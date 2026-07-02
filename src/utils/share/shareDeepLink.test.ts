@@ -83,9 +83,15 @@ describe('sharePathFromUrl', () => {
     expect(sharePathFromUrl('/post/post-abc')).toBe('/post/post-abc');
   });
 
-  it('ignora custom scheme e URLs vazias', () => {
-    expect(sharePathFromUrl('likeme://post/abc123')).toBeNull();
+  it('extrai pathname de likeme:// e ignora URLs vazias', () => {
+    expect(sharePathFromUrl('likeme://post/abc123')).toBe('/post/abc123');
     expect(sharePathFromUrl('   ')).toBeNull();
+  });
+
+  it('preserva query string em path https', () => {
+    expect(sharePathFromUrl('https://likeme-back-end-one.vercel.app/affiliate/prod-1?ref=abc')).toBe(
+      '/affiliate/prod-1?ref=abc',
+    );
   });
 });
 
@@ -115,8 +121,15 @@ describe('shareDeepLinkTargetFromUrl', () => {
     expect(shareDeepLinkTargetFromUrl(`${SHARE_BASE_URL}/provider/prov-1`)).toEqual(PROVIDER_TARGET);
   });
 
-  it('ignora custom scheme (somente Universal/App Link)', () => {
-    expect(shareDeepLinkTargetFromUrl('likeme://post/abc123')).toBeNull();
+  it('resolve rotas via custom scheme likeme://', () => {
+    expect(shareDeepLinkTargetFromUrl('likeme://post/abc123')).toEqual({
+      screen: 'Community',
+      params: {
+        screen: 'PostDetail',
+        params: { postId: 'abc123' },
+      },
+    });
+    expect(shareDeepLinkTargetFromUrl('likeme://affiliate/aff-1?adId=ad-9')).toEqual(AFFILIATE_TARGET);
   });
 
   it('retorna null para paths desconhecidos', () => {
