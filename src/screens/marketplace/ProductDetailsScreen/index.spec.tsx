@@ -71,6 +71,23 @@ jest.mock('@/components/ui/layout', () => {
   };
 });
 
+jest.mock('@/components/ui/feedback', () => {
+  const { View, Text, TouchableOpacity } = require('react-native');
+  return {
+    ShareContentUnavailable: ({ onGoHome }: { onGoHome?: () => void }) => (
+      <View>
+        <Text>share.contentUnavailable</Text>
+        {onGoHome ? (
+          <TouchableOpacity onPress={onGoHome}>
+            <Text>share.goToHome</Text>
+          </TouchableOpacity>
+        ) : null}
+      </View>
+    ),
+    EmptyState: ({ title }: { title?: string }) => (title ? <Text>{title}</Text> : null),
+  };
+});
+
 jest.mock('@/components/ui', () => {
   const { View, Text, TouchableOpacity } = require('react-native');
   return {
@@ -360,7 +377,7 @@ describe('ProductDetailsScreen', () => {
     const { getByText } = render(<ProductDetailsScreen navigation={mockNavigation as any} route={mockRoute as any} />);
 
     await waitFor(() => {
-      expect(getByText('marketplace.productNotFound')).toBeTruthy();
+      expect(getByText('share.contentUnavailable')).toBeTruthy();
     });
   });
 

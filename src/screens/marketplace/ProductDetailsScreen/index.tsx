@@ -4,6 +4,7 @@ import type { ScrollView as ScrollViewType } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { StackNavigationProp } from '@react-navigation/stack';
 import { HeroImage, ScreenWithHeader } from '@/components/ui/layout';
+import { ShareContentUnavailable } from '@/components/ui/feedback';
 import { Toggle } from '@/components/ui';
 import { SecondaryButton } from '@/components/ui/buttons';
 import { ProductsCarousel } from '@/components/sections/product';
@@ -35,6 +36,8 @@ import type { RootStackParamList } from '@/types/navigation';
 import { PRODUCT_CATALOG_TYPE, catalogTypeTranslatedBadgeLabels, isProgramCatalogType } from '@/types/product';
 import { navigateToProviderProfile } from '@/utils/navigation/marketplaceNavigation';
 import { navigateToProductDetailsScreen } from '@/utils/navigation/productNavigation';
+import { navigateToShareHome } from '@/utils/navigation/shareHomeNavigation';
+import { shareContent, shareInputForProduct } from '@/utils/share/shareContent';
 import { styles } from './styles';
 
 type ProductDetailsScreenProps = {
@@ -246,6 +249,18 @@ const ProductDetailsScreen: React.FC<ProductDetailsScreenProps> = ({ navigation,
     navigation.goBack();
   };
 
+  const handleGoHome = () => {
+    navigateToShareHome(navigation);
+  };
+
+  const handleSharePress = async () => {
+    if (!product) {
+      return;
+    }
+    const shareInput = shareInputForProduct(product, ad?.id);
+    await shareContent(shareInput, { screenName: 'product_details' });
+  };
+
   const handleSeeProviderProfile = () => {
     const providerId = advertiserId ?? partnerData.id ?? '';
 
@@ -337,14 +352,13 @@ const ProductDetailsScreen: React.FC<ProductDetailsScreenProps> = ({ navigation,
   if (!product || !displayData) {
     logError({ screen_name: 'product_details', error_type: 'product_not_found' });
     return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.loadingContainer}>
-          <Text style={styles.loadingText}>{t('marketplace.productNotFound')}</Text>
-          <TouchableOpacity onPress={handleBackPress} style={styles.backButton}>
-            <Text>{t('common.goBack')}</Text>
-          </TouchableOpacity>
-        </View>
-      </SafeAreaView>
+      <ScreenWithHeader
+        navigation={navigation}
+        headerProps={{ showBackButton: true, onBackPress: handleBackPress }}
+        contentContainerStyle={styles.container}
+      >
+        <ShareContentUnavailable itemId={route.params.productId} screenName='product_details' onGoHome={handleGoHome} />
+      </ScreenWithHeader>
     );
   }
 
@@ -352,7 +366,12 @@ const ProductDetailsScreen: React.FC<ProductDetailsScreenProps> = ({ navigation,
     <>
       <ScreenWithHeader
         navigation={navigation}
-        headerProps={{ showBackButton: true, onBackPress: handleBackPress }}
+        headerProps={{
+          showBackButton: true,
+          onBackPress: handleBackPress,
+          showShareButton: true,
+          onSharePress: handleSharePress,
+        }}
         contentContainerStyle={styles.container}
       >
         <ScrollView

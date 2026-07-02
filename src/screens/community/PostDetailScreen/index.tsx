@@ -11,7 +11,9 @@ import {
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ShareContentUnavailable } from '@/components/ui/feedback';
 import { GradientBackground, KeyboardAwareList, ScreenWithHeader } from '@/components/ui/layout';
+import { SHARE_CONTENT_TYPES } from '@/constants/share';
 import { PostCard } from '@/components/sections/community';
 import { CommentCard } from '@/components/ui';
 import ReplyInput from '@/components/ui/inputs/ReplyInput';
@@ -23,7 +25,9 @@ import { usePostReplies, useTranslation } from '@/hooks';
 import type { PostReplyCardComment } from '@/hooks/community/usePostReplies';
 import { communityService } from '@/services';
 import { mapCommunityPostToPost } from '@/utils';
+import { navigateToShareHome } from '@/utils/navigation/shareHomeNavigation';
 import { logger } from '@/utils/logger';
+import { shareContent } from '@/utils/share/shareContent';
 
 type Props = {
   navigation: any;
@@ -117,12 +121,21 @@ const PostDetailScreen: React.FC<Props> = ({ navigation, route }) => {
     };
   }, [initialPost, routePostId]);
 
-  useEffect(() => {
-    if (postLoadState !== 'error' || initialPost) {
+  const handleBackPress = useCallback(() => {
+    navigation?.goBack?.();
+  }, [navigation]);
+
+  const handleGoHome = useCallback(() => {
+    navigateToShareHome(navigation);
+  }, [navigation]);
+
+  const handleSharePress = useCallback(async () => {
+    const postId = post?.id ?? routePostId;
+    if (!postId) {
       return;
     }
-    navigation?.goBack?.();
-  }, [initialPost, navigation, postLoadState]);
+    await shareContent({ contentType: SHARE_CONTENT_TYPES.COMMUNITY_POST, postId }, { screenName: 'post_details' });
+  }, [post?.id, routePostId]);
 
   const [likeBootstrap, setLikeBootstrap] = useState({
     initialLikes: post?.likes ?? 0,
@@ -335,13 +348,13 @@ const PostDetailScreen: React.FC<Props> = ({ navigation, route }) => {
       </View>
     ) : undefined;
 
-  if (postLoadState === 'loading' || postLoadState === 'error') {
+  if (postLoadState === 'loading') {
     return (
       <ScreenWithHeader
         navigation={navigation}
         headerProps={{
           showBackButton: true,
-          onBackPress: () => navigation?.goBack?.(),
+          onBackPress: handleBackPress,
         }}
         contentContainerStyle={styles.screenContent}
         contentBackgroundColor={COLORS.BACKGROUND_SECONDARY}
@@ -350,6 +363,27 @@ const PostDetailScreen: React.FC<Props> = ({ navigation, route }) => {
           <ActivityIndicator size='large' color={COLORS.PRIMARY.PURE} />
           <Text style={styles.commentsStateLabel}>{t('common.loading')}</Text>
         </View>
+      </ScreenWithHeader>
+    );
+  }
+
+  if (postLoadState === 'error') {
+    return (
+      <ScreenWithHeader
+        navigation={navigation}
+        headerProps={{
+          showBackButton: true,
+          onBackPress: handleBackPress,
+        }}
+        contentContainerStyle={styles.screenContent}
+        contentBackgroundColor={COLORS.BACKGROUND_SECONDARY}
+      >
+        <ShareContentUnavailable
+          contentType={SHARE_CONTENT_TYPES.COMMUNITY_POST}
+          itemId={routePostId ?? undefined}
+          screenName='post_details'
+          onGoHome={handleGoHome}
+        />
       </ScreenWithHeader>
     );
   }
@@ -363,7 +397,9 @@ const PostDetailScreen: React.FC<Props> = ({ navigation, route }) => {
       navigation={navigation}
       headerProps={{
         showBackButton: true,
-        onBackPress: () => navigation?.goBack?.(),
+        onBackPress: handleBackPress,
+        showShareButton: true,
+        onSharePress: handleSharePress,
       }}
       contentContainerStyle={styles.screenContent}
       contentBackgroundColor={COLORS.BACKGROUND_SECONDARY}

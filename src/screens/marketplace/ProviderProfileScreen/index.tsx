@@ -6,7 +6,7 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import { HeroImage, ScreenWithHeader } from '@/components/ui/layout';
 import { ToggleTabs } from '@/components/ui/tabs';
 import { IconButton, SecondaryButton } from '@/components/ui/buttons';
-import { EmptyState } from '@/components/ui/feedback';
+import { EmptyState, ShareContentUnavailable } from '@/components/ui/feedback';
 import type { ButtonCarouselOption } from '@/components/ui/carousel';
 import { type JoinCardItem } from '@/components/ui/cards';
 import { JoinCardList } from '@/components/ui/lists/JoinCardList';
@@ -21,6 +21,7 @@ import { styles as communityShopListStyles } from '@/components/sections/communi
 import { communityService, advertiserService } from '@/services';
 import type { Advertiser, AdvertiserProfile } from '@/types/ad';
 import { COLORS, FEATURE_FLAGS } from '@/constants';
+import { SHARE_CONTENT_TYPES } from '@/constants/share';
 import { DEFAULT_MARKETPLACE_SORT_ORDER, type MarketplaceSortOrderId } from '@/constants/marketplaceSortOrder';
 import { PRODUCT_CATALOG_TYPE } from '@/types/product';
 import { useSetFloatingMenu } from '@/contexts/FloatingMenuContext';
@@ -31,6 +32,8 @@ import { resolveCommunityHeroImageUri } from '@/utils/community/mappers';
 import { navigateToCommunity } from '@/utils/navigation/communityNavigation';
 import { navigateToProviderProfile } from '@/utils/navigation/marketplaceNavigation';
 import { navigateToProductDetailsScreen } from '@/utils/navigation/productNavigation';
+import { navigateToShareHome } from '@/utils/navigation/shareHomeNavigation';
+import { shareContent } from '@/utils/share/shareContent';
 import { getProductModeTranslationKey } from '@/utils';
 import { filterAdsForProviderProfile } from '@/utils/marketplace/filterAdsForProviderProfile';
 import { getMarketplaceSortOptions } from '@/utils/marketplace/sortOptions';
@@ -318,6 +321,17 @@ const ProviderProfileScreen: React.FC<ProviderProfileScreenProps> = ({ navigatio
     navigation.goBack();
   };
 
+  const handleGoHome = () => {
+    navigateToShareHome(navigation);
+  };
+
+  const handleSharePress = async () => {
+    if (!providerId) {
+      return;
+    }
+    await shareContent({ contentType: SHARE_CONTENT_TYPES.PROVIDER, providerId }, { screenName: 'provider_profile' });
+  };
+
   const handleTalkToProvider = () => {
     if (!providerData) return;
     if (!isChatEnabled) {
@@ -339,7 +353,12 @@ const ProviderProfileScreen: React.FC<ProviderProfileScreenProps> = ({ navigatio
   return (
     <ScreenWithHeader
       navigation={navigation}
-      headerProps={{ showBackButton: true, onBackPress: handleBackPress }}
+      headerProps={{
+        showBackButton: true,
+        onBackPress: handleBackPress,
+        showShareButton: Boolean(providerData),
+        onSharePress: handleSharePress,
+      }}
       contentContainerStyle={styles.container}
     >
       {loadingProvider && !providerData && (
@@ -349,9 +368,12 @@ const ProviderProfileScreen: React.FC<ProviderProfileScreenProps> = ({ navigatio
         </View>
       )}
       {!loadingProvider && !providerData && (
-        <View style={styles.loadingContainer}>
-          <Text style={styles.emptyText}>{t('marketplace.providerNotFound')}</Text>
-        </View>
+        <ShareContentUnavailable
+          contentType={SHARE_CONTENT_TYPES.PROVIDER}
+          itemId={providerId}
+          screenName='provider_profile'
+          onGoHome={handleGoHome}
+        />
       )}
       {providerData && (
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>

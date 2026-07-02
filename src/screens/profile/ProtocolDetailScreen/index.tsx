@@ -3,7 +3,7 @@ import { ActivityIndicator, ScrollView, Text, View } from 'react-native';
 import type { StackScreenProps } from '@react-navigation/stack';
 import { useFocusEffect } from '@react-navigation/native';
 import { ScreenWithHeader, HeroImage } from '@/components/ui/layout';
-import { EmptyState } from '@/components/ui/feedback';
+import { EmptyState, ShareContentUnavailable } from '@/components/ui/feedback';
 import { ButtonCarousel, type ButtonCarouselOption } from '@/components/ui/carousel';
 import { ModuleAccordion } from '@/components/sections/program';
 import { EventBanner } from '@/components/sections/community';
@@ -14,13 +14,16 @@ import { useFloatingMenuActions } from '@/contexts/FloatingMenuContext';
 import { useAnalyticsScreen, logTabSelect } from '@/analytics';
 import { useTranslation } from '@/hooks/i18n';
 import { MEMBER_PROTOCOL_COMMUNITY_IMAGE_FALLBACK } from '@/constants/community/communityProtocol';
+import { SHARE_CONTENT_TYPES } from '@/constants/share';
 import type { ProtocolDetailProtocol, RootStackParamList } from '@/types/navigation';
 import type { ModuleItem } from '@/components/sections/program/ModuleAccordion';
 import productService from '@/services/product/productService';
 import { COLORS } from '@/constants';
 import { moduleItemsFromProgramCourse } from '@/utils/course/programCourseModules';
 import { protocolDetailFromProduct } from '@/utils/profile/protocolDetailFromProduct';
+import { navigateToShareHome } from '@/utils/navigation/shareHomeNavigation';
 import { logger } from '@/utils/logger';
+import { shareContent } from '@/utils/share/shareContent';
 import { styles } from './styles';
 
 type Props = StackScreenProps<RootStackParamList, 'ProtocolDetail'>;
@@ -185,6 +188,18 @@ const ProtocolDetailScreen: React.FC<Props> = ({ navigation, route }) => {
     navigation.goBack();
   };
 
+  const handleGoHome = () => {
+    navigateToShareHome(navigation);
+  };
+
+  const handleSharePress = async () => {
+    const productId = protocol?.productId ?? routeProductId;
+    if (!productId) {
+      return;
+    }
+    await shareContent({ contentType: SHARE_CONTENT_TYPES.PROTOCOL, productId }, { screenName: 'protocol_detail' });
+  };
+
   const handleTabSelect = (tabId: ProtocolTabId) => {
     logTabSelect({ screen_name: 'protocol_detail', tab_id: tabId });
     setActiveTab(tabId);
@@ -213,9 +228,11 @@ const ProtocolDetailScreen: React.FC<Props> = ({ navigation, route }) => {
         contentContainerStyle={styles.container}
         contentBackgroundColor={COLORS.BACKGROUND}
       >
-        <EmptyState
-          title={t('share.contentUnavailable', { defaultValue: 'Conteúdo indisponível' })}
-          iconName='link-off'
+        <ShareContentUnavailable
+          contentType={SHARE_CONTENT_TYPES.PROTOCOL}
+          itemId={routeProductId ?? undefined}
+          screenName='protocol_detail'
+          onGoHome={handleGoHome}
         />
       </ScreenWithHeader>
     );
@@ -320,7 +337,12 @@ const ProtocolDetailScreen: React.FC<Props> = ({ navigation, route }) => {
   return (
     <ScreenWithHeader
       navigation={navigation}
-      headerProps={{ showBackButton: true, onBackPress: handleBack }}
+      headerProps={{
+        showBackButton: true,
+        onBackPress: handleBack,
+        showShareButton: true,
+        onSharePress: handleSharePress,
+      }}
       contentContainerStyle={styles.container}
       contentBackgroundColor={COLORS.BACKGROUND}
     >

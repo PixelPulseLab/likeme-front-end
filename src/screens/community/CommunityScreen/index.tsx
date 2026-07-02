@@ -14,7 +14,8 @@ import {
 } from '@/components/sections/community';
 import { styles as socialListStyles } from '@/components/sections/community/SocialList/styles';
 import { Product, ProductsCarousel } from '@/components/sections/product';
-import { EmptyState } from '@/components/ui';
+import { EmptyState, ShareContentUnavailable } from '@/components/ui';
+import { SHARE_CONTENT_TYPES } from '@/constants/share';
 import type { Post } from '@/types';
 import { ButtonCarousel, type ButtonCarouselOption } from '@/components/ui/carousel';
 import { HeroImage, ScreenWithHeader } from '@/components/ui/layout';
@@ -42,6 +43,8 @@ import { logger } from '@/utils/logger';
 import { resolveCommunityHeroImageUri } from '@/utils/community/mappers';
 import { navigateToProviderProfile } from '@/utils/navigation/marketplaceNavigation';
 import { navigateToProductDetailsScreen } from '@/utils/navigation/productNavigation';
+import { navigateToShareHome } from '@/utils/navigation/shareHomeNavigation';
+import { shareContent } from '@/utils/share/shareContent';
 import { filterAdsForProviderProfile } from '@/utils/marketplace/filterAdsForProviderProfile';
 import type { Advertiser } from '@/types/ad';
 import type { ShopTabId } from '@/components/sections/community/ShoppingList';
@@ -122,7 +125,7 @@ const CommunityScreen: React.FC<Props> = ({ navigation }) => {
   const {
     communities: rawCommunities,
     categories,
-    loading: _communitiesLoading,
+    loading: communitiesLoading,
     loadingMore: _communitiesLoadingMore,
     error: _communitiesError,
     hasMore: _communitiesHasMore,
@@ -147,6 +150,24 @@ const CommunityScreen: React.FC<Props> = ({ navigation }) => {
   }, [rawCommunities, focusCommunityId]);
 
   const selectedCommunityId = focusCommunityId ?? selectedCommunity?.communityId;
+
+  const focusCommunityUnavailable = Boolean(
+    focusCommunityId &&
+      !communitiesLoading &&
+      !rawCommunities.some((community) => community.communityId === focusCommunityId),
+  );
+
+  const handleGoHome = useCallback(() => {
+    navigateToShareHome(rootNavigation ?? navigation);
+  }, [navigation, rootNavigation]);
+
+  const handleSharePress = useCallback(async () => {
+    const communityId = selectedCommunityId?.trim();
+    if (!communityId) {
+      return;
+    }
+    await shareContent({ contentType: SHARE_CONTENT_TYPES.COMMUNITY, communityId }, { screenName: 'community_list' });
+  }, [selectedCommunityId]);
 
   const { termsAccepted: communityTermsAccepted, toggleTermsAccepted: toggleCommunityTermsAccepted } = useCommunity({
     communityId: activeInfoTab === 'agreements' ? selectedCommunityId : undefined,
@@ -732,6 +753,29 @@ const CommunityScreen: React.FC<Props> = ({ navigation }) => {
     return <EmptyState title={t('community.noPostsFound')} description={t('community.noPostsFoundDescription')} />;
   }, [error, t]);
 
+  if (focusCommunityUnavailable) {
+    return (
+      <View style={styles.screenRoot}>
+        <ScreenWithHeader
+          navigation={rootNavigation}
+          headerProps={{
+            showBackButton: true,
+            showMenuWithAvatar: false,
+            onBackPress: () => navigation?.goBack?.(),
+          }}
+          contentContainerStyle={styles.container}
+        >
+          <ShareContentUnavailable
+            contentType={SHARE_CONTENT_TYPES.COMMUNITY}
+            itemId={focusCommunityId}
+            screenName='community_list'
+            onGoHome={handleGoHome}
+          />
+        </ScreenWithHeader>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.screenRoot}>
       {eventJoinUrl ? <EventWebViewSession url={eventJoinUrl} onClose={closeEventSession} /> : null}
@@ -743,6 +787,8 @@ const CommunityScreen: React.FC<Props> = ({ navigation }) => {
           onBackPress: () => navigation?.goBack?.(),
           showCartButton: true,
           onCartPress: handleCartPress,
+          showShareButton: Boolean(selectedCommunityId?.trim()),
+          onSharePress: handleSharePress,
         }}
         contentContainerStyle={styles.container}
       >

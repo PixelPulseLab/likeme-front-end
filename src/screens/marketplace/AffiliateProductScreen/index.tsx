@@ -6,6 +6,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import type { StackNavigationProp } from '@react-navigation/stack';
 import { PartnerSection } from '@/components/sections/advertiser';
 import { ScreenWithHeader } from '@/components/ui/layout';
+import { ShareContentUnavailable } from '@/components/ui/feedback';
 import { CachedImage } from '@/components/ui/media/CachedImage';
 import { MarkdownText } from '@/components/ui/text/MarkdownText';
 import { IMAGE_PRIORITY_HIGH, MARKETPLACE_PRODUCT_PLACEHOLDER_IMAGE_URI } from '@/constants';
@@ -17,6 +18,9 @@ import { useSetFloatingMenu } from '@/contexts/FloatingMenuContext';
 import { getProductModeTranslationKey } from '@/utils';
 import { logger } from '@/utils/logger';
 import { catalogTypeTranslatedBadgeLabels } from '@/types/product';
+import { SHARE_CONTENT_TYPES } from '@/constants/share';
+import { navigateToShareHome } from '@/utils/navigation/shareHomeNavigation';
+import { shareContent } from '@/utils/share/shareContent';
 import { styles } from './styles';
 
 type AffiliateProductScreenProps = {
@@ -107,6 +111,21 @@ const AffiliateProductScreen: React.FC<AffiliateProductScreenProps> = ({ navigat
 
   const handleBackPress = () => {
     navigation.goBack();
+  };
+
+  const handleGoHome = () => {
+    navigateToShareHome(navigation);
+  };
+
+  const handleSharePress = async () => {
+    const productId = product?.id ?? route.params?.productId;
+    if (!productId) {
+      return;
+    }
+    await shareContent(
+      { contentType: SHARE_CONTENT_TYPES.AFFILIATE, productId, adId: route.params?.adId },
+      { screenName: 'affiliate_product' },
+    );
   };
 
   const handleBuyOnAmazon = () => {
@@ -235,10 +254,32 @@ const AffiliateProductScreen: React.FC<AffiliateProductScreenProps> = ({ navigat
     );
   }
 
+  if (!product) {
+    return (
+      <ScreenWithHeader
+        navigation={navigation}
+        headerProps={{ showBackButton: true, onBackPress: handleBackPress }}
+        contentContainerStyle={styles.container}
+      >
+        <ShareContentUnavailable
+          contentType={SHARE_CONTENT_TYPES.AFFILIATE}
+          itemId={route.params?.productId}
+          screenName='affiliate_product'
+          onGoHome={handleGoHome}
+        />
+      </ScreenWithHeader>
+    );
+  }
+
   return (
     <ScreenWithHeader
       navigation={navigation}
-      headerProps={{ showBackButton: true, onBackPress: handleBackPress }}
+      headerProps={{
+        showBackButton: true,
+        onBackPress: handleBackPress,
+        showShareButton: true,
+        onSharePress: handleSharePress,
+      }}
       contentContainerStyle={styles.container}
     >
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
