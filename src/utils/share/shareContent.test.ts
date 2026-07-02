@@ -85,4 +85,54 @@ describe('shareContent', () => {
       [ANALYTICS_PARAMS.SUCCESS]: false,
     });
   });
+
+  it('registra share_failed quando Share.share lança erro', async () => {
+    jest.spyOn(Share, 'share').mockRejectedValue(new Error('share unavailable'));
+
+    await shareContent({ contentType: SHARE_CONTENT_TYPES.PRODUCT, productId: 'prod-1' });
+
+    expect(logEvent).toHaveBeenLastCalledWith(GA4_EVENTS.SHARE, {
+      [ANALYTICS_PARAMS.CONTENT_TYPE]: SHARE_CONTENT_TYPES.PRODUCT,
+      [ANALYTICS_PARAMS.ITEM_ID]: 'prod-1',
+      [ANALYTICS_PARAMS.ACTION_NAME]: 'share_failed',
+      [ANALYTICS_PARAMS.SUCCESS]: false,
+    });
+  });
+
+  it.each([
+    [
+      'protocolo',
+      { contentType: SHARE_CONTENT_TYPES.PROTOCOL, productId: 'prog-1' },
+      'https://share.example.com/protocol/prog-1',
+    ],
+    [
+      'serviço',
+      { contentType: SHARE_CONTENT_TYPES.SERVICE, productId: 'svc-1' },
+      'https://share.example.com/product/svc-1',
+    ],
+    [
+      'afiliado com adId',
+      { contentType: SHARE_CONTENT_TYPES.AFFILIATE, productId: 'aff-1', adId: 'ad-9' },
+      'https://share.example.com/affiliate/aff-1?adId=ad-9',
+    ],
+    [
+      'provider',
+      { contentType: SHARE_CONTENT_TYPES.PROVIDER, providerId: 'prov-1' },
+      'https://share.example.com/provider/prov-1',
+    ],
+  ] as const)('abre share sheet para %s com URL correta', async (_label, input, expectedUrl) => {
+    await shareContent(input);
+
+    expect(Share.share).toHaveBeenCalledWith({
+      url: expectedUrl,
+      message: expectedUrl,
+    });
+    expect(logEvent).toHaveBeenNthCalledWith(
+      1,
+      GA4_EVENTS.SHARE,
+      expect.objectContaining({
+        [ANALYTICS_PARAMS.ACTION_NAME]: 'share_started',
+      }),
+    );
+  });
 });

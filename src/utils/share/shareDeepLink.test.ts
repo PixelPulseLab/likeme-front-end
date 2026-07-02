@@ -198,6 +198,25 @@ describe('openDeepLinkTarget', () => {
     );
   });
 
+  it('navega para protocolo, afiliado e provider quando app está pronto', () => {
+    const navigationRef = createNavigationRef();
+
+    openDeepLinkTarget(navigationRef, `${SHARE_BASE_URL}/protocol/prog-1`, 'Main');
+    expect(navigationRef.dispatch).toHaveBeenLastCalledWith(
+      CommonActions.navigate({ name: 'ProtocolDetail', params: PROTOCOL_TARGET.params }),
+    );
+
+    openDeepLinkTarget(navigationRef, `${SHARE_BASE_URL}/affiliate/aff-1?adId=ad-9`, 'Main');
+    expect(navigationRef.dispatch).toHaveBeenLastCalledWith(
+      CommonActions.navigate({ name: 'AffiliateProduct', params: AFFILIATE_TARGET.params }),
+    );
+
+    openDeepLinkTarget(navigationRef, `${SHARE_BASE_URL}/provider/prov-1`, 'Main');
+    expect(navigationRef.dispatch).toHaveBeenLastCalledWith(
+      CommonActions.navigate({ name: 'ProviderProfile', params: PROVIDER_TARGET.params }),
+    );
+  });
+
   it('enfileira destino enquanto rota de bootstrap está ativa', () => {
     const navigationRef = createNavigationRef();
 

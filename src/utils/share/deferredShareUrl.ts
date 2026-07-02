@@ -1,5 +1,6 @@
 import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Clipboard from 'expo-clipboard';
 import { GA4_EVENTS, logEvent, ANALYTICS_PARAMS } from '@/analytics';
 import { SHARE_CONFIG } from '@/config/environment';
 import { shareDeepLinkTargetFromUrl } from '@/utils/share/shareDeepLink';
@@ -58,6 +59,33 @@ async function fetchAndroidInstallReferrerString(): Promise<string | null> {
   }
 }
 
+async function fetchIosDeferredShareUrlFromClipboard(): Promise<string | null> {
+  if (Platform.OS !== 'ios') {
+    return null;
+  }
+
+  try {
+    const clipboardText = (await Clipboard.getStringAsync())?.trim();
+    return clipboardText || null;
+  } catch (error) {
+    logger.warn('[deferredShareUrl] Clipboard indisponível', { cause: error });
+    return null;
+  }
+}
+
+async function fetchDeferredShareUrlCandidate(): Promise<string | null> {
+  if (Platform.OS === 'android') {
+    const referrer = await fetchAndroidInstallReferrerString();
+    return parseDeferredShareUrlFromInstallReferrer(referrer);
+  }
+
+  if (Platform.OS === 'ios') {
+    return fetchIosDeferredShareUrlFromClipboard();
+  }
+
+  return null;
+}
+
 export async function readDeferredShareUrlOnce(): Promise<string | null> {
   const alreadyChecked = await AsyncStorage.getItem(DEFERRED_SHARE_REFERRER_CHECKED_KEY);
   if (alreadyChecked === '1') {
@@ -66,8 +94,7 @@ export async function readDeferredShareUrlOnce(): Promise<string | null> {
 
   await AsyncStorage.setItem(DEFERRED_SHARE_REFERRER_CHECKED_KEY, '1');
 
-  const referrer = await fetchAndroidInstallReferrerString();
-  const deferredUrl = parseDeferredShareUrlFromInstallReferrer(referrer);
+  const deferredUrl = await fetchDeferredShareUrlCandidate();
   if (!deferredUrl || !isShareHostUrl(deferredUrl)) {
     return null;
   }
