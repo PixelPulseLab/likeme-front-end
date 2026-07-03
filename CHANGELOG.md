@@ -159,3 +159,16 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 
 ### Corrigido
 - Empty state em protocolos sem expor erros de API ao usuário
+
+## [1.9.0] - 2026-07-03
+
+### Adicionado
+- Compartilhamento social de posts, produtos, protocolos, comunidades e providers (APP-332)
+- Deep linking e deferred deep link para abrir conteúdo compartilhado no app (APP-332)
+- Tela de conteúdo exclusivo ao acessar link sem permissão (APP-332)
+
+### Alterado
+- Botões de compartilhar reposicionados conforme Figma na PDP, comunidade, protocolo e provider (APP-332)
+
+### Corrigido
+- Link duplicado ao compartilhar no iOS e Android (APP-332)
