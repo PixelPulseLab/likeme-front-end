@@ -17,7 +17,6 @@ type Props<T extends string | number = string> = {
   onSharePress?: () => void;
   menuOptions?: InfoSectionMenuOption[];
   style?: StyleProp<ViewStyle>;
-  carouselStyle?: StyleProp<ViewStyle>;
 };
 
 function InfoSectionTabsRow<T extends string | number = string>({
@@ -27,7 +26,6 @@ function InfoSectionTabsRow<T extends string | number = string>({
   onSharePress,
   menuOptions,
   style,
-  carouselStyle,
 }: Props<T>) {
   const { t } = useTranslation();
 
@@ -79,7 +77,6 @@ function InfoSectionTabsRow<T extends string | number = string>({
           options={options}
           selectedId={selectedId}
           onSelect={onSelect}
-          style={carouselStyle}
           contentContainerStyle={styles.carouselContent}
         />
       </View>

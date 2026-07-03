@@ -3,6 +3,7 @@ import { navigateToProductDetailsScreen } from '@/utils/navigation/productNaviga
 
 type Navigation = {
   navigate: (screen: string, params?: unknown) => void;
+  replace: (screen: string, params?: unknown) => void;
 };
 
 export function navigateToShareDiscover(navigation: Navigation | undefined, productId?: string | null): void {
