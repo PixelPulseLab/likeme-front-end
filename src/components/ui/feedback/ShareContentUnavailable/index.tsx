@@ -1,13 +1,17 @@
 import React, { useEffect } from 'react';
-import EmptyState from '@/components/ui/feedback/EmptyState';
+import { View, Text } from 'react-native';
+import PrimaryButton from '@/components/ui/buttons/Primary';
+import SecondaryButton from '@/components/ui/buttons/Secondary';
 import { GA4_EVENTS, logEvent, ANALYTICS_PARAMS } from '@/analytics';
 import type { ShareContentType } from '@/constants/share';
 import { useTranslation } from '@/hooks/i18n';
+import { styles } from './styles';
 
 export type ShareContentUnavailableProps = {
   contentType?: ShareContentType;
   itemId?: string;
   screenName?: string;
+  onDiscover?: () => void;
   onGoHome?: () => void;
 };
 
@@ -15,6 +19,7 @@ const ShareContentUnavailable: React.FC<ShareContentUnavailableProps> = ({
   contentType,
   itemId,
   screenName,
+  onDiscover,
   onGoHome,
 }) => {
   const { t } = useTranslation();
@@ -29,13 +34,27 @@ const ShareContentUnavailable: React.FC<ShareContentUnavailableProps> = ({
   }, [contentType, itemId, screenName]);
 
   return (
-    <EmptyState
-      title={t('share.contentUnavailable')}
-      description={t('share.contentUnavailableDescription')}
-      iconName='link-off'
-      actionLabel={onGoHome ? t('share.goToHome') : undefined}
-      onActionPress={onGoHome}
-    />
+    <View style={styles.container}>
+      <View style={styles.messageBlock}>
+        <Text style={styles.title}>{t('share.exclusiveContentTitle')}</Text>
+        <Text style={styles.description}>{t('share.exclusiveContentDescription')}</Text>
+      </View>
+      {(onDiscover || onGoHome) && (
+        <View style={styles.actions}>
+          {onDiscover ? (
+            <PrimaryButton label={t('share.discover')} onPress={onDiscover} size='large' style={styles.primaryButton} />
+          ) : null}
+          {onGoHome ? (
+            <SecondaryButton
+              label={t('share.goToHome')}
+              onPress={onGoHome}
+              size='large'
+              style={styles.secondaryButton}
+            />
+          ) : null}
+        </View>
+      )}
+    </View>
   );
 };
 

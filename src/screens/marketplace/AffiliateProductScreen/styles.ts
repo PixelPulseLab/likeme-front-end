@@ -114,11 +114,21 @@ export const styles = StyleSheet.create({
     paddingHorizontal: 32,
     gap: 16,
   },
-  tabsContainer: {
+  tabsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
     marginTop: SPACING.MD,
+    marginBottom: 16,
+  },
+  tabsContainer: {
+    flex: 1,
     flexDirection: 'row',
     gap: 4,
-    marginBottom: 16,
+  },
+  tabsShareButton: {
+    flexShrink: 0,
   },
   tab: {
     paddingVertical: 9,

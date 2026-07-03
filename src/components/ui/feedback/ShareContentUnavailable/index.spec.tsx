@@ -53,4 +53,13 @@ describe('ShareContentUnavailable', () => {
       });
     });
   });
+
+  it('exibe ações Conhecer e Ir para a Home quando callbacks informados', () => {
+    const onDiscover = jest.fn();
+    const onGoHome = jest.fn();
+    const { getByText } = render(<ShareContentUnavailable onDiscover={onDiscover} onGoHome={onGoHome} />);
+
+    expect(getByText('share.discover')).toBeTruthy();
+    expect(getByText('share.goToHome')).toBeTruthy();
+  });
 });

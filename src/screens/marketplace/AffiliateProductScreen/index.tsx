@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Linking, StyleSheet } from 'react-native';
-import { SecondaryButton } from '@/components/ui/buttons';
+import { IconButton, SecondaryButton } from '@/components/ui/buttons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import type { StackNavigationProp } from '@react-navigation/stack';
@@ -20,6 +20,7 @@ import { logger } from '@/utils/logger';
 import { catalogTypeTranslatedBadgeLabels } from '@/types/product';
 import { SHARE_CONTENT_TYPES } from '@/constants/share';
 import { navigateToShareHome } from '@/utils/navigation/shareHomeNavigation';
+import { navigateToShareDiscover } from '@/utils/navigation/shareDiscoverNavigation';
 import { shareContent } from '@/utils/share/shareContent';
 import { styles } from './styles';
 
@@ -117,6 +118,10 @@ const AffiliateProductScreen: React.FC<AffiliateProductScreenProps> = ({ navigat
     navigateToShareHome(navigation);
   };
 
+  const handleDiscover = () => {
+    navigateToShareDiscover(navigation, route.params?.productId);
+  };
+
   const handleSharePress = async () => {
     const productId = product?.id ?? route.params?.productId;
     if (!productId) {
@@ -212,17 +217,25 @@ const AffiliateProductScreen: React.FC<AffiliateProductScreenProps> = ({ navigat
   };
 
   const renderTabs = () => (
-    <View style={styles.tabsContainer}>
-      {tabs.map((tab) => (
-        <TouchableOpacity
-          key={tab.id}
-          style={[styles.tab, resolvedTabId === tab.id && styles.tabActive]}
-          onPress={() => setActiveTab(tab.id)}
-          activeOpacity={0.7}
-        >
-          <Text style={[styles.tabText, resolvedTabId === tab.id && styles.tabTextActive]}>{tab.label}</Text>
-        </TouchableOpacity>
-      ))}
+    <View style={styles.tabsRow}>
+      <View style={styles.tabsContainer}>
+        {tabs.map((tab) => (
+          <TouchableOpacity
+            key={tab.id}
+            style={[styles.tab, resolvedTabId === tab.id && styles.tabActive]}
+            onPress={() => setActiveTab(tab.id)}
+            activeOpacity={0.7}
+          >
+            <Text style={[styles.tabText, resolvedTabId === tab.id && styles.tabTextActive]}>{tab.label}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+      <IconButton
+        icon='share'
+        onPress={handleSharePress}
+        backgroundSize='medium'
+        containerStyle={styles.tabsShareButton}
+      />
     </View>
   );
 
@@ -265,6 +278,7 @@ const AffiliateProductScreen: React.FC<AffiliateProductScreenProps> = ({ navigat
           contentType={SHARE_CONTENT_TYPES.AFFILIATE}
           itemId={route.params?.productId}
           screenName='affiliate_product'
+          onDiscover={handleDiscover}
           onGoHome={handleGoHome}
         />
       </ScreenWithHeader>
@@ -277,8 +291,6 @@ const AffiliateProductScreen: React.FC<AffiliateProductScreenProps> = ({ navigat
       headerProps={{
         showBackButton: true,
         onBackPress: handleBackPress,
-        showShareButton: true,
-        onSharePress: handleSharePress,
       }}
       contentContainerStyle={styles.container}
     >

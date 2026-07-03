@@ -1,6 +1,5 @@
 import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as Clipboard from 'expo-clipboard';
 import { GA4_EVENTS, logEvent, ANALYTICS_PARAMS } from '@/analytics';
 import { SHARE_CONFIG } from '@/config/environment';
 import { shareDeepLinkTargetFromUrl } from '@/utils/share/shareDeepLink';
@@ -65,6 +64,8 @@ async function fetchIosDeferredShareUrlFromClipboard(): Promise<string | null> {
   }
 
   try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires -- carregado só no iOS; evita crash se o dev client não foi rebuildado
+    const Clipboard = require('expo-clipboard') as typeof import('expo-clipboard');
     const clipboardText = (await Clipboard.getStringAsync())?.trim();
     return clipboardText || null;
   } catch (error) {

@@ -17,7 +17,8 @@ import { Product, ProductsCarousel } from '@/components/sections/product';
 import { EmptyState, ShareContentUnavailable } from '@/components/ui';
 import { SHARE_CONTENT_TYPES } from '@/constants/share';
 import type { Post } from '@/types';
-import { ButtonCarousel, type ButtonCarouselOption } from '@/components/ui/carousel';
+import { type ButtonCarouselOption } from '@/components/ui/carousel';
+import InfoSectionTabsRow from '@/components/ui/carousel/InfoSectionTabsRow';
 import { HeroImage, ScreenWithHeader } from '@/components/ui/layout';
 import type { FeedEvent } from '@/types/event';
 import { SPACING, COMMUNITY_FEED_POSTS_PAGE_SIZE, ADVERTISER_STATUS } from '@/constants';
@@ -44,6 +45,7 @@ import { resolveCommunityHeroImageUri } from '@/utils/community/mappers';
 import { navigateToProviderProfile } from '@/utils/navigation/marketplaceNavigation';
 import { navigateToProductDetailsScreen } from '@/utils/navigation/productNavigation';
 import { navigateToShareHome } from '@/utils/navigation/shareHomeNavigation';
+import { navigateToShareDiscover } from '@/utils/navigation/shareDiscoverNavigation';
 import { shareContent } from '@/utils/share/shareContent';
 import { filterAdsForProviderProfile } from '@/utils/marketplace/filterAdsForProviderProfile';
 import type { Advertiser } from '@/types/ad';
@@ -159,6 +161,10 @@ const CommunityScreen: React.FC<Props> = ({ navigation }) => {
 
   const handleGoHome = useCallback(() => {
     navigateToShareHome(rootNavigation ?? navigation);
+  }, [navigation, rootNavigation]);
+
+  const handleDiscover = useCallback(() => {
+    navigateToShareDiscover(rootNavigation ?? navigation);
   }, [navigation, rootNavigation]);
 
   const handleSharePress = useCallback(async () => {
@@ -498,13 +504,21 @@ const CommunityScreen: React.FC<Props> = ({ navigation }) => {
     [navigation],
   );
 
+  const handlePostSharePress = useCallback(async (post: Post) => {
+    const postId = post.id?.trim();
+    if (!postId) {
+      return;
+    }
+    await shareContent({ contentType: SHARE_CONTENT_TYPES.COMMUNITY_POST, postId }, { screenName: 'community_list' });
+  }, []);
+
   const renderPostItem = useCallback<ListRenderItem<Post>>(
     ({ item }) => (
       <View style={styles.feedItemWrapper}>
-        <PostCard post={item} onPress={handlePostCardPress} />
+        <PostCard post={item} onPress={handlePostCardPress} onSharePress={handlePostSharePress} />
       </View>
     ),
-    [handlePostCardPress],
+    [handlePostCardPress, handlePostSharePress],
   );
 
   const renderPostSeparator = useCallback(() => <View style={styles.feedItemSeparator} />, []);
@@ -557,13 +571,14 @@ const CommunityScreen: React.FC<Props> = ({ navigation }) => {
       <>
         <View style={styles.tabsContainerInCard}>
           <Text style={styles.sectionTitle}>{t('community.informationTitle')}</Text>
-          <ButtonCarousel
+          <InfoSectionTabsRow
             options={communityInfoTabOptions}
             selectedId={activeInfoTab}
             onSelect={(tabId) => {
               logTabSelect({ screen_name: 'community_list', tab_id: tabId });
               setActiveInfoTab(tabId);
             }}
+            onSharePress={handleSharePress}
           />
         </View>
         {activeInfoTab === 'about' ? (
@@ -769,6 +784,7 @@ const CommunityScreen: React.FC<Props> = ({ navigation }) => {
             contentType={SHARE_CONTENT_TYPES.COMMUNITY}
             itemId={focusCommunityId}
             screenName='community_list'
+            onDiscover={handleDiscover}
             onGoHome={handleGoHome}
           />
         </ScreenWithHeader>
@@ -787,8 +803,6 @@ const CommunityScreen: React.FC<Props> = ({ navigation }) => {
           onBackPress: () => navigation?.goBack?.(),
           showCartButton: true,
           onCartPress: handleCartPress,
-          showShareButton: Boolean(selectedCommunityId?.trim()),
-          onSharePress: handleSharePress,
         }}
         contentContainerStyle={styles.container}
       >

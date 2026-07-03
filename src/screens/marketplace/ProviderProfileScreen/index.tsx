@@ -33,6 +33,7 @@ import { navigateToCommunity } from '@/utils/navigation/communityNavigation';
 import { navigateToProviderProfile } from '@/utils/navigation/marketplaceNavigation';
 import { navigateToProductDetailsScreen } from '@/utils/navigation/productNavigation';
 import { navigateToShareHome } from '@/utils/navigation/shareHomeNavigation';
+import { navigateToShareDiscover } from '@/utils/navigation/shareDiscoverNavigation';
 import { shareContent } from '@/utils/share/shareContent';
 import { getProductModeTranslationKey } from '@/utils';
 import { filterAdsForProviderProfile } from '@/utils/marketplace/filterAdsForProviderProfile';
@@ -325,6 +326,10 @@ const ProviderProfileScreen: React.FC<ProviderProfileScreenProps> = ({ navigatio
     navigateToShareHome(navigation);
   };
 
+  const handleDiscover = () => {
+    navigateToShareDiscover(navigation);
+  };
+
   const handleSharePress = async () => {
     if (!providerId) {
       return;
@@ -356,8 +361,6 @@ const ProviderProfileScreen: React.FC<ProviderProfileScreenProps> = ({ navigatio
       headerProps={{
         showBackButton: true,
         onBackPress: handleBackPress,
-        showShareButton: Boolean(providerData),
-        onSharePress: handleSharePress,
       }}
       contentContainerStyle={styles.container}
     >
@@ -372,6 +375,7 @@ const ProviderProfileScreen: React.FC<ProviderProfileScreenProps> = ({ navigatio
           contentType={SHARE_CONTENT_TYPES.PROVIDER}
           itemId={providerId}
           screenName='provider_profile'
+          onDiscover={handleDiscover}
           onGoHome={handleGoHome}
         />
       )}
@@ -401,6 +405,7 @@ const ProviderProfileScreen: React.FC<ProviderProfileScreenProps> = ({ navigatio
               <ContactButtonsRow
                 contacts={advertiser?.contacts}
                 providerId={providerId}
+                onSharePress={handleSharePress}
                 testID='provider-profile-contacts'
               />
             ) : null}

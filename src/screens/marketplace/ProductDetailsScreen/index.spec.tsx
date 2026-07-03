@@ -74,9 +74,14 @@ jest.mock('@/components/ui/layout', () => {
 jest.mock('@/components/ui/feedback', () => {
   const { View, Text, TouchableOpacity } = require('react-native');
   return {
-    ShareContentUnavailable: ({ onGoHome }: { onGoHome?: () => void }) => (
+    ShareContentUnavailable: ({ onGoHome, onDiscover }: { onGoHome?: () => void; onDiscover?: () => void }) => (
       <View>
-        <Text>share.contentUnavailable</Text>
+        <Text>share.exclusiveContentTitle</Text>
+        {onDiscover ? (
+          <TouchableOpacity onPress={onDiscover}>
+            <Text>share.discover</Text>
+          </TouchableOpacity>
+        ) : null}
         {onGoHome ? (
           <TouchableOpacity onPress={onGoHome}>
             <Text>share.goToHome</Text>
@@ -124,6 +129,20 @@ jest.mock('@/components/ui/buttons', () => {
       <TouchableOpacity onPress={onPress} testID={testID ?? `button-${label}`}>
         <Text>{label}</Text>
       </TouchableOpacity>
+    ),
+  };
+});
+
+jest.mock('@/components/ui/carousel/InfoSectionTabsRow', () => {
+  const { View, Text } = require('react-native');
+  return {
+    __esModule: true,
+    default: ({ options }: any) => (
+      <View testID='info-section-tabs-row'>
+        {options.map((opt: any) => (
+          <Text key={opt.id}>{opt.label}</Text>
+        ))}
+      </View>
     ),
   };
 });
@@ -315,7 +334,7 @@ describe('ProductDetailsScreen', () => {
     );
 
     await waitFor(() => {
-      expect(getByTestId('button-carousel')).toBeTruthy();
+      expect(getByTestId('info-section-tabs-row')).toBeTruthy();
       expect(getAllByText('Test Product').length).toBeGreaterThan(0);
     });
   });
@@ -377,7 +396,7 @@ describe('ProductDetailsScreen', () => {
     const { getByText } = render(<ProductDetailsScreen navigation={mockNavigation as any} route={mockRoute as any} />);
 
     await waitFor(() => {
-      expect(getByText('share.contentUnavailable')).toBeTruthy();
+      expect(getByText('share.exclusiveContentTitle')).toBeTruthy();
     });
   });
 

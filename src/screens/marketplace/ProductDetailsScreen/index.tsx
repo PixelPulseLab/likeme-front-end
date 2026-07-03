@@ -17,7 +17,8 @@ import { Checkbox } from '@/components/ui/inputs';
 import { MarkdownText } from '@/components/ui/text/MarkdownText';
 import { PartnerSection } from '@/components/sections/advertiser/PartnerSection';
 import { ContactButtonsRow } from '@/components/sections/advertiser/ContactButtonsRow';
-import { ButtonCarousel, type ButtonCarouselOption } from '@/components/ui/carousel';
+import { type ButtonCarouselOption } from '@/components/ui/carousel';
+import InfoSectionTabsRow from '@/components/ui/carousel/InfoSectionTabsRow';
 import { useMenuItems, useProductDetails, useProductPartner, useSuggestedProducts } from '@/hooks';
 import { useSetFloatingMenu } from '@/contexts/FloatingMenuContext';
 import { useTranslation } from '@/hooks/i18n';
@@ -37,6 +38,7 @@ import { PRODUCT_CATALOG_TYPE, catalogTypeTranslatedBadgeLabels, isProgramCatalo
 import { navigateToProviderProfile } from '@/utils/navigation/marketplaceNavigation';
 import { navigateToProductDetailsScreen } from '@/utils/navigation/productNavigation';
 import { navigateToShareHome } from '@/utils/navigation/shareHomeNavigation';
+import { navigateToShareDiscover } from '@/utils/navigation/shareDiscoverNavigation';
 import { shareContent, shareInputForProduct } from '@/utils/share/shareContent';
 import { styles } from './styles';
 
@@ -253,6 +255,10 @@ const ProductDetailsScreen: React.FC<ProductDetailsScreenProps> = ({ navigation,
     navigateToShareHome(navigation);
   };
 
+  const handleDiscover = () => {
+    navigateToShareDiscover(navigation, route.params.productId);
+  };
+
   const handleSharePress = async () => {
     if (!product) {
       return;
@@ -357,7 +363,12 @@ const ProductDetailsScreen: React.FC<ProductDetailsScreenProps> = ({ navigation,
         headerProps={{ showBackButton: true, onBackPress: handleBackPress }}
         contentContainerStyle={styles.container}
       >
-        <ShareContentUnavailable itemId={route.params.productId} screenName='product_details' onGoHome={handleGoHome} />
+        <ShareContentUnavailable
+          itemId={route.params.productId}
+          screenName='product_details'
+          onDiscover={handleDiscover}
+          onGoHome={handleGoHome}
+        />
       </ScreenWithHeader>
     );
   }
@@ -369,8 +380,6 @@ const ProductDetailsScreen: React.FC<ProductDetailsScreenProps> = ({ navigation,
         headerProps={{
           showBackButton: true,
           onBackPress: handleBackPress,
-          showShareButton: true,
-          onSharePress: handleSharePress,
         }}
         contentContainerStyle={styles.container}
       >
@@ -416,13 +425,14 @@ const ProductDetailsScreen: React.FC<ProductDetailsScreenProps> = ({ navigation,
                     {productTabOptions.length > 0 && (
                       <View style={styles.tabsContainerInCard}>
                         <Text style={styles.sectionTitle}>Informações</Text>
-                        <ButtonCarousel
+                        <InfoSectionTabsRow
                           options={productTabOptions}
                           selectedId={activeProductTab}
                           onSelect={(tabId) => {
                             logTabSelect({ screen_name: 'product_details', tab_id: tabId });
                             setActiveProductTab(tabId);
                           }}
+                          onSharePress={handleSharePress}
                         />
                       </View>
                     )}

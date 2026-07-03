@@ -26,6 +26,7 @@ import type { PostReplyCardComment } from '@/hooks/community/usePostReplies';
 import { communityService } from '@/services';
 import { mapCommunityPostToPost } from '@/utils';
 import { navigateToShareHome } from '@/utils/navigation/shareHomeNavigation';
+import { navigateToShareDiscover } from '@/utils/navigation/shareDiscoverNavigation';
 import { logger } from '@/utils/logger';
 import { shareContent } from '@/utils/share/shareContent';
 
@@ -127,6 +128,10 @@ const PostDetailScreen: React.FC<Props> = ({ navigation, route }) => {
 
   const handleGoHome = useCallback(() => {
     navigateToShareHome(navigation);
+  }, [navigation]);
+
+  const handleDiscover = useCallback(() => {
+    navigateToShareDiscover(navigation);
   }, [navigation]);
 
   const handleSharePress = useCallback(async () => {
@@ -382,6 +387,7 @@ const PostDetailScreen: React.FC<Props> = ({ navigation, route }) => {
           contentType={SHARE_CONTENT_TYPES.COMMUNITY_POST}
           itemId={routePostId ?? undefined}
           screenName='post_details'
+          onDiscover={handleDiscover}
           onGoHome={handleGoHome}
         />
       </ScreenWithHeader>

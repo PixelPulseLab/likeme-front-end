@@ -180,6 +180,11 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     gap: SPACING.XS,
   },
+  shareButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   commentsCount: {
     fontSize: 12,
     fontWeight: '500',

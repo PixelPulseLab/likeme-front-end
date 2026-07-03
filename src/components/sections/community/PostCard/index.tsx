@@ -23,6 +23,7 @@ import PostAttachmentsSection from '../PostAttachments/PostAttachmentsSection';
 type Props = {
   post: Post;
   onPress?: (post: Post) => void;
+  onSharePress?: (post: Post) => void;
   category?: string;
   initialContentExpanded?: boolean;
   initialCommentsOpen?: boolean;
@@ -40,6 +41,7 @@ type ViewProps = Props & { engagement: PostLikeEngagement };
 const PostCardView: React.FC<ViewProps> = ({
   post,
   onPress,
+  onSharePress,
   category: _category,
   initialContentExpanded = false,
   initialCommentsOpen = false,
@@ -300,6 +302,20 @@ const PostCardView: React.FC<ViewProps> = ({
               <Text style={cardStyles.commentsCount}>{commentsCount}</Text>
             </Pressable>
           )}
+
+          {!activePoll && onSharePress ? (
+            <Pressable
+              style={({ pressed }) => [cardStyles.shareButton, pressed ? { opacity: 0.85 } : undefined]}
+              onPress={(e) => {
+                e?.stopPropagation?.();
+                onSharePress(post);
+              }}
+              accessibilityRole='button'
+              accessibilityLabel='Compartilhar'
+            >
+              <Icon name='share' size={18} color='#0154f8' />
+            </Pressable>
+          ) : null}
         </View>
       </View>
     </>
@@ -363,6 +379,7 @@ const PostCard = React.memo(PostCardInner, (prev, next) => {
   }
   return (
     prev.onPress === next.onPress &&
+    prev.onSharePress === next.onSharePress &&
     prev.category === next.category &&
     prev.initialContentExpanded === next.initialContentExpanded &&
     prev.initialCommentsOpen === next.initialCommentsOpen &&

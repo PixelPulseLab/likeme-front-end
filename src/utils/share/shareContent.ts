@@ -1,4 +1,4 @@
-import { Share } from 'react-native';
+import { Platform, Share } from 'react-native';
 import { GA4_EVENTS, logEvent, ANALYTICS_PARAMS } from '@/analytics';
 import { SHARE_CONTENT_TYPES } from '@/constants/share';
 import { PRODUCT_CATALOG_TYPE, isProgramCatalogType } from '@/types/product';
@@ -60,12 +60,17 @@ function logShareEvent(
   });
 }
 
+function sharePayloadForUrl(url: string): { url: string } | { message: string } {
+  // iOS usa `url`; Android usa `message`. Enviar os dois com o mesmo valor duplica o link no share sheet.
+  return Platform.OS === 'ios' ? { url } : { message: url };
+}
+
 export async function shareContent(input: BuildShareUrlInput, options?: ShareContentOptions): Promise<void> {
   const url = buildShareUrl(input);
   logShareEvent(input, 'share_started', options);
 
   try {
-    const result = await Share.share({ url, message: url });
+    const result = await Share.share(sharePayloadForUrl(url));
     const completed = result.action === Share.sharedAction;
     logShareEvent(input, completed ? 'share_completed' : 'share_dismissed', options, completed);
   } catch (error) {

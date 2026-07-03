@@ -1,4 +1,4 @@
-import { Share } from 'react-native';
+import { Platform, Share } from 'react-native';
 import { GA4_EVENTS, logEvent, ANALYTICS_PARAMS } from '@/analytics';
 import { SHARE_CONTENT_TYPES } from '@/constants/share';
 import { PRODUCT_CATALOG_TYPE } from '@/types/product';
@@ -49,6 +49,7 @@ describe('shareContent', () => {
   });
 
   it('abre share sheet e registra analytics de início e conclusão', async () => {
+    Platform.OS = 'ios';
     await shareContent(
       { contentType: SHARE_CONTENT_TYPES.COMMUNITY_POST, postId: 'post-1' },
       { screenName: 'post_details' },
@@ -56,7 +57,6 @@ describe('shareContent', () => {
 
     expect(Share.share).toHaveBeenCalledWith({
       url: 'https://share.example.com/post/post-1',
-      message: 'https://share.example.com/post/post-1',
     });
     expect(logEvent).toHaveBeenNthCalledWith(1, GA4_EVENTS.SHARE, {
       [ANALYTICS_PARAMS.CONTENT_TYPE]: SHARE_CONTENT_TYPES.COMMUNITY_POST,
@@ -121,10 +121,10 @@ describe('shareContent', () => {
       'https://share.example.com/provider/prov-1',
     ],
   ] as const)('abre share sheet para %s com URL correta', async (_label, input, expectedUrl) => {
+    Platform.OS = 'android';
     await shareContent(input);
 
     expect(Share.share).toHaveBeenCalledWith({
-      url: expectedUrl,
       message: expectedUrl,
     });
     expect(logEvent).toHaveBeenNthCalledWith(

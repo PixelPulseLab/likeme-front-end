@@ -4,7 +4,8 @@ import type { StackScreenProps } from '@react-navigation/stack';
 import { useFocusEffect } from '@react-navigation/native';
 import { ScreenWithHeader, HeroImage } from '@/components/ui/layout';
 import { EmptyState, ShareContentUnavailable } from '@/components/ui/feedback';
-import { ButtonCarousel, type ButtonCarouselOption } from '@/components/ui/carousel';
+import { type ButtonCarouselOption } from '@/components/ui/carousel';
+import InfoSectionTabsRow from '@/components/ui/carousel/InfoSectionTabsRow';
 import { ModuleAccordion } from '@/components/sections/program';
 import { EventBanner } from '@/components/sections/community';
 import { EventWebViewSession } from '@/components/infrastructure/webview/EventWebViewSession';
@@ -22,6 +23,7 @@ import { COLORS } from '@/constants';
 import { moduleItemsFromProgramCourse } from '@/utils/course/programCourseModules';
 import { protocolDetailFromProduct } from '@/utils/profile/protocolDetailFromProduct';
 import { navigateToShareHome } from '@/utils/navigation/shareHomeNavigation';
+import { navigateToShareDiscover } from '@/utils/navigation/shareDiscoverNavigation';
 import { logger } from '@/utils/logger';
 import { shareContent } from '@/utils/share/shareContent';
 import { styles } from './styles';
@@ -192,6 +194,10 @@ const ProtocolDetailScreen: React.FC<Props> = ({ navigation, route }) => {
     navigateToShareHome(navigation);
   };
 
+  const handleDiscover = () => {
+    navigateToShareDiscover(navigation, protocol?.productId ?? routeProductId);
+  };
+
   const handleSharePress = async () => {
     const productId = protocol?.productId ?? routeProductId;
     if (!productId) {
@@ -232,6 +238,7 @@ const ProtocolDetailScreen: React.FC<Props> = ({ navigation, route }) => {
           contentType={SHARE_CONTENT_TYPES.PROTOCOL}
           itemId={routeProductId ?? undefined}
           screenName='protocol_detail'
+          onDiscover={handleDiscover}
           onGoHome={handleGoHome}
         />
       </ScreenWithHeader>
@@ -340,8 +347,6 @@ const ProtocolDetailScreen: React.FC<Props> = ({ navigation, route }) => {
       headerProps={{
         showBackButton: true,
         onBackPress: handleBack,
-        showShareButton: true,
-        onSharePress: handleSharePress,
       }}
       contentContainerStyle={styles.container}
       contentBackgroundColor={COLORS.BACKGROUND}
@@ -363,7 +368,12 @@ const ProtocolDetailScreen: React.FC<Props> = ({ navigation, route }) => {
 
         <View style={styles.infoSection}>
           <Text style={styles.sectionTitle}>{t('community.informationTitle', { defaultValue: 'Informações' })}</Text>
-          <ButtonCarousel options={TAB_OPTIONS} selectedId={activeTab} onSelect={handleTabSelect} />
+          <InfoSectionTabsRow
+            options={TAB_OPTIONS}
+            selectedId={activeTab}
+            onSelect={handleTabSelect}
+            onSharePress={() => void handleSharePress()}
+          />
         </View>
 
         {renderTabContent()}
