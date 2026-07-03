@@ -172,3 +172,8 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 
 ### Corrigido
 - Link duplicado ao compartilhar no iOS e Android (APP-332)
+
+## [1.9.1] - 2026-07-03
+
+### Corrigido
+- Deep link de conteúdo compartilhado redireciona para login quando o usuário não está autenticado (APP-332)

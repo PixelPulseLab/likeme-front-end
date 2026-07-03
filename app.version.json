@@ -1,23 +1,15 @@
 {
-  "version": "1.9.0",
+  "version": "1.9.1",
   "releasedAt": "2026-07-03",
   "android": {
-    "versionCode": 245
+    "versionCode": 246
   },
   "ios": {
-    "buildNumber": 21
+    "buildNumber": 22
   },
   "changelog": {
-    "added": [
-      "Compartilhamento social de posts, produtos, protocolos, comunidades e providers (APP-332)",
-      "Deep linking e deferred deep link para abrir conteúdo compartilhado no app (APP-332)",
-      "Tela de conteúdo exclusivo ao acessar link sem permissão (APP-332)"
-    ],
-    "changed": [
-      "Botões de compartilhar reposicionados conforme Figma na PDP, comunidade, protocolo e provider (APP-332)"
-    ],
     "fixed": [
-      "Link duplicado ao compartilhar no iOS e Android (APP-332)"
+      "Deep link de conteúdo compartilhado redireciona para login quando o usuário não está autenticado (APP-332)"
     ]
   }
 }

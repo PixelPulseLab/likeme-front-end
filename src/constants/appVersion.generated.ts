@@ -2,4 +2,4 @@
 // Fonte: app.version.json
 // Changelog: CHANGELOG.md (sem UI no app).
 
-export const APP_VERSION = '1.9.0' as const;
+export const APP_VERSION = '1.9.1' as const;
