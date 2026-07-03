@@ -78,6 +78,26 @@ jest.mock('@/analytics', () => ({
   useAnalyticsScreen: jest.fn(),
 }));
 
+jest.mock('@/components/ui/buttons', () => {
+  const { TouchableOpacity, Text } = require('react-native');
+  return {
+    SecondaryButton: ({ label, onPress, testID }: any) => (
+      <TouchableOpacity onPress={onPress} testID={testID ?? `button-${label}`}>
+        <Text>{label}</Text>
+      </TouchableOpacity>
+    ),
+    IconButton: ({ onPress, testID }: any) => (
+      <TouchableOpacity onPress={onPress} testID={testID ?? 'icon-button'}>
+        <Text>share</Text>
+      </TouchableOpacity>
+    ),
+  };
+});
+
+jest.mock('@/utils/share/shareContent', () => ({
+  shareContent: jest.fn(),
+}));
+
 const mockAdvertiser = {
   id: 'adv-1',
   name: 'Dr. Partner',
