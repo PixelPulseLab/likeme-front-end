@@ -7,6 +7,10 @@ export type PendingDeepLinkNavigationTarget = {
 
 let pendingTarget: PendingDeepLinkNavigationTarget | null = null;
 
+export function hasPendingDeepLinkNavigation(): boolean {
+  return pendingTarget != null;
+}
+
 export function setPendingDeepLinkNavigation(target: PendingDeepLinkNavigationTarget): void {
   pendingTarget = target;
 }

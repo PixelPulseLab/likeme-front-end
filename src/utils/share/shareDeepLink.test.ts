@@ -27,6 +27,15 @@ jest.mock('@/config/environment', () => ({
   },
 }));
 
+jest.mock('@/services/auth/storageService', () => ({
+  __esModule: true,
+  default: {
+    getToken: jest.fn().mockResolvedValue('session-token'),
+  },
+}));
+
+import storageService from '@/services/auth/storageService';
+
 const POST_TARGET = {
   screen: 'Community',
   params: {
@@ -141,12 +150,13 @@ describe('openDeepLinkTarget', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     consumePendingDeepLinkNavigation();
+    (storageService.getToken as jest.Mock).mockResolvedValue('session-token');
   });
 
-  it('navega para post quando app está pronto', () => {
+  it('navega para post quando app está pronto', async () => {
     const navigationRef = createNavigationRef();
 
-    openDeepLinkTarget(navigationRef, `${SHARE_BASE_URL}/post/post-xyz`, 'Main');
+    await openDeepLinkTarget(navigationRef, `${SHARE_BASE_URL}/post/post-xyz`, 'Main');
 
     expect(logEvent).toHaveBeenCalledWith(GA4_EVENTS.SELECT_CONTENT, {
       [ANALYTICS_PARAMS.CONTENT_TYPE]: SHARE_CONTENT_TYPES.COMMUNITY_POST,
@@ -162,10 +172,10 @@ describe('openDeepLinkTarget', () => {
     expect(consumePendingDeepLinkNavigation()).toBeNull();
   });
 
-  it('navega para produto quando app está pronto', () => {
+  it('navega para produto quando app está pronto', async () => {
     const navigationRef = createNavigationRef();
 
-    openDeepLinkTarget(navigationRef, `${SHARE_BASE_URL}/product/prod-1`, 'Main');
+    await openDeepLinkTarget(navigationRef, `${SHARE_BASE_URL}/product/prod-1`, 'Main');
 
     expect(logEvent).toHaveBeenCalledWith(GA4_EVENTS.SELECT_CONTENT, {
       [ANALYTICS_PARAMS.CONTENT_TYPE]: SHARE_CONTENT_TYPES.PRODUCT,
@@ -180,10 +190,10 @@ describe('openDeepLinkTarget', () => {
     );
   });
 
-  it('navega para feed da comunidade quando app está pronto', () => {
+  it('navega para feed da comunidade quando app está pronto', async () => {
     const navigationRef = createNavigationRef();
 
-    openDeepLinkTarget(navigationRef, `${SHARE_BASE_URL}/community/community-abc`, 'Main');
+    await openDeepLinkTarget(navigationRef, `${SHARE_BASE_URL}/community/community-abc`, 'Main');
 
     expect(logEvent).toHaveBeenCalledWith(GA4_EVENTS.SELECT_CONTENT, {
       [ANALYTICS_PARAMS.CONTENT_TYPE]: SHARE_CONTENT_TYPES.COMMUNITY,
@@ -198,48 +208,48 @@ describe('openDeepLinkTarget', () => {
     );
   });
 
-  it('navega para protocolo, afiliado e provider quando app está pronto', () => {
+  it('navega para protocolo, afiliado e provider quando app está pronto', async () => {
     const navigationRef = createNavigationRef();
 
-    openDeepLinkTarget(navigationRef, `${SHARE_BASE_URL}/protocol/prog-1`, 'Main');
+    await openDeepLinkTarget(navigationRef, `${SHARE_BASE_URL}/protocol/prog-1`, 'Main');
     expect(navigationRef.dispatch).toHaveBeenLastCalledWith(
       CommonActions.navigate({ name: 'ProtocolDetail', params: PROTOCOL_TARGET.params }),
     );
 
-    openDeepLinkTarget(navigationRef, `${SHARE_BASE_URL}/affiliate/aff-1?adId=ad-9`, 'Main');
+    await openDeepLinkTarget(navigationRef, `${SHARE_BASE_URL}/affiliate/aff-1?adId=ad-9`, 'Main');
     expect(navigationRef.dispatch).toHaveBeenLastCalledWith(
       CommonActions.navigate({ name: 'AffiliateProduct', params: AFFILIATE_TARGET.params }),
     );
 
-    openDeepLinkTarget(navigationRef, `${SHARE_BASE_URL}/provider/prov-1`, 'Main');
+    await openDeepLinkTarget(navigationRef, `${SHARE_BASE_URL}/provider/prov-1`, 'Main');
     expect(navigationRef.dispatch).toHaveBeenLastCalledWith(
       CommonActions.navigate({ name: 'ProviderProfile', params: PROVIDER_TARGET.params }),
     );
   });
 
-  it('enfileira destino enquanto rota de bootstrap está ativa', () => {
+  it('enfileira destino enquanto rota de bootstrap está ativa', async () => {
     const navigationRef = createNavigationRef();
 
-    openDeepLinkTarget(navigationRef, `${SHARE_BASE_URL}/post/post-xyz`, 'Loading');
+    await openDeepLinkTarget(navigationRef, `${SHARE_BASE_URL}/post/post-xyz`, 'Loading');
 
     expect(navigationRef.dispatch).not.toHaveBeenCalled();
     expect(consumePendingDeepLinkNavigation()).toEqual(POST_TARGET);
   });
 
-  it('ignora URL inválida, outro host ou navigation não pronta', () => {
+  it('ignora URL inválida, outro host ou navigation não pronta', async () => {
     const navigationRef = createNavigationRef(false);
 
-    openDeepLinkTarget(navigationRef, 'https://example.com/product/1', 'Main');
-    openDeepLinkTarget(navigationRef, `${SHARE_BASE_URL}/post/post-xyz`, 'Main');
+    await openDeepLinkTarget(navigationRef, 'https://example.com/product/1', 'Main');
+    await openDeepLinkTarget(navigationRef, `${SHARE_BASE_URL}/post/post-xyz`, 'Main');
 
     expect(logEvent).not.toHaveBeenCalled();
     expect(navigationRef.dispatch).not.toHaveBeenCalled();
   });
 
-  it('redireciona para Summary quando path do domínio de share é desconhecido', () => {
+  it('redireciona para Summary quando path do domínio de share é desconhecido', async () => {
     const navigationRef = createNavigationRef();
 
-    openDeepLinkTarget(navigationRef, `${SHARE_BASE_URL}/legacy/abc`, 'Main');
+    await openDeepLinkTarget(navigationRef, `${SHARE_BASE_URL}/legacy/abc`, 'Main');
 
     expect(logEvent).toHaveBeenCalledWith(GA4_EVENTS.SELECT_CONTENT, {
       [ANALYTICS_PARAMS.CONTENT_TYPE]: 'unknown',
@@ -253,27 +263,53 @@ describe('openDeepLinkTarget', () => {
     );
   });
 
-  it('enfileira Summary como fallback enquanto bootstrap está ativo', () => {
+  it('enfileira Summary como fallback enquanto bootstrap está ativo', async () => {
     const navigationRef = createNavigationRef();
 
-    openDeepLinkTarget(navigationRef, `${SHARE_BASE_URL}/unknown/path`, 'Loading');
+    await openDeepLinkTarget(navigationRef, `${SHARE_BASE_URL}/unknown/path`, 'Loading');
 
     expect(navigationRef.dispatch).not.toHaveBeenCalled();
     expect(consumePendingDeepLinkNavigation()).toEqual(HOME_TARGET);
+  });
+
+  it('enfileira destino e redireciona para login sem sessão', async () => {
+    (storageService.getToken as jest.Mock).mockResolvedValue(null);
+    const navigationRef = createNavigationRef();
+
+    await openDeepLinkTarget(navigationRef, `${SHARE_BASE_URL}/post/post-xyz`, 'Summary');
+
+    expect(navigationRef.dispatch).toHaveBeenCalledWith(
+      CommonActions.reset({
+        index: 0,
+        routes: [{ name: 'Unauthenticated' }],
+      }),
+    );
+    expect(consumePendingDeepLinkNavigation()).toEqual(POST_TARGET);
+  });
+
+  it('não redireciona para login duplicado quando já está em Unauthenticated', async () => {
+    (storageService.getToken as jest.Mock).mockResolvedValue(null);
+    const navigationRef = createNavigationRef();
+
+    await openDeepLinkTarget(navigationRef, `${SHARE_BASE_URL}/post/post-xyz`, 'Unauthenticated');
+
+    expect(navigationRef.dispatch).not.toHaveBeenCalled();
+    expect(consumePendingDeepLinkNavigation()).toEqual(POST_TARGET);
   });
 });
 
 describe('flushPendingDeepLinkNavigation', () => {
   beforeEach(() => {
     consumePendingDeepLinkNavigation();
+    (storageService.getToken as jest.Mock).mockResolvedValue('session-token');
   });
 
-  it('navega quando há destino pendente e rota permite', () => {
+  it('navega quando há destino pendente e rota permite', async () => {
     const navigationRef = createNavigationRef();
 
-    openDeepLinkTarget(navigationRef, `${SHARE_BASE_URL}/post/post-xyz`, 'Loading');
+    await openDeepLinkTarget(navigationRef, `${SHARE_BASE_URL}/post/post-xyz`, 'Loading');
 
-    flushPendingDeepLinkNavigation(navigationRef, 'Main');
+    await flushPendingDeepLinkNavigation(navigationRef, 'Main');
 
     expect(navigationRef.dispatch).toHaveBeenCalledWith(
       CommonActions.navigate({
@@ -284,14 +320,30 @@ describe('flushPendingDeepLinkNavigation', () => {
     expect(consumePendingDeepLinkNavigation()).toBeNull();
   });
 
-  it('não navega enquanto rota ainda bloqueia deep link', () => {
+  it('não navega enquanto rota ainda bloqueia deep link', async () => {
     const navigationRef = createNavigationRef();
 
-    openDeepLinkTarget(navigationRef, `${SHARE_BASE_URL}/post/post-xyz`, 'Loading');
+    await openDeepLinkTarget(navigationRef, `${SHARE_BASE_URL}/post/post-xyz`, 'Loading');
 
-    flushPendingDeepLinkNavigation(navigationRef, 'Loading');
+    await flushPendingDeepLinkNavigation(navigationRef, 'Loading');
 
     expect(navigationRef.dispatch).not.toHaveBeenCalled();
+    expect(consumePendingDeepLinkNavigation()).toEqual(POST_TARGET);
+  });
+
+  it('redireciona para login e mantém destino pendente sem sessão', async () => {
+    (storageService.getToken as jest.Mock).mockResolvedValue(null);
+    const navigationRef = createNavigationRef();
+
+    await openDeepLinkTarget(navigationRef, `${SHARE_BASE_URL}/post/post-xyz`, 'Loading');
+    await flushPendingDeepLinkNavigation(navigationRef, 'Summary');
+
+    expect(navigationRef.dispatch).toHaveBeenCalledWith(
+      CommonActions.reset({
+        index: 0,
+        routes: [{ name: 'Unauthenticated' }],
+      }),
+    );
     expect(consumePendingDeepLinkNavigation()).toEqual(POST_TARGET);
   });
 });

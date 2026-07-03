@@ -13,10 +13,12 @@ import {
   SHARE_QUERY_PARAMS,
   type ShareContentType,
 } from '@/constants/share';
+import storageService from '@/services/auth/storageService';
 import type { CommunityStackParamList, RootStackParamList } from '@/types/navigation';
 import {
   canNavigateFromDeepLink,
   consumePendingDeepLinkNavigation,
+  hasPendingDeepLinkNavigation,
   setPendingDeepLinkNavigation,
   type PendingDeepLinkNavigationTarget,
 } from '@/utils/navigation/pendingDeepLinkNavigation';
@@ -181,11 +183,32 @@ function dispatchDeepLinkTarget(
   );
 }
 
-export function openDeepLinkTarget(
+async function hasStoredSessionToken(): Promise<boolean> {
+  const token = await storageService.getToken();
+  return Boolean(token?.trim());
+}
+
+function navigateToUnauthenticatedIfNeeded(
+  navigationRef: NavigationContainerRefWithCurrent<RootStackParamList>,
+  activeRouteName: string | undefined,
+): void {
+  if (activeRouteName === 'Unauthenticated' || activeRouteName === 'Loading') {
+    return;
+  }
+
+  navigationRef.dispatch(
+    CommonActions.reset({
+      index: 0,
+      routes: [{ name: 'Unauthenticated' }],
+    }),
+  );
+}
+
+export async function openDeepLinkTarget(
   navigationRef: NavigationContainerRefWithCurrent<RootStackParamList>,
   url: string,
   activeRouteName: string | undefined,
-): void {
+): Promise<void> {
   if (!navigationRef.isReady()) {
     return;
   }
@@ -220,14 +243,31 @@ export function openDeepLinkTarget(
     return;
   }
 
+  const hasSession = await hasStoredSessionToken();
+  if (!hasSession) {
+    setPendingDeepLinkNavigation(target);
+    navigateToUnauthenticatedIfNeeded(navigationRef, activeRouteName);
+    return;
+  }
+
   dispatchDeepLinkTarget(navigationRef, target);
 }
 
-export function flushPendingDeepLinkNavigation(
+export async function flushPendingDeepLinkNavigation(
   navigationRef: NavigationContainerRefWithCurrent<RootStackParamList>,
   activeRouteName: string | undefined,
-): void {
+): Promise<void> {
   if (!navigationRef.isReady() || !canNavigateFromDeepLink(activeRouteName)) {
+    return;
+  }
+
+  if (!hasPendingDeepLinkNavigation()) {
+    return;
+  }
+
+  const hasSession = await hasStoredSessionToken();
+  if (!hasSession) {
+    navigateToUnauthenticatedIfNeeded(navigationRef, activeRouteName);
     return;
   }
 

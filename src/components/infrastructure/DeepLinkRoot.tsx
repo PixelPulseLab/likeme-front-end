@@ -20,7 +20,7 @@ const DeepLinkRoot: React.FC<Props> = ({ activeRouteName, navigationRef }) => {
       if (!url) {
         return;
       }
-      openDeepLinkTarget(navigationRef, url, activeRouteName);
+      void openDeepLinkTarget(navigationRef, url, activeRouteName);
     },
     [activeRouteName, navigationRef],
   );
@@ -63,7 +63,7 @@ const DeepLinkRoot: React.FC<Props> = ({ activeRouteName, navigationRef }) => {
   }, [handleIncomingUrl]);
 
   useEffect(() => {
-    flushPendingDeepLinkNavigation(navigationRef, activeRouteName);
+    void flushPendingDeepLinkNavigation(navigationRef, activeRouteName);
   }, [activeRouteName, navigationRef]);
 
   return null;
