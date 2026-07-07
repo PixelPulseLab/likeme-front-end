@@ -19,9 +19,11 @@ import { CommentCard } from '@/components/ui';
 import ReplyInput from '@/components/ui/inputs/ReplyInput';
 import { styles } from './styles';
 import type { CommunityStackParamList } from '@/types/navigation';
+import { BOTTOM_DOCK_BAR_HEIGHT } from '@/constants/bottomDockBar';
 import { COLORS, SPACING } from '@/constants';
 import type { Post } from '@/types';
-import { usePostReplies, useTranslation } from '@/hooks';
+import { useKeyboardInset, useMenuItems, usePostReplies, useTranslation } from '@/hooks';
+import { useFloatingMenuActions } from '@/contexts/FloatingMenuContext';
 import type { PostReplyCardComment } from '@/hooks/community/usePostReplies';
 import { communityService } from '@/services';
 import { mapCommunityPostToPost } from '@/utils';
@@ -48,8 +50,19 @@ function postIdFromRouteParams(params: CommunityStackParamList['PostDetail']): s
 
 const PostDetailScreen: React.FC<Props> = ({ navigation, route }) => {
   const routeParams = route.params;
+  const isSharedPostEntry = 'postId' in routeParams;
   const initialPost = 'post' in routeParams ? routeParams.post : undefined;
   const routePostId = postIdFromRouteParams(routeParams);
+
+  const menuItems = useMenuItems(navigation);
+  const { setMenu } = useFloatingMenuActions();
+
+  useEffect(() => {
+    if (!isSharedPostEntry) {
+      return;
+    }
+    setMenu(menuItems, 'community');
+  }, [isSharedPostEntry, menuItems, setMenu]);
 
   const [resolvedPost, setResolvedPost] = useState<Post | null>(initialPost ?? null);
   const [postLoadState, setPostLoadState] = useState<'idle' | 'loading' | 'error'>(initialPost ? 'idle' : 'loading');
@@ -58,6 +71,8 @@ const PostDetailScreen: React.FC<Props> = ({ navigation, route }) => {
   const [messageText, setMessageText] = useState('');
   const { t } = useTranslation();
   const { bottom: bottomInset } = useSafeAreaInsets();
+  const keyboardInset = useKeyboardInset();
+  const sharedPostMenuDockPadding = isSharedPostEntry && keyboardInset === 0 ? BOTTOM_DOCK_BAR_HEIGHT : 0;
 
   useEffect(() => {
     if (initialPost) {
@@ -340,7 +355,14 @@ const PostDetailScreen: React.FC<Props> = ({ navigation, route }) => {
 
   const commentComposer =
     post && !post.poll ? (
-      <View style={[styles.composerFooter, bottomInset > 0 ? { paddingBottom: bottomInset } : null]}>
+      <View
+        style={[
+          styles.composerFooter,
+          {
+            paddingBottom: SPACING.MD + bottomInset + sharedPostMenuDockPadding,
+          },
+        ]}
+      >
         <ReplyInput
           ref={commentInputRef}
           value={messageText}
