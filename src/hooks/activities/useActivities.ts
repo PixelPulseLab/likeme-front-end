@@ -89,7 +89,10 @@ export const useActivities = (options: UseActivitiesOptions = {}): UseActivities
         }
       }
 
-      const description = activity.description || activity.location || '';
+      const linkedDescription = activity.description ?? '';
+      const description = linkedDescription.startsWith('community_event:')
+        ? activity.location ?? ''
+        : linkedDescription || activity.location || '';
       const isCompleted = activity.deletedAt !== null && description.startsWith('[COMPLETED]');
       const isDeclined = activity.deletedAt !== null && !isCompleted;
 

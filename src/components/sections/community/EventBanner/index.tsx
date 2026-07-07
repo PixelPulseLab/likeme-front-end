@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, type ImageSourcePropType } from 'react-na
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import type { EventBannerData, EventBannerVariant } from '@/types/event';
 import { useTranslation } from '@/hooks/i18n';
-import { formatEventTimeRange } from '@/utils/event/formatEventTimeRange';
+import { formatEventScheduleLabel } from '@/utils/event/formatEventTimeRange';
 import { CachedImage } from '@/components/ui/media/CachedImage';
 import { styles } from './styles';
 
@@ -11,6 +11,20 @@ type Props = {
   event: EventBannerData;
   onPress: (event: EventBannerData) => void;
 };
+
+function titleKey(variant: EventBannerVariant | undefined): string {
+  switch (variant) {
+    case 'purchase':
+      return 'community.eventBanner.purchaseTitlePrefix';
+    case 'reminder':
+    case 'reminder_created':
+      return 'community.eventBanner.reminderTitlePrefix';
+    case 'live_join':
+      return 'community.eventBanner.liveStartedTitle';
+    default:
+      return 'community.eventBanner.withHost';
+  }
+}
 
 function ctaLabelKey(variant: EventBannerVariant | undefined): string {
   switch (variant) {
@@ -44,11 +58,12 @@ function subtitleKey(variant: EventBannerVariant | undefined): string {
 const EventBanner: React.FC<Props> = ({ event, onPress }) => {
   const { t } = useTranslation();
   const isImageUri = typeof event.thumbnail === 'string';
-  const eventTimeRange = formatEventTimeRange(event.startTime, event.endTime);
-  const eventTimeLabel = eventTimeRange || t('community.eventBanner.todayFallback');
+  const eventScheduleLabel =
+    formatEventScheduleLabel(event.startTime, event.endTime) || t('community.eventBanner.todayFallback');
   const variant = event.variant;
   const ctaDisabled = variant === 'reminder_created';
   const subtitle = t(subtitleKey(variant), { host: event.host });
+  const title = variant === 'live_join' ? t(titleKey(variant)) : `${t(titleKey(variant))} ${event.title}`.trim();
 
   return (
     <View style={styles.container}>
@@ -78,20 +93,20 @@ const EventBanner: React.FC<Props> = ({ event, onPress }) => {
             </View>
             <View style={styles.titleContainer}>
               <Text style={styles.title} numberOfLines={2}>
-                {event.title}
+                {title}
               </Text>
-              <Text style={styles.host}>{subtitle}</Text>
+              {variant !== 'live_join' ? <Text style={styles.host}>{subtitle}</Text> : null}
             </View>
           </View>
           <View style={styles.timeContainer}>
             {event.status === 'Live Now' && variant !== 'purchase' ? (
               <>
                 <Text style={styles.timeLabel}>{t('community.eventBanner.statusLiveNow')}</Text>
-                <Text style={styles.time}>{eventTimeLabel}</Text>
+                <Text style={styles.time}>{eventScheduleLabel}</Text>
               </>
             ) : null}
             {event.status === 'Scheduled' && variant !== 'live_join' ? (
-              <Text style={styles.time}>{eventTimeLabel}</Text>
+              <Text style={styles.time}>{eventScheduleLabel}</Text>
             ) : null}
           </View>
         </View>

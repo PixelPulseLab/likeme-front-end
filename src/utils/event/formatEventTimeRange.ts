@@ -29,3 +29,28 @@ export function formatEventTimeRange(startTime: string, endTime: string, locale 
 
   return formattedStartTime || formattedEndTime;
 }
+
+export function formatEventScheduleLabel(startTime: string, endTime: string, locale = 'pt-BR'): string {
+  const normalizedStart = normalizeRawTime(startTime);
+  if (!normalizedStart) {
+    return '';
+  }
+
+  const parsedStart = new Date(normalizedStart);
+  if (Number.isNaN(parsedStart.getTime())) {
+    return formatEventTimeRange(startTime, endTime, locale);
+  }
+
+  const datePart = parsedStart.toLocaleDateString(locale, {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  });
+  const timePart = formatEventTimeRange(startTime, endTime, locale);
+
+  if (!timePart) {
+    return datePart;
+  }
+
+  return `${datePart} · ${timePart}`;
+}

@@ -1,4 +1,4 @@
-import { formatEventTime, formatEventTimeRange } from '@/utils/event/formatEventTimeRange';
+import { formatEventTime, formatEventScheduleLabel, formatEventTimeRange } from '@/utils/event/formatEventTimeRange';
 
 describe('formatEventTime', () => {
   it('retorna vazio quando valor vem vazio', () => {
@@ -24,5 +24,14 @@ describe('formatEventTimeRange', () => {
   it('retorna só start quando end não existe', () => {
     const out = formatEventTimeRange('2026-05-08T14:00:00.000Z', '');
     expect(out).toMatch(/^\d{2}:\d{2}$/);
+  });
+});
+
+describe('formatEventScheduleLabel', () => {
+  it('inclui data e horário no rodapé', () => {
+    const out = formatEventScheduleLabel('2026-05-08T14:00:00.000Z', '2026-05-08T15:30:00.000Z');
+    expect(out).toMatch(/08\/05\/2026/);
+    expect(out).toContain('·');
+    expect(out).toMatch(/\d{2}:\d{2} - \d{2}:\d{2}/);
   });
 });
