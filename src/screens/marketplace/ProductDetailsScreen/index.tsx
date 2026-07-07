@@ -417,6 +417,7 @@ const ProductDetailsScreen: React.FC<ProductDetailsScreenProps> = ({ navigation,
                 contacts={product.contacts}
                 providerId={advertiserId}
                 testID='product-details-contacts'
+                containerStyle={styles.contactButtonsRow}
               />
               {usesPhysicalProductDetailLayout ? (
                 <>

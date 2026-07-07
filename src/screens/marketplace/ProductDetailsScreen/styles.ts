@@ -215,6 +215,10 @@ export const styles = StyleSheet.create({
     backgroundColor: COLORS.BACKGROUND,
     paddingTop: SPACING.LG,
   },
+  contactButtonsRow: {
+    paddingHorizontal: SPACING.LG,
+    marginBottom: 0,
+  },
   swapperSection: {
     paddingHorizontal: SPACING.LG,
   },
@@ -261,7 +265,7 @@ export const styles = StyleSheet.create({
     marginTop: 0,
   },
   tabsContainerInCard: {
-    paddingVertical: SPACING.LG,
+    paddingBottom: SPACING.LG,
   },
   tabsContainer: {
     marginBottom: SPACING.LG,
