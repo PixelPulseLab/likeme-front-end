@@ -4,6 +4,8 @@ export type NavWithParent = {
   getParent?: () => NavWithParent | undefined;
   navigate?: (screen: string, params?: unknown) => void;
   dispatch?: (action: ReturnType<typeof CommonActions.navigate>) => void;
+  canGoBack?: () => boolean;
+  goBack?: () => void;
 };
 
 export function rootStackNavigationFrom(navigation: NavWithParent | undefined): NavWithParent | undefined {

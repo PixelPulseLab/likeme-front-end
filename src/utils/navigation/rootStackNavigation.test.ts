@@ -1,7 +1,13 @@
 import { CommonActions } from '@react-navigation/native';
 import { navigateRootStack, rootStackNavigationFrom } from '@/utils/navigation/rootStackNavigation';
 
-function createNav(parent?: ReturnType<typeof createNav>) {
+type MockNav = {
+  dispatch: jest.Mock;
+  navigate: jest.Mock;
+  getParent: jest.Mock;
+};
+
+function createNav(parent?: MockNav): MockNav {
   const dispatch = jest.fn();
   const navigate = jest.fn();
   return {

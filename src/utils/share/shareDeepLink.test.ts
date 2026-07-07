@@ -36,7 +36,7 @@ jest.mock('@/services/auth/storageService', () => ({
 
 import storageService from '@/services/auth/storageService';
 
-function shareContentResetAction(screen: string, params?: unknown) {
+function shareContentResetAction(screen: string, params?: object) {
   return CommonActions.reset({
     index: 1,
     routes: [{ name: SHARE_DEEP_LINK_HOME_SCREEN }, { name: screen, params }],
