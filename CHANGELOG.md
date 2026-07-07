@@ -177,3 +177,14 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 
 ### Corrigido
 - Deep link de conteúdo compartilhado redireciona para login quando o usuário não está autenticado (APP-332)
+
+## [1.9.2] - 2026-07-07
+
+### Alterado
+- Ícones de contato alinhados na PDP de serviço (APP-278)
+
+### Corrigido
+- Menu inferior e voltar após abrir link compartilhado
+- Card de evento da comunidade com textos do Figma e data no rodapé (APP-344)
+- Menu inferior ao abrir post compartilhado (APP-349)
+- Navegação pelo menu após deep link na PDP e demais telas compartilhadas (APP-350)

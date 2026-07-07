@@ -225,6 +225,7 @@ jest.mock('@/assets', () => ({
 const mockNavigation = {
   goBack: jest.fn(),
   navigate: jest.fn(),
+  canGoBack: jest.fn(() => true),
   getParent: jest.fn(() => ({
     navigate: jest.fn(),
   })),
