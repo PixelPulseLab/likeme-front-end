@@ -19,7 +19,7 @@ import { getProductModeTranslationKey } from '@/utils';
 import { logger } from '@/utils/logger';
 import { catalogTypeTranslatedBadgeLabels } from '@/types/product';
 import { SHARE_CONTENT_TYPES } from '@/constants/share';
-import { navigateToShareHome } from '@/utils/navigation/shareHomeNavigation';
+import { goBackOrShareHome, navigateToShareHome } from '@/utils/navigation/shareHomeNavigation';
 import { navigateToShareDiscover } from '@/utils/navigation/shareDiscoverNavigation';
 import { shareContent } from '@/utils/share/shareContent';
 import { styles } from './styles';
@@ -111,7 +111,7 @@ const AffiliateProductScreen: React.FC<AffiliateProductScreenProps> = ({ navigat
   });
 
   const handleBackPress = () => {
-    navigation.goBack();
+    goBackOrShareHome(navigation);
   };
 
   const handleGoHome = () => {

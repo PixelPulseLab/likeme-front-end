@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect } from 'react';
+import React, { useCallback, useEffect, useRef } from 'react';
 import * as Linking from 'expo-linking';
 import type { NavigationContainerRefWithCurrent } from '@react-navigation/native';
 import type { RootStackParamList } from '@/types/navigation';
@@ -15,14 +15,17 @@ type Props = {
 };
 
 const DeepLinkRoot: React.FC<Props> = ({ activeRouteName, navigationRef }) => {
+  const activeRouteNameRef = useRef(activeRouteName);
+  activeRouteNameRef.current = activeRouteName;
+
   const handleIncomingUrl = useCallback(
     (url: string | null) => {
       if (!url) {
         return;
       }
-      void openDeepLinkTarget(navigationRef, url, activeRouteName);
+      void openDeepLinkTarget(navigationRef, url, activeRouteNameRef.current);
     },
-    [activeRouteName, navigationRef],
+    [navigationRef],
   );
 
   useEffect(() => {
@@ -52,14 +55,17 @@ const DeepLinkRoot: React.FC<Props> = ({ activeRouteName, navigationRef }) => {
       handleIncomingUrl(initialUrl);
     })();
 
+    return () => {
+      cancelled = true;
+    };
+  }, [handleIncomingUrl]);
+
+  useEffect(() => {
     const subscription = Linking.addEventListener('url', ({ url }) => {
       handleIncomingUrl(url);
     });
 
-    return () => {
-      cancelled = true;
-      subscription.remove();
-    };
+    return () => subscription.remove();
   }, [handleIncomingUrl]);
 
   useEffect(() => {

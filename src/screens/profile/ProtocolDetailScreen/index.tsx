@@ -22,7 +22,7 @@ import productService from '@/services/product/productService';
 import { COLORS } from '@/constants';
 import { moduleItemsFromProgramCourse } from '@/utils/course/programCourseModules';
 import { protocolDetailFromProduct } from '@/utils/profile/protocolDetailFromProduct';
-import { navigateToShareHome } from '@/utils/navigation/shareHomeNavigation';
+import { goBackOrShareHome, navigateToShareHome } from '@/utils/navigation/shareHomeNavigation';
 import { navigateToShareDiscover } from '@/utils/navigation/shareDiscoverNavigation';
 import { logger } from '@/utils/logger';
 import { shareContent } from '@/utils/share/shareContent';
@@ -187,7 +187,7 @@ const ProtocolDetailScreen: React.FC<Props> = ({ navigation, route }) => {
   );
 
   const handleBack = () => {
-    navigation.goBack();
+    goBackOrShareHome(navigation);
   };
 
   const handleGoHome = () => {

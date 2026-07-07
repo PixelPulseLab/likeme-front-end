@@ -25,7 +25,7 @@ import { usePostReplies, useTranslation } from '@/hooks';
 import type { PostReplyCardComment } from '@/hooks/community/usePostReplies';
 import { communityService } from '@/services';
 import { mapCommunityPostToPost } from '@/utils';
-import { navigateToShareHome } from '@/utils/navigation/shareHomeNavigation';
+import { goBackOrShareHome, navigateToShareHome } from '@/utils/navigation/shareHomeNavigation';
 import { navigateToShareDiscover } from '@/utils/navigation/shareDiscoverNavigation';
 import { logger } from '@/utils/logger';
 import { shareContent } from '@/utils/share/shareContent';
@@ -123,7 +123,7 @@ const PostDetailScreen: React.FC<Props> = ({ navigation, route }) => {
   }, [initialPost, routePostId]);
 
   const handleBackPress = useCallback(() => {
-    navigation?.goBack?.();
+    goBackOrShareHome(navigation);
   }, [navigation]);
 
   const handleGoHome = useCallback(() => {

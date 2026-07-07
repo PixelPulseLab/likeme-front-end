@@ -172,6 +172,17 @@ describe('openDeepLinkTarget', () => {
     expect(consumePendingDeepLinkNavigation()).toBeNull();
   });
 
+  it('limpa destino pendente ao navegar com sessão ativa', async () => {
+    const navigationRef = createNavigationRef();
+
+    await openDeepLinkTarget(navigationRef, `${SHARE_BASE_URL}/product/prod-1`, 'Loading');
+    expect(consumePendingDeepLinkNavigation()).toEqual(PRODUCT_TARGET);
+
+    await openDeepLinkTarget(navigationRef, `${SHARE_BASE_URL}/product/prod-1`, 'Summary');
+
+    expect(consumePendingDeepLinkNavigation()).toBeNull();
+  });
+
   it('navega para produto quando app está pronto', async () => {
     const navigationRef = createNavigationRef();
 

@@ -44,7 +44,7 @@ import { logger } from '@/utils/logger';
 import { resolveCommunityHeroImageUri } from '@/utils/community/mappers';
 import { navigateToProviderProfile } from '@/utils/navigation/marketplaceNavigation';
 import { navigateToProductDetailsScreen } from '@/utils/navigation/productNavigation';
-import { navigateToShareHome } from '@/utils/navigation/shareHomeNavigation';
+import { goBackOrShareHome, navigateToShareHome } from '@/utils/navigation/shareHomeNavigation';
 import { navigateToShareDiscover } from '@/utils/navigation/shareDiscoverNavigation';
 import { shareContent } from '@/utils/share/shareContent';
 import { filterAdsForProviderProfile } from '@/utils/marketplace/filterAdsForProviderProfile';
@@ -776,7 +776,7 @@ const CommunityScreen: React.FC<Props> = ({ navigation }) => {
           headerProps={{
             showBackButton: true,
             showMenuWithAvatar: false,
-            onBackPress: () => navigation?.goBack?.(),
+            onBackPress: () => goBackOrShareHome(navigation),
           }}
           contentContainerStyle={styles.container}
         >
@@ -800,7 +800,7 @@ const CommunityScreen: React.FC<Props> = ({ navigation }) => {
         headerProps={{
           showBackButton: true,
           showMenuWithAvatar: false,
-          onBackPress: () => navigation?.goBack?.(),
+          onBackPress: () => goBackOrShareHome(navigation),
           showCartButton: true,
           onCartPress: handleCartPress,
         }}

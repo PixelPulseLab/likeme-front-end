@@ -32,7 +32,7 @@ import { resolveCommunityHeroImageUri } from '@/utils/community/mappers';
 import { navigateToCommunity } from '@/utils/navigation/communityNavigation';
 import { navigateToProviderProfile } from '@/utils/navigation/marketplaceNavigation';
 import { navigateToProductDetailsScreen } from '@/utils/navigation/productNavigation';
-import { navigateToShareHome } from '@/utils/navigation/shareHomeNavigation';
+import { goBackOrShareHome, navigateToShareHome } from '@/utils/navigation/shareHomeNavigation';
 import { navigateToShareDiscover } from '@/utils/navigation/shareDiscoverNavigation';
 import { shareContent } from '@/utils/share/shareContent';
 import { getProductModeTranslationKey } from '@/utils';
@@ -319,7 +319,7 @@ const ProviderProfileScreen: React.FC<ProviderProfileScreenProps> = ({ navigatio
   );
 
   const handleBackPress = () => {
-    navigation.goBack();
+    goBackOrShareHome(navigation);
   };
 
   const handleGoHome = () => {

@@ -251,6 +251,7 @@ export async function openDeepLinkTarget(
   }
 
   dispatchDeepLinkTarget(navigationRef, target);
+  consumePendingDeepLinkNavigation();
 }
 
 export async function flushPendingDeepLinkNavigation(

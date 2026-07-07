@@ -37,7 +37,7 @@ import type { RootStackParamList } from '@/types/navigation';
 import { PRODUCT_CATALOG_TYPE, catalogTypeTranslatedBadgeLabels, isProgramCatalogType } from '@/types/product';
 import { navigateToProviderProfile } from '@/utils/navigation/marketplaceNavigation';
 import { navigateToProductDetailsScreen } from '@/utils/navigation/productNavigation';
-import { navigateToShareHome } from '@/utils/navigation/shareHomeNavigation';
+import { goBackOrShareHome, navigateToShareHome } from '@/utils/navigation/shareHomeNavigation';
 import { navigateToShareDiscover } from '@/utils/navigation/shareDiscoverNavigation';
 import { shareContent, shareInputForProduct } from '@/utils/share/shareContent';
 import { styles } from './styles';
@@ -248,7 +248,7 @@ const ProductDetailsScreen: React.FC<ProductDetailsScreenProps> = ({ navigation,
       button_label: 'back',
       action_name: 'go_back',
     });
-    navigation.goBack();
+    goBackOrShareHome(navigation);
   };
 
   const handleGoHome = () => {
