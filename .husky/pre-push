@@ -14,4 +14,4 @@ if [ $? -ne 0 ]; then
   echo "❌ Push bloqueado: build falhou. Corrija os erros antes de fazer push."
   exit 1
 fi
-echo "✅ Release checks + Build OK. Prosseguindo com o push."
+echo "✅ Versão, testes e build OK. Prosseguindo com o push."
