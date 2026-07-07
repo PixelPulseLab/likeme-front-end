@@ -1,7 +1,7 @@
 import { CommonActions } from '@react-navigation/native';
 import type { NavigationContainerRefWithCurrent } from '@react-navigation/native';
 import { GA4_EVENTS, logEvent, ANALYTICS_PARAMS } from '@/analytics';
-import { SHARE_CONTENT_TYPES } from '@/constants/share';
+import { SHARE_CONTENT_TYPES, SHARE_DEEP_LINK_HOME_SCREEN } from '@/constants/share';
 import type { RootStackParamList } from '@/types/navigation';
 import { consumePendingDeepLinkNavigation } from '@/utils/navigation/pendingDeepLinkNavigation';
 import { shareEntityIdFromPath, sharePathFromUrl } from '@/utils/share/sharePath';
@@ -35,6 +35,13 @@ jest.mock('@/services/auth/storageService', () => ({
 }));
 
 import storageService from '@/services/auth/storageService';
+
+function shareContentResetAction(screen: string, params?: unknown) {
+  return CommonActions.reset({
+    index: 1,
+    routes: [{ name: SHARE_DEEP_LINK_HOME_SCREEN }, { name: screen, params }],
+  });
+}
 
 const POST_TARGET = {
   screen: 'Community',
@@ -163,12 +170,7 @@ describe('openDeepLinkTarget', () => {
       [ANALYTICS_PARAMS.ITEM_ID]: 'post-xyz',
       [ANALYTICS_PARAMS.ACTION_NAME]: 'deep_link_open',
     });
-    expect(navigationRef.dispatch).toHaveBeenCalledWith(
-      CommonActions.navigate({
-        name: 'Community',
-        params: POST_TARGET.params,
-      }),
-    );
+    expect(navigationRef.dispatch).toHaveBeenCalledWith(shareContentResetAction('Community', POST_TARGET.params));
     expect(consumePendingDeepLinkNavigation()).toBeNull();
   });
 
@@ -194,10 +196,7 @@ describe('openDeepLinkTarget', () => {
       [ANALYTICS_PARAMS.ACTION_NAME]: 'deep_link_open',
     });
     expect(navigationRef.dispatch).toHaveBeenCalledWith(
-      CommonActions.navigate({
-        name: 'ProductDetails',
-        params: PRODUCT_TARGET.params,
-      }),
+      shareContentResetAction('ProductDetails', PRODUCT_TARGET.params),
     );
   });
 
@@ -211,12 +210,7 @@ describe('openDeepLinkTarget', () => {
       [ANALYTICS_PARAMS.ITEM_ID]: 'community-abc',
       [ANALYTICS_PARAMS.ACTION_NAME]: 'deep_link_open',
     });
-    expect(navigationRef.dispatch).toHaveBeenCalledWith(
-      CommonActions.navigate({
-        name: 'Community',
-        params: COMMUNITY_TARGET.params,
-      }),
-    );
+    expect(navigationRef.dispatch).toHaveBeenCalledWith(shareContentResetAction('Community', COMMUNITY_TARGET.params));
   });
 
   it('navega para protocolo, afiliado e provider quando app está pronto', async () => {
@@ -224,17 +218,17 @@ describe('openDeepLinkTarget', () => {
 
     await openDeepLinkTarget(navigationRef, `${SHARE_BASE_URL}/protocol/prog-1`, 'Main');
     expect(navigationRef.dispatch).toHaveBeenLastCalledWith(
-      CommonActions.navigate({ name: 'ProtocolDetail', params: PROTOCOL_TARGET.params }),
+      shareContentResetAction('ProtocolDetail', PROTOCOL_TARGET.params),
     );
 
     await openDeepLinkTarget(navigationRef, `${SHARE_BASE_URL}/affiliate/aff-1?adId=ad-9`, 'Main');
     expect(navigationRef.dispatch).toHaveBeenLastCalledWith(
-      CommonActions.navigate({ name: 'AffiliateProduct', params: AFFILIATE_TARGET.params }),
+      shareContentResetAction('AffiliateProduct', AFFILIATE_TARGET.params),
     );
 
     await openDeepLinkTarget(navigationRef, `${SHARE_BASE_URL}/provider/prov-1`, 'Main');
     expect(navigationRef.dispatch).toHaveBeenLastCalledWith(
-      CommonActions.navigate({ name: 'ProviderProfile', params: PROVIDER_TARGET.params }),
+      shareContentResetAction('ProviderProfile', PROVIDER_TARGET.params),
     );
   });
 
@@ -322,12 +316,7 @@ describe('flushPendingDeepLinkNavigation', () => {
 
     await flushPendingDeepLinkNavigation(navigationRef, 'Main');
 
-    expect(navigationRef.dispatch).toHaveBeenCalledWith(
-      CommonActions.navigate({
-        name: 'Community',
-        params: POST_TARGET.params,
-      }),
-    );
+    expect(navigationRef.dispatch).toHaveBeenCalledWith(shareContentResetAction('Community', POST_TARGET.params));
     expect(consumePendingDeepLinkNavigation()).toBeNull();
   });
 

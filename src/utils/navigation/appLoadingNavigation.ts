@@ -5,7 +5,8 @@ import {
   getProductDetailsScreen,
   getProviderProfileScreen,
 } from '@/navigation/rootStackScreenLoaders';
-import type { AppLoadingNavigateTarget, RootStackParamList } from '@/types/navigation';
+import type { AppLoadingNavigateTarget } from '@/types/navigation';
+import { navigateRootStack } from '@/utils/navigation/rootStackNavigation';
 
 export const APP_LOADING_TARGET_NAMES = [
   'ProductDetails',
@@ -49,7 +50,7 @@ export function navigateWithAppLoading(
   options?: { loadingMessage?: string },
 ): void {
   preloadAppLoadingTarget(target.name);
-  navigation.navigate('AppLoading', {
+  navigateRootStack(navigation, 'AppLoading', {
     target,
     loadingMessage: options?.loadingMessage,
   });

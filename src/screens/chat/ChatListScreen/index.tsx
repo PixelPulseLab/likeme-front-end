@@ -17,6 +17,7 @@ import { storageService } from '@/services';
 import type { ChatStackParamList } from '@/types/navigation';
 import { useAnalyticsScreen } from '@/analytics';
 import { navigateToCommunity } from '@/utils/navigation/communityNavigation';
+import { navigateRootStack, rootStackNavigationFrom } from '@/utils/navigation/rootStackNavigation';
 import { styles } from './styles';
 
 type ChatListNavigationProp = StackNavigationProp<ChatStackParamList, 'ChatList'>;
@@ -29,7 +30,7 @@ const ChatListScreen: React.FC<Props> = () => {
   useAnalyticsScreen({ screenName: 'ChatList', screenClass: 'ChatListScreen' });
   const { t } = useTranslation();
   const navigation = useNavigation<ChatListNavigationProp>();
-  const rootNavigation = navigation.getParent() ?? navigation;
+  const rootNavigation = rootStackNavigationFrom(navigation) ?? navigation;
   const { isEnabled: isChatEnabled, isLoading: isChatFlagLoading } = useFeatureFlag(FEATURE_FLAGS.CHAT_ENABLED);
   const [searchQuery, setSearchQuery] = useState('');
   const [userAvatarUri, setUserAvatarUri] = useState<string | null>(null);
@@ -94,11 +95,11 @@ const ChatListScreen: React.FC<Props> = () => {
   };
 
   const handleCartPress = () => {
-    rootNavigation.navigate('Cart' as never);
+    navigateRootStack(rootNavigation, 'Cart');
   };
 
   const handleMenuPress = () => {
-    rootNavigation.navigate('Profile' as never);
+    navigateRootStack(rootNavigation, 'Profile');
   };
 
   const handleConversationPress = (conversation: ChatConversation) => {

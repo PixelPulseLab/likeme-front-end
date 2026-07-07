@@ -12,6 +12,7 @@ import { COLORS, SPACING } from '@/constants';
 import { ACCOUNT_CONFIG } from '@/config/environment';
 import { logger } from '@/utils/logger';
 import { navigateToActivitiesOrders } from '@/utils/navigation/activitiesNavigation';
+import { navigateRootStack, rootStackNavigationFrom } from '@/utils/navigation/rootStackNavigation';
 import { styles } from './styles';
 
 type Props = {
@@ -29,7 +30,7 @@ type ProfileMenuItem = {
 
 const ProfileFloatingMenu: React.FC<Props> = ({ visible, navigation, onClose }) => {
   const { t } = useTranslation();
-  const rootNavigation = navigation.getParent() ?? navigation;
+  const rootNavigation = rootStackNavigationFrom(navigation) ?? navigation;
   const [user, setUser] = useState<StoredUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [deletingAccount, setDeletingAccount] = useState(false);
@@ -103,7 +104,7 @@ const ProfileFloatingMenu: React.FC<Props> = ({ visible, navigation, onClose }) 
 
   const handleGoToSubscriptions = useCallback(() => {
     onClose();
-    rootNavigation.navigate('SubscriptionList' as never);
+    navigateRootStack(rootNavigation, 'SubscriptionList');
   }, [onClose, rootNavigation]);
 
   const handleGoToOrders = useCallback(() => {
@@ -113,12 +114,12 @@ const ProfileFloatingMenu: React.FC<Props> = ({ visible, navigation, onClose }) 
 
   const handleGoToActivities = useCallback(() => {
     onClose();
-    rootNavigation.navigate('Activities' as never, { initialTab: 'actives' } as never);
+    navigateRootStack(rootNavigation, 'Activities', { initialTab: 'actives' });
   }, [onClose, rootNavigation]);
 
   const handleGoToUserProfile = useCallback(() => {
     onClose();
-    rootNavigation.navigate('UserProfileHome' as never);
+    navigateRootStack(rootNavigation, 'UserProfileHome');
   }, [onClose, rootNavigation]);
 
   const menuItems: ProfileMenuItem[] = useMemo(

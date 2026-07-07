@@ -23,6 +23,7 @@ import type { ChatStackParamList } from '@/types/navigation';
 import { useAnalyticsScreen } from '@/analytics';
 import { logger } from '@/utils/logger';
 import { navigateToCommunity } from '@/utils/navigation/communityNavigation';
+import { navigateRootStack } from '@/utils/navigation/rootStackNavigation';
 import { styles } from './styles';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -107,7 +108,7 @@ const ChatScreen: React.FC = () => {
   useEffect(() => {
     if (!isChatFlagLoading && !isChatEnabled) {
       Alert.alert('Chat indisponivel', 'Esta funcionalidade esta desativada no momento.');
-      navigateToCommunity(navigation.getParent() ?? navigation);
+      navigateToCommunity(navigation);
     }
   }, [isChatEnabled, isChatFlagLoading, navigation]);
 
@@ -152,11 +153,11 @@ const ChatScreen: React.FC = () => {
   }, [messages]);
 
   const handleMenuPress = () => {
-    (navigation.getParent() ?? navigation).navigate('Profile' as never);
+    navigateRootStack(navigation, 'Profile');
   };
 
   const handleCartPress = () => {
-    (navigation.getParent() ?? navigation).navigate('Cart' as never);
+    navigateRootStack(navigation, 'Cart');
   };
 
   const [sending, setSending] = useState(false);

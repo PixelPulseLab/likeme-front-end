@@ -24,6 +24,18 @@ import {
 } from '@/utils/navigation/pendingDeepLinkNavigation';
 import { shareEntityIdFromPath, sharePathFromUrl, shareQueryParamFromUrl } from '@/utils/share/sharePath';
 
+const SHARE_RESET_STACK_SCREENS = new Set<keyof RootStackParamList>([
+  'Community',
+  'ProductDetails',
+  'AffiliateProduct',
+  'ProviderProfile',
+  'ProtocolDetail',
+]);
+
+function shouldResetShareStackForTarget(target: PendingDeepLinkNavigationTarget): boolean {
+  return SHARE_RESET_STACK_SCREENS.has(target.screen);
+}
+
 type ShareDeepLinkMatch = {
   contentType: ShareContentType;
   itemId: string;
@@ -175,6 +187,16 @@ function dispatchDeepLinkTarget(
   navigationRef: NavigationContainerRefWithCurrent<RootStackParamList>,
   target: PendingDeepLinkNavigationTarget,
 ): void {
+  if (shouldResetShareStackForTarget(target)) {
+    navigationRef.dispatch(
+      CommonActions.reset({
+        index: 1,
+        routes: [{ name: SHARE_DEEP_LINK_HOME_SCREEN }, { name: target.screen, params: target.params }],
+      }),
+    );
+    return;
+  }
+
   navigationRef.dispatch(
     CommonActions.navigate({
       name: target.screen,

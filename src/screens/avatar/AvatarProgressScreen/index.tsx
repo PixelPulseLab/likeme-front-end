@@ -23,6 +23,7 @@ import Carousel from '@/components/sections/product/Carousel';
 import { useAnalyticsScreen } from '@/analytics';
 import { logger } from '@/utils/logger';
 import { navigateToCommunity } from '@/utils/navigation/communityNavigation';
+import { rootStackNavigationFrom } from '@/utils/navigation/rootStackNavigation';
 import { navigateToProductDetailsScreen } from '@/utils/navigation/productNavigation';
 import { styles } from './styles';
 
@@ -34,7 +35,7 @@ type Props = {
 const AvatarProgressScreen: React.FC<Props> = ({ navigation }) => {
   useAnalyticsScreen({ screenName: 'AvatarProgress', screenClass: 'AvatarProgressScreen' });
   const { t } = useTranslation();
-  const rootNavigation = navigation.getParent() ?? navigation;
+  const rootNavigation = rootStackNavigationFrom(navigation) ?? navigation;
   const [selectedPeriod, setSelectedPeriod] = useState<'week' | 'month'>('week');
   const [events, setEvents] = useState<FeedEvent[]>([]);
   const [popularProviders, setPopularProviders] = useState<Provider[]>([]);

@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, TouchableOpacity, Text, type ImageSourcePropType } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { navigateRootStack } from '@/utils/navigation/rootStackNavigation';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { ColoredTwoDotsIcon } from '@/assets/ui';
 import { CachedImage } from '@/components/ui/media/CachedImage';
@@ -29,7 +30,7 @@ const FloatingMenu: React.FC<Props> = ({ items, selectedId }) => {
   const navigation = useNavigation();
 
   const handleHomePress = () => {
-    navigation.navigate('Home' as never);
+    navigateRootStack(navigation, 'Home');
   };
 
   return (

@@ -46,6 +46,7 @@ import { navigateToProviderProfile } from '@/utils/navigation/marketplaceNavigat
 import { navigateToProductDetailsScreen } from '@/utils/navigation/productNavigation';
 import { goBackOrShareHome, navigateToShareHome } from '@/utils/navigation/shareHomeNavigation';
 import { navigateToShareDiscover } from '@/utils/navigation/shareDiscoverNavigation';
+import { navigateRootStack, rootStackNavigationFrom } from '@/utils/navigation/rootStackNavigation';
 import { shareContent } from '@/utils/share/shareContent';
 import { filterAdsForProviderProfile } from '@/utils/marketplace/filterAdsForProviderProfile';
 import type { Advertiser } from '@/types/ad';
@@ -74,9 +75,9 @@ const CommunityScreen: React.FC<Props> = ({ navigation }) => {
   const route = useRoute<RouteProp<CommunityStackParamList, 'CommunityList'>>();
   const { t } = useTranslation();
   const toggleOptions = useMemo(() => [t('community.social'), t('community.solutions')] as const, [t]);
-  const rootNavigation = navigation.getParent()?.getParent?.() ?? navigation.getParent();
+  const rootNavigation = rootStackNavigationFrom(navigation) ?? navigation;
   const handleCartPress = () => {
-    (rootNavigation ?? navigation).navigate('Cart' as never);
+    navigateRootStack(rootNavigation, 'Cart');
   };
   const [selectedMode, setSelectedMode] = useState<CommunityViewId>(COMMUNITY_VIEW.FEED);
   const [activeInfoTab, setActiveInfoTab] = useState<CommunityInfoTabId>('posts');

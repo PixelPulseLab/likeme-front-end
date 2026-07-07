@@ -3,6 +3,7 @@ import { View, type ViewStyle } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Header from '../Header';
 import { COLORS, SPACING } from '@/constants';
+import { navigateRootStack } from '@/utils/navigation/rootStackNavigation';
 
 type HeaderProps = React.ComponentProps<typeof Header>;
 
@@ -23,8 +24,7 @@ const ScreenWithHeader: React.FC<Props> = ({
   contentContainerStyle,
   children,
 }) => {
-  const rootNavigation = navigation?.getParent?.() ?? navigation;
-  const defaultOnLogoPress = rootNavigation?.navigate != null ? () => rootNavigation.navigate('Summary') : undefined;
+  const defaultOnLogoPress = navigation != null ? () => navigateRootStack(navigation, 'Summary') : undefined;
   const headerBackgroundColor = headerProps?.backgroundColor ?? COLORS.BACKGROUND_SECONDARY;
 
   return (

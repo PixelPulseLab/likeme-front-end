@@ -43,6 +43,7 @@ import { useSetFloatingMenu } from '@/contexts/FloatingMenuContext';
 import { useTranslation } from '@/hooks/i18n';
 import { handleAdNavigation } from '@/utils';
 import { navigateToProviderProfile } from '@/utils/navigation/marketplaceNavigation';
+import { navigateRootStack, rootStackNavigationFrom } from '@/utils/navigation/rootStackNavigation';
 import type { Ad, Advertiser } from '@/types/ad';
 import type { RootStackParamList } from '@/types/navigation';
 import { BOTTOM_DOCK_BAR_HEIGHT, SPACING } from '@/constants';
@@ -72,7 +73,7 @@ const MarketplaceScreen: React.FC<MarketplaceScreenProps> = ({ navigation, route
   const { t } = useTranslation();
   const { bottom: bottomInset } = useSafeAreaInsets();
   const { marketplaceCarouselOptions } = useSolutions();
-  const rootNavigation = navigation.getParent() ?? navigation;
+  const rootNavigation = rootStackNavigationFrom(navigation) ?? navigation;
   const userAvatarUri = useUserAvatar();
   const { categories } = useCategories({ enabled: true });
   const { getCategoryName } = useCategoryDisplayLabel();
@@ -580,7 +581,7 @@ const MarketplaceScreen: React.FC<MarketplaceScreenProps> = ({ navigation, route
       headerProps={{
         showBackButton: false,
         showMenuWithAvatar: true,
-        onMenuPress: () => rootNavigation.navigate('Profile' as never),
+        onMenuPress: () => navigateRootStack(rootNavigation, 'Profile'),
         userAvatarUri,
         showCartButton: true,
         onCartPress: () => navigation.navigate('Cart'),

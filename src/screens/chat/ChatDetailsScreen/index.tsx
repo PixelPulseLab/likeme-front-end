@@ -11,6 +11,7 @@ import { chatService } from '@/services';
 import { useBlockedUser, useUserAvatar, useTranslation } from '@/hooks';
 import type { ChatStackParamList } from '@/types/navigation';
 import { useAnalyticsScreen } from '@/analytics';
+import { navigateRootStack } from '@/utils/navigation/rootStackNavigation';
 import { styles } from './styles';
 
 type DetailsNavigation = StackNavigationProp<ChatStackParamList, 'ChatDetails'>;
@@ -38,11 +39,11 @@ const ChatDetailsScreen: React.FC = () => {
   const [actionLoading, setActionLoading] = useState<'block' | 'leave' | null>(null);
 
   const handleMenuPress = () => {
-    (navigation.getParent() ?? navigation).navigate('Profile' as never);
+    navigateRootStack(navigation, 'Profile');
   };
 
   const handleCartPress = () => {
-    (navigation.getParent() ?? navigation).navigate('Cart' as never);
+    navigateRootStack(navigation, 'Cart');
   };
 
   const confirmAndExecute = (

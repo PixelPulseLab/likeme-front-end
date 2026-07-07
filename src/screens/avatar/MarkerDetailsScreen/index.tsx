@@ -5,6 +5,7 @@ import { ScreenWithHeader } from '@/components/ui/layout';
 import ProgressBar from '@/components/ui/feedback/ProgressBar';
 import { useMenuItems } from '@/hooks';
 import { useSetFloatingMenu } from '@/contexts/FloatingMenuContext';
+import { rootStackNavigationFrom } from '@/utils/navigation/rootStackNavigation';
 import { useTranslation } from '@/hooks/i18n';
 import { COLORS, SPACING } from '@/constants';
 import { getMarkerColor, getMarkerGradient, MARKER_NAMES, hasMarkerGradient } from '@/constants/markers';
@@ -26,7 +27,7 @@ type Period = 'day' | 'week' | 'month';
 const MarkerDetailsScreen: React.FC<Props> = ({ navigation, route }) => {
   useAnalyticsScreen({ screenName: 'MarkerDetails', screenClass: 'MarkerDetailsScreen' });
   const { t } = useTranslation();
-  const rootNavigation = navigation.getParent() ?? navigation;
+  const rootNavigation = rootStackNavigationFrom(navigation) ?? navigation;
   const menuItems = useMenuItems(rootNavigation);
   useSetFloatingMenu(menuItems, 'activities');
   const [selectedPeriod, setSelectedPeriod] = useState<Period>('week');

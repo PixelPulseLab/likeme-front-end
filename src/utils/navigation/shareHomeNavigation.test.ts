@@ -1,3 +1,4 @@
+import { CommonActions } from '@react-navigation/native';
 import { SHARE_DEEP_LINK_HOME_SCREEN } from '@/constants/share';
 import { goBackOrShareHome, navigateToShareHome } from '@/utils/navigation/shareHomeNavigation';
 
@@ -18,12 +19,18 @@ function createNav(options: { canGoBack?: boolean; parent?: { canGoBack?: boolea
 
 describe('navigateToShareHome', () => {
   it('navega para Summary no root', () => {
-    const rootNavigate = jest.fn();
-    const child = { getParent: () => ({ navigate: rootNavigate, getParent: () => undefined }) };
+    const rootDispatch = jest.fn();
+    const root = { dispatch: rootDispatch, getParent: () => undefined };
+    const child = { getParent: () => root };
 
     navigateToShareHome(child);
 
-    expect(rootNavigate).toHaveBeenCalledWith(SHARE_DEEP_LINK_HOME_SCREEN);
+    expect(rootDispatch).toHaveBeenCalledWith(
+      CommonActions.navigate({
+        name: SHARE_DEEP_LINK_HOME_SCREEN,
+        params: undefined,
+      }),
+    );
   });
 });
 
@@ -59,11 +66,13 @@ describe('goBackOrShareHome', () => {
   });
 
   it('vai para home quando não há histórico em nenhum nível', () => {
+    const rootDispatch = jest.fn();
     const rootNavigate = jest.fn();
     const root = {
       canGoBack: jest.fn(() => false),
       goBack: jest.fn(),
       navigate: rootNavigate,
+      dispatch: rootDispatch,
       getParent: () => undefined,
     };
     const navigation = {
@@ -77,6 +86,12 @@ describe('goBackOrShareHome', () => {
 
     expect(navigation.goBack).not.toHaveBeenCalled();
     expect(root.goBack).not.toHaveBeenCalled();
-    expect(rootNavigate).toHaveBeenCalledWith(SHARE_DEEP_LINK_HOME_SCREEN);
+    expect(rootDispatch).toHaveBeenCalledWith(
+      CommonActions.navigate({
+        name: SHARE_DEEP_LINK_HOME_SCREEN,
+        params: undefined,
+      }),
+    );
+    expect(rootNavigate).not.toHaveBeenCalled();
   });
 });

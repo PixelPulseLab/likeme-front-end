@@ -30,6 +30,7 @@ import { ContactButtonsRow } from '@/components/sections/advertiser/ContactButto
 import { formatAdvertiserDocumentsLine } from '@/utils/advertiser/documents';
 import { resolveCommunityHeroImageUri } from '@/utils/community/mappers';
 import { navigateToCommunity } from '@/utils/navigation/communityNavigation';
+import { navigateRootStack, rootStackNavigationFrom } from '@/utils/navigation/rootStackNavigation';
 import { navigateToProviderProfile } from '@/utils/navigation/marketplaceNavigation';
 import { navigateToProductDetailsScreen } from '@/utils/navigation/productNavigation';
 import { goBackOrShareHome, navigateToShareHome } from '@/utils/navigation/shareHomeNavigation';
@@ -191,7 +192,7 @@ const ProviderProfileScreen: React.FC<ProviderProfileScreenProps> = ({ navigatio
     }
   }, [visibleProfiles]);
 
-  const rootNavigation = navigation.getParent() ?? navigation;
+  const rootNavigation = rootStackNavigationFrom(navigation) ?? navigation;
 
   const loadCommunityShop = activeTab === 'communities';
 
@@ -344,7 +345,7 @@ const ProviderProfileScreen: React.FC<ProviderProfileScreenProps> = ({ navigatio
       return;
     }
 
-    (rootNavigation as any).navigate('Chat', {
+    navigateRootStack(rootNavigation, 'Chat', {
       screen: 'ChatConversation',
       params: {
         targetAdvertiserId: providerId,

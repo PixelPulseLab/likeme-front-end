@@ -6,6 +6,7 @@ import { FEATURE_FLAGS } from '@/constants';
 import { useFeatureFlag } from '@/hooks/featureFlags/useFeatureFlag';
 import { navigateToCommunity } from '@/utils/navigation/communityNavigation';
 import { navigateToMarketplace } from '@/utils/navigation/marketplaceNavigation';
+import { navigateRootStack, rootStackNavigationFrom } from '@/utils/navigation/rootStackNavigation';
 
 type MenuItem = {
   id: string;
@@ -17,7 +18,7 @@ type MenuItem = {
 };
 
 export const useMenuItems = (navigation: any): MenuItem[] => {
-  const rootNavigation = navigation.getParent() ?? navigation;
+  const rootNavigation = rootStackNavigationFrom(navigation) ?? navigation;
   const { t } = useTranslation();
   const shopLabel = t('community.solutions');
   const { isEnabled: isChatEnabled } = useFeatureFlag(FEATURE_FLAGS.CHAT_ENABLED);
@@ -30,7 +31,7 @@ export const useMenuItems = (navigation: any): MenuItem[] => {
         iconImage: HOME_MVP_ASSETS.navActivities,
         label: 'Atividades',
         fullLabel: 'Atividades',
-        onPress: () => rootNavigation.navigate('Activities' as never),
+        onPress: () => navigateRootStack(rootNavigation, 'Activities'),
       },
       {
         id: 'community',
@@ -57,7 +58,7 @@ export const useMenuItems = (navigation: any): MenuItem[] => {
         iconImage: HOME_MVP_ASSETS.navChat,
         label: 'Chat',
         fullLabel: 'Chat',
-        onPress: () => rootNavigation.navigate('Chat' as never),
+        onPress: () => navigateRootStack(rootNavigation, 'Chat'),
       });
     }
 

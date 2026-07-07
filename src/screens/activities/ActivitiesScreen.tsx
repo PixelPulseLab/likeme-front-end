@@ -32,6 +32,7 @@ import { useAnalyticsScreen } from '@/analytics';
 import { logger } from '@/utils/logger';
 import { formatOrderDisplayId } from '@/utils/marketplace/orderDisplayId';
 import { navigateToOrderDetail } from '@/utils/navigation/activitiesNavigation';
+import { navigateRootStack, rootStackNavigationFrom } from '@/utils/navigation/rootStackNavigation';
 import { orderCardStatusPresentation, orderCardTitle } from '@/utils/marketplace/orderStatusDisplay';
 import { navigateToProductDetailsScreen } from '@/utils/navigation/productNavigation';
 import { styles } from './styles';
@@ -56,7 +57,7 @@ import type { UserActivity } from '@/types/activity';
 const ActivitiesScreen: React.FC<ActivitiesScreenProps> = ({ navigation, route }) => {
   useAnalyticsScreen({ screenName: 'Activities', screenClass: 'ActivitiesScreen' });
   const { t } = useTranslation();
-  const rootNavigation = navigation.getParent() ?? navigation;
+  const rootNavigation = rootStackNavigationFrom(navigation) ?? navigation;
   const [activeTab, setActiveTab] = useState<TabType>(route?.params?.initialTab ?? 'actives');
   const [selectedFilter, setSelectedFilter] = useState<FilterType>(route?.params?.initialFilter ?? 'all');
   const [showFestivalBanner, setShowFestivalBanner] = useState(true);
@@ -436,7 +437,7 @@ const ActivitiesScreen: React.FC<ActivitiesScreenProps> = ({ navigation, route }
   };
 
   const handleCartPress = () => {
-    rootNavigation.navigate('Cart' as never);
+    navigateRootStack(rootNavigation, 'Cart');
   };
 
   const handleMarkAsDone = async (activityId: string) => {

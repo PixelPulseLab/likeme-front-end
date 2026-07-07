@@ -35,6 +35,7 @@ import { PRODUCT_CATALOG_TYPE } from '@/types/product';
 import { useAnalyticsScreen } from '@/analytics';
 import { getCommunityStackNavigator } from '@/navigation/rootStackScreenLoaders';
 import { navigateToCommunity } from '@/utils/navigation/communityNavigation';
+import { navigateRootStack, rootStackNavigationFrom } from '@/utils/navigation/rootStackNavigation';
 import {
   navigateToProviderProfile,
   navigateToMarketplace,
@@ -56,7 +57,7 @@ const SummaryScreen: React.FC<Props> = ({ navigation }) => {
   useAnalyticsScreen({ screenName: 'Summary', screenClass: 'SummaryScreen' });
   const { t } = useTranslation();
   const { marketplaceCarouselOptions } = useSolutions();
-  const rootNavigation = navigation.getParent() ?? navigation;
+  const rootNavigation = rootStackNavigationFrom(navigation) ?? navigation;
   const hasSessionToken = useSessionTokenReady();
   const [userAvatarUri, setUserAvatarUri] = useState<string | null>(null);
   const [isProfileMenuVisible, setIsProfileMenuVisible] = useState(false);
@@ -91,7 +92,7 @@ const SummaryScreen: React.FC<Props> = ({ navigation }) => {
   }, [hasSessionToken]);
 
   const handleCartPress = () => {
-    rootNavigation.navigate('Cart' as never);
+    navigateRootStack(rootNavigation, 'Cart');
   };
 
   const handleMenuPress = () => {

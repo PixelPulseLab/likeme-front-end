@@ -1,30 +1,21 @@
 import { SHARE_DEEP_LINK_HOME_SCREEN } from '@/constants/share';
+import { navigateRootStack, rootStackNavigationFrom, type NavWithParent } from '@/utils/navigation/rootStackNavigation';
 
-type NavWithParent = {
-  getParent?: () => NavWithParent | undefined;
-  navigate?: (screen: string) => void;
+type ShareNav = NavWithParent & {
   canGoBack?: () => boolean;
   goBack?: () => void;
 };
 
-function rootNavigationFrom(navigation: NavWithParent): NavWithParent {
-  let root = navigation;
-  while (root.getParent?.()) {
-    root = root.getParent() as NavWithParent;
-  }
-  return root;
-}
-
-export function navigateToShareHome(navigation: NavWithParent | undefined): void {
+export function navigateToShareHome(navigation: ShareNav | undefined): void {
   if (!navigation) {
     return;
   }
 
-  rootNavigationFrom(navigation).navigate?.(SHARE_DEEP_LINK_HOME_SCREEN);
+  navigateRootStack(navigation, SHARE_DEEP_LINK_HOME_SCREEN);
 }
 
 /** Volta na pilha quando houver histórico; senão abre a home (entrada via deep link). */
-export function goBackOrShareHome(navigation: NavWithParent | undefined): void {
+export function goBackOrShareHome(navigation: ShareNav | undefined): void {
   if (!navigation) {
     return;
   }
@@ -34,7 +25,7 @@ export function goBackOrShareHome(navigation: NavWithParent | undefined): void {
     return;
   }
 
-  const root = rootNavigationFrom(navigation);
+  const root = rootStackNavigationFrom(navigation);
   if (root !== navigation && root.canGoBack?.()) {
     root.goBack?.();
     return;
