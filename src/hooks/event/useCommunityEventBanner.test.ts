@@ -3,6 +3,7 @@ import { Alert, Linking } from 'react-native';
 import { useCommunityEventBanner } from '@/hooks/event/useCommunityEventBanner';
 import { useEventList } from '@/hooks/event/useEventList';
 import { eventService } from '@/services';
+import { prefetchActivityList } from '@/utils/activity/activityListCache';
 import { navigateToActivitiesActives } from '@/utils/navigation/activitiesNavigation';
 import { navigateToProductDetailsScreen } from '@/utils/navigation/productNavigation';
 
@@ -20,6 +21,10 @@ jest.mock('@/hooks/i18n', () => ({
   useTranslation: () => ({
     t: (key: string) => key,
   }),
+}));
+
+jest.mock('@/utils/activity/activityListCache', () => ({
+  prefetchActivityList: jest.fn().mockResolvedValue([]),
 }));
 
 jest.mock('@/utils/navigation/activitiesNavigation', () => ({
@@ -141,6 +146,7 @@ describe('useCommunityEventBanner', () => {
       communityId: 'community-1',
     });
     expect(refreshEventsMock).toHaveBeenCalled();
+    expect(prefetchActivityList).toHaveBeenCalledWith(false);
     expect(navigateToActivitiesActives).toHaveBeenCalledWith(navigation);
     expect(Alert.alert).not.toHaveBeenCalled();
   });
