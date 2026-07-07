@@ -438,6 +438,15 @@ describe('ActivitiesScreen', () => {
       });
     });
 
+    it('dispara uma única carga inicial ao montar', async () => {
+      renderWithProvider(<ActivitiesScreen navigation={mockNavigation} />);
+
+      await waitFor(() => {
+        expect(mockLoadActivities).toHaveBeenCalledTimes(1);
+        expect(mockLoadActivities).toHaveBeenCalledWith(false);
+      });
+    });
+
     it('displays activity cards', async () => {
       const { getByText } = renderWithProvider(<ActivitiesScreen navigation={mockNavigation} />);
 

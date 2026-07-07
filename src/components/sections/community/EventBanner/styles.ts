@@ -126,13 +126,6 @@ export const styles = StyleSheet.create({
     letterSpacing: 0.2,
     lineHeight: 14,
   },
-  host: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: '#001137',
-    letterSpacing: 0.2,
-    lineHeight: 12,
-  },
   timeContainer: {
     flexDirection: 'row',
     alignItems: 'center',

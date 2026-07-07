@@ -1,8 +1,21 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
-import { activityService } from '@/services';
 import type { UserActivity } from '@/types/activity';
 import type { ActivityItem, UseActivitiesOptions, UseActivitiesReturn } from '@/types/activity/hooks';
+import {
+  fetchActivityList,
+  readCachedActivityList,
+  shouldSkipActivityListFetch,
+} from '@/utils/activity/activityListCache';
+import { userActivitiesToItems } from '@/utils/activity/userActivityToItem';
 import { logger } from '@/utils/logger';
+
+export type LoadActivitiesOptions = {
+  silent?: boolean;
+};
+
+function initialRawActivities(includeDeleted: boolean): UserActivity[] {
+  return readCachedActivityList(includeDeleted) ?? [];
+}
 
 /**
  * Hook para gerenciar activities
@@ -12,9 +25,11 @@ import { logger } from '@/utils/logger';
 export const useActivities = (options: UseActivitiesOptions = {}): UseActivitiesReturn => {
   const { enabled = true, includeDeleted: defaultIncludeDeleted = false, autoLoad = true } = options;
 
-  const [activities, setActivities] = useState<ActivityItem[]>([]);
-  const [rawActivities, setRawActivities] = useState<UserActivity[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [activities, setActivities] = useState<ActivityItem[]>(() =>
+    userActivitiesToItems(initialRawActivities(defaultIncludeDeleted)),
+  );
+  const [rawActivities, setRawActivities] = useState<UserActivity[]>(() => initialRawActivities(defaultIncludeDeleted));
+  const [loading, setLoading] = useState(() => initialRawActivities(defaultIncludeDeleted).length === 0);
   const [error, setError] = useState<string | null>(null);
 
   /**
@@ -59,129 +74,59 @@ export const useActivities = (options: UseActivitiesOptions = {}): UseActivities
     );
   }, []);
 
-  /**
-   * Converte UserActivity do backend para ActivityItem do frontend
-   */
-  const convertActivityToItem = useCallback(
-    (activity: UserActivity): ActivityItem => {
-      let dateTime: string | undefined;
-      if (activity.startDate) {
-        // Parsear a data como local (não UTC) para evitar problemas de timezone
-        // O backend retorna como ISO string (UTC), precisamos extrair apenas a data
-        const dateStr = activity.startDate;
-        let date: Date;
-
-        // Extrair apenas a parte da data (YYYY-MM-DD) da string ISO
-        const dateOnly = dateStr.split('T')[0];
-        if (/^\d{4}-\d{2}-\d{2}$/.test(dateOnly)) {
-          // Formato YYYY-MM-DD - criar como data local para preservar o dia correto
-          const [year, month, day] = dateOnly.split('-').map(Number);
-          date = new Date(year, month - 1, day);
-        } else {
-          // Outro formato - usar new Date normalmente
-          date = new Date(activity.startDate);
-        }
-        const formattedDate = formatDate(date);
-        if (activity.startTime) {
-          dateTime = `${formattedDate} at ${activity.startTime}`;
-        } else {
-          dateTime = formattedDate;
-        }
-      }
-
-      const linkedDescription = activity.description ?? '';
-      const description = linkedDescription.startsWith('community_event:')
-        ? activity.location ?? ''
-        : linkedDescription || activity.location || '';
-      const isCompleted = activity.deletedAt !== null && description.startsWith('[COMPLETED]');
-      const isDeclined = activity.deletedAt !== null && !isCompleted;
-
-      // Verificar se location contém uma URL válida (link do meet)
-      const isUrl = (str: string | null | undefined): boolean => {
-        if (!str) return false;
-        return (
-          str.startsWith('http://') ||
-          str.startsWith('https://') ||
-          str.startsWith('www.') ||
-          str.startsWith('meet.google')
-        );
-      };
-
-      const meetUrl = activity.location && isUrl(activity.location) ? activity.location : undefined;
-      const providerName =
-        activity.location?.includes('Meet') && !isUrl(activity.location)
-          ? activity.location.replace('Meet with ', '')
-          : undefined;
-
-      return {
-        id: activity.id,
-        type: activity.type === 'task' ? 'personal' : activity.type === 'event' ? 'appointment' : 'program',
-        title: activity.name,
-        description: description.replace(/^\[COMPLETED\]/, ''), // Remover marcador da descrição exibida
-        dateTime,
-        providerName,
-        providerAvatar: providerName ? providerName.charAt(0) : undefined,
-        completed: activity.deletedAt !== null,
-        declined: isDeclined,
-        isFavorite: false,
-        meetUrl,
-      };
-    },
-    [formatDate],
-  );
+  const applyActivityList = useCallback((list: UserActivity[]) => {
+    setRawActivities(list);
+    setActivities(userActivitiesToItems(list));
+  }, []);
 
   /**
    * Carrega activities do backend
    */
   const loadActivities = useCallback(
-    async (includeDeleted: boolean = defaultIncludeDeleted) => {
+    async (includeDeleted: boolean = defaultIncludeDeleted, loadOptions?: LoadActivitiesOptions) => {
       if (!enabled) {
         return;
       }
 
+      const silent = loadOptions?.silent === true;
+      const hasCachedData = readCachedActivityList(includeDeleted) != null;
+
       try {
-        setLoading(true);
+        if (!silent && !hasCachedData) {
+          setLoading(true);
+        }
         setError(null);
 
-        const response = await activityService.listActivities({
-          page: 1,
-          limit: 100,
-          includeDeleted,
-        });
-
-        // TypeScript workaround: response pode ter estrutura variável
-        const responseTyped = response as any;
-        const isSuccess = responseTyped.success === true;
-        const responseData = responseTyped.data;
-        const activitiesList = responseData?.activities || [];
-
-        if (isSuccess && activitiesList.length > 0) {
-          // Armazenar dados originais
-          setRawActivities(activitiesList);
-
-          // Converter UserActivity para ActivityItem
-          const convertedActivities: ActivityItem[] = activitiesList.map(convertActivityToItem);
-          setActivities(convertedActivities);
-
-          logger.debug('Activities loaded:', {
-            count: convertedActivities.length,
-            includeDeleted,
-          });
-        } else {
-          setActivities([]);
-          setRawActivities([]);
+        if (silent && shouldSkipActivityListFetch(includeDeleted)) {
+          const cachedList = readCachedActivityList(includeDeleted);
+          if (cachedList) {
+            applyActivityList(cachedList);
+            setLoading(false);
+            return;
+          }
         }
+
+        const activitiesList = await fetchActivityList(includeDeleted);
+        applyActivityList(activitiesList);
+
+        logger.debug('Activities loaded:', {
+          count: activitiesList.length,
+          includeDeleted,
+          silent,
+        });
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'Erro ao carregar atividades';
         setError(errorMessage);
-        setActivities([]);
-        setRawActivities([]);
+        if (!hasCachedData) {
+          setActivities([]);
+          setRawActivities([]);
+        }
         logger.error('Error loading activities:', err);
       } finally {
         setLoading(false);
       }
     },
-    [enabled, defaultIncludeDeleted, convertActivityToItem],
+    [applyActivityList, defaultIncludeDeleted, enabled],
   );
 
   /**

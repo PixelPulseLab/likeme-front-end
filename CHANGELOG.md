@@ -188,3 +188,12 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 - Card de evento da comunidade com textos do Figma e data no rodapé (APP-344)
 - Menu inferior ao abrir post compartilhado (APP-349)
 - Navegação pelo menu após deep link na PDP e demais telas compartilhadas (APP-350)
+
+## [1.9.3] - 2026-07-07
+
+### Alterado
+- Lista de atividades recarrega mais rápido ao voltar de outras telas
+
+### Corrigido
+- Atividades aparecem logo após criar lembrete de evento da comunidade (APP-344)
+- Banner de evento sem subtítulo duplicado abaixo do título

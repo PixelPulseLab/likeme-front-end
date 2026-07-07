@@ -6,6 +6,8 @@ import { logger } from '@/utils/logger';
 import { effectiveJoinMode } from '@/utils/event/effectiveJoinMode';
 import { applyCommunityEventBannerPresentation } from '@/utils/event/applyCommunityEventBannerPresentation';
 import { useEventList } from '@/hooks/event/useEventList';
+import { navigateToActivitiesActives } from '@/utils/navigation/activitiesNavigation';
+import { prefetchActivityList } from '@/utils/activity/activityListCache';
 import { navigateToProductDetailsScreen } from '@/utils/navigation/productNavigation';
 import { useTranslation } from '@/hooks/i18n';
 import type { EventBannerData } from '@/types/event';
@@ -182,8 +184,15 @@ export function useCommunityEventBanner(options: UseCommunityEventBannerOptions 
             return;
           }
 
-          await refreshReminderState();
-          Alert.alert(t('community.eventBanner.reminderCreatedTitle'), t('community.eventBanner.reminderCreatedBody'));
+          await Promise.all([refreshReminderState(), prefetchActivityList(false)]);
+          if (navigation) {
+            navigateToActivitiesActives(navigation);
+          } else {
+            Alert.alert(
+              t('community.eventBanner.reminderCreatedTitle'),
+              t('community.eventBanner.reminderCreatedBody'),
+            );
+          }
         } catch (error) {
           logger.error('[useCommunityEventBanner] Falha ao registrar lembrete do evento', {
             eventId: bannerData.id,

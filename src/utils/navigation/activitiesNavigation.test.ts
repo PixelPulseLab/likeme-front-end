@@ -1,4 +1,13 @@
-import { navigateToActivitiesOrders, navigateToOrderDetail } from './activitiesNavigation';
+import { navigateToActivitiesActives, navigateToActivitiesOrders, navigateToOrderDetail } from './activitiesNavigation';
+
+describe('navigateToActivitiesActives', () => {
+  it('navega para Activities na aba de ativos', () => {
+    const navigate = jest.fn();
+    navigateToActivitiesActives({ navigate });
+
+    expect(navigate).toHaveBeenCalledWith('Activities', { initialTab: 'actives' });
+  });
+});
 
 describe('navigateToActivitiesOrders', () => {
   it('navega para Activities com filtro de pedidos no navigator raiz', () => {

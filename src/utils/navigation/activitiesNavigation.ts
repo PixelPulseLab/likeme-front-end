@@ -5,6 +5,10 @@ type Navigation = {
   navigate: (screen: string, params?: unknown) => void;
 };
 
+export function navigateToActivitiesActives(navigation: Navigation): void {
+  navigateRootStack(navigation, 'Activities', { initialTab: 'actives' });
+}
+
 export function navigateToActivitiesOrders(navigation: Navigation): void {
   navigateRootStack(navigation, 'Activities', { initialTab: 'history', initialFilter: 'orders' });
 }

@@ -36,7 +36,7 @@ export interface UseActivitiesReturn {
   error: string | null;
   historyActivities: ActivityItem[];
   activeActivities: ActivityItem[];
-  loadActivities: (includeDeleted?: boolean) => Promise<void>;
+  loadActivities: (includeDeleted?: boolean, options?: { silent?: boolean }) => Promise<void>;
   refresh: () => Promise<void>;
   formatDate: (date: Date) => string;
   parseTimeString: (timeString: string, baseDate: Date) => Date;

@@ -1,21 +1,19 @@
 {
-  "version": "1.9.2",
+  "version": "1.9.3",
   "releasedAt": "2026-07-07",
   "android": {
-    "versionCode": 247
+    "versionCode": 248
   },
   "ios": {
-    "buildNumber": 23
+    "buildNumber": 24
   },
   "changelog": {
     "changed": [
-      "Ícones de contato alinhados na PDP de serviço (APP-278)"
+      "Lista de atividades recarrega mais rápido ao voltar de outras telas"
     ],
     "fixed": [
-      "Menu inferior e voltar após abrir link compartilhado",
-      "Card de evento da comunidade com textos do Figma e data no rodapé (APP-344)",
-      "Menu inferior ao abrir post compartilhado (APP-349)",
-      "Navegação pelo menu após deep link na PDP e demais telas compartilhadas (APP-350)"
+      "Atividades aparecem logo após criar lembrete de evento da comunidade (APP-344)",
+      "Banner de evento sem subtítulo duplicado abaixo do título"
     ]
   }
 }

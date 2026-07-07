@@ -41,20 +41,6 @@ function ctaLabelKey(variant: EventBannerVariant | undefined): string {
   }
 }
 
-function subtitleKey(variant: EventBannerVariant | undefined): string {
-  switch (variant) {
-    case 'purchase':
-      return 'community.eventBanner.purchaseSubtitle';
-    case 'reminder':
-    case 'reminder_created':
-      return 'community.eventBanner.reminderSubtitle';
-    case 'live_join':
-      return 'community.eventBanner.liveStartedSubtitle';
-    default:
-      return 'community.eventBanner.withHost';
-  }
-}
-
 const EventBanner: React.FC<Props> = ({ event, onPress }) => {
   const { t } = useTranslation();
   const isImageUri = typeof event.thumbnail === 'string';
@@ -62,7 +48,6 @@ const EventBanner: React.FC<Props> = ({ event, onPress }) => {
     formatEventScheduleLabel(event.startTime, event.endTime) || t('community.eventBanner.todayFallback');
   const variant = event.variant;
   const ctaDisabled = variant === 'reminder_created';
-  const subtitle = t(subtitleKey(variant), { host: event.host });
   const title = variant === 'live_join' ? t(titleKey(variant)) : `${t(titleKey(variant))} ${event.title}`.trim();
 
   return (
@@ -95,7 +80,6 @@ const EventBanner: React.FC<Props> = ({ event, onPress }) => {
               <Text style={styles.title} numberOfLines={2}>
                 {title}
               </Text>
-              {variant !== 'live_join' ? <Text style={styles.host}>{subtitle}</Text> : null}
             </View>
           </View>
           <View style={styles.timeContainer}>

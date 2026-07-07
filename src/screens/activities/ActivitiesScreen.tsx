@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect, useCallback } from 'react';
+import React, { useMemo, useState, useEffect, useCallback, useRef } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Modal, Alert, Linking } from 'react-native';
 import { CachedImage } from '@/components/ui/media/CachedImage';
 import { useFocusEffect } from '@react-navigation/native';
@@ -72,6 +72,7 @@ const ActivitiesScreen: React.FC<ActivitiesScreenProps> = ({ navigation, route }
   const [_hasCompletedAnamnesis, setHasCompletedAnamnesis] = useState<boolean>(false);
   const [isProfileMenuVisible, setIsProfileMenuVisible] = useState(false);
   const [userAvatarUri, setUserAvatarUri] = useState<string | null>(null);
+  const hasFocusedOnceRef = useRef(false);
 
   // Usar o hook useActivities
   const {
@@ -107,6 +108,25 @@ const ActivitiesScreen: React.FC<ActivitiesScreenProps> = ({ navigation, route }
     setIsCreateActivityModalVisible(true);
   }, []);
 
+  const loadOrders = useCallback(async (options?: { silent?: boolean }) => {
+    try {
+      if (!options?.silent) {
+        setIsLoadingOrders(true);
+      }
+      const response = await orderService.listOrders({
+        page: 1,
+        limit: 50,
+      });
+      if (response.success && response.data?.orders) {
+        setOrders(response.data.orders);
+      }
+    } catch (error) {
+      logger.error('Error loading orders:', error);
+    } finally {
+      setIsLoadingOrders(false);
+    }
+  }, []);
+
   useEffect(() => {
     // Incluir atividades deletadas (skipadas) quando estiver na aba de histórico
     const includeDeleted = activeTab === 'history';
@@ -115,9 +135,23 @@ const ActivitiesScreen: React.FC<ActivitiesScreenProps> = ({ navigation, route }
 
   useEffect(() => {
     if (activeTab === 'history') {
-      loadOrders();
+      void loadOrders();
     }
-  }, [activeTab]);
+  }, [activeTab, loadOrders]);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!hasFocusedOnceRef.current) {
+        hasFocusedOnceRef.current = true;
+        return;
+      }
+
+      void loadActivities(activeTab === 'history', { silent: true });
+      if (activeTab === 'history') {
+        void loadOrders({ silent: orders.length > 0 });
+      }
+    }, [activeTab, loadActivities, loadOrders, orders.length]),
+  );
 
   useFocusEffect(
     useCallback(() => {
@@ -391,23 +425,6 @@ const ActivitiesScreen: React.FC<ActivitiesScreenProps> = ({ navigation, route }
     } catch (error) {
       logger.error('Error parsing date and time:', error);
       return { date: t('activities.today'), time: '' };
-    }
-  };
-
-  const loadOrders = async () => {
-    try {
-      setIsLoadingOrders(true);
-      const response = await orderService.listOrders({
-        page: 1,
-        limit: 50,
-      });
-      if (response.success && response.data?.orders) {
-        setOrders(response.data.orders);
-      }
-    } catch (error) {
-      logger.error('Error loading orders:', error);
-    } finally {
-      setIsLoadingOrders(false);
     }
   };
 
