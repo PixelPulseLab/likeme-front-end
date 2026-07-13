@@ -126,30 +126,30 @@ const ProfileFloatingMenu: React.FC<Props> = ({ visible, navigation, onClose }) 
     () => [
       {
         key: 'my-profile',
-        label: 'Meu Perfil',
+        label: t('profile.floatingMenu.myProfile', { defaultValue: 'Meu Perfil' }),
         IconComponent: PROFILE_FLOATING_MENU_ICONS.myProfile,
         onPress: handleGoToUserProfile,
       },
       {
         key: 'my-orders',
-        label: 'Meus Pedidos',
+        label: t('profile.floatingMenu.myOrders', { defaultValue: 'Meus Pedidos' }),
         IconComponent: PROFILE_FLOATING_MENU_ICONS.myOrders,
         onPress: handleGoToOrders,
       },
       {
         key: 'my-protocols',
-        label: 'Meus Protocolos e Serviços',
+        label: t('profile.acquisitionList.menuLabel', { defaultValue: 'Meus Programas e Serviços' }),
         IconComponent: PROFILE_FLOATING_MENU_ICONS.myProtocols,
         onPress: handleGoToSubscriptions,
       },
       {
         key: 'my-activities',
-        label: 'Minhas Atividades',
+        label: t('profile.floatingMenu.myActivities', { defaultValue: 'Minhas Atividades' }),
         IconComponent: PROFILE_FLOATING_MENU_ICONS.myActivities,
         onPress: handleGoToActivities,
       },
     ],
-    [handleGoToActivities, handleGoToOrders, handleGoToSubscriptions, handleGoToUserProfile],
+    [handleGoToActivities, handleGoToOrders, handleGoToSubscriptions, handleGoToUserProfile, t],
   );
 
   const userName = useMemo(() => user?.name?.trim() || user?.nickname?.trim() || 'Usuário', [user]);

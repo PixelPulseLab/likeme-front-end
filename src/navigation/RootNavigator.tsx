@@ -12,6 +12,7 @@ import { STACK_GESTURE_ENABLED, fastFadeTransition, forSimpleFade } from '@/navi
 import PushNotificationsRoot from '@/components/infrastructure/PushNotificationsRoot';
 import DeepLinkRoot from '@/components/infrastructure/DeepLinkRoot';
 import { COLORS } from '@/constants';
+import { useTranslation } from '@/hooks/i18n';
 import {
   getLoadingScreen,
   getForcedUpdateScreen,
@@ -73,6 +74,7 @@ const styles = StyleSheet.create({
 });
 
 const RootNavigator: React.FC = () => {
+  const { t } = useTranslation();
   const navigationRef = useNavigationContainerRef<RootStackParamList>();
   const [activeRouteName, setActiveRouteName] = useState<string | undefined>(undefined);
 
@@ -214,7 +216,9 @@ const RootNavigator: React.FC = () => {
                     <Stack.Screen
                       name='UserProfileHome'
                       getComponent={getUserProfileHomeScreen}
-                      options={{ title: 'Meu Perfil' }}
+                      options={{
+                        title: t('profile.floatingMenu.myProfile', { defaultValue: 'Meu Perfil' }),
+                      }}
                     />
                     <Stack.Screen
                       name='InterestCategoriesEdit'
@@ -234,7 +238,9 @@ const RootNavigator: React.FC = () => {
                     <Stack.Screen
                       name='SubscriptionList'
                       getComponent={getSubscriptionListScreen}
-                      options={{ title: 'Meus Protocolos e Serviços' }}
+                      options={{
+                        title: t('profile.acquisitionList.title', { defaultValue: 'Meus Programas e Serviços' }),
+                      }}
                     />
                     <Stack.Screen
                       name='PrivacyPolicies'

@@ -142,7 +142,9 @@ const SubscriptionListScreen: React.FC<Props> = ({ navigation }) => {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps='handled'
       >
-        <Text style={styles.screenTitle}>Meus Protocolos e Serviços</Text>
+        <Text style={styles.screenTitle}>
+          {t('profile.acquisitionList.title', { defaultValue: 'Meus Programas e Serviços' })}
+        </Text>
 
         {!isFullyEmpty && (
           <View style={styles.searchWrap}>
