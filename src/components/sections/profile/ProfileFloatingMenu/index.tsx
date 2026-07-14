@@ -1,15 +1,14 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Alert, Linking, Modal, Pressable, Text, TouchableOpacity, View } from 'react-native';
+import { Modal, Pressable, Text, TouchableOpacity, View } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import type { SvgProps } from 'react-native-svg';
 import { PrimaryButton } from '@/components/ui/buttons';
 import { CachedImage } from '@/components/ui/media/CachedImage';
-import { AuthService, storageService, userService } from '@/services';
+import { storageService } from '@/services';
 import { useTranslation } from '@/hooks/i18n';
 import type { StoredUser } from '@/types/auth';
 import { PROFILE_FLOATING_MENU_ICONS, PROFILE_MENU_CHEVRON_SIZE, PROFILE_MENU_ICON_SIZE } from '@/assets/profile';
-import { COLORS, SPACING } from '@/constants';
-import { ACCOUNT_CONFIG } from '@/config/environment';
+import { COLORS } from '@/constants';
 import { logger } from '@/utils/logger';
 import { navigateToActivitiesOrders } from '@/utils/navigation/activitiesNavigation';
 import { navigateRootStack, rootStackNavigationFrom } from '@/utils/navigation/rootStackNavigation';
@@ -33,7 +32,6 @@ const ProfileFloatingMenu: React.FC<Props> = ({ visible, navigation, onClose }) 
   const rootNavigation = rootStackNavigationFrom(navigation) ?? navigation;
   const [user, setUser] = useState<StoredUser | null>(null);
   const [loading, setLoading] = useState(true);
-  const [deletingAccount, setDeletingAccount] = useState(false);
 
   useEffect(() => {
     if (!visible) return;
@@ -59,48 +57,6 @@ const ProfileFloatingMenu: React.FC<Props> = ({ visible, navigation, onClose }) 
       routes: [{ name: 'Unauthenticated' as never }],
     });
   };
-
-  const runDeleteAccount = useCallback(async () => {
-    setDeletingAccount(true);
-    try {
-      await userService.deleteMyAccount();
-      await AuthService.logout();
-      rootNavigation.reset({
-        index: 0,
-        routes: [{ name: 'Unauthenticated' as never }],
-      });
-    } catch (error) {
-      logger.error('Falha ao eliminar conta', { cause: error });
-      const message = error instanceof Error ? error.message : t('profile.deleteAccountError');
-      Alert.alert(t('profile.deleteAccountConfirmTitle'), message);
-    } finally {
-      setDeletingAccount(false);
-    }
-  }, [rootNavigation, t]);
-
-  const handleDeleteAccountPress = useCallback(() => {
-    Alert.alert(t('profile.deleteAccountConfirmTitle'), t('profile.deleteAccountConfirmMessage'), [
-      { text: t('profile.deleteAccountCancel'), style: 'cancel' },
-      {
-        text: t('profile.deleteAccountConfirmButton'),
-        style: 'destructive',
-        onPress: () => {
-          void runDeleteAccount();
-        },
-      },
-    ]);
-  }, [runDeleteAccount, t]);
-
-  const handleOpenDeletionWebUrl = useCallback(async () => {
-    const url = ACCOUNT_CONFIG.deletionWebUrl;
-    if (!url) return;
-    try {
-      await Linking.openURL(url);
-    } catch (error) {
-      logger.error('Falha ao abrir URL de exclusão de conta', { url, cause: error });
-      Alert.alert(t('profile.deleteAccountConfirmTitle'), t('profile.deleteAccountError'));
-    }
-  }, [t]);
 
   const handleGoToSubscriptions = useCallback(() => {
     onClose();
@@ -208,23 +164,6 @@ const ProfileFloatingMenu: React.FC<Props> = ({ visible, navigation, onClose }) 
 
             <View style={styles.bottomButtons}>
               <PrimaryButton label='Logout' onPress={handleLogout} size='large' />
-              <Text
-                onPress={handleDeleteAccountPress}
-                accessibilityRole='button'
-                style={styles.deleteAccountLink}
-                testID='profile-delete-account'
-              >
-                {deletingAccount ? t('profile.loading') : 'Encerrar a conta'}
-              </Text>
-              {ACCOUNT_CONFIG.deletionWebUrl ? (
-                <Text
-                  onPress={() => void handleOpenDeletionWebUrl()}
-                  accessibilityRole='link'
-                  style={styles.webDeletionLinkText}
-                >
-                  {t('profile.deleteAccountWebLinkLabel')}
-                </Text>
-              ) : null}
             </View>
           </View>
         </View>

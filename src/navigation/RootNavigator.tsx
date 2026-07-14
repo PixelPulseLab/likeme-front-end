@@ -45,6 +45,7 @@ import {
   getUserProfileHomeScreen,
   getInterestCategoriesEditScreen,
   getPersonalDataEditScreen,
+  getSettingsAndSecurityScreen,
   getProtocolDetailScreen,
   getSubscriptionListScreen,
   getPrivacyPoliciesScreen,
@@ -229,6 +230,15 @@ const RootNavigator: React.FC = () => {
                       name='PersonalDataEdit'
                       getComponent={getPersonalDataEditScreen}
                       options={{ title: 'Dados Pessoais' }}
+                    />
+                    <Stack.Screen
+                      name='SettingsAndSecurity'
+                      getComponent={getSettingsAndSecurityScreen}
+                      options={{
+                        title: t('profile.settingsAndSecurity.title', {
+                          defaultValue: 'Configurações e segurança',
+                        }),
+                      }}
                     />
                     <Stack.Screen
                       name='ProtocolDetail'

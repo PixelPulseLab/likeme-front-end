@@ -117,19 +117,4 @@ export const styles = StyleSheet.create({
     gap: SPACING.SM,
     width: '100%',
   },
-  deleteAccountLink: {
-    fontSize: 14,
-    lineHeight: 22,
-    color: COLORS.TEXT_LIGHT,
-    textAlign: 'center',
-    fontFamily: 'DM Sans',
-    fontWeight: '500',
-  },
-  webDeletionLinkText: {
-    fontSize: 12,
-    color: COLORS.TEXT_LIGHT,
-    textAlign: 'center',
-    textDecorationLine: 'underline',
-    fontFamily: 'DM Sans',
-  },
 });

@@ -181,6 +181,12 @@ export const styles = StyleSheet.create({
     color: COLORS.TEXT,
     flexShrink: 1,
   },
+  menuItemDisabled: {
+    opacity: 0.45,
+  },
+  menuItemLabelDisabled: {
+    color: COLORS.TEXT_LIGHT,
+  },
   separator: {
     height: 1,
     backgroundColor: COLORS.SECONDARY.MEDIUM,

@@ -1,5 +1,5 @@
 import React, { useCallback } from 'react';
-import { Alert, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import type { StackScreenProps } from '@react-navigation/stack';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import type { SvgProps } from 'react-native-svg';
@@ -26,8 +26,10 @@ type Props = StackScreenProps<RootStackParamList, 'UserProfileHome'>;
 type AccountMenuItem = {
   key: string;
   labelKey: string;
+  labelDefault: string;
   IconComponent: React.FC<SvgProps>;
-  onPress: () => void;
+  onPress?: () => void;
+  disabled?: boolean;
 };
 
 const UserProfileHomeScreen: React.FC<Props> = ({ navigation }) => {
@@ -56,38 +58,38 @@ const UserProfileHomeScreen: React.FC<Props> = ({ navigation }) => {
     navigation.navigate('InterestCategoriesEdit');
   }, [navigation]);
 
-  const handleDataUsagePolicyPress = useCallback(() => {
-    navigation.navigate('PrivacyPolicies');
+  const handleSettingsAndSecurityPress = useCallback(() => {
+    navigation.navigate('SettingsAndSecurity');
   }, [navigation]);
-
-  const handleAccountSettingsPress = useCallback(() => {
-    Alert.alert(t('common.error'), t('profile.home.accountSettingsUnavailable'));
-  }, [t]);
 
   const accountMenuItems: AccountMenuItem[] = [
     {
       key: 'personal-data',
       labelKey: 'profile.home.personalData',
+      labelDefault: 'Dados Pessoais',
       IconComponent: PROFILE_HOME_MENU_ICONS.personalData,
       onPress: handlePersonalDataPress,
     },
     {
       key: 'interest-categories',
       labelKey: 'profile.home.interestCategories',
+      labelDefault: 'Categorias de Interesse',
       IconComponent: PROFILE_HOME_MENU_ICONS.interestCategories,
       onPress: handleInterestCategoriesPress,
     },
     {
-      key: 'data-usage-policy',
-      labelKey: 'profile.home.dataUsagePolicy',
-      IconComponent: PROFILE_HOME_MENU_ICONS.dataUsagePolicy,
-      onPress: handleDataUsagePolicyPress,
+      key: 'notifications',
+      labelKey: 'profile.home.notifications',
+      labelDefault: 'Notificações',
+      IconComponent: PROFILE_HOME_MENU_ICONS.notifications,
+      disabled: true,
     },
     {
-      key: 'account-settings',
-      labelKey: 'profile.home.accountSettings',
-      IconComponent: PROFILE_HOME_MENU_ICONS.accountSettings,
-      onPress: handleAccountSettingsPress,
+      key: 'settings-and-security',
+      labelKey: 'profile.home.settingsAndSecurity',
+      labelDefault: 'Configurações e segurança',
+      IconComponent: PROFILE_HOME_MENU_ICONS.settingsAndSecurity,
+      onPress: handleSettingsAndSecurityPress,
     },
   ];
 
@@ -190,12 +192,21 @@ const UserProfileHomeScreen: React.FC<Props> = ({ navigation }) => {
           <View style={styles.menuList}>
             {accountMenuItems.map((item) => {
               const MenuIcon = item.IconComponent;
+              const isDisabled = Boolean(item.disabled);
               return (
-                <View key={item.key} style={styles.menuItemBlock}>
-                  <TouchableOpacity style={styles.menuItem} onPress={item.onPress} activeOpacity={0.7}>
+                <View key={item.key} style={[styles.menuItemBlock, isDisabled ? styles.menuItemDisabled : null]}>
+                  <TouchableOpacity
+                    style={styles.menuItem}
+                    onPress={item.onPress}
+                    activeOpacity={isDisabled ? 1 : 0.7}
+                    disabled={isDisabled}
+                    accessibilityState={{ disabled: isDisabled }}
+                  >
                     <View style={styles.menuItemLeft}>
                       <MenuIcon width={30} height={26} />
-                      <Text style={styles.menuItemLabel}>{t(item.labelKey)}</Text>
+                      <Text style={[styles.menuItemLabel, isDisabled ? styles.menuItemLabelDisabled : null]}>
+                        {t(item.labelKey, { defaultValue: item.labelDefault })}
+                      </Text>
                     </View>
                     <PROFILE_HOME_MENU_ICONS.chevronRight width={28} height={28} />
                   </TouchableOpacity>

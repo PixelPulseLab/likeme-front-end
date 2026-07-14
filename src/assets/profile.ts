@@ -8,7 +8,9 @@ import BodyAvatarActivePng from '../../assets/avatar/BodyAvatar.png';
 import MenuAccountSettingsIcon from '../../assets/profile/menu-account-settings.svg';
 import MenuChevronRightIconSvg from '../../assets/profile/menu-chevron-right.svg';
 import MenuDataUsagePolicyIcon from '../../assets/profile/menu-data-usage-policy.svg';
+import MenuDeleteAccountIcon from '../../assets/profile/menu-delete-account.svg';
 import MenuInterestCategoriesIcon from '../../assets/profile/menu-interest-categories.svg';
+import MenuNotificationsIcon from '../../assets/profile/menu-notifications.svg';
 import MenuPersonalDataIcon from '../../assets/profile/menu-personal-data.svg';
 import FloatingMenuCloseIcon from '../../assets/profile/floating-menu-close.svg';
 import FloatingMenuMyActivitiesIcon from '../../assets/profile/floating-menu-my-activities.svg';
@@ -28,8 +30,11 @@ export const MenuChevronRightIcon = MenuChevronRightIconSvg;
 export const PROFILE_HOME_MENU_ICONS = {
   personalData: MenuPersonalDataIcon,
   interestCategories: MenuInterestCategoriesIcon,
+  notifications: MenuNotificationsIcon,
+  settingsAndSecurity: MenuAccountSettingsIcon,
   dataUsagePolicy: MenuDataUsagePolicyIcon,
-  accountSettings: MenuAccountSettingsIcon,
+  termsOfUse: MenuDataUsagePolicyIcon,
+  deleteAccount: MenuDeleteAccountIcon,
   chevronRight: MenuChevronRightIconSvg,
 } as const satisfies Record<string, FC<SvgProps>>;
 
