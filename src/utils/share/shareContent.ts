@@ -4,6 +4,7 @@ import { SHARE_CONTENT_TYPES } from '@/constants/share';
 import { PRODUCT_CATALOG_TYPE, isProgramCatalogType } from '@/types/product';
 import { logger } from '@/utils/logger';
 import { buildShareUrl, type BuildShareUrlInput } from '@/utils/share/buildShareUrl';
+import { shareIntroMessageForContentType } from '@/utils/share/shareIntroMessage';
 
 export type ShareContentOptions = {
   screenName?: string;
@@ -60,17 +61,22 @@ function logShareEvent(
   });
 }
 
-function sharePayloadForUrl(url: string): { url: string } | { message: string } {
-  // iOS usa `url`; Android usa `message`. Enviar os dois com o mesmo valor duplica o link no share sheet.
-  return Platform.OS === 'ios' ? { url } : { message: url };
+function sharePayload(intro: string, url: string): { message: string; url?: string } {
+  if (Platform.OS === 'ios') {
+    // iOS: texto e URL separados evitam link duplicado no share sheet (APP-332).
+    return { message: intro, url };
+  }
+
+  return { message: `${intro}\n\n${url}` };
 }
 
 export async function shareContent(input: BuildShareUrlInput, options?: ShareContentOptions): Promise<void> {
   const url = buildShareUrl(input);
+  const intro = shareIntroMessageForContentType(input.contentType);
   logShareEvent(input, 'share_started', options);
 
   try {
-    const result = await Share.share(sharePayloadForUrl(url));
+    const result = await Share.share(sharePayload(intro, url));
     const completed = result.action === Share.sharedAction;
     logShareEvent(input, completed ? 'share_completed' : 'share_dismissed', options, completed);
   } catch (error) {

@@ -3,6 +3,11 @@ import { GA4_EVENTS, logEvent, ANALYTICS_PARAMS } from '@/analytics';
 import { SHARE_CONTENT_TYPES } from '@/constants/share';
 import { PRODUCT_CATALOG_TYPE } from '@/types/product';
 import { shareContent, shareInputForProduct } from '@/utils/share/shareContent';
+import { shareIntroMessageForContentType } from '@/utils/share/shareIntroMessage';
+
+jest.mock('@/utils/share/shareIntroMessage', () => ({
+  shareIntroMessageForContentType: jest.fn((contentType: string) => `intro:${contentType}`),
+}));
 
 jest.mock('@/analytics', () => ({
   GA4_EVENTS: { SHARE: 'share' },
@@ -55,7 +60,9 @@ describe('shareContent', () => {
       { screenName: 'post_details' },
     );
 
+    expect(shareIntroMessageForContentType).toHaveBeenCalledWith(SHARE_CONTENT_TYPES.COMMUNITY_POST);
     expect(Share.share).toHaveBeenCalledWith({
+      message: 'intro:community_post',
       url: 'https://share.example.com/post/post-1',
     });
     expect(logEvent).toHaveBeenNthCalledWith(1, GA4_EVENTS.SHARE, {
@@ -120,12 +127,12 @@ describe('shareContent', () => {
       { contentType: SHARE_CONTENT_TYPES.PROVIDER, providerId: 'prov-1' },
       'https://share.example.com/provider/prov-1',
     ],
-  ] as const)('abre share sheet para %s com URL correta', async (_label, input, expectedUrl) => {
+  ] as const)('abre share sheet para %s com mensagem e URL corretas', async (_label, input, expectedUrl) => {
     Platform.OS = 'android';
     await shareContent(input);
 
     expect(Share.share).toHaveBeenCalledWith({
-      message: expectedUrl,
+      message: `intro:${input.contentType}\n\n${expectedUrl}`,
     });
     expect(logEvent).toHaveBeenNthCalledWith(
       1,
