@@ -133,13 +133,15 @@ const ProtocolDetailScreen: React.FC<Props> = ({ navigation, route }) => {
     navigation,
   });
 
+  const [protocolAccessedAt, setProtocolAccessedAt] = useState(() => Date.now());
+
   const courseModules: ModuleItem[] = useMemo(() => {
     if (course?.steps?.length) {
-      return moduleItemsFromProgramCourse(course);
+      return moduleItemsFromProgramCourse(course, { now: new Date(protocolAccessedAt) });
     }
 
     return [];
-  }, [course]);
+  }, [course, protocolAccessedAt]);
 
   const aboutText = protocol?.description?.trim() || protocol?.shortDescription?.trim() || null;
 
@@ -183,6 +185,7 @@ const ProtocolDetailScreen: React.FC<Props> = ({ navigation, route }) => {
   useFocusEffect(
     useCallback(() => {
       setMenu(menuItems, 'profile');
+      setProtocolAccessedAt(Date.now());
     }, [menuItems, setMenu]),
   );
 

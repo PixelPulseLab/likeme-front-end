@@ -2,6 +2,7 @@ import type { ModuleItem } from '@/components/sections/program/ModuleAccordion';
 import type { ProgramCourse } from '@/types/course/course';
 import type { CommunityPost } from '@/types/community';
 import { mapCommunityPostToPost } from '@/utils/community/mappers';
+import { isProtocolStepAutoCompleted } from '@/utils/course/protocolStepAutoCompleted';
 
 function communityPostForStep(course: ProgramCourse, postId: string): CommunityPost | undefined {
   const fromPosts = course.posts?.find((post) => (post.postId ?? post._id) === postId);
@@ -55,7 +56,15 @@ function enrichCoursePostForStep(
   return { ...post, childrenPosts: Array.from(byId.values()) };
 }
 
-export function moduleItemsFromProgramCourse(course: ProgramCourse): ModuleItem[] {
+type ModuleItemsFromProgramCourseOptions = {
+  now?: Date;
+};
+
+export function moduleItemsFromProgramCourse(
+  course: ProgramCourse,
+  options?: ModuleItemsFromProgramCourseOptions,
+): ModuleItem[] {
+  const now = options?.now;
   const files = course.files;
   const postChildren = course.postChildren;
   const feedPosts = [...(course.posts ?? []), ...(course.postChildren ?? [])];
@@ -81,7 +90,7 @@ export function moduleItemsFromProgramCourse(course: ProgramCourse): ModuleItem[
     return {
       id: step.postId,
       title: step.title,
-      completed: false,
+      completed: isProtocolStepAutoCompleted(step.updatedAt, now),
       body: step.body,
       image,
       videoUrl,
