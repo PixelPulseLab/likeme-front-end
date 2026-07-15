@@ -37,6 +37,10 @@ class ActivityService {
         queryParams.endDate = params.endDate;
       }
 
+      if (params.scope) {
+        queryParams.scope = params.scope;
+      }
+
       if (params.includeDeleted !== undefined) {
         queryParams.includeDeleted = String(params.includeDeleted);
       }

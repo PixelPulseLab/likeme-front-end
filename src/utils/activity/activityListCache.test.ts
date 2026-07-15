@@ -46,7 +46,7 @@ describe('activityListCache', () => {
         }),
     );
 
-    const [first, second] = await Promise.all([fetchActivityList(false), fetchActivityList(false)]);
+    const [first, second] = await Promise.all([fetchActivityList('active'), fetchActivityList('active')]);
 
     expect(first).toEqual([baseActivity]);
     expect(second).toEqual([baseActivity]);
@@ -54,9 +54,9 @@ describe('activityListCache', () => {
   });
 
   it('reutiliza cache recente para refresh silencioso', () => {
-    writeActivityListCache(false, [baseActivity]);
+    writeActivityListCache('active', [baseActivity]);
 
-    expect(readCachedActivityList(false)).toEqual([baseActivity]);
-    expect(shouldSkipActivityListFetch(false)).toBe(true);
+    expect(readCachedActivityList('active')).toEqual([baseActivity]);
+    expect(shouldSkipActivityListFetch('active')).toBe(true);
   });
 });

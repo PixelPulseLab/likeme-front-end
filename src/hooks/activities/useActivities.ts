@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
-import type { UserActivity } from '@/types/activity';
+import type { ActivityListScope, UserActivity } from '@/types/activity';
 import type { ActivityItem, UseActivitiesOptions, UseActivitiesReturn } from '@/types/activity/hooks';
 import {
   fetchActivityList,
@@ -13,8 +13,8 @@ export type LoadActivitiesOptions = {
   silent?: boolean;
 };
 
-function initialRawActivities(includeDeleted: boolean): UserActivity[] {
-  return readCachedActivityList(includeDeleted) ?? [];
+function initialRawActivities(listScope: ActivityListScope): UserActivity[] {
+  return readCachedActivityList(listScope) ?? [];
 }
 
 /**
@@ -23,13 +23,13 @@ function initialRawActivities(includeDeleted: boolean): UserActivity[] {
  * @returns Objeto com activities, estados e funções auxiliares
  */
 export const useActivities = (options: UseActivitiesOptions = {}): UseActivitiesReturn => {
-  const { enabled = true, includeDeleted: defaultIncludeDeleted = false, autoLoad = true } = options;
+  const { enabled = true, listScope: defaultListScope = 'active', autoLoad = true } = options;
 
   const [activities, setActivities] = useState<ActivityItem[]>(() =>
-    userActivitiesToItems(initialRawActivities(defaultIncludeDeleted)),
+    userActivitiesToItems(initialRawActivities(defaultListScope)),
   );
-  const [rawActivities, setRawActivities] = useState<UserActivity[]>(() => initialRawActivities(defaultIncludeDeleted));
-  const [loading, setLoading] = useState(() => initialRawActivities(defaultIncludeDeleted).length === 0);
+  const [rawActivities, setRawActivities] = useState<UserActivity[]>(() => initialRawActivities(defaultListScope));
+  const [loading, setLoading] = useState(() => initialRawActivities(defaultListScope).length === 0);
   const [error, setError] = useState<string | null>(null);
 
   /**
@@ -83,13 +83,13 @@ export const useActivities = (options: UseActivitiesOptions = {}): UseActivities
    * Carrega activities do backend
    */
   const loadActivities = useCallback(
-    async (includeDeleted: boolean = defaultIncludeDeleted, loadOptions?: LoadActivitiesOptions) => {
+    async (listScope: ActivityListScope = defaultListScope, loadOptions?: LoadActivitiesOptions) => {
       if (!enabled) {
         return;
       }
 
       const silent = loadOptions?.silent === true;
-      const hasCachedData = readCachedActivityList(includeDeleted) != null;
+      const hasCachedData = readCachedActivityList(listScope) != null;
 
       try {
         if (!silent && !hasCachedData) {
@@ -97,8 +97,8 @@ export const useActivities = (options: UseActivitiesOptions = {}): UseActivities
         }
         setError(null);
 
-        if (silent && shouldSkipActivityListFetch(includeDeleted)) {
-          const cachedList = readCachedActivityList(includeDeleted);
+        if (silent && shouldSkipActivityListFetch(listScope)) {
+          const cachedList = readCachedActivityList(listScope);
           if (cachedList) {
             applyActivityList(cachedList);
             setLoading(false);
@@ -106,12 +106,12 @@ export const useActivities = (options: UseActivitiesOptions = {}): UseActivities
           }
         }
 
-        const activitiesList = await fetchActivityList(includeDeleted);
+        const activitiesList = await fetchActivityList(listScope);
         applyActivityList(activitiesList);
 
         logger.debug('Activities loaded:', {
           count: activitiesList.length,
-          includeDeleted,
+          listScope,
           silent,
         });
       } catch (err) {
@@ -126,32 +126,26 @@ export const useActivities = (options: UseActivitiesOptions = {}): UseActivities
         setLoading(false);
       }
     },
-    [applyActivityList, defaultIncludeDeleted, enabled],
+    [applyActivityList, defaultListScope, enabled],
   );
 
   /**
    * Recarrega activities
    */
   const refresh = useCallback(async () => {
-    await loadActivities(defaultIncludeDeleted);
-  }, [loadActivities, defaultIncludeDeleted]);
+    await loadActivities(defaultListScope);
+  }, [loadActivities, defaultListScope]);
 
-  // Computed values
-  const historyActivities = useMemo(() => {
-    return activities.filter((a) => a.completed);
-  }, [activities]);
-
-  const activeActivities = useMemo(() => {
-    return activities.filter((a) => !a.completed);
-  }, [activities]);
+  const historyActivities = useMemo(() => activities, [activities]);
+  const activeActivities = useMemo(() => activities, [activities]);
 
   // Auto-load activities quando enabled e autoLoad são true
   useEffect(() => {
     if (enabled && autoLoad) {
-      loadActivities(defaultIncludeDeleted);
+      loadActivities(defaultListScope);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [enabled, autoLoad, defaultIncludeDeleted]);
+  }, [enabled, autoLoad, defaultListScope]);
 
   return {
     activities,

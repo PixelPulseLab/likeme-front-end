@@ -281,13 +281,13 @@ const mockActivities = [
     userId: 'user1',
     name: 'Therapy Session',
     type: 'event' as const,
-    startDate: '2024-01-03',
+    startDate: '2023-01-03',
     startTime: '16:00',
     location: 'Meet with Avery Parker',
     reminderEnabled: false,
-    createdAt: '2024-01-03T00:00:00Z',
-    updatedAt: '2024-01-03T00:00:00Z',
-    deletedAt: '2024-01-04T00:00:00Z', // Completed
+    createdAt: '2023-01-03T00:00:00Z',
+    updatedAt: '2023-01-03T00:00:00Z',
+    deletedAt: null,
   },
 ];
 
@@ -319,6 +319,39 @@ const mockOrders = [
   },
 ];
 
+const mapActivityToItem = (activity: (typeof mockActivities)[number]) => ({
+  id: activity.id,
+  title: activity.name,
+  description: activity.location || '',
+  type: activity.type === 'task' ? 'personal' : 'appointment',
+  dateTime: `${activity.startDate} ${activity.startTime}`,
+  providerName: activity.location?.startsWith('Meet with ') ? activity.location.replace('Meet with ', '') : undefined,
+  providerAvatar: undefined,
+  isFavorite: false,
+  completed: !!activity.deletedAt,
+  declined: !!activity.deletedAt,
+  meetUrl: undefined,
+});
+
+const activeMockActivities = mockActivities.filter((activity) => activity.id !== '3');
+const historyMockActivities = mockActivities.filter((activity) => activity.id === '3');
+
+function buildUseActivitiesReturn(listScope: 'active' | 'history' = 'active') {
+  const scopedActivities = listScope === 'history' ? historyMockActivities : activeMockActivities;
+
+  return {
+    activities: scopedActivities.map(mapActivityToItem),
+    rawActivities: scopedActivities,
+    loading: false,
+    historyActivities: historyMockActivities.map(mapActivityToItem),
+    activeActivities: activeMockActivities.map(mapActivityToItem),
+    loadActivities: mockLoadActivities,
+    formatDate: jest.fn((d: Date) => d.toLocaleDateString()),
+    parseTimeString: jest.fn((t: string, d: Date) => d),
+    isToday: jest.fn(() => false),
+  };
+}
+
 describe('ActivitiesScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -326,55 +359,7 @@ describe('ActivitiesScreen', () => {
     console.error = jest.fn();
 
     mockLoadActivities.mockClear();
-    mockActivitiesHook.mockReturnValue({
-      activities: mockActivities.map((a) => ({
-        id: a.id,
-        title: a.name,
-        description: a.location || '',
-        type: a.type === 'task' ? 'personal' : 'appointment',
-        dateTime: `${a.startDate} ${a.startTime}`,
-        providerName: a.location?.startsWith('Meet with ') ? a.location.replace('Meet with ', '') : undefined,
-        providerAvatar: undefined,
-        isFavorite: false,
-        declined: !!a.deletedAt,
-        meetUrl: undefined,
-      })),
-      rawActivities: mockActivities,
-      loading: false,
-      historyActivities: mockActivities
-        .filter((a) => a.deletedAt)
-        .map((a) => ({
-          id: a.id,
-          title: a.name,
-          description: a.location || '',
-          type: a.type === 'task' ? 'personal' : 'appointment',
-          dateTime: `${a.startDate} ${a.startTime}`,
-          providerName: a.location?.startsWith('Meet with ') ? a.location.replace('Meet with ', '') : undefined,
-          providerAvatar: undefined,
-          isFavorite: false,
-          declined: true,
-          meetUrl: undefined,
-        })),
-      activeActivities: mockActivities
-        .filter((a) => !a.deletedAt)
-        .map((a) => ({
-          id: a.id,
-          title: a.name,
-          description: a.location || '',
-          type: a.type === 'task' ? 'personal' : 'appointment',
-          dateTime: `${a.startDate} ${a.startTime}`,
-          providerName: a.location?.startsWith('Meet with ') ? a.location.replace('Meet with ', '') : undefined,
-          providerAvatar: undefined,
-          isFavorite: false,
-          declined: false,
-          meetUrl: undefined,
-        })),
-      loadActivities: mockLoadActivities,
-      formatDate: jest.fn((d: Date) => d.toLocaleDateString()),
-      parseTimeString: jest.fn((t: string, d: Date) => d),
-      isToday: jest.fn(() => false),
-    });
-
+    mockActivitiesHook.mockReturnValue(buildUseActivitiesReturn('active'));
     (activityService.listActivities as jest.Mock).mockResolvedValue({
       success: true,
       data: {
@@ -443,7 +428,7 @@ describe('ActivitiesScreen', () => {
 
       await waitFor(() => {
         expect(mockLoadActivities).toHaveBeenCalledTimes(1);
-        expect(mockLoadActivities).toHaveBeenCalledWith(false);
+        expect(mockLoadActivities).toHaveBeenCalledWith('active');
       });
     });
 
@@ -650,11 +635,11 @@ describe('ActivitiesScreen', () => {
       });
     });
 
-    it('shows status icon in history tab for completed activities', async () => {
-      const { getByText } = renderWithProvider(<ActivitiesScreen navigation={mockNavigation} />);
-
-      const historyTab = getByText('activities.history');
-      fireEvent.press(historyTab);
+    it('shows past appointment in history tab', async () => {
+      mockActivitiesHook.mockReturnValue(buildUseActivitiesReturn('history'));
+      const { getByText } = renderWithProvider(
+        <ActivitiesScreen navigation={mockNavigation} route={{ params: { initialTab: 'history' } }} />,
+      );
 
       await waitFor(() => {
         expect(getByText('activities.therapySession')).toBeTruthy();

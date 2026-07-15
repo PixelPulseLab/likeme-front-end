@@ -1,4 +1,4 @@
-import type { UserActivity } from '@/types/activity';
+import type { UserActivity, ActivityListScope } from '@/types/activity';
 
 /**
  * Item de activity formatado para exibição no frontend
@@ -22,7 +22,7 @@ export interface ActivityItem {
  */
 export interface UseActivitiesOptions {
   enabled?: boolean;
-  includeDeleted?: boolean;
+  listScope?: ActivityListScope;
   autoLoad?: boolean;
 }
 
@@ -36,7 +36,7 @@ export interface UseActivitiesReturn {
   error: string | null;
   historyActivities: ActivityItem[];
   activeActivities: ActivityItem[];
-  loadActivities: (includeDeleted?: boolean, options?: { silent?: boolean }) => Promise<void>;
+  loadActivities: (listScope?: ActivityListScope, options?: { silent?: boolean }) => Promise<void>;
   refresh: () => Promise<void>;
   formatDate: (date: Date) => string;
   parseTimeString: (timeString: string, baseDate: Date) => Date;

@@ -15,7 +15,7 @@ import { ProductsCarousel, PlansCarousel, type Plan } from '@/components/section
 import { EventReminder } from '@/components/ui/cards';
 import { orderService, activityService } from '@/services';
 import { storageService } from '@/services';
-import { formatPrice, getDateFromDatetime, getTimeFromDatetime, sortByDateTime, sortByDateField } from '@/utils';
+import { formatPrice, sortByDateTime, sortByDateField } from '@/utils';
 import { COLORS } from '@/constants';
 import {
   useActivities,
@@ -49,6 +49,10 @@ type ActivitiesScreenProps = {
 };
 
 type TabType = 'actives' | 'history';
+
+function activityListScopeForTab(tab: TabType): 'active' | 'history' {
+  return tab === 'history' ? 'history' : 'active';
+}
 type FilterType = 'all' | 'activities' | 'appointments' | 'orders';
 
 import type { ActivityItem } from '@/types/activity/hooks';
@@ -79,16 +83,14 @@ const ActivitiesScreen: React.FC<ActivitiesScreenProps> = ({ navigation, route }
     activities,
     rawActivities,
     loading: _isLoadingActivities,
-    historyActivities,
-    activeActivities,
     loadActivities,
     formatDate,
     parseTimeString,
     isToday,
   } = useActivities({
     enabled: true,
-    includeDeleted: false, // Padrão, será sobrescrito no loadActivities
-    autoLoad: false, // Vamos controlar manualmente quando carregar
+    listScope: 'active',
+    autoLoad: false,
   });
 
   const openActivityEditorFromUserActivity = useCallback((activity: UserActivity) => {
@@ -107,6 +109,31 @@ const ActivitiesScreen: React.FC<ActivitiesScreenProps> = ({ navigation, route }
     setEditingActivityId(activity.id);
     setIsCreateActivityModalVisible(true);
   }, []);
+
+  const openActivityEditor = useCallback(
+    async (activityId: string) => {
+      const fromList = rawActivities.find((entry) => entry.id === activityId);
+      if (fromList) {
+        openActivityEditorFromUserActivity(fromList);
+        setMenuVisibleForId(null);
+        return;
+      }
+
+      try {
+        const response = await activityService.getActivityById(activityId);
+        if (response.success && response.data) {
+          openActivityEditorFromUserActivity(response.data);
+          setMenuVisibleForId(null);
+          return;
+        }
+      } catch (error) {
+        logger.error('Error loading activity for edit:', error);
+      }
+
+      Alert.alert(t('errors.error'), t('activities.saveError'));
+    },
+    [openActivityEditorFromUserActivity, rawActivities, t],
+  );
 
   const loadOrders = useCallback(async (options?: { silent?: boolean }) => {
     try {
@@ -128,9 +155,7 @@ const ActivitiesScreen: React.FC<ActivitiesScreenProps> = ({ navigation, route }
   }, []);
 
   useEffect(() => {
-    // Incluir atividades deletadas (skipadas) quando estiver na aba de histórico
-    const includeDeleted = activeTab === 'history';
-    loadActivities(includeDeleted);
+    loadActivities(activityListScopeForTab(activeTab));
   }, [activeTab, loadActivities]);
 
   useEffect(() => {
@@ -146,7 +171,7 @@ const ActivitiesScreen: React.FC<ActivitiesScreenProps> = ({ navigation, route }
         return;
       }
 
-      void loadActivities(activeTab === 'history', { silent: true });
+      void loadActivities(activityListScopeForTab(activeTab), { silent: true });
       if (activeTab === 'history') {
         void loadOrders({ silent: orders.length > 0 });
       }
@@ -429,7 +454,7 @@ const ActivitiesScreen: React.FC<ActivitiesScreenProps> = ({ navigation, route }
   };
 
   const filteredActivities = useMemo(() => {
-    let source = activeTab === 'history' ? historyActivities : activeActivities;
+    let source = activities;
 
     // Apply filter
     if (selectedFilter === 'all') {
@@ -444,7 +469,7 @@ const ActivitiesScreen: React.FC<ActivitiesScreenProps> = ({ navigation, route }
     const sorted = sortByDateTime(source, daySortOrder, (item) => item.dateTime);
 
     return sorted;
-  }, [activeTab, selectedFilter, daySortOrder, historyActivities, activeActivities]);
+  }, [activeTab, selectedFilter, daySortOrder, activities]);
 
   const menuItems = useMenuItems(navigation);
   useSetFloatingMenu(menuItems, 'activities');
@@ -475,7 +500,7 @@ const ActivitiesScreen: React.FC<ActivitiesScreenProps> = ({ navigation, route }
       // Marcar atividade como concluída (deletada) para que apareça no histórico como completada
       await activityService.deleteActivity(activityId);
       // Recarregar atividades para atualizar a lista
-      await loadActivities(activeTab === 'history');
+      await loadActivities(activityListScopeForTab(activeTab));
     } catch (error) {
       logger.error('Error marking activity as done:', error);
       Alert.alert(t('errors.error'), t('activities.markError'));
@@ -483,20 +508,7 @@ const ActivitiesScreen: React.FC<ActivitiesScreenProps> = ({ navigation, route }
   };
 
   const handleViewActivity = (activity: ActivityItem) => {
-    // Abrir modal de edição
-    setEditingActivityData({
-      name: activity.title,
-      type: activity.type === 'personal' ? 'task' : activity.type === 'appointment' ? 'event' : 'event',
-      startDate: activity.dateTime ? getDateFromDatetime(activity.dateTime) : undefined,
-      startTime: activity.dateTime ? getTimeFromDatetime(activity.dateTime) : undefined,
-      location: activity.providerName ? `Meet with ${activity.providerName}` : activity.description || '',
-      description: activity.description,
-      reminderEnabled: false,
-      reminderMinutes: 5,
-    });
-    setEditingActivityId(activity.id);
-    setIsCreateActivityModalVisible(true);
-    setMenuVisibleForId(null);
+    void openActivityEditor(activity.id);
   };
 
   const handleDeleteActivity = async (activityId: string) => {
@@ -511,7 +523,7 @@ const ActivitiesScreen: React.FC<ActivitiesScreenProps> = ({ navigation, route }
         onPress: async () => {
           try {
             await activityService.deleteActivity(activityId);
-            await loadActivities(activeTab === 'history');
+            await loadActivities(activityListScopeForTab(activeTab));
             setMenuVisibleForId(null);
           } catch (error) {
             logger.error('Error deleting activity:', error);
@@ -535,7 +547,7 @@ const ActivitiesScreen: React.FC<ActivitiesScreenProps> = ({ navigation, route }
       // Marcar atividade como declinada (deletada) para que apareça no histórico como declinada
       await activityService.deleteActivity(activityId);
       // Recarregar atividades para atualizar a lista
-      await loadActivities(activeTab === 'history');
+      await loadActivities(activityListScopeForTab(activeTab));
     } catch (error) {
       logger.error('Error skipping activity:', error);
       Alert.alert(t('errors.error'), t('activities.skipError'));
@@ -543,12 +555,24 @@ const ActivitiesScreen: React.FC<ActivitiesScreenProps> = ({ navigation, route }
   };
 
   const handleOpenMeet = (activity: ActivityItem) => {
+    if (!activity.meetUrl) {
+      return;
+    }
+
+    const url =
+      activity.meetUrl.startsWith('http://') || activity.meetUrl.startsWith('https://')
+        ? activity.meetUrl
+        : `https://${activity.meetUrl}`;
+
+    Linking.openURL(url).catch((err: Error) => {
+      logger.error('Error opening meet URL:', err);
+      Alert.alert(t('errors.error'), t('activities.openMeetError'));
+    });
+  };
+
+  const handleActivityCardPress = (activity: ActivityItem) => {
     if (activity.meetUrl) {
-      // Abrir link do meet em um navegador ou app apropriado
-      Linking.openURL(activity.meetUrl).catch((err: Error) => {
-        logger.error('Error opening meet URL:', err);
-        Alert.alert(t('errors.error'), t('activities.openMeetError'));
-      });
+      handleOpenMeet(activity);
     }
   };
 
@@ -710,34 +734,46 @@ const ActivitiesScreen: React.FC<ActivitiesScreenProps> = ({ navigation, route }
 
     // For appointments, show date/time in title row
     if (activity.type === 'appointment') {
+      const cardBody = (
+        <>
+          <View style={styles.cardHeader}>
+            <Badge label={typeLabels[activity.type]} color='orange' />
+            <TouchableOpacity activeOpacity={0.7} onPress={(e) => handleActivityCardMenuPress(activity.id, e)}>
+              <Icon name='more-vert' size={20} color={COLORS.TEXT} />
+            </TouchableOpacity>
+          </View>
+
+          <View>
+            {activity.dateTime && (
+              <View style={styles.appointmentDateTimeRow}>
+                <Icon name='event' size={16} color={COLORS.TEXT} />
+                <Text style={styles.appointmentDateTimeText}>{activity.dateTime}</Text>
+              </View>
+            )}
+
+            {activity.providerName && (
+              <View style={styles.providerContainer}>
+                <Text style={styles.providerText}>{t('activities.therapySession')}</Text>
+                <View style={styles.providerAvatar}>
+                  <Text style={styles.providerAvatarText}>{activity.providerAvatar || 'A'}</Text>
+                </View>
+                <Text style={styles.providerName}>{activity.providerName}</Text>
+              </View>
+            )}
+          </View>
+        </>
+      );
+
       return (
         <View key={activity.id} style={[styles.activityCard, styles.appointmentCard]}>
           <View style={styles.cardContent}>
-            <View style={styles.cardHeader}>
-              <Badge label={typeLabels[activity.type]} color='orange' />
-              <TouchableOpacity activeOpacity={0.7} onPress={(e) => handleActivityCardMenuPress(activity.id, e)}>
-                <Icon name='more-vert' size={20} color={COLORS.TEXT} />
+            {activity.meetUrl ? (
+              <TouchableOpacity activeOpacity={0.7} onPress={() => handleActivityCardPress(activity)}>
+                {cardBody}
               </TouchableOpacity>
-            </View>
-
-            <View>
-              {activity.dateTime && (
-                <View style={styles.appointmentDateTimeRow}>
-                  <Icon name='event' size={16} color={COLORS.TEXT} />
-                  <Text style={styles.appointmentDateTimeText}>{activity.dateTime}</Text>
-                </View>
-              )}
-
-              {activity.providerName && (
-                <View style={styles.providerContainer}>
-                  <Text style={styles.providerText}>{t('activities.therapySession')}</Text>
-                  <View style={styles.providerAvatar}>
-                    <Text style={styles.providerAvatarText}>{activity.providerAvatar || 'A'}</Text>
-                  </View>
-                  <Text style={styles.providerName}>{activity.providerName}</Text>
-                </View>
-              )}
-            </View>
+            ) : (
+              cardBody
+            )}
 
             <View style={styles.cardActions}>
               {activity.meetUrl && (
@@ -782,9 +818,11 @@ const ActivitiesScreen: React.FC<ActivitiesScreenProps> = ({ navigation, route }
 
           <View style={styles.cardActions}>
             {activeTab === 'history' ? (
-              <View style={[styles.actionButton]}>
-                <CachedImage source={activity.declined ? CloseIcon : DoneIcon} style={styles.statusIcon} />
-              </View>
+              activity.declined || activity.completed ? (
+                <View style={[styles.actionButton]}>
+                  <CachedImage source={activity.declined ? CloseIcon : DoneIcon} style={styles.statusIcon} />
+                </View>
+              ) : null
             ) : (
               <TouchableOpacity
                 style={[styles.actionButton, styles.markButton]}
@@ -957,7 +995,7 @@ const ActivitiesScreen: React.FC<ActivitiesScreenProps> = ({ navigation, route }
             // Verificar se a operação foi bem-sucedida antes de recarregar
             if (response && response.success && response.data) {
               // Refresh activities list after save
-              await loadActivities(activeTab === 'history');
+              await loadActivities(activityListScopeForTab(activeTab));
             } else {
               throw new Error(response?.message || 'Failed to save activity');
             }

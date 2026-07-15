@@ -1,11 +1,11 @@
 import { activityService } from '@/services';
-import type { UserActivity } from '@/types/activity';
+import type { ActivityListScope, UserActivity } from '@/types/activity';
 
 const CACHE_MAX_AGE_MS = 120_000;
 const CACHE_FRESH_SKIP_MS = 5_000;
 
 type ActivityListCacheEntry = {
-  includeDeleted: boolean;
+  listScope: ActivityListScope;
   rawActivities: UserActivity[];
   fetchedAt: number;
 };
@@ -14,12 +14,12 @@ let cache: ActivityListCacheEntry | null = null;
 let inflightKey: string | null = null;
 let inflightPromise: Promise<UserActivity[]> | null = null;
 
-function cacheKey(includeDeleted: boolean): string {
-  return includeDeleted ? 'with-deleted' : 'active-only';
+function cacheKey(listScope: ActivityListScope): string {
+  return listScope;
 }
 
-export function readCachedActivityList(includeDeleted: boolean): UserActivity[] | null {
-  if (!cache || cache.includeDeleted !== includeDeleted) {
+export function readCachedActivityList(listScope: ActivityListScope): UserActivity[] | null {
+  if (!cache || cache.listScope !== listScope) {
     return null;
   }
   if (Date.now() - cache.fetchedAt > CACHE_MAX_AGE_MS) {
@@ -28,9 +28,9 @@ export function readCachedActivityList(includeDeleted: boolean): UserActivity[] 
   return cache.rawActivities;
 }
 
-export function writeActivityListCache(includeDeleted: boolean, rawActivities: UserActivity[]): void {
+export function writeActivityListCache(listScope: ActivityListScope, rawActivities: UserActivity[]): void {
   cache = {
-    includeDeleted,
+    listScope,
     rawActivities,
     fetchedAt: Date.now(),
   };
@@ -40,15 +40,15 @@ export function invalidateActivityListCache(): void {
   cache = null;
 }
 
-export function shouldSkipActivityListFetch(includeDeleted: boolean): boolean {
-  if (!cache || cache.includeDeleted !== includeDeleted) {
+export function shouldSkipActivityListFetch(listScope: ActivityListScope): boolean {
+  if (!cache || cache.listScope !== listScope) {
     return false;
   }
   return Date.now() - cache.fetchedAt < CACHE_FRESH_SKIP_MS;
 }
 
-export async function fetchActivityList(includeDeleted = false): Promise<UserActivity[]> {
-  const key = cacheKey(includeDeleted);
+export async function fetchActivityList(listScope: ActivityListScope = 'active'): Promise<UserActivity[]> {
+  const key = cacheKey(listScope);
   if (inflightPromise && inflightKey === key) {
     return inflightPromise;
   }
@@ -58,19 +58,19 @@ export async function fetchActivityList(includeDeleted = false): Promise<UserAct
     .listActivities({
       page: 1,
       limit: 100,
-      includeDeleted,
+      scope: listScope,
     })
     .then((response) => {
       const typed = response as { success?: boolean; data?: { activities?: UserActivity[] } };
       if (typed.success !== true) {
-        return readCachedActivityList(includeDeleted) ?? [];
+        return readCachedActivityList(listScope) ?? [];
       }
       const list = typed.data?.activities ?? [];
-      writeActivityListCache(includeDeleted, list);
+      writeActivityListCache(listScope, list);
       return list;
     })
     .catch((error) => {
-      const cached = readCachedActivityList(includeDeleted);
+      const cached = readCachedActivityList(listScope);
       if (cached) {
         return cached;
       }
@@ -84,6 +84,6 @@ export async function fetchActivityList(includeDeleted = false): Promise<UserAct
   return inflightPromise;
 }
 
-export async function prefetchActivityList(includeDeleted = false): Promise<UserActivity[]> {
-  return fetchActivityList(includeDeleted);
+export async function prefetchActivityList(listScope: ActivityListScope = 'active'): Promise<UserActivity[]> {
+  return fetchActivityList(listScope);
 }

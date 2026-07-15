@@ -2,6 +2,8 @@ import type { ApiResponse } from '@/types/infrastructure';
 
 export type ActivityType = 'task' | 'event';
 
+export type ActivityListScope = 'active' | 'history';
+
 export interface UserActivity {
   id: string;
   userId: string;
@@ -26,6 +28,8 @@ export interface ListActivitiesParams {
   endDate?: string;
   page?: number;
   limit?: number;
+  scope?: ActivityListScope;
+  /** @deprecated use scope=history */
   includeDeleted?: boolean;
 }
 
