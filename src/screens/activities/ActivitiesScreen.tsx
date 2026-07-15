@@ -155,7 +155,7 @@ const ActivitiesScreen: React.FC<ActivitiesScreenProps> = ({ navigation, route }
   }, []);
 
   useEffect(() => {
-    loadActivities(activityListScopeForTab(activeTab));
+    void loadActivities(activityListScopeForTab(activeTab), { silent: true });
   }, [activeTab, loadActivities]);
 
   useEffect(() => {
@@ -744,6 +744,10 @@ const ActivitiesScreen: React.FC<ActivitiesScreenProps> = ({ navigation, route }
           </View>
 
           <View>
+            <View style={styles.cardTitleRow}>
+              <Text style={styles.cardTitle}>{activity.title}</Text>
+            </View>
+
             {activity.dateTime && (
               <View style={styles.appointmentDateTimeRow}>
                 <Icon name='event' size={16} color={COLORS.TEXT} />

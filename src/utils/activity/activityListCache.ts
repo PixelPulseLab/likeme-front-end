@@ -5,12 +5,11 @@ const CACHE_MAX_AGE_MS = 120_000;
 const CACHE_FRESH_SKIP_MS = 5_000;
 
 type ActivityListCacheEntry = {
-  listScope: ActivityListScope;
   rawActivities: UserActivity[];
   fetchedAt: number;
 };
 
-let cache: ActivityListCacheEntry | null = null;
+const caches: Partial<Record<ActivityListScope, ActivityListCacheEntry>> = {};
 let inflightKey: string | null = null;
 let inflightPromise: Promise<UserActivity[]> | null = null;
 
@@ -19,7 +18,8 @@ function cacheKey(listScope: ActivityListScope): string {
 }
 
 export function readCachedActivityList(listScope: ActivityListScope): UserActivity[] | null {
-  if (!cache || cache.listScope !== listScope) {
+  const cache = caches[listScope];
+  if (!cache) {
     return null;
   }
   if (Date.now() - cache.fetchedAt > CACHE_MAX_AGE_MS) {
@@ -29,19 +29,25 @@ export function readCachedActivityList(listScope: ActivityListScope): UserActivi
 }
 
 export function writeActivityListCache(listScope: ActivityListScope, rawActivities: UserActivity[]): void {
-  cache = {
-    listScope,
+  caches[listScope] = {
     rawActivities,
     fetchedAt: Date.now(),
   };
 }
 
-export function invalidateActivityListCache(): void {
-  cache = null;
+export function invalidateActivityListCache(listScope?: ActivityListScope): void {
+  if (listScope) {
+    delete caches[listScope];
+    return;
+  }
+  for (const scope of Object.keys(caches) as ActivityListScope[]) {
+    delete caches[scope];
+  }
 }
 
 export function shouldSkipActivityListFetch(listScope: ActivityListScope): boolean {
-  if (!cache || cache.listScope !== listScope) {
+  const cache = caches[listScope];
+  if (!cache) {
     return false;
   }
   return Date.now() - cache.fetchedAt < CACHE_FRESH_SKIP_MS;

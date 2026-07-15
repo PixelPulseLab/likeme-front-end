@@ -428,7 +428,7 @@ describe('ActivitiesScreen', () => {
 
       await waitFor(() => {
         expect(mockLoadActivities).toHaveBeenCalledTimes(1);
-        expect(mockLoadActivities).toHaveBeenCalledWith('active');
+        expect(mockLoadActivities).toHaveBeenCalledWith('active', { silent: true });
       });
     });
 

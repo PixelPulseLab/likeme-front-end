@@ -13,8 +13,37 @@ export type LoadActivitiesOptions = {
   silent?: boolean;
 };
 
-function initialRawActivities(listScope: ActivityListScope): UserActivity[] {
-  return readCachedActivityList(listScope) ?? [];
+type ScopeData = {
+  rawActivities: UserActivity[];
+  activities: ActivityItem[];
+};
+
+function buildScopeData(listScope: ActivityListScope): ScopeData {
+  const rawActivities = readCachedActivityList(listScope) ?? [];
+  return {
+    rawActivities,
+    activities: userActivitiesToItems(rawActivities),
+  };
+}
+
+function emptyScopeData(): ScopeData {
+  return {
+    rawActivities: [],
+    activities: [],
+  };
+}
+
+function sameActivityLists(left: UserActivity[], right: UserActivity[]): boolean {
+  if (left.length !== right.length) {
+    return false;
+  }
+
+  return left.every(
+    (item, index) =>
+      item.id === right[index]?.id &&
+      item.updatedAt === right[index]?.updatedAt &&
+      item.deletedAt === right[index]?.deletedAt,
+  );
 }
 
 /**
@@ -25,12 +54,32 @@ function initialRawActivities(listScope: ActivityListScope): UserActivity[] {
 export const useActivities = (options: UseActivitiesOptions = {}): UseActivitiesReturn => {
   const { enabled = true, listScope: defaultListScope = 'active', autoLoad = true } = options;
 
-  const [activities, setActivities] = useState<ActivityItem[]>(() =>
-    userActivitiesToItems(initialRawActivities(defaultListScope)),
-  );
-  const [rawActivities, setRawActivities] = useState<UserActivity[]>(() => initialRawActivities(defaultListScope));
-  const [loading, setLoading] = useState(() => initialRawActivities(defaultListScope).length === 0);
+  const [dataByScope, setDataByScope] = useState<Record<ActivityListScope, ScopeData>>(() => ({
+    active: buildScopeData('active'),
+    history: buildScopeData('history'),
+  }));
+  const [displayedScope, setDisplayedScope] = useState<ActivityListScope>(defaultListScope);
+  const [loading, setLoading] = useState(() => buildScopeData(defaultListScope).rawActivities.length === 0);
   const [error, setError] = useState<string | null>(null);
+
+  const activities = dataByScope[displayedScope].activities;
+  const rawActivities = dataByScope[displayedScope].rawActivities;
+
+  const applyScopeData = useCallback((listScope: ActivityListScope, list: UserActivity[]) => {
+    setDataByScope((current) => {
+      if (sameActivityLists(current[listScope].rawActivities, list)) {
+        return current;
+      }
+
+      return {
+        ...current,
+        [listScope]: {
+          rawActivities: list,
+          activities: userActivitiesToItems(list),
+        },
+      };
+    });
+  }, []);
 
   /**
    * Formata uma data para exibição (ex: "13 Nov.")
@@ -74,11 +123,6 @@ export const useActivities = (options: UseActivitiesOptions = {}): UseActivities
     );
   }, []);
 
-  const applyActivityList = useCallback((list: UserActivity[]) => {
-    setRawActivities(list);
-    setActivities(userActivitiesToItems(list));
-  }, []);
-
   /**
    * Carrega activities do backend
    */
@@ -88,26 +132,41 @@ export const useActivities = (options: UseActivitiesOptions = {}): UseActivities
         return;
       }
 
-      const silent = loadOptions?.silent === true;
-      const hasCachedData = readCachedActivityList(listScope) != null;
+      setDisplayedScope(listScope);
+
+      const cachedList = readCachedActivityList(listScope);
+      let hasDisplayedData = false;
+
+      setDataByScope((current) => {
+        hasDisplayedData = current[listScope].rawActivities.length > 0;
+        if (cachedList && !sameActivityLists(current[listScope].rawActivities, cachedList)) {
+          return {
+            ...current,
+            [listScope]: {
+              rawActivities: cachedList,
+              activities: userActivitiesToItems(cachedList),
+            },
+          };
+        }
+        return current;
+      });
+
+      const hasCachedData = cachedList != null;
+      const silent = loadOptions?.silent === true || hasCachedData || hasDisplayedData;
 
       try {
-        if (!silent && !hasCachedData) {
+        if (!silent) {
           setLoading(true);
         }
         setError(null);
 
         if (silent && shouldSkipActivityListFetch(listScope)) {
-          const cachedList = readCachedActivityList(listScope);
-          if (cachedList) {
-            applyActivityList(cachedList);
-            setLoading(false);
-            return;
-          }
+          setLoading(false);
+          return;
         }
 
         const activitiesList = await fetchActivityList(listScope);
-        applyActivityList(activitiesList);
+        applyScopeData(listScope, activitiesList);
 
         logger.debug('Activities loaded:', {
           count: activitiesList.length,
@@ -117,27 +176,29 @@ export const useActivities = (options: UseActivitiesOptions = {}): UseActivities
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'Erro ao carregar atividades';
         setError(errorMessage);
-        if (!hasCachedData) {
-          setActivities([]);
-          setRawActivities([]);
+        if (!hasCachedData && !hasDisplayedData) {
+          setDataByScope((current) => ({
+            ...current,
+            [listScope]: emptyScopeData(),
+          }));
         }
         logger.error('Error loading activities:', err);
       } finally {
         setLoading(false);
       }
     },
-    [applyActivityList, defaultListScope, enabled],
+    [applyScopeData, defaultListScope, enabled],
   );
 
   /**
    * Recarrega activities
    */
   const refresh = useCallback(async () => {
-    await loadActivities(defaultListScope);
-  }, [loadActivities, defaultListScope]);
+    await loadActivities(displayedScope);
+  }, [displayedScope, loadActivities]);
 
-  const historyActivities = useMemo(() => activities, [activities]);
-  const activeActivities = useMemo(() => activities, [activities]);
+  const historyActivities = useMemo(() => dataByScope.history.activities, [dataByScope.history.activities]);
+  const activeActivities = useMemo(() => dataByScope.active.activities, [dataByScope.active.activities]);
 
   // Auto-load activities quando enabled e autoLoad são true
   useEffect(() => {

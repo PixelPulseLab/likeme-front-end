@@ -59,4 +59,14 @@ describe('activityListCache', () => {
     expect(readCachedActivityList('active')).toEqual([baseActivity]);
     expect(shouldSkipActivityListFetch('active')).toBe(true);
   });
+
+  it('mantém cache separado por scope', () => {
+    const historyActivity = { ...baseActivity, id: 'activity-history' };
+
+    writeActivityListCache('active', [baseActivity]);
+    writeActivityListCache('history', [historyActivity]);
+
+    expect(readCachedActivityList('active')).toEqual([baseActivity]);
+    expect(readCachedActivityList('history')).toEqual([historyActivity]);
+  });
 });
