@@ -146,7 +146,7 @@ describe('useCommunityEventBanner', () => {
       communityId: 'community-1',
     });
     expect(refreshEventsMock).toHaveBeenCalled();
-    expect(prefetchActivityList).toHaveBeenCalledWith(false);
+    expect(prefetchActivityList).toHaveBeenCalledWith('active');
     expect(navigateToActivitiesActives).toHaveBeenCalledWith(navigation);
     expect(Alert.alert).not.toHaveBeenCalled();
   });

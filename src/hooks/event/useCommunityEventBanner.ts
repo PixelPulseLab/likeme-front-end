@@ -184,7 +184,7 @@ export function useCommunityEventBanner(options: UseCommunityEventBannerOptions 
             return;
           }
 
-          await Promise.all([refreshReminderState(), prefetchActivityList(false)]);
+          await Promise.all([refreshReminderState(), prefetchActivityList('active')]);
           if (navigation) {
             navigateToActivitiesActives(navigation);
           } else {
