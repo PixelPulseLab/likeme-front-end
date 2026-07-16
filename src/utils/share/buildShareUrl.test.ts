@@ -12,11 +12,11 @@ import { buildShareUrl, sharePathPrefixForContentType } from '@/utils/share/buil
 
 jest.mock('@/config/environment', () => ({
   SHARE_CONFIG: {
-    baseUrl: 'https://likeme-back-end-one.vercel.app',
+    baseUrl: 'https://app.likeme.global',
   },
 }));
 
-const BASE = 'https://likeme-back-end-one.vercel.app';
+const BASE = 'https://app.likeme.global';
 
 describe('buildShareUrl', () => {
   it('monta URLs por tipo de conteúdo', () => {

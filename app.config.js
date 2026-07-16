@@ -165,14 +165,14 @@ const getEnvVar = (key, defaultValue = '') => {
 };
 
 const DEFAULT_BACKEND_URL = 'https://likeme-back-end-one.vercel.app/';
+const DEFAULT_SHARE_BASE_URL = 'https://app.likeme.global';
 
-// TODO(APP-332): migrar associated domain / intent filter para https://www.app.likeme.global
 function shareBaseUrl() {
   const explicitShare = getEnvVar('EXPO_PUBLIC_SHARE_BASE_URL', '').replace(/\/+$/, '');
   if (explicitShare) {
     return explicitShare;
   }
-  return getEnvVar('EXPO_PUBLIC_BACKEND_URL', DEFAULT_BACKEND_URL).replace(/\/+$/, '');
+  return DEFAULT_SHARE_BASE_URL;
 }
 
 function shareUniversalLinkHost() {
@@ -180,7 +180,7 @@ function shareUniversalLinkHost() {
   try {
     return new URL(base).host;
   } catch {
-    return 'likeme-back-end-one.vercel.app';
+    return 'app.likeme.global';
   }
 }
 

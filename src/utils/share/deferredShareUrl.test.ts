@@ -15,7 +15,7 @@ jest.mock('@/analytics', () => ({
 
 jest.mock('@/config/environment', () => ({
   SHARE_CONFIG: {
-    baseUrl: 'https://likeme-back-end-one.vercel.app',
+    baseUrl: 'https://app.likeme.global',
   },
 }));
 
@@ -46,7 +46,7 @@ const Clipboard = jest.requireMock('expo-clipboard') as {
   getStringAsync: jest.Mock;
 };
 
-const SHARE_URL = 'https://likeme-back-end-one.vercel.app/post/post-abc';
+const SHARE_URL = 'https://app.likeme.global/post/post-abc';
 
 describe('deferredShareUrl', () => {
   beforeEach(() => {

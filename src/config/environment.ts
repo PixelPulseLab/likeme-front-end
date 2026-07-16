@@ -109,12 +109,11 @@ export const STORE_URL_CONFIG = {
   android: getEnvVar('EXPO_PUBLIC_ANDROID_PLAY_STORE_URL', DEFAULT_ANDROID_PLAY_STORE_URL).trim(),
 };
 
-/** Host base dos Universal/App Links (mesmo domínio do backend por padrão). */
-// TODO(APP-332): migrar base dos Universal/App Links para https://www.app.likeme.global
+/** Host base dos Universal/App Links (links compartilháveis). */
+const DEFAULT_SHARE_BASE_URL = 'https://app.likeme.global';
+
 export const SHARE_CONFIG = {
-  baseUrl: normalizePublicBaseUrl(
-    getEnvVar('EXPO_PUBLIC_SHARE_BASE_URL', '') || BACKEND_CONFIG.baseUrl || DEFAULT_BACKEND_URL,
-  ),
+  baseUrl: normalizePublicBaseUrl(getEnvVar('EXPO_PUBLIC_SHARE_BASE_URL', '') || DEFAULT_SHARE_BASE_URL),
 };
 
 export const getApiUrl = (endpoint: string) => {

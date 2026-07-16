@@ -36,12 +36,12 @@
       </intent-filter>
       <intent-filter android:autoVerify="true" data-generated="true">
         <action android:name="android.intent.action.VIEW"/>
-        <data android:scheme="https" android:host="likeme-back-end-one.vercel.app" android:pathPrefix="/post"/>
-        <data android:scheme="https" android:host="likeme-back-end-one.vercel.app" android:pathPrefix="/community"/>
-        <data android:scheme="https" android:host="likeme-back-end-one.vercel.app" android:pathPrefix="/product"/>
-        <data android:scheme="https" android:host="likeme-back-end-one.vercel.app" android:pathPrefix="/protocol"/>
-        <data android:scheme="https" android:host="likeme-back-end-one.vercel.app" android:pathPrefix="/affiliate"/>
-        <data android:scheme="https" android:host="likeme-back-end-one.vercel.app" android:pathPrefix="/provider"/>
+        <data android:scheme="https" android:host="app.likeme.global" android:pathPrefix="/post"/>
+        <data android:scheme="https" android:host="app.likeme.global" android:pathPrefix="/community"/>
+        <data android:scheme="https" android:host="app.likeme.global" android:pathPrefix="/product"/>
+        <data android:scheme="https" android:host="app.likeme.global" android:pathPrefix="/protocol"/>
+        <data android:scheme="https" android:host="app.likeme.global" android:pathPrefix="/affiliate"/>
+        <data android:scheme="https" android:host="app.likeme.global" android:pathPrefix="/provider"/>
         <category android:name="android.intent.category.BROWSABLE"/>
         <category android:name="android.intent.category.DEFAULT"/>
       </intent-filter>

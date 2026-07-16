@@ -10,7 +10,7 @@
     </array>
     <key>com.apple.developer.associated-domains</key>
     <array>
-      <string>applinks:likeme-back-end-one.vercel.app</string>
+      <string>applinks:app.likeme.global</string>
     </array>
   </dict>
 </plist>

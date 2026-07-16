@@ -23,7 +23,7 @@ jest.mock('@/analytics', () => ({
 
 jest.mock('@/config/environment', () => ({
   SHARE_CONFIG: {
-    baseUrl: 'https://likeme-back-end-one.vercel.app',
+    baseUrl: 'https://app.likeme.global',
   },
 }));
 
@@ -81,7 +81,7 @@ const PROVIDER_TARGET = {
 
 const HOME_TARGET = { screen: 'Summary' } as const;
 
-const SHARE_BASE_URL = 'https://likeme-back-end-one.vercel.app';
+const SHARE_BASE_URL = 'https://app.likeme.global';
 
 function createNavigationRef(isReady = true) {
   return {
@@ -92,7 +92,7 @@ function createNavigationRef(isReady = true) {
 
 describe('sharePathFromUrl', () => {
   it('extrai pathname de URL https', () => {
-    expect(sharePathFromUrl('https://likeme-back-end-one.vercel.app/post/post-xyz')).toBe('/post/post-xyz');
+    expect(sharePathFromUrl('https://app.likeme.global/post/post-xyz')).toBe('/post/post-xyz');
   });
 
   it('aceita path sem scheme', () => {
@@ -105,9 +105,7 @@ describe('sharePathFromUrl', () => {
   });
 
   it('preserva query string em path https', () => {
-    expect(sharePathFromUrl('https://likeme-back-end-one.vercel.app/affiliate/prod-1?ref=abc')).toBe(
-      '/affiliate/prod-1?ref=abc',
-    );
+    expect(sharePathFromUrl('https://app.likeme.global/affiliate/prod-1?ref=abc')).toBe('/affiliate/prod-1?ref=abc');
   });
 });
 
