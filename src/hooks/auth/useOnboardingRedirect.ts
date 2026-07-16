@@ -32,9 +32,6 @@ async function syncOnboardingStateFromBackend(): Promise<void> {
 async function getLoggedInUserDisplayName(): Promise<string | null> {
   const token = await storageService.getToken();
   if (!token) return null;
-  const stored = await storageService.getUser();
-  const fromStorage = stored?.name?.trim() || stored?.nickname?.trim();
-  if (fromStorage) return fromStorage;
   try {
     const response = await Promise.race([
       userService.getProfile(),
@@ -42,22 +39,26 @@ async function getLoggedInUserDisplayName(): Promise<string | null> {
         setTimeout(() => resolve('timeout'), AUTH_BOOTSTRAP_HTTP_TIMEOUT_MS);
       }),
     ]);
-    if (response === 'timeout') {
-      logger.warn('[useOnboardingRedirect] Timeout ao buscar perfil; segue onboarding sem nome da API');
-      return null;
-    }
-    if (response.success && response.data) {
-      const person = response.data.person;
-      if (person?.firstName) {
-        const full = [person.firstName, person.lastName, person.surname].filter(Boolean).join(' ').trim();
-        return full || response.data.name?.trim() || null;
+    if (response !== 'timeout' && response && typeof response === 'object' && 'success' in response) {
+      if (response.success && response.data) {
+        const person = response.data.person;
+        if (person?.firstName) {
+          const full = [person.firstName, person.lastName, person.surname].filter(Boolean).join(' ').trim();
+          return full || response.data.name?.trim() || null;
+        }
+        if (response.data.name?.trim()) {
+          return response.data.name.trim();
+        }
       }
-      return response.data.name?.trim() || null;
+    }
+    if (response === 'timeout') {
+      logger.warn('[useOnboardingRedirect] Timeout ao buscar perfil; usa nome do storage');
     }
   } catch (error) {
     logger.warn('[useOnboardingRedirect] getProfile falhou; fallback de nome no onboarding', { cause: error });
   }
-  return null;
+  const stored = await storageService.getUser();
+  return stored?.name?.trim() || stored?.nickname?.trim() || null;
 }
 
 export function useOnboardingRedirect(navigationReplace: NavigationReplace): void {

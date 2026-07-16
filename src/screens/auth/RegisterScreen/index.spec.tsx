@@ -80,6 +80,7 @@ jest.mock('@/services', () => ({
   },
   userService: {
     getProfile: jest.fn().mockResolvedValue({ success: false }),
+    syncStoredUserName: jest.fn().mockResolvedValue(undefined),
   },
 }));
 
@@ -223,8 +224,10 @@ describe('RegisterScreen', () => {
 
     fireEvent.press(getByText('Configurar depois'));
 
-    expect(mockNavigation.navigate).toHaveBeenCalledWith('InterestCategories', {
-      firstName: 'John',
+    await waitFor(() => {
+      expect(mockNavigation.navigate).toHaveBeenCalledWith('InterestCategories', {
+        firstName: 'John',
+      });
     });
   });
 

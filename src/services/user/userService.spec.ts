@@ -127,4 +127,26 @@ describe('userService profile avatar', () => {
       );
     });
   });
+
+  describe('syncStoredUserName', () => {
+    it('atualiza name no storage local', async () => {
+      mockStorage.getUser.mockResolvedValue({ email: 'a@b.com', name: 'Ana', picture: 'old.jpg' });
+
+      await userService.syncStoredUserName('  Ana Nova  ');
+
+      expect(mockStorage.setUser).toHaveBeenCalledWith({
+        email: 'a@b.com',
+        name: 'Ana Nova',
+        picture: 'old.jpg',
+      });
+    });
+
+    it('não altera storage quando nome está vazio', async () => {
+      mockStorage.getUser.mockResolvedValue({ email: 'a@b.com', name: 'Ana' });
+
+      await userService.syncStoredUserName('   ');
+
+      expect(mockStorage.setUser).not.toHaveBeenCalled();
+    });
+  });
 });

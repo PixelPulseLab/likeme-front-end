@@ -406,6 +406,8 @@ class AuthService {
         await storageService.setToken(authResult.accessToken);
       }
 
+      await storageService.clearLocalUserDataIfOwnerChanged(authResult.user.email);
+
       await storageService.setUser({
         ...authResult.user,
         picture:

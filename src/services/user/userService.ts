@@ -142,12 +142,9 @@ class UserService {
    * Elimina a conta do utilizador autenticado no backend (soft delete).
    * Requer perfil com `id` (GET /api/auth/profile).
    */
-  async deleteMyAccount(): Promise<void> {
-    const profile = await this.getProfile();
-    if (!profile.success || !profile.data?.id) {
-      throw new Error('Perfil indisponível. Não foi possível identificar a conta para eliminar.');
-    }
-    const response = await apiClient.delete<ApiResponse<null>>(`/api/users/${profile.data.id}`, undefined, true);
+  async deleteMyAccount(reason?: string): Promise<void> {
+    const body = reason ? { reason } : undefined;
+    const response = await apiClient.delete<ApiResponse<null>>('/api/auth/account', body, true);
     if (
       !response ||
       typeof response !== 'object' ||
@@ -195,6 +192,18 @@ class UserService {
       await storageService.setUser(next);
     } catch (error) {
       logger.warn('[userService] Falha ao sincronizar avatar no storage local', { cause: error });
+    }
+  }
+
+  async syncStoredUserName(displayName: string): Promise<void> {
+    const name = displayName.trim();
+    if (!name) return;
+    try {
+      const user = await storageService.getUser();
+      if (!user) return;
+      await storageService.setUser({ ...user, name });
+    } catch (error) {
+      logger.warn('[userService] Falha ao sincronizar nome no storage local', { cause: error });
     }
   }
 }

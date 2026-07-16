@@ -36,7 +36,7 @@ export type ProtocolDetailProtocol = {
 
 type RootStackParamListCore = {
   ForcedUpdate: { storeUrl: string; message?: string };
-  Unauthenticated: undefined;
+  Unauthenticated: { skipAutoLogin?: boolean } | undefined;
   Authenticated: undefined;
   Welcome: undefined;
   AppPresentation: { userName?: string };
@@ -99,6 +99,7 @@ type RootStackParamListCore = {
   PersonalDataEdit: undefined;
   InterestCategoriesEdit: undefined;
   SettingsAndSecurity: undefined;
+  DeleteAccount: undefined;
   SubscriptionList: undefined;
   ProtocolDetail: { protocol: ProtocolDetailProtocol } | { productId: string };
   PrivacyPolicies: { userName?: string };

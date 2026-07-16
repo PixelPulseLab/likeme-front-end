@@ -27,7 +27,7 @@ export const useLogout = (options: UseLogoutOptions) => {
             const rootNavigation = navigation.getParent() || navigation;
             rootNavigation.reset({
               index: 0,
-              routes: [{ name: 'Unauthenticated' as never }],
+              routes: [{ name: 'Unauthenticated' as never, params: { skipAutoLogin: true } }],
             });
             onSuccess?.();
           } catch (error) {

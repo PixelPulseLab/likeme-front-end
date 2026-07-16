@@ -114,6 +114,9 @@ jest.mock('@/services', () => ({
   personsService: {
     createOrUpdatePerson: jest.fn().mockResolvedValue(undefined),
   },
+  userService: {
+    syncStoredUserName: jest.fn().mockResolvedValue(undefined),
+  },
 }));
 
 const getServices = () => require('@/services');

@@ -6,7 +6,7 @@ import { KeyboardAwareScreen, ScreenWithHeader } from '@/components/ui/layout';
 import PersonalDataFieldsForm, {
   type PersonalDataFieldErrors,
 } from '@/components/sections/person/PersonalDataFieldsForm';
-import { personsService } from '@/services';
+import { personsService, userService } from '@/services';
 import { useTranslation } from '@/hooks/i18n';
 import { useLoadPersonalData, useScrollToFocusedField } from '@/hooks';
 import type { PersonData } from '@/types/person';
@@ -144,6 +144,7 @@ const RegisterScreen: React.FC<Props> = ({ navigation, route }) => {
       };
 
       await personsService.createOrUpdatePerson(personData);
+      await userService.syncStoredUserName(fullName.trim());
 
       const nextScreen = getNextOnboardingScreen('Register');
       const params = {
@@ -162,7 +163,19 @@ const RegisterScreen: React.FC<Props> = ({ navigation, route }) => {
   const handleSkip = useCallback(async () => {
     try {
       setIsSkipLoading(true);
-      const firstName = fullName.trim().split(/\s+/)[0] || fullName || route.params?.userName || 'Usuário';
+      const trimmedName = fullName.trim();
+      if (trimmedName) {
+        await userService.syncStoredUserName(trimmedName);
+        if (!validateFullNameForPerson(trimmedName)) {
+          const { firstName, lastName } = parseFullName(trimmedName);
+          try {
+            await personsService.createOrUpdatePerson({ firstName, lastName });
+          } catch (error) {
+            logger.warn('[RegisterScreen] Falha ao persistir nome ao pular cadastro', { cause: error });
+          }
+        }
+      }
+      const firstName = trimmedName.split(/\s+/)[0] || fullName || route.params?.userName || 'Usuário';
       const nextScreen = getNextOnboardingScreen('Register');
       const params = { firstName };
       navigation.navigate(nextScreen as never, params as never);

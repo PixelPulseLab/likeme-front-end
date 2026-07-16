@@ -8,7 +8,9 @@ import { GradientSplash4 } from '@/assets/auth';
 import { useTranslation } from '@/hooks/i18n';
 import { useAnalyticsScreen, logButtonClick, logFormSubmit, logNavigation } from '@/analytics';
 import { getNextOnboardingScreen } from '@/utils';
-import { storageService } from '@/services';
+import { personsService, storageService, userService } from '@/services';
+import { parseFullName, validateFullNameForPerson } from '@/utils/person/fullNameValidation';
+import { logger } from '@/utils/logger';
 import { styles } from './styles';
 
 type Props = { navigation: any };
@@ -18,6 +20,7 @@ const WelcomeScreen: React.FC<Props> = ({ navigation }) => {
   const { t } = useTranslation();
   const { bottom: bottomInset } = useSafeAreaInsets();
   const [name, setName] = useState('');
+  const [isContinuing, setIsContinuing] = useState(false);
   const inputRef = useRef<RNTextInput>(null);
 
   useEffect(() => {
@@ -31,7 +34,7 @@ const WelcomeScreen: React.FC<Props> = ({ navigation }) => {
     init();
   }, []);
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     if (!name.trim()) {
       logFormSubmit({
         screen_name: 'welcome',
@@ -42,19 +45,38 @@ const WelcomeScreen: React.FC<Props> = ({ navigation }) => {
       Alert.alert(t('auth.nameRequired'), t('auth.nameRequiredMessage'));
       return;
     }
-    logFormSubmit({
-      screen_name: 'welcome',
-      form_name: 'welcome_name',
-      success: true,
-    });
-    const nextScreen = getNextOnboardingScreen('Welcome');
-    const params = { userName: name.trim() };
-    logNavigation({
-      source_screen: 'welcome',
-      destination_screen: nextScreen.toLowerCase(),
-      action_name: 'continue',
-    });
-    navigation.navigate(nextScreen as never, params as never);
+    if (isContinuing) return;
+
+    const trimmedName = name.trim();
+    setIsContinuing(true);
+    try {
+      await userService.syncStoredUserName(trimmedName);
+
+      if (!validateFullNameForPerson(trimmedName)) {
+        const { firstName, lastName } = parseFullName(trimmedName);
+        try {
+          await personsService.createOrUpdatePerson({ firstName, lastName });
+        } catch (error) {
+          logger.warn('[WelcomeScreen] Falha ao persistir nome na Person; segue onboarding', { cause: error });
+        }
+      }
+
+      logFormSubmit({
+        screen_name: 'welcome',
+        form_name: 'welcome_name',
+        success: true,
+      });
+      const nextScreen = getNextOnboardingScreen('Welcome');
+      const params = { userName: trimmedName };
+      logNavigation({
+        source_screen: 'welcome',
+        destination_screen: nextScreen.toLowerCase(),
+        action_name: 'continue',
+      });
+      navigation.navigate(nextScreen as never, params as never);
+    } finally {
+      setIsContinuing(false);
+    }
   };
 
   const handleBack = () => {
@@ -84,7 +106,14 @@ const WelcomeScreen: React.FC<Props> = ({ navigation }) => {
         includeBottomSafeAreaOnFooter={false}
         footer={
           <View style={[styles.footer, bottomInset > 0 ? { paddingBottom: 0 } : null]}>
-            <PrimaryButton label='Próximo' onPress={handleContinue} size='large' />
+            <PrimaryButton
+              label='Próximo'
+              onPress={() => {
+                void handleContinue();
+              }}
+              disabled={isContinuing}
+              size='large'
+            />
           </View>
         }
       >
@@ -110,7 +139,9 @@ const WelcomeScreen: React.FC<Props> = ({ navigation }) => {
                 onChangeText={setName}
                 placeholder={t('auth.yourNamePlaceholder')}
                 returnKeyType='next'
-                onSubmitEditing={handleContinue}
+                onSubmitEditing={() => {
+                  void handleContinue();
+                }}
                 onPressIn={() => inputRef.current?.focus()}
               />
             </View>

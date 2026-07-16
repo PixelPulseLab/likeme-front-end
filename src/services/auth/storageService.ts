@@ -14,11 +14,29 @@ const OBJECTIVES_SELECTED_AT_KEY = '@likeme:objectives_selected_at';
 const SELECTED_OBJECTIVES_IDS_KEY = '@likeme:selected_objectives_ids';
 const ANAMNESIS_COMPLETED_AT_KEY = '@likeme:anamnesis_completed_at';
 const CART_ITEMS_KEY = '@likeme:cart_items';
+/** E-mail do dono do carrinho local — evita reutilizar itens entre contas no mesmo device. */
+const CART_OWNER_EMAIL_KEY = '@likeme:cart_owner_email';
+/** E-mail da sessão local — evita reutilizar flags de onboarding entre contas no mesmo device. */
+const SESSION_OWNER_EMAIL_KEY = '@likeme:session_owner_email';
 const PRIVACY_POLICY_ACCEPTED_AT_KEY = '@likeme:privacy_policy_accepted_at';
 const COMMUNITY_WELCOME_DISMISSED_KEY = '@likeme:community_welcome_dismissed';
 const COMMUNITY_SHOPPING_TIP_DISMISSED_KEY = '@likeme:community_shopping_tip_dismissed';
 const COMMUNITY_FAVORITE_IDS_KEY = '@likeme:community_favorite_ids';
 const PROGRAM_MODULE_COMPLETED_IDS_KEY = '@likeme:program_module_completed_ids';
+
+const ONBOARDING_STORAGE_KEYS = [
+  REGISTER_COMPLETED_AT_KEY,
+  WELCOME_SCREEN_ACCESSED_AT_KEY,
+  OBJECTIVES_SELECTED_AT_KEY,
+  SELECTED_OBJECTIVES_IDS_KEY,
+  ANAMNESIS_COMPLETED_AT_KEY,
+  PRIVACY_POLICY_ACCEPTED_AT_KEY,
+] as const;
+
+function normalizeStorageOwnerEmail(email: string | null | undefined): string | null {
+  const normalized = email?.trim().toLowerCase();
+  return normalized || null;
+}
 
 class StorageService {
   async setToken(token: string): Promise<void> {
@@ -50,6 +68,10 @@ class StorageService {
   async setUser(user: StoredUser): Promise<void> {
     try {
       await AsyncStorage.setItem(USER_KEY, JSON.stringify(user));
+      const ownerEmail = normalizeStorageOwnerEmail(user.email);
+      if (ownerEmail) {
+        await AsyncStorage.setItem(SESSION_OWNER_EMAIL_KEY, ownerEmail);
+      }
     } catch (error) {
       logger.error('Error saving user:', error);
     }
@@ -232,10 +254,19 @@ class StorageService {
   async getCartItems(): Promise<any[]> {
     try {
       const cartItemsString = await AsyncStorage.getItem(CART_ITEMS_KEY);
-      if (cartItemsString) {
-        return JSON.parse(cartItemsString);
+      if (!cartItemsString) {
+        return [];
       }
-      return [];
+
+      const ownerEmail = normalizeStorageOwnerEmail(await AsyncStorage.getItem(CART_OWNER_EMAIL_KEY));
+      const currentEmail = normalizeStorageOwnerEmail((await this.getUser())?.email);
+      if (ownerEmail && currentEmail && ownerEmail !== currentEmail) {
+        await this.clearCart();
+        return [];
+      }
+
+      const parsed = JSON.parse(cartItemsString);
+      return Array.isArray(parsed) ? parsed : [];
     } catch (error) {
       logger.error('Error getting cart items:', error);
       return [];
@@ -245,9 +276,42 @@ class StorageService {
   async setCartItems(items: any[]): Promise<void> {
     try {
       await AsyncStorage.setItem(CART_ITEMS_KEY, JSON.stringify(items));
+      const ownerEmail = normalizeStorageOwnerEmail((await this.getUser())?.email);
+      if (ownerEmail) {
+        await AsyncStorage.setItem(CART_OWNER_EMAIL_KEY, ownerEmail);
+      }
     } catch (error) {
       logger.error('Error saving cart items:', error);
     }
+  }
+
+  async clearOnboardingLocalState(): Promise<void> {
+    try {
+      await AsyncStorage.multiRemove([...ONBOARDING_STORAGE_KEYS]);
+    } catch (error) {
+      logger.error('Error clearing onboarding local state:', error);
+    }
+  }
+
+  /**
+   * Limpa dados locais de conta (carrinho + onboarding) quando o e-mail da sessão muda.
+   */
+  async clearLocalUserDataIfOwnerChanged(nextEmail: string | null | undefined): Promise<void> {
+    const nextOwner = normalizeStorageOwnerEmail(nextEmail);
+    const previousOwner = normalizeStorageOwnerEmail((await this.getUser())?.email);
+    const sessionOwner = normalizeStorageOwnerEmail(await AsyncStorage.getItem(SESSION_OWNER_EMAIL_KEY));
+    const cartOwner = normalizeStorageOwnerEmail(await AsyncStorage.getItem(CART_OWNER_EMAIL_KEY));
+    const ownerToCompare = previousOwner ?? sessionOwner ?? cartOwner;
+
+    if (!nextOwner || !ownerToCompare || ownerToCompare !== nextOwner) {
+      await this.clearOnboardingLocalState();
+      await this.clearCart();
+    }
+  }
+
+  /** @deprecated Prefer `clearLocalUserDataIfOwnerChanged` — mantido para compatibilidade de testes. */
+  async clearCartIfOwnerChanged(nextEmail: string | null | undefined): Promise<void> {
+    await this.clearLocalUserDataIfOwnerChanged(nextEmail);
   }
 
   async addToCart(item: any, quantity: number = 1): Promise<void> {
@@ -288,7 +352,7 @@ class StorageService {
 
   async clearCart(): Promise<void> {
     try {
-      await AsyncStorage.removeItem(CART_ITEMS_KEY);
+      await AsyncStorage.multiRemove([CART_ITEMS_KEY, CART_OWNER_EMAIL_KEY]);
     } catch (error) {
       logger.error('Error clearing cart:', error);
     }
@@ -447,16 +511,14 @@ class StorageService {
     try {
       await this.removeToken();
       await this.removeUser();
-      await AsyncStorage.removeItem(REGISTER_COMPLETED_AT_KEY);
-      await AsyncStorage.removeItem(WELCOME_SCREEN_ACCESSED_AT_KEY);
-      await AsyncStorage.removeItem(OBJECTIVES_SELECTED_AT_KEY);
-      await AsyncStorage.removeItem(SELECTED_OBJECTIVES_IDS_KEY);
-      await AsyncStorage.removeItem(ANAMNESIS_COMPLETED_AT_KEY);
-      await AsyncStorage.removeItem(PRIVACY_POLICY_ACCEPTED_AT_KEY);
-      await AsyncStorage.removeItem(COMMUNITY_WELCOME_DISMISSED_KEY);
-      await AsyncStorage.removeItem(COMMUNITY_SHOPPING_TIP_DISMISSED_KEY);
-      await AsyncStorage.removeItem(COMMUNITY_FAVORITE_IDS_KEY);
-      await AsyncStorage.removeItem(PROGRAM_MODULE_COMPLETED_IDS_KEY);
+      await this.clearOnboardingLocalState();
+      await AsyncStorage.multiRemove([
+        SESSION_OWNER_EMAIL_KEY,
+        COMMUNITY_WELCOME_DISMISSED_KEY,
+        COMMUNITY_SHOPPING_TIP_DISMISSED_KEY,
+        COMMUNITY_FAVORITE_IDS_KEY,
+        PROGRAM_MODULE_COMPLETED_IDS_KEY,
+      ]);
       await this.clearCart();
     } catch (error) {
       logger.error('Error clearing storage:', error);

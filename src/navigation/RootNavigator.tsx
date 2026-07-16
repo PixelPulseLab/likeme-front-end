@@ -46,6 +46,7 @@ import {
   getInterestCategoriesEditScreen,
   getPersonalDataEditScreen,
   getSettingsAndSecurityScreen,
+  getDeleteAccountScreen,
   getProtocolDetailScreen,
   getSubscriptionListScreen,
   getPrivacyPoliciesScreen,
@@ -238,6 +239,13 @@ const RootNavigator: React.FC = () => {
                         title: t('profile.settingsAndSecurity.title', {
                           defaultValue: 'Configurações e segurança',
                         }),
+                      }}
+                    />
+                    <Stack.Screen
+                      name='DeleteAccount'
+                      getComponent={getDeleteAccountScreen}
+                      options={{
+                        title: t('profile.deleteAccountFlow.title', { defaultValue: 'Excluir conta' }),
                       }}
                     />
                     <Stack.Screen

@@ -6,7 +6,7 @@ import { ScreenWithHeader, GradientBackground, KeyboardAwareScreen } from '@/com
 import PersonalDataFieldsForm, {
   type PersonalDataFieldErrors,
 } from '@/components/sections/person/PersonalDataFieldsForm';
-import { personsService } from '@/services';
+import { personsService, userService } from '@/services';
 import { useTranslation } from '@/hooks/i18n';
 import { useLoadPersonalData, useScrollToFocusedField, type PersonFormData } from '@/hooks';
 import type { PersonData } from '@/types/person';
@@ -159,6 +159,7 @@ const PersonalDataEditScreen: React.FC<Props> = ({ navigation }) => {
       };
 
       await personsService.createOrUpdatePerson(personData);
+      await userService.syncStoredUserName(formData.fullName.trim());
       setSavedFormData(formData);
       navigation.goBack();
     } catch (error: unknown) {

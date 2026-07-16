@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback } from 'react';
 import { Alert, Linking, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import type { StackScreenProps } from '@react-navigation/stack';
 import type { SvgProps } from 'react-native-svg';
@@ -7,12 +7,10 @@ import { PROFILE_HOME_MENU_ICONS } from '@/assets/profile';
 import { GradientBackground, ScreenWithHeader } from '@/components/ui/layout';
 import { useTranslation } from '@/hooks/i18n';
 import { useAnalyticsScreen } from '@/analytics';
-import { AuthService, userService } from '@/services';
 import type { RootStackParamList } from '@/types/navigation';
 import { COLORS, SPACING } from '@/constants';
 import { ACCOUNT_CONFIG } from '@/config/environment';
 import { logger } from '@/utils/logger';
-import { rootStackNavigationFrom } from '@/utils/navigation/rootStackNavigation';
 import { styles } from './styles';
 
 const TERMS_OF_USE_URL = 'https://www.likeme.global/terms';
@@ -31,8 +29,6 @@ const SettingsAndSecurityScreen: React.FC<Props> = ({ navigation }) => {
   useAnalyticsScreen({ screenName: 'SettingsAndSecurity', screenClass: 'SettingsAndSecurityScreen' });
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
-  const rootNavigation = rootStackNavigationFrom(navigation) ?? navigation;
-  const [deletingAccount, setDeletingAccount] = useState(false);
 
   const handleBack = useCallback(() => {
     navigation.goBack();
@@ -54,37 +50,9 @@ const SettingsAndSecurityScreen: React.FC<Props> = ({ navigation }) => {
     }
   }, [t]);
 
-  const runDeleteAccount = useCallback(async () => {
-    setDeletingAccount(true);
-    try {
-      await userService.deleteMyAccount();
-      await AuthService.logout();
-      rootNavigation.reset({
-        index: 0,
-        routes: [{ name: 'Unauthenticated' as never }],
-      });
-    } catch (error) {
-      logger.error('[SettingsAndSecurity] Falha ao excluir conta', { cause: error });
-      const message = error instanceof Error ? error.message : t('profile.deleteAccountError');
-      Alert.alert(t('profile.deleteAccountConfirmTitle'), message);
-    } finally {
-      setDeletingAccount(false);
-    }
-  }, [rootNavigation, t]);
-
   const handleDeleteAccountPress = useCallback(() => {
-    if (deletingAccount) return;
-    Alert.alert(t('profile.deleteAccountConfirmTitle'), t('profile.deleteAccountConfirmMessage'), [
-      { text: t('profile.deleteAccountCancel'), style: 'cancel' },
-      {
-        text: t('profile.deleteAccountConfirmButton'),
-        style: 'destructive',
-        onPress: () => {
-          void runDeleteAccount();
-        },
-      },
-    ]);
-  }, [deletingAccount, runDeleteAccount, t]);
+    navigation.navigate('DeleteAccount');
+  }, [navigation]);
 
   const handleOpenDeletionWebUrl = useCallback(async () => {
     const url = ACCOUNT_CONFIG.deletionWebUrl;
@@ -149,20 +117,12 @@ const SettingsAndSecurityScreen: React.FC<Props> = ({ navigation }) => {
           <View style={styles.menuList}>
             {menuItems.map((item) => {
               const MenuIcon = item.IconComponent;
-              const isDeleting = item.key === 'delete-account' && deletingAccount;
               return (
                 <View key={item.key} style={styles.menuItemBlock}>
-                  <TouchableOpacity
-                    style={styles.menuItem}
-                    onPress={item.onPress}
-                    activeOpacity={0.7}
-                    disabled={isDeleting}
-                  >
+                  <TouchableOpacity style={styles.menuItem} onPress={item.onPress} activeOpacity={0.7}>
                     <View style={styles.menuItemLeft}>
                       <MenuIcon width={30} height={26} />
-                      <Text style={styles.menuItemLabel}>
-                        {isDeleting ? t('profile.loading') : t(item.labelKey, { defaultValue: item.labelDefault })}
-                      </Text>
+                      <Text style={styles.menuItemLabel}>{t(item.labelKey, { defaultValue: item.labelDefault })}</Text>
                     </View>
                     <PROFILE_HOME_MENU_ICONS.chevronRight width={28} height={28} />
                   </TouchableOpacity>

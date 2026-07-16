@@ -1,4 +1,4 @@
-import { render, fireEvent } from '@testing-library/react-native';
+import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import { Alert } from 'react-native';
 import WelcomeScreen from './index';
 
@@ -66,6 +66,12 @@ jest.mock('@/services', () => ({
     setWelcomeScreenAccessedAt: jest.fn().mockResolvedValue(undefined),
     getUser: jest.fn().mockResolvedValue(null),
   },
+  userService: {
+    syncStoredUserName: jest.fn().mockResolvedValue(undefined),
+  },
+  personsService: {
+    createOrUpdatePerson: jest.fn().mockResolvedValue(undefined),
+  },
 }));
 
 describe('WelcomeScreen', () => {
@@ -86,7 +92,7 @@ describe('WelcomeScreen', () => {
     expect(getByPlaceholderText('auth.yourNamePlaceholder')).toBeTruthy();
   });
 
-  it('navega para AppPresentation ao pressionar Enter em qualquer teclado', () => {
+  it('navega para AppPresentation ao pressionar Enter em qualquer teclado', async () => {
     const mockNavigation = {
       navigate: jest.fn(),
       goBack: jest.fn(),
@@ -98,7 +104,9 @@ describe('WelcomeScreen', () => {
     fireEvent.changeText(input, 'John');
     fireEvent(input, 'submitEditing');
 
-    expect(mockNavigation.navigate).toHaveBeenCalledWith('AppPresentation', { userName: 'John' });
+    await waitFor(() => {
+      expect(mockNavigation.navigate).toHaveBeenCalledWith('AppPresentation', { userName: 'John' });
+    });
   });
 
   it('shows alert when trying to continue with empty name', () => {

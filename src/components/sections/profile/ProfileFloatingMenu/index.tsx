@@ -4,7 +4,7 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import type { SvgProps } from 'react-native-svg';
 import { PrimaryButton } from '@/components/ui/buttons';
 import { CachedImage } from '@/components/ui/media/CachedImage';
-import { storageService } from '@/services';
+import { AuthService, storageService } from '@/services';
 import { useTranslation } from '@/hooks/i18n';
 import type { StoredUser } from '@/types/auth';
 import { PROFILE_FLOATING_MENU_ICONS, PROFILE_MENU_CHEVRON_SIZE, PROFILE_MENU_ICON_SIZE } from '@/assets/profile';
@@ -51,10 +51,16 @@ const ProfileFloatingMenu: React.FC<Props> = ({ visible, navigation, onClose }) 
     void loadUser();
   }, [visible]);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await AuthService.logout();
+    } catch (error) {
+      logger.error('[ProfileFloatingMenu] Erro ao fazer logout', error);
+    }
+    onClose();
     rootNavigation.reset({
       index: 0,
-      routes: [{ name: 'Unauthenticated' as never }],
+      routes: [{ name: 'Unauthenticated' as never, params: { skipAutoLogin: true } }],
     });
   };
 
