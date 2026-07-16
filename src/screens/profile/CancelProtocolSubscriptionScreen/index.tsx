@@ -3,7 +3,7 @@ import { Alert, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import type { StackScreenProps } from '@react-navigation/stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialIcons';
-import { GradientBackground, ScreenWithHeader } from '@/components/ui/layout';
+import { ScreenWithHeader } from '@/components/ui/layout';
 import { PrimaryButton, SecondaryButton } from '@/components/ui/buttons';
 import { useTranslation } from '@/hooks/i18n';
 import { useAnalyticsScreen } from '@/analytics';
@@ -20,6 +20,8 @@ import { formatSubscriptionManageDate } from '@/utils/subscription/subscriptionM
 import { styles } from './styles';
 
 type Props = StackScreenProps<RootStackParamList, 'CancelProtocolSubscription'>;
+
+const CONSEQUENCE_POSITIVE_COLOR = '#29CC6A';
 
 const CancelProtocolSubscriptionScreen: React.FC<Props> = ({ navigation, route }) => {
   useAnalyticsScreen({
@@ -119,7 +121,6 @@ const CancelProtocolSubscriptionScreen: React.FC<Props> = ({ navigation, route }
       contentBackgroundColor={COLORS.BACKGROUND}
       contentContainerStyle={styles.container}
     >
-      <GradientBackground colors={['#958AAA', '#D8E4D6', '#F4F3EC']} />
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[
@@ -177,7 +178,7 @@ const CancelProtocolSubscriptionScreen: React.FC<Props> = ({ navigation, route }
                   <Icon
                     name={item.positive ? 'check-circle' : 'cancel'}
                     size={24}
-                    color={item.positive ? '#29CC6A' : COLORS.ERROR}
+                    color={item.positive ? CONSEQUENCE_POSITIVE_COLOR : COLORS.ERROR}
                   />
                   <Text style={styles.consequenceText}>{item.text}</Text>
                 </View>

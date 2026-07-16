@@ -208,13 +208,13 @@ const ProtocolDetailScreen: React.FC<Props> = ({ navigation, route }) => {
     navigateToShareDiscover(navigation, protocol?.productId ?? routeProductId);
   };
 
-  const handleSharePress = async () => {
+  const handleSharePress = useCallback(async () => {
     const productId = protocol?.productId ?? routeProductId;
     if (!productId) {
       return;
     }
     await shareContent({ contentType: SHARE_CONTENT_TYPES.PROTOCOL, productId }, { screenName: 'protocol_detail' });
-  };
+  }, [protocol?.productId, routeProductId]);
 
   const handleManageProtocol = useCallback(() => {
     const subscriptionId = protocol?.subscriptionId?.trim();
@@ -229,16 +229,36 @@ const ProtocolDetailScreen: React.FC<Props> = ({ navigation, route }) => {
   }, [navigation, protocol?.name, protocol?.subscriptionId, t]);
 
   const protocolMenuOptions = useMemo(() => {
-    if (!protocol?.subscriptionId?.trim()) {
+    if (!protocol) {
       return undefined;
     }
-    return [
-      {
+
+    const subscriptionFields = {
+      status: protocol.subscriptionStatus,
+      cancelAtPeriodEnd: protocol.cancelAtPeriodEnd,
+      canceledAt: protocol.canceledAt,
+    };
+    const isCanceledSubscription = subscriptionIsCanceledPresentation(subscriptionFields);
+    const options: Array<{ label: string; onPress: () => void }> = [];
+
+    if (protocol.subscriptionId?.trim()) {
+      options.push({
         label: t('profile.protocolDetail.manageProtocol', { defaultValue: 'Gerenciar protocolo' }),
         onPress: handleManageProtocol,
-      },
-    ];
-  }, [handleManageProtocol, protocol?.subscriptionId, t]);
+      });
+    }
+
+    if (!isCanceledSubscription) {
+      options.push({
+        label: t('profile.protocolDetail.share', { defaultValue: 'Compartilhar' }),
+        onPress: () => {
+          void handleSharePress();
+        },
+      });
+    }
+
+    return options.length > 0 ? options : undefined;
+  }, [handleManageProtocol, handleSharePress, protocol, t]);
 
   const handleTabSelect = (tabId: ProtocolTabId) => {
     logTabSelect({ screen_name: 'protocol_detail', tab_id: tabId });
@@ -488,7 +508,6 @@ const ProtocolDetailScreen: React.FC<Props> = ({ navigation, route }) => {
             options={TAB_OPTIONS}
             selectedId={activeTab}
             onSelect={handleTabSelect}
-            onSharePress={isCanceledSubscription ? undefined : () => void handleSharePress()}
             menuOptions={protocolMenuOptions}
           />
         </View>

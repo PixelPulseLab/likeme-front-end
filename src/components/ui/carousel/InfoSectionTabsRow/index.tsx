@@ -1,13 +1,17 @@
-import React, { useCallback } from 'react';
-import { ActionSheetIOS, Alert, Platform, View, type StyleProp, type ViewStyle } from 'react-native';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { Dimensions, Modal, Pressable, Text, View, type StyleProp, type ViewStyle } from 'react-native';
 import { IconButton } from '@/components/ui/buttons';
 import ButtonCarousel, { type ButtonCarouselOption } from '@/components/ui/carousel/ButtonCarousel';
-import { useTranslation } from '@/hooks/i18n';
 import { styles } from './styles';
 
 export type InfoSectionMenuOption = {
   label: string;
   onPress: () => void;
+};
+
+type MenuAnchor = {
+  top: number;
+  right: number;
 };
 
 type Props<T extends string | number = string> = {
@@ -27,45 +31,42 @@ function InfoSectionTabsRow<T extends string | number = string>({
   menuOptions,
   style,
 }: Props<T>) {
-  const { t } = useTranslation();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [menuAnchor, setMenuAnchor] = useState<MenuAnchor>({ top: 0, right: 16 });
+  const menuButtonRef = useRef<View>(null);
+
+  const closeMenu = useCallback(() => {
+    setIsMenuOpen(false);
+  }, []);
+
+  useEffect(() => {
+    if (!menuOptions?.length && isMenuOpen) {
+      setIsMenuOpen(false);
+    }
+  }, [isMenuOpen, menuOptions]);
 
   const openMenu = useCallback(() => {
     if (!menuOptions?.length) {
       return;
     }
 
-    const labels = menuOptions.map((option) => option.label);
-    const cancelLabel = t('common.cancel');
+    menuButtonRef.current?.measureInWindow((x, y, width, height) => {
+      const windowWidth = Dimensions.get('window').width;
+      setMenuAnchor({
+        top: y + height + 4,
+        right: Math.max(16, windowWidth - (x + width)),
+      });
+      setIsMenuOpen(true);
+    });
+  }, [menuOptions]);
 
-    if (Platform.OS === 'ios') {
-      ActionSheetIOS.showActionSheetWithOptions(
-        {
-          options: [...labels, cancelLabel],
-          cancelButtonIndex: labels.length,
-        },
-        (buttonIndex) => {
-          if (buttonIndex == null || buttonIndex >= labels.length) {
-            return;
-          }
-          menuOptions[buttonIndex]?.onPress();
-        },
-      );
-      return;
-    }
-
-    Alert.alert(
-      t('community.informationTitle', { defaultValue: 'Informações' }),
-      undefined,
-      [
-        ...menuOptions.map((option) => ({
-          text: option.label,
-          onPress: option.onPress,
-        })),
-        { text: cancelLabel, style: 'cancel' as const },
-      ],
-      { cancelable: true },
-    );
-  }, [menuOptions, t]);
+  const handleMenuOptionPress = useCallback(
+    (option: InfoSectionMenuOption) => {
+      closeMenu();
+      option.onPress();
+    },
+    [closeMenu],
+  );
 
   const showShare = Boolean(onSharePress);
   const showMenu = Boolean(menuOptions?.length);
@@ -89,14 +90,29 @@ function InfoSectionTabsRow<T extends string | number = string>({
         />
       ) : null}
       {showMenu ? (
-        <IconButton
-          icon='more-vert'
-          onPress={openMenu}
-          variant='dark'
-          backgroundSize='medium'
-          containerStyle={styles.trailingAction}
-        />
+        <View ref={menuButtonRef} collapsable={false} style={styles.trailingAction}>
+          <IconButton icon='more-vert' onPress={openMenu} variant='dark' backgroundSize='medium' />
+        </View>
       ) : null}
+
+      <Modal visible={isMenuOpen} transparent animationType='fade' onRequestClose={closeMenu}>
+        <View style={styles.menuBackdrop}>
+          <Pressable style={styles.menuDismissArea} onPress={closeMenu} accessibilityRole='button' />
+          <View style={[styles.menuCard, { top: menuAnchor.top, right: menuAnchor.right }]}>
+            {menuOptions?.map((option) => (
+              <Pressable
+                key={option.label}
+                style={styles.menuOption}
+                onPress={() => handleMenuOptionPress(option)}
+                accessibilityRole='button'
+                accessibilityLabel={option.label}
+              >
+                <Text style={styles.menuOptionLabel}>{option.label}</Text>
+              </Pressable>
+            ))}
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }

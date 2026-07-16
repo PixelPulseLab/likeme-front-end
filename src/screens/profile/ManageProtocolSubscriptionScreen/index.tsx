@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, ScrollView, Text, View } from 'react-native';
 import type { StackScreenProps } from '@react-navigation/stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { GradientBackground, ScreenWithHeader } from '@/components/ui/layout';
+import { ScreenWithHeader } from '@/components/ui/layout';
 import { PrimaryButton, SecondaryButton } from '@/components/ui/buttons';
 import Badge from '@/components/ui/badge';
 import { useTranslation } from '@/hooks/i18n';
@@ -166,7 +166,6 @@ const ManageProtocolSubscriptionScreen: React.FC<Props> = ({ navigation, route }
       contentBackgroundColor={COLORS.BACKGROUND}
       contentContainerStyle={styles.container}
     >
-      <GradientBackground colors={['#958AAA', '#D8E4D6', '#F4F3EC']} />
       {loading ? (
         <View style={styles.loadingBox}>
           <ActivityIndicator color={COLORS.TEXT} />
@@ -283,9 +282,10 @@ const ManageProtocolSubscriptionScreen: React.FC<Props> = ({ navigation, route }
                 </Text>
                 <View style={styles.benefitList}>
                   {benefits.map((benefit) => (
-                    <Text key={benefit} style={styles.benefitItem}>
-                      • {benefit}
-                    </Text>
+                    <View key={benefit} style={styles.benefitRow}>
+                      <Text style={styles.benefitBullet}>{'\u2022'}</Text>
+                      <Text style={styles.benefitItem}>{benefit}</Text>
+                    </View>
                   ))}
                 </View>
               </View>
@@ -299,6 +299,7 @@ const ManageProtocolSubscriptionScreen: React.FC<Props> = ({ navigation, route }
                   })}
                   onPress={handleCancelPress}
                   size='large'
+                  style={styles.cancelButton}
                 />
               </View>
             ) : null}

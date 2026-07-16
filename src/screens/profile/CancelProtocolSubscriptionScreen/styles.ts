@@ -1,10 +1,11 @@
-import { StyleSheet } from 'react-native';
-import { COLORS, FONT_FAMILY, SPACING, TYPOGRAPHY } from '@/constants';
+import { Platform, StyleSheet } from 'react-native';
+import { COLORS, FONT_FAMILY, SPACING } from '@/constants';
 
 export const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingBottom: 0,
+    backgroundColor: COLORS.BACKGROUND,
   },
   scrollContent: {
     flexGrow: 1,
@@ -14,7 +15,9 @@ export const styles = StyleSheet.create({
     gap: SPACING.LG,
   },
   title: {
-    ...TYPOGRAPHY.title3,
+    fontFamily: FONT_FAMILY.DM_SANS_BOLD,
+    fontSize: 20,
+    lineHeight: 24,
     color: COLORS.TEXT,
   },
   reasonSection: {
@@ -30,11 +33,14 @@ export const styles = StyleSheet.create({
   reasonTitle: {
     fontFamily: FONT_FAMILY.DM_SANS_BOLD,
     fontSize: 16,
-    lineHeight: 22,
+    lineHeight: 20,
     color: COLORS.TEXT,
   },
   reasonOptional: {
-    ...TYPOGRAPHY.bodyMd,
+    fontFamily: FONT_FAMILY.DM_SANS_REGULAR,
+    fontSize: 14,
+    lineHeight: 18,
+    letterSpacing: 0.2,
     color: COLORS.TEXT_LIGHT,
   },
   reasonList: {
@@ -77,7 +83,10 @@ export const styles = StyleSheet.create({
   },
   reasonLabel: {
     flex: 1,
-    ...TYPOGRAPHY.bodyMd,
+    fontFamily: FONT_FAMILY.DM_SANS_REGULAR,
+    fontSize: 14,
+    lineHeight: 22,
+    letterSpacing: 0.2,
     color: COLORS.TEXT,
   },
   card: {
@@ -93,7 +102,7 @@ export const styles = StyleSheet.create({
   cardTitle: {
     fontFamily: FONT_FAMILY.DM_SANS_BOLD,
     fontSize: 16,
-    lineHeight: 22,
+    lineHeight: 20,
     color: COLORS.TEXT,
   },
   consequenceList: {
@@ -108,11 +117,14 @@ export const styles = StyleSheet.create({
   },
   consequenceText: {
     flex: 1,
-    ...TYPOGRAPHY.bodyMd,
+    fontFamily: FONT_FAMILY.DM_SANS_REGULAR,
+    fontSize: 14,
+    lineHeight: 22,
+    letterSpacing: 0.2,
     color: COLORS.TEXT,
   },
   separator: {
-    height: 1,
+    height: StyleSheet.hairlineWidth,
     width: '100%',
     backgroundColor: COLORS.SECONDARY.MEDIUM,
   },
@@ -125,13 +137,16 @@ export const styles = StyleSheet.create({
     gap: SPACING.XS,
   },
   fieldLabel: {
-    ...TYPOGRAPHY.bodyMd,
+    fontFamily: FONT_FAMILY.DM_SANS_REGULAR,
+    fontSize: 14,
+    lineHeight: 22,
+    letterSpacing: 0.2,
     color: COLORS.TEXT,
   },
   fieldValue: {
     fontFamily: FONT_FAMILY.DM_SANS_REGULAR,
     fontSize: 14,
-    lineHeight: 20,
+    lineHeight: 18,
     letterSpacing: 0.2,
     color: COLORS.TEXT_LIGHT,
   },
@@ -143,8 +158,47 @@ export const styles = StyleSheet.create({
   },
   actionPrimary: {
     flex: 1,
+    minHeight: 48,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    borderBottomLeftRadius: 22,
+    borderBottomRightRadius: 22,
+    paddingVertical: 12,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.08,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 2,
+      },
+      default: {},
+    }),
   },
   actionSecondary: {
     flexShrink: 0,
+    backgroundColor: 'rgba(240, 238, 225, 0.16)',
+    borderColor: COLORS.TEXT,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    borderBottomLeftRadius: 22,
+    borderBottomRightRadius: 22,
+    minHeight: 48,
+    paddingVertical: 12,
+    overflow: 'visible',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.08,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 2,
+      },
+      default: {},
+    }),
   },
 });
