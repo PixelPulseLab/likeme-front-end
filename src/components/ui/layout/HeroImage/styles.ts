@@ -24,6 +24,13 @@ export const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
   },
+  desaturatedImageWrap: {
+    ...StyleSheet.absoluteFillObject,
+    filter: [{ grayscale: 1 }],
+    borderBottomLeftRadius: 40,
+    borderBottomRightRadius: 40,
+    overflow: 'hidden',
+  },
   imageStyle: {
     borderBottomLeftRadius: 40,
     borderBottomRightRadius: 40,

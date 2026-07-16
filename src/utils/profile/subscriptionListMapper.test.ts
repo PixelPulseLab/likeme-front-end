@@ -28,6 +28,31 @@ describe('subscriptionListMapper', () => {
     const item = mapSubscriptionToListItem(row, t);
     expect(item.kind).toBe('protocol');
     expect(item.title).toBe('Protocolo X');
+    expect(item.desaturated).toBe(false);
+  });
+
+  it('marca protocolo cancelado com badge e card dessaturado', () => {
+    const row: UserSubscriptionListItem = {
+      id: 'sub-canceled',
+      productId: 'prod-1',
+      status: 'ACTIVE',
+      nextBillingAt: null,
+      createdAt: '2026-01-01T00:00:00.000Z',
+      cancelAtPeriodEnd: true,
+      cancelRequestedAt: '2026-06-28T00:00:00.000Z',
+      accessValidUntil: '2026-07-15T00:00:00.000Z',
+      product: {
+        id: 'prod-1',
+        name: 'Protocolo Y',
+        image: 'https://example.com/img.jpg',
+        type: 'program',
+      },
+    };
+
+    const item = mapSubscriptionToListItem(row, (key, options) => options?.defaultValue ?? key);
+    expect(item.desaturated).toBe(true);
+    expect(item.badges).toContain('Cancelado');
+    expect(item.cancelAtPeriodEnd).toBe(true);
   });
 
   it('extrai serviços pagos dos pedidos', () => {

@@ -27,6 +27,13 @@ export type ProtocolDetailProtocol = {
   shortDescription?: string;
   description?: string;
   productId?: string;
+  /** Assinatura ativa — habilita “Gerenciar protocolo” no menu. */
+  subscriptionId?: string;
+  subscriptionStatus?: string;
+  cancelAtPeriodEnd?: boolean;
+  canceledAt?: string | null;
+  cancelRequestedAt?: string | null;
+  accessValidUntil?: string | null;
   /** Mesmo conteúdo da aba Acordos em ProductDetails (`Product.technicalSpecifications`). */
   agreements?: string;
   providerName?: string;
@@ -102,6 +109,17 @@ type RootStackParamListCore = {
   DeleteAccount: undefined;
   SubscriptionList: undefined;
   ProtocolDetail: { protocol: ProtocolDetailProtocol } | { productId: string };
+  ManageProtocolSubscription: { subscriptionId: string; programName: string };
+  CancelProtocolSubscription: {
+    subscriptionId: string;
+    programName: string;
+    lastBillingAt: string | null;
+    accessValidUntil: string | null;
+  };
+  CancelProtocolSubscriptionConfirm: {
+    programName: string;
+    accessValidUntil: string;
+  };
   PrivacyPolicies: { userName?: string };
   Home: undefined;
   Summary: undefined;

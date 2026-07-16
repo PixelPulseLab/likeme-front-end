@@ -19,6 +19,7 @@ export type HeroImageProps = {
   cardContent?: React.ReactNode;
   heightRatio?: number;
   offsetTop?: number;
+  desaturated?: boolean;
 };
 
 const HeroImage = ({
@@ -31,6 +32,7 @@ const HeroImage = ({
   cardContent,
   heightRatio = 0.5,
   offsetTop = 0,
+  desaturated = false,
 }: HeroImageProps) => {
   const source = useMemo(() => ({ uri: imageUri || DEFAULT_IMAGE_URI }), [imageUri]);
 
@@ -47,7 +49,13 @@ const HeroImage = ({
 
   return (
     <View style={[styles.section, sectionStyle]}>
-      <CachedImage source={source} style={[styles.image, styles.imageStyle]} priority={IMAGE_PRIORITY_HIGH} />
+      {desaturated ? (
+        <View style={styles.desaturatedImageWrap}>
+          <CachedImage source={source} style={[styles.image, styles.imageStyle]} priority={IMAGE_PRIORITY_HIGH} />
+        </View>
+      ) : (
+        <CachedImage source={source} style={[styles.image, styles.imageStyle]} priority={IMAGE_PRIORITY_HIGH} />
+      )}
       {shouldRenderCard ? (
         <View style={styles.cardContainer}>{cardContent}</View>
       ) : (

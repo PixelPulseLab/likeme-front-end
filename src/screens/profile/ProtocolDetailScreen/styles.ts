@@ -1,5 +1,5 @@
 import { StyleSheet } from 'react-native';
-import { COLORS, SPACING, FLOATING_NAV_MENU_BAR_OFFSET, TYPOGRAPHY } from '@/constants';
+import { COLORS, FONT_FAMILY, SPACING, FLOATING_NAV_MENU_BAR_OFFSET, TYPOGRAPHY } from '@/constants';
 
 export const styles = StyleSheet.create({
   container: {
@@ -48,5 +48,41 @@ export const styles = StyleSheet.create({
     ...TYPOGRAPHY.bodySm,
     color: COLORS.WHITE,
     marginBottom: SPACING.SM,
+  },
+  canceledNoticeCard: {
+    marginHorizontal: SPACING.MD,
+    backgroundColor: COLORS.BACKGROUND_SECONDARY,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 32,
+    borderBottomLeftRadius: 32,
+    borderBottomRightRadius: 24,
+    padding: SPACING.LG,
+  },
+  canceledNoticeText: {
+    ...TYPOGRAPHY.bodyMd,
+    color: COLORS.TEXT,
+  },
+  canceledNoticeDate: {
+    fontFamily: FONT_FAMILY.DM_SANS_BOLD,
+    fontSize: 14,
+    lineHeight: 20,
+    letterSpacing: 0.2,
+    color: COLORS.TEXT,
+  },
+  similarProductsSection: {
+    paddingHorizontal: SPACING.MD,
+    alignItems: 'center',
+    gap: SPACING.MD,
+  },
+  similarProductsTitle: {
+    ...TYPOGRAPHY.title3,
+    color: COLORS.TEXT,
+    textAlign: 'center',
+  },
+  similarProductsDescription: {
+    ...TYPOGRAPHY.bodyMd,
+    color: COLORS.TEXT,
+    textAlign: 'center',
+    maxWidth: 275,
   },
 });

@@ -4,6 +4,7 @@ export type JoinCardItem = {
   badges: string[];
   image: string;
   price?: number | null;
+  desaturated?: boolean;
 };
 
 export type JoinCardProps = {
@@ -11,6 +12,7 @@ export type JoinCardProps = {
   badges: readonly string[];
   image: string;
   price?: number | null;
+  desaturated?: boolean;
   onPress?: () => void;
   square?: boolean;
   fullWidth?: boolean;

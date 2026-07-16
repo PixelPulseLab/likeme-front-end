@@ -17,9 +17,17 @@ export type BlurCardProps = {
   footerSection?: React.ReactNode;
   onPress?: () => void;
   style?: StyleProp<ViewStyle>;
+  desaturated?: boolean;
 };
 
-const BlurCard: React.FC<BlurCardProps> = ({ backgroundImage, topSection, footerSection, onPress, style }) => {
+const BlurCard: React.FC<BlurCardProps> = ({
+  backgroundImage,
+  topSection,
+  footerSection,
+  onPress,
+  style,
+  desaturated = false,
+}) => {
   const [footerHeight, setFooterHeight] = useState(0);
   const lastFooterHeight = useRef(0);
 
@@ -38,7 +46,13 @@ const BlurCard: React.FC<BlurCardProps> = ({ backgroundImage, topSection, footer
 
   return (
     <Wrapper {...wrapperProps} style={[styles.container, style]}>
-      <CachedImage source={{ uri: backgroundImage }} style={styles.backgroundImage} />
+      {desaturated ? (
+        <View style={styles.desaturatedImageWrap}>
+          <CachedImage source={{ uri: backgroundImage }} style={styles.backgroundImage} />
+        </View>
+      ) : (
+        <CachedImage source={{ uri: backgroundImage }} style={styles.backgroundImage} />
+      )}
 
       <View style={styles.content}>
         {topSection && <View style={styles.topSection}>{topSection}</View>}

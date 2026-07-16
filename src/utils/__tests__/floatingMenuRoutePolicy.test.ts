@@ -151,6 +151,18 @@ describe('floatingMenuRoutePolicy', () => {
       expect(shouldShowFloatingMenuByRoute(state)).toBe(true);
       expect(getSelectedIdFromRoute('ProtocolDetail')).toBe('profile');
     });
+
+    it('fluxo de cancelamento de assinatura mantém overlay profile', () => {
+      for (const routeName of [
+        'ManageProtocolSubscription',
+        'CancelProtocolSubscription',
+        'CancelProtocolSubscriptionConfirm',
+      ] as const) {
+        const state = makeStack(0, [routeName]);
+        expect(shouldShowFloatingMenuByRoute(state)).toBe(true);
+        expect(getSelectedIdFromRoute(routeName)).toBe('profile');
+      }
+    });
   });
 
   describe('getSelectedIdFromRoute', () => {

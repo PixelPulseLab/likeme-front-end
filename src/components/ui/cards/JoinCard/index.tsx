@@ -12,6 +12,7 @@ export function JoinCard({
   badges,
   image,
   price,
+  desaturated = false,
   onPress,
   square = false,
   fullWidth = true,
@@ -58,6 +59,7 @@ export function JoinCard({
         footerSection={footerSection}
         onPress={onPress}
         style={cardStyle}
+        desaturated={desaturated}
       />
     </View>
   );

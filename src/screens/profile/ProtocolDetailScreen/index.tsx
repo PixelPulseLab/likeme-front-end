@@ -4,6 +4,7 @@ import type { StackScreenProps } from '@react-navigation/stack';
 import { useFocusEffect } from '@react-navigation/native';
 import { ScreenWithHeader, HeroImage } from '@/components/ui/layout';
 import { EmptyState, ShareContentUnavailable } from '@/components/ui/feedback';
+import { SecondaryButton } from '@/components/ui/buttons';
 import { type ButtonCarouselOption } from '@/components/ui/carousel';
 import InfoSectionTabsRow from '@/components/ui/carousel/InfoSectionTabsRow';
 import { ModuleAccordion } from '@/components/sections/program';
@@ -26,6 +27,11 @@ import { goBackOrShareHome, navigateToShareHome } from '@/utils/navigation/share
 import { navigateToShareDiscover } from '@/utils/navigation/shareDiscoverNavigation';
 import { logger } from '@/utils/logger';
 import { shareContent } from '@/utils/share/shareContent';
+import {
+  formatSubscriptionManageDate,
+  subscriptionCanceledOnDate,
+  subscriptionIsCanceledPresentation,
+} from '@/utils/subscription/subscriptionManageDisplay';
 import { styles } from './styles';
 
 type Props = StackScreenProps<RootStackParamList, 'ProtocolDetail'>;
@@ -209,6 +215,30 @@ const ProtocolDetailScreen: React.FC<Props> = ({ navigation, route }) => {
     await shareContent({ contentType: SHARE_CONTENT_TYPES.PROTOCOL, productId }, { screenName: 'protocol_detail' });
   };
 
+  const handleManageProtocol = useCallback(() => {
+    const subscriptionId = protocol?.subscriptionId?.trim();
+    if (!subscriptionId) {
+      return;
+    }
+    navigation.navigate('ManageProtocolSubscription', {
+      subscriptionId,
+      programName:
+        protocol?.name?.trim() || t('profile.subscriptionManage.programFallback', { defaultValue: 'Programa' }),
+    });
+  }, [navigation, protocol?.name, protocol?.subscriptionId, t]);
+
+  const protocolMenuOptions = useMemo(() => {
+    if (!protocol?.subscriptionId?.trim()) {
+      return undefined;
+    }
+    return [
+      {
+        label: t('profile.protocolDetail.manageProtocol', { defaultValue: 'Gerenciar protocolo' }),
+        onPress: handleManageProtocol,
+      },
+    ];
+  }, [handleManageProtocol, protocol?.subscriptionId, t]);
+
   const handleTabSelect = (tabId: ProtocolTabId) => {
     logTabSelect({ screen_name: 'protocol_detail', tab_id: tabId });
     setActiveTab(tabId);
@@ -248,7 +278,62 @@ const ProtocolDetailScreen: React.FC<Props> = ({ navigation, route }) => {
     );
   }
 
+  const isCanceledSubscription = subscriptionIsCanceledPresentation({
+    status: protocol.subscriptionStatus,
+    cancelAtPeriodEnd: protocol.cancelAtPeriodEnd,
+    canceledAt: protocol.canceledAt,
+  });
+  const canceledBadgeLabel = t('profile.acquisitionList.statusCanceled', { defaultValue: 'Cancelado' });
+  const heroBadges = (() => {
+    const base = (protocol.badges ?? []).filter(Boolean);
+    if (!isCanceledSubscription) {
+      return base;
+    }
+    const alreadyHasCanceled = base.some((badge) => badge.trim().toLowerCase() === canceledBadgeLabel.toLowerCase());
+    return alreadyHasCanceled ? base : [...base, canceledBadgeLabel];
+  })();
+  const canceledOnLabel = formatSubscriptionManageDate(
+    subscriptionCanceledOnDate({
+      status: protocol.subscriptionStatus,
+      cancelAtPeriodEnd: protocol.cancelAtPeriodEnd,
+      canceledAt: protocol.canceledAt,
+      cancelRequestedAt: protocol.cancelRequestedAt,
+    }),
+  );
+
+  const renderCanceledContentTab = () => (
+    <View style={styles.tabContent}>
+      <View style={styles.canceledNoticeCard}>
+        <Text style={styles.canceledNoticeText}>
+          {t('profile.protocolDetail.canceledNoticePrefix', { defaultValue: 'Programa cancelado em ' })}
+          <Text style={styles.canceledNoticeDate}>{canceledOnLabel}</Text>
+          {t('profile.protocolDetail.canceledNoticeSuffix', { defaultValue: '.' })}
+        </Text>
+      </View>
+      <View style={styles.similarProductsSection}>
+        <Text style={styles.similarProductsTitle}>
+          {t('profile.protocolDetail.similarProductsTitle', { defaultValue: 'Conheça produtos similares' })}
+        </Text>
+        <Text style={styles.similarProductsDescription}>
+          {t('profile.protocolDetail.similarProductsDescription', {
+            defaultValue:
+              'Navegue na(s) comunidade(s) e na aba shop e descubra o que combina com a sua jornada de bem-estar.',
+          })}
+        </Text>
+        <SecondaryButton
+          label={t('profile.protocolDetail.similarProductsButton', { defaultValue: 'Ver mais' })}
+          onPress={() => navigation.navigate('Marketplace' as never)}
+          size='large'
+        />
+      </View>
+    </View>
+  );
+
   const renderContentTab = () => {
+    if (isCanceledSubscription) {
+      return renderCanceledContentTab();
+    }
+
     if (!hasCommunity) {
       return (
         <View style={styles.tabContent}>
@@ -358,8 +443,9 @@ const ProtocolDetailScreen: React.FC<Props> = ({ navigation, route }) => {
         <HeroImage
           imageUri={heroImageUri}
           name={protocol.name}
-          badges={protocol.badges ?? []}
+          badges={heroBadges}
           heightRatio={0.6}
+          desaturated={isCanceledSubscription}
           footer={
             aboutText ? (
               <View style={styles.heroFooter}>
@@ -375,7 +461,8 @@ const ProtocolDetailScreen: React.FC<Props> = ({ navigation, route }) => {
             options={TAB_OPTIONS}
             selectedId={activeTab}
             onSelect={handleTabSelect}
-            onSharePress={() => void handleSharePress()}
+            onSharePress={isCanceledSubscription ? undefined : () => void handleSharePress()}
+            menuOptions={protocolMenuOptions}
           />
         </View>
 

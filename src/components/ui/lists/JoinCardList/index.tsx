@@ -34,6 +34,7 @@ export function JoinCardList<T extends JoinCardItem>({
         badges={item.badges}
         image={item.image}
         price={item.price}
+        desaturated={item.desaturated}
         onPress={handlePress}
         square={square}
         fullWidth={layout === 'list'}

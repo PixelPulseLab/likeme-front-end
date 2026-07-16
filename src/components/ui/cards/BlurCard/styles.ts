@@ -18,6 +18,10 @@ export const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
+  desaturatedImageWrap: {
+    ...StyleSheet.absoluteFillObject,
+    filter: [{ grayscale: 1 }],
+  },
   content: {
     flex: 1,
     justifyContent: 'space-between',

@@ -49,6 +49,9 @@ import {
   getDeleteAccountScreen,
   getProtocolDetailScreen,
   getSubscriptionListScreen,
+  getManageProtocolSubscriptionScreen,
+  getCancelProtocolSubscriptionScreen,
+  getCancelProtocolSubscriptionConfirmScreen,
   getPrivacyPoliciesScreen,
   getHomeScreen,
   getSummaryScreen,
@@ -258,6 +261,29 @@ const RootNavigator: React.FC = () => {
                       getComponent={getSubscriptionListScreen}
                       options={{
                         title: t('profile.acquisitionList.title', { defaultValue: 'Meus Programas e Serviços' }),
+                      }}
+                    />
+                    <Stack.Screen
+                      name='ManageProtocolSubscription'
+                      getComponent={getManageProtocolSubscriptionScreen}
+                      options={{
+                        title: t('profile.subscriptionManage.title', { defaultValue: 'Sobre o programa' }),
+                      }}
+                    />
+                    <Stack.Screen
+                      name='CancelProtocolSubscription'
+                      getComponent={getCancelProtocolSubscriptionScreen}
+                      options={{
+                        title: t('profile.subscriptionCancel.title', { defaultValue: 'Cancelar o programa' }),
+                      }}
+                    />
+                    <Stack.Screen
+                      name='CancelProtocolSubscriptionConfirm'
+                      getComponent={getCancelProtocolSubscriptionConfirmScreen}
+                      options={{
+                        title: t('profile.subscriptionCancelConfirm.title', {
+                          defaultValue: 'Assinatura cancelada',
+                        }),
                       }}
                     />
                     <Stack.Screen

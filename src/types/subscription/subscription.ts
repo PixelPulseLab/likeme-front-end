@@ -12,4 +12,11 @@ export interface SubscriptionListItem {
   communityId?: string;
   description?: string | null;
   agreements?: string | null;
+  status?: string;
+  cancelAtPeriodEnd?: boolean;
+  canceledAt?: string | null;
+  cancelRequestedAt?: string | null;
+  accessValidUntil?: string | null;
+  /** Card em escala de cinza (assinatura cancelada / em cancelamento). */
+  desaturated?: boolean;
 }

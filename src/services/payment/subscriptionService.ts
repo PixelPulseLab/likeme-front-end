@@ -55,6 +55,10 @@ export interface UserSubscriptionListItem {
   status: string;
   nextBillingAt: string | null;
   createdAt: string;
+  accessValidUntil?: string | null;
+  cancelAtPeriodEnd?: boolean;
+  canceledAt?: string | null;
+  cancelRequestedAt?: string | null;
   product: {
     id: string;
     name: string;
@@ -83,6 +87,29 @@ export interface UserAcquiredServiceItem {
 
 export interface ListUserSubscriptionsParams {
   search?: string;
+}
+
+export interface SubscriptionManageResult {
+  subscriptionId: string;
+  productId: string;
+  status: string;
+  cancelAtPeriodEnd: boolean;
+  startedAt: string;
+  lastBillingAt: string | null;
+  nextBillingAt: string | null;
+  accessValidUntil: string | null;
+  priceCents: number;
+  billingPeriod: string;
+  benefits: string[];
+  canCancel: boolean;
+  canReactivate: boolean;
+}
+
+export interface ScheduleSubscriptionCancelResult {
+  subscriptionId: string;
+  status: string;
+  cancelAtPeriodEnd: boolean;
+  accessValidUntil: string;
 }
 
 class SubscriptionService {
@@ -114,6 +141,31 @@ class SubscriptionService {
     return apiClient.get<
       ApiResponse<{ subscriptions: UserSubscriptionListItem[]; services: UserAcquiredServiceItem[] }>
     >('/api/payment/subscriptions', queryParams);
+  }
+
+  async getManageSubscription(subscriptionId: string): Promise<ApiResponse<SubscriptionManageResult>> {
+    return apiClient.get<ApiResponse<SubscriptionManageResult>>(
+      `/api/payment/subscriptions/${encodeURIComponent(subscriptionId)}/manage`,
+    );
+  }
+
+  async scheduleSubscriptionCancel(
+    subscriptionId: string,
+    reason: string,
+  ): Promise<ApiResponse<ScheduleSubscriptionCancelResult>> {
+    return apiClient.post<ApiResponse<ScheduleSubscriptionCancelResult>>(
+      `/api/payment/subscriptions/${encodeURIComponent(subscriptionId)}/schedule-cancel`,
+      { reason },
+      true,
+    );
+  }
+
+  async reactivateSubscription(subscriptionId: string): Promise<ApiResponse<{ subscriptionId: string }>> {
+    return apiClient.post<ApiResponse<{ subscriptionId: string }>>(
+      `/api/payment/subscriptions/${encodeURIComponent(subscriptionId)}/reactivate`,
+      {},
+      true,
+    );
   }
 }
 

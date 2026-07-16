@@ -19,6 +19,9 @@ export const ROUTES_SHOW_MENU = new Set<string>([
   'Checkout',
   'SubscriptionList',
   'ProtocolDetail',
+  'ManageProtocolSubscription',
+  'CancelProtocolSubscription',
+  'CancelProtocolSubscriptionConfirm',
   'Profile',
   CHAT_STACK_LIST_ROUTE,
 ]);
@@ -42,6 +45,9 @@ export const ROUTE_TO_SELECTED_ID: Record<string, string> = {
   ProviderProfile: 'marketplace',
   SubscriptionList: 'profile',
   ProtocolDetail: 'profile',
+  ManageProtocolSubscription: 'profile',
+  CancelProtocolSubscription: 'profile',
+  CancelProtocolSubscriptionConfirm: 'profile',
   Profile: 'profile',
 };
 
