@@ -2,17 +2,30 @@ import type { SubscriptionListItem } from '@/types/subscription/subscription';
 import type { UserSubscriptionListItem } from '@/services/payment/subscriptionService';
 import type { Order } from '@/types/order';
 import { PRODUCT_CATALOG_TYPE, catalogTypeTranslatedBadgeLabels } from '@/types/product';
-import { subscriptionIsCanceledPresentation } from '@/utils/subscription/subscriptionManageDisplay';
+import {
+  subscriptionIsCancelingPresentation,
+  subscriptionIsCanceledPresentation,
+} from '@/utils/subscription/subscriptionManageDisplay';
 
 const DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=400';
 
 type TranslateFn = (key: string, options?: { defaultValue?: string }) => string;
 
+function subscriptionStatusBadge(row: UserSubscriptionListItem, t: TranslateFn): string | null {
+  if (subscriptionIsCanceledPresentation(row)) {
+    return t('profile.acquisitionList.statusCanceled', { defaultValue: 'Cancelado' });
+  }
+  if (subscriptionIsCancelingPresentation(row)) {
+    return t('profile.acquisitionList.statusCanceling', { defaultValue: 'Em cancelamento' });
+  }
+  return null;
+}
+
 export function mapSubscriptionToListItem(row: UserSubscriptionListItem, t: TranslateFn): SubscriptionListItem {
   const typeBadges = catalogTypeTranslatedBadgeLabels(row.product.type, t);
+  const statusBadge = subscriptionStatusBadge(row, t);
   const isCanceled = subscriptionIsCanceledPresentation(row);
-  const canceledBadge = t('profile.acquisitionList.statusCanceled', { defaultValue: 'Cancelado' });
-  const badges = [...typeBadges, ...(isCanceled ? [canceledBadge] : [])];
+  const badges = [...typeBadges, ...(statusBadge ? [statusBadge] : [])];
 
   return {
     id: row.id,

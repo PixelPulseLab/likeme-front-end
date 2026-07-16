@@ -12,7 +12,10 @@ import type { Product as ApiProduct } from '@/types/product';
 import { catalogTypeTranslatedBadgeLabels } from '@/types/product';
 import { useTranslation } from '@/hooks/i18n';
 import { logger } from '@/utils/logger';
-import { subscriptionIsCanceledPresentation } from '@/utils/subscription/subscriptionManageDisplay';
+import {
+  subscriptionIsCancelingPresentation,
+  subscriptionIsCanceledPresentation,
+} from '@/utils/subscription/subscriptionManageDisplay';
 
 const DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=400';
 
@@ -112,10 +115,13 @@ export function useSubscriptionList(appliedSearchQuery = '') {
       const categoryBadges = fullProduct ? buildMarketplaceCategoryBadgeLabels(fullProduct, categoriesRef.current) : [];
       const typeBadges = catalogTypeTranslatedBadgeLabels(fullProduct?.type ?? sub.product.type, tRef.current);
       const isCanceled = subscriptionIsCanceledPresentation(sub);
-      const canceledBadge = tRef.current('profile.acquisitionList.statusCanceled', {
-        defaultValue: 'Cancelado',
-      });
-      const badges = [...categoryBadges, ...typeBadges, ...(isCanceled ? [canceledBadge] : [])].filter(Boolean);
+      const isCanceling = subscriptionIsCancelingPresentation(sub);
+      const statusBadge = isCanceled
+        ? tRef.current('profile.acquisitionList.statusCanceled', { defaultValue: 'Cancelado' })
+        : isCanceling
+        ? tRef.current('profile.acquisitionList.statusCanceling', { defaultValue: 'Em cancelamento' })
+        : null;
+      const badges = [...categoryBadges, ...typeBadges, ...(statusBadge ? [statusBadge] : [])].filter(Boolean);
 
       return {
         id: sub.id,

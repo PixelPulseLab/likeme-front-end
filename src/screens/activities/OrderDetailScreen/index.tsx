@@ -116,7 +116,7 @@ const OrderDetailScreen: React.FC<Props> = ({ navigation, route }) => {
 
   const renderOrderItem = (item: OrderItem) => {
     const product = item.product;
-    const tagLabels = orderItemBadgeLabels(product, t);
+    const tagLabels = orderItemBadgeLabels(product, t, order?.subscription);
     const imageUri = product?.image?.trim() || DEFAULT_PRODUCT_IMAGE;
     const catalogType = product?.type;
     const showDeliveryForecast =

@@ -18,6 +18,16 @@ export interface OrderItem {
   product?: Product;
 }
 
+export type OrderSubscriptionSummary = {
+  id: string;
+  status: string;
+  cancelAtPeriodEnd: boolean;
+  canceledAt?: string | null;
+  accessValidUntil?: string | null;
+  cancelRequestedAt?: string | null;
+  productId: string;
+};
+
 export interface Order {
   id: string;
   userId: string;
@@ -36,6 +46,7 @@ export interface Order {
   voucherId?: string | null;
   voucherDiscount?: number;
   voucher?: OrderVoucherSummary | null;
+  subscription?: OrderSubscriptionSummary | null;
   createdAt: string;
   updatedAt: string;
   deletedAt?: string;

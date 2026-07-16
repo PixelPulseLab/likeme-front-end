@@ -29,15 +29,25 @@ export type SubscriptionCanceledFields = {
   canceledAt?: string | null;
 };
 
-/** Assinatura cancelada ou com cancelamento agendado (UI cinza + badge Cancelado). */
-export function subscriptionIsCanceledPresentation(subscription: SubscriptionCanceledFields): boolean {
-  if (subscription.cancelAtPeriodEnd) {
-    return true;
+function normalizedSubscriptionStatus(status?: string | null): string {
+  return status?.trim().toUpperCase() ?? '';
+}
+
+/** Cancelamento agendado: ainda ACTIVE com acesso até o fim do ciclo. */
+export function subscriptionIsCancelingPresentation(subscription: SubscriptionCanceledFields): boolean {
+  const normalized = normalizedSubscriptionStatus(subscription.status);
+  if (normalized === 'CANCELED' || normalized === 'CANCELLED') {
+    return false;
   }
+  return Boolean(subscription.cancelAtPeriodEnd);
+}
+
+/** Cancelamento efetivado: sem acesso ao conteúdo do protocolo. */
+export function subscriptionIsCanceledPresentation(subscription: SubscriptionCanceledFields): boolean {
   if (subscription.canceledAt) {
     return true;
   }
-  const normalized = subscription.status?.trim().toUpperCase();
+  const normalized = normalizedSubscriptionStatus(subscription.status);
   return normalized === 'CANCELED' || normalized === 'CANCELLED';
 }
 
@@ -51,8 +61,8 @@ export function subscriptionManageStatusLabel(
   status: string,
   cancelAtPeriodEnd: boolean,
 ): { label: string; badgeColor: 'lime' | 'orange' | 'beige' } {
-  if (cancelAtPeriodEnd) {
-    return { label: 'Cancelado', badgeColor: 'orange' };
+  if (subscriptionIsCancelingPresentation({ status, cancelAtPeriodEnd })) {
+    return { label: 'Em cancelamento', badgeColor: 'orange' };
   }
   const normalized = status.trim().toUpperCase();
   if (normalized === 'ACTIVE' || normalized === 'PENDING') {

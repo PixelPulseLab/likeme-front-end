@@ -12,9 +12,11 @@ import { subscriptionService, type SubscriptionManageResult } from '@/services/p
 import type { RootStackParamList } from '@/types/navigation';
 import { COLORS, SPACING } from '@/constants';
 import { logger } from '@/utils/logger';
+import { navigateToProductDetailsScreen } from '@/utils/navigation/productNavigation';
 import {
   formatSubscriptionManageDate,
   formatSubscriptionManagePrice,
+  subscriptionIsCancelingPresentation,
   subscriptionIsCanceledPresentation,
   subscriptionManageStatusLabel,
 } from '@/utils/subscription/subscriptionManageDisplay';
@@ -82,7 +84,21 @@ const ManageProtocolSubscriptionScreen: React.FC<Props> = ({ navigation, route }
   }, [manage, navigation, programName, subscriptionId, t]);
 
   const handleReactivatePress = useCallback(async () => {
-    if (!manage?.canReactivate) {
+    if (!manage) {
+      return;
+    }
+
+    const isFullyCanceled = subscriptionIsCanceledPresentation({
+      status: manage.status,
+      cancelAtPeriodEnd: manage.cancelAtPeriodEnd,
+    });
+
+    if (isFullyCanceled) {
+      navigateToProductDetailsScreen(navigation, { productId: manage.productId });
+      return;
+    }
+
+    if (!manage.canReactivate) {
       return;
     }
     setReactivating(true);
@@ -111,9 +127,16 @@ const ManageProtocolSubscriptionScreen: React.FC<Props> = ({ navigation, route }
     } finally {
       setReactivating(false);
     }
-  }, [loadManage, manage?.canReactivate, subscriptionId, t]);
+  }, [loadManage, manage, navigation, subscriptionId, t]);
 
   const statusPresentation = manage ? subscriptionManageStatusLabel(manage.status, manage.cancelAtPeriodEnd) : null;
+
+  const isCancelingPresentation = manage
+    ? subscriptionIsCancelingPresentation({
+        status: manage.status,
+        cancelAtPeriodEnd: manage.cancelAtPeriodEnd,
+      })
+    : false;
 
   const isCanceledPresentation = manage
     ? subscriptionIsCanceledPresentation({
@@ -121,6 +144,9 @@ const ManageProtocolSubscriptionScreen: React.FC<Props> = ({ navigation, route }
         cancelAtPeriodEnd: manage.cancelAtPeriodEnd,
       })
     : false;
+
+  const showReducedSubscriptionFields = isCancelingPresentation || isCanceledPresentation;
+  const showRepurchaseReactivate = isCanceledPresentation;
 
   const benefits =
     manage?.benefits && manage.benefits.length > 0
@@ -175,7 +201,7 @@ const ManageProtocolSubscriptionScreen: React.FC<Props> = ({ navigation, route }
               <Text style={styles.cardTitle}>
                 {t('profile.subscriptionManage.mySubscription', { defaultValue: 'Minha assinatura' })}
               </Text>
-              {isCanceledPresentation ? (
+              {showReducedSubscriptionFields ? (
                 <View style={styles.fieldList}>
                   <View style={styles.fieldBlock}>
                     <Text style={styles.fieldLabel}>
@@ -248,7 +274,7 @@ const ManageProtocolSubscriptionScreen: React.FC<Props> = ({ navigation, route }
               )}
             </View>
 
-            {!isCanceledPresentation ? (
+            {!showReducedSubscriptionFields ? (
               <View style={[styles.card, styles.benefitsCard]}>
                 <Text style={styles.cardTitle}>
                   {t('profile.subscriptionManage.includedTitle', {
@@ -277,7 +303,7 @@ const ManageProtocolSubscriptionScreen: React.FC<Props> = ({ navigation, route }
               </View>
             ) : null}
 
-            {manage.canReactivate ? (
+            {manage.canReactivate || showRepurchaseReactivate ? (
               <View style={styles.actions}>
                 <PrimaryButton
                   label={t('profile.subscriptionManage.reactivateButton', {
@@ -288,12 +314,20 @@ const ManageProtocolSubscriptionScreen: React.FC<Props> = ({ navigation, route }
                   loading={reactivating}
                   disabled={reactivating}
                 />
-                <Text style={styles.reactivateHint}>
-                  {t('profile.subscriptionManage.reactivateHint', {
-                    defaultValue: `Mudou de ideia? Reative antes de ${reactivateDeadline}.`,
-                    date: reactivateDeadline,
-                  })}
-                </Text>
+                {manage.canReactivate ? (
+                  <Text style={styles.reactivateHint}>
+                    {t('profile.subscriptionManage.reactivateHint', {
+                      defaultValue: `Mudou de ideia? Reative antes de ${reactivateDeadline}.`,
+                      date: reactivateDeadline,
+                    })}
+                  </Text>
+                ) : (
+                  <Text style={styles.reactivateHint}>
+                    {t('profile.subscriptionManage.repurchaseHint', {
+                      defaultValue: 'Para voltar a ter acesso, adquira o protocolo novamente.',
+                    })}
+                  </Text>
+                )}
               </View>
             ) : null}
           </View>

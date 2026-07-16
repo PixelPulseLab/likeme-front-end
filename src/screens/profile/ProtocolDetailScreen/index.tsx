@@ -30,6 +30,7 @@ import { shareContent } from '@/utils/share/shareContent';
 import {
   formatSubscriptionManageDate,
   subscriptionCanceledOnDate,
+  subscriptionIsCancelingPresentation,
   subscriptionIsCanceledPresentation,
 } from '@/utils/subscription/subscriptionManageDisplay';
 import { styles } from './styles';
@@ -278,27 +279,50 @@ const ProtocolDetailScreen: React.FC<Props> = ({ navigation, route }) => {
     );
   }
 
-  const isCanceledSubscription = subscriptionIsCanceledPresentation({
+  const subscriptionFields = {
     status: protocol.subscriptionStatus,
     cancelAtPeriodEnd: protocol.cancelAtPeriodEnd,
     canceledAt: protocol.canceledAt,
-  });
+  };
+  const isCanceledSubscription = subscriptionIsCanceledPresentation(subscriptionFields);
+  const isCancelingSubscription = subscriptionIsCancelingPresentation(subscriptionFields);
   const canceledBadgeLabel = t('profile.acquisitionList.statusCanceled', { defaultValue: 'Cancelado' });
+  const cancelingBadgeLabel = t('profile.acquisitionList.statusCanceling', {
+    defaultValue: 'Em cancelamento',
+  });
   const heroBadges = (() => {
     const base = (protocol.badges ?? []).filter(Boolean);
-    if (!isCanceledSubscription) {
+    const statusBadge = isCanceledSubscription
+      ? canceledBadgeLabel
+      : isCancelingSubscription
+      ? cancelingBadgeLabel
+      : null;
+    if (!statusBadge) {
       return base;
     }
-    const alreadyHasCanceled = base.some((badge) => badge.trim().toLowerCase() === canceledBadgeLabel.toLowerCase());
-    return alreadyHasCanceled ? base : [...base, canceledBadgeLabel];
+    const alreadyHas = base.some((badge) => badge.trim().toLowerCase() === statusBadge.toLowerCase());
+    return alreadyHas ? base : [...base, statusBadge];
   })();
   const canceledOnLabel = formatSubscriptionManageDate(
     subscriptionCanceledOnDate({
-      status: protocol.subscriptionStatus,
-      cancelAtPeriodEnd: protocol.cancelAtPeriodEnd,
-      canceledAt: protocol.canceledAt,
+      ...subscriptionFields,
       cancelRequestedAt: protocol.cancelRequestedAt,
     }),
+  );
+  const accessUntilLabel = formatSubscriptionManageDate(protocol.accessValidUntil);
+
+  const renderCancelingNotice = () => (
+    <View style={styles.canceledNoticeCard}>
+      <Text style={styles.canceledNoticeText}>
+        {t('profile.protocolDetail.cancelingNoticePrefix', {
+          defaultValue: 'Este protocolo será cancelado em ',
+        })}
+        <Text style={styles.canceledNoticeDate}>{accessUntilLabel}</Text>
+        {t('profile.protocolDetail.cancelingNoticeSuffix', {
+          defaultValue: '. Você continua com acesso até essa data.',
+        })}
+      </Text>
+    </View>
   );
 
   const renderCanceledContentTab = () => (
@@ -337,6 +361,7 @@ const ProtocolDetailScreen: React.FC<Props> = ({ navigation, route }) => {
     if (!hasCommunity) {
       return (
         <View style={styles.tabContent}>
+          {isCancelingSubscription ? renderCancelingNotice() : null}
           {courseModules.length > 0 ? (
             <ModuleAccordion modules={courseModules} storageScopeId={moduleStorageScopeId} />
           ) : (
@@ -366,6 +391,7 @@ const ProtocolDetailScreen: React.FC<Props> = ({ navigation, route }) => {
     if (!eventBanner && !showLessons) {
       return (
         <View style={styles.tabContent}>
+          {isCancelingSubscription ? renderCancelingNotice() : null}
           <EmptyState title={noCourseStepsTitle} iconName='menu-book' />
         </View>
       );
@@ -373,6 +399,7 @@ const ProtocolDetailScreen: React.FC<Props> = ({ navigation, route }) => {
 
     return (
       <View style={styles.tabContent}>
+        {isCancelingSubscription ? renderCancelingNotice() : null}
         {eventBanner ? (
           <View style={styles.eventBannerContainer}>
             <EventBanner event={eventBanner} onPress={handleEventBannerPress} />

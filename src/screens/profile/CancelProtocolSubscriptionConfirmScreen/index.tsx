@@ -80,7 +80,7 @@ const CancelProtocolSubscriptionConfirmScreen: React.FC<Props> = ({ navigation, 
                 {t('profile.subscriptionManage.status', { defaultValue: 'Status' })}
               </Text>
               <Badge
-                label={t('profile.subscriptionCancelConfirm.statusCanceled', { defaultValue: 'Cancelado' })}
+                label={t('profile.acquisitionList.statusCanceling', { defaultValue: 'Em cancelamento' })}
                 color='orange'
               />
             </View>
@@ -125,12 +125,12 @@ const CancelProtocolSubscriptionConfirmScreen: React.FC<Props> = ({ navigation, 
           <View style={styles.emailTexts}>
             <Text style={styles.emailTitle}>
               {t('profile.subscriptionCancelConfirm.emailTitle', {
-                defaultValue: 'E-mail de confirmação enviado',
+                defaultValue: 'E-mail de confirmação',
               })}
             </Text>
             <Text style={styles.emailSubtitle}>
               {t('profile.subscriptionCancelConfirm.emailSubtitle', {
-                defaultValue: 'Verifique sua caixa de entrada',
+                defaultValue: 'Verifique sua caixa de entrada — o envio depende da configuração do template.',
               })}
             </Text>
           </View>

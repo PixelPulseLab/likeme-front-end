@@ -31,9 +31,9 @@ describe('subscriptionListMapper', () => {
     expect(item.desaturated).toBe(false);
   });
 
-  it('marca protocolo cancelado com badge e card dessaturado', () => {
+  it('marca protocolo em cancelamento com badge sem dessaturar o card', () => {
     const row: UserSubscriptionListItem = {
-      id: 'sub-canceled',
+      id: 'sub-canceling',
       productId: 'prod-1',
       status: 'ACTIVE',
       nextBillingAt: null,
@@ -50,9 +50,31 @@ describe('subscriptionListMapper', () => {
     };
 
     const item = mapSubscriptionToListItem(row, (key, options) => options?.defaultValue ?? key);
+    expect(item.desaturated).toBe(false);
+    expect(item.badges).toContain('Em cancelamento');
+    expect(item.cancelAtPeriodEnd).toBe(true);
+  });
+
+  it('marca protocolo cancelado efetivo com badge e card dessaturado', () => {
+    const row: UserSubscriptionListItem = {
+      id: 'sub-canceled',
+      productId: 'prod-1',
+      status: 'CANCELED',
+      nextBillingAt: null,
+      createdAt: '2026-01-01T00:00:00.000Z',
+      cancelAtPeriodEnd: false,
+      canceledAt: '2026-07-01T00:00:00.000Z',
+      product: {
+        id: 'prod-1',
+        name: 'Protocolo Z',
+        image: 'https://example.com/img.jpg',
+        type: 'program',
+      },
+    };
+
+    const item = mapSubscriptionToListItem(row, (key, options) => options?.defaultValue ?? key);
     expect(item.desaturated).toBe(true);
     expect(item.badges).toContain('Cancelado');
-    expect(item.cancelAtPeriodEnd).toBe(true);
   });
 
   it('extrai serviços pagos dos pedidos', () => {
