@@ -45,6 +45,14 @@ const REMOVED_DATA_ITEMS = [
   },
 ] as const;
 
+const REASON_OPTION_DEFAULTS: Record<string, string> = {
+  'profile.deleteAccountFlow.reasonNotUsingEnough': 'Não estou usando o suficiente',
+  'profile.deleteAccountFlow.reasonPriceTooHigh': 'O valor está alto para mim',
+  'profile.deleteAccountFlow.reasonLearnedEnough': 'Já aprendi o que precisava',
+  'profile.deleteAccountFlow.reasonWillResumeLater': 'Vou retomar em outro momento',
+  'profile.deleteAccountFlow.reasonOther': 'Outro motivo',
+};
+
 const DeleteAccountScreen: React.FC<Props> = ({ navigation }) => {
   useAnalyticsScreen({ screenName: 'DeleteAccount', screenClass: 'DeleteAccountScreen' });
   const { t } = useTranslation();
@@ -140,35 +148,67 @@ const DeleteAccountScreen: React.FC<Props> = ({ navigation }) => {
 
   const renderReasonStep = () => (
     <>
-      <Text style={styles.title}>{t('profile.deleteAccountFlow.step2Title')}</Text>
-      <View style={styles.disclaimerBox}>
-        <Text style={styles.disclaimerText}>{t('profile.deleteAccountFlow.step2Disclaimer')}</Text>
-        <Text style={styles.recoveryText}>{t('profile.deleteAccountFlow.step2RecoveryNotice')}</Text>
+      <Text style={styles.title}>
+        {t('profile.deleteAccountFlow.step2Title', { defaultValue: 'Encerrar a conta' })}
+      </Text>
+      <View style={styles.attentionCard}>
+        <Text style={styles.attentionTitle}>
+          {t('profile.deleteAccountFlow.step2AttentionTitle', { defaultValue: 'ATENÇÃO!' })}
+          {'\n'}
+          {t('profile.deleteAccountFlow.step2AttentionSubtitle', { defaultValue: 'Ação irreversível' })}
+        </Text>
+        <Text style={styles.attentionBody}>
+          {t('profile.deleteAccountFlow.step2RecoveryNotice', {
+            defaultValue:
+              'Após a exclusão, você terá 30 dias para reativar sua conta entrando em contato com o suporte. Depois disso, os dados são permanentemente apagados.',
+          })}
+        </Text>
       </View>
-      <Text style={styles.reasonTitle}>{t('profile.deleteAccountFlow.reasonSurveyTitle')}</Text>
-      <View style={styles.reasonList}>
-        {ACCOUNT_CLOSURE_REASON_OPTIONS.map((option) => {
-          const selected = selectedReason === option.id;
-          return (
-            <TouchableOpacity
-              key={option.id}
-              style={[styles.reasonOption, selected && styles.reasonOptionSelected]}
-              onPress={() => setSelectedReason(selected ? null : option.id)}
-              activeOpacity={0.7}
-            >
-              <View style={styles.reasonRadio}>{selected ? <View style={styles.reasonRadioInner} /> : null}</View>
-              <Text style={styles.reasonLabel}>{t(option.labelKey)}</Text>
-            </TouchableOpacity>
-          );
-        })}
+      <View style={styles.reasonSection}>
+        <View style={styles.reasonTitleRow}>
+          <Text style={styles.reasonTitle}>
+            {t('profile.deleteAccountFlow.reasonSurveyTitle', {
+              defaultValue: 'Por que está cancelando?',
+            })}
+          </Text>
+          <Text style={styles.reasonOptional}>
+            {t('profile.deleteAccountFlow.reasonSurveyOptional', { defaultValue: '(opcional)' })}
+          </Text>
+        </View>
+        <View style={styles.reasonList}>
+          {ACCOUNT_CLOSURE_REASON_OPTIONS.map((option) => {
+            const selected = selectedReason === option.id;
+            return (
+              <TouchableOpacity
+                key={option.id}
+                style={[styles.reasonOption, selected && styles.reasonOptionSelected]}
+                onPress={() => setSelectedReason(selected ? null : option.id)}
+                activeOpacity={0.7}
+                accessibilityRole='radio'
+                accessibilityState={{ selected }}
+              >
+                <View style={[styles.reasonRadio, selected && styles.reasonRadioSelected]}>
+                  {selected ? <View style={styles.reasonRadioInner} /> : null}
+                </View>
+                <Text style={styles.reasonLabel}>
+                  {t(option.labelKey, { defaultValue: REASON_OPTION_DEFAULTS[option.labelKey] })}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
       </View>
       <View style={styles.actions}>
         <PrimaryButton
-          label={t('profile.deleteAccountFlow.advanceButton')}
+          label={t('profile.deleteAccountFlow.advanceButton', { defaultValue: 'Avançar' })}
           onPress={handleOpenConfirmModal}
           size='large'
         />
-        <SecondaryButton label={t('profile.deleteAccountFlow.cancelButton')} onPress={handleCancel} />
+        <SecondaryButton
+          label={t('profile.deleteAccountFlow.keepAccountButton', { defaultValue: 'Manter a conta' })}
+          onPress={handleCancel}
+          size='large'
+        />
       </View>
     </>
   );
@@ -189,44 +229,54 @@ const DeleteAccountScreen: React.FC<Props> = ({ navigation }) => {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[
           styles.scrollContent,
+          step === 'reason' && styles.scrollContentReason,
           { paddingBottom: SPACING.GAP_20 + Math.max(insets.bottom, SPACING.MD) },
         ]}
       >
         {step === 'overview' ? renderOverviewStep() : renderReasonStep()}
       </ScrollView>
 
-      <ModalBase
-        visible={confirmModalVisible}
-        onClose={handleCloseConfirmModal}
-        title={t('profile.deleteAccountFlow.confirmModalTitle')}
-        footer={
-          <View style={[styles.actions, { padding: SPACING.MD }]}>
-            <PrimaryButton
-              label={t('profile.deleteAccountFlow.confirmDeleteButton')}
-              onPress={() => void runDeleteAccount()}
-              disabled={!canConfirmDeletion}
-              loading={deletingAccount}
-              solidDisabled={!canConfirmDeletion}
-              size='large'
-            />
-            <SecondaryButton
-              label={t('profile.deleteAccountFlow.cancelButton')}
-              onPress={handleCloseConfirmModal}
-              disabled={deletingAccount}
-            />
-          </View>
-        }
-      >
-        <Text style={styles.modalInstruction}>{t('profile.deleteAccountFlow.confirmModalInstruction')}</Text>
+      <ModalBase visible={confirmModalVisible} onClose={handleCloseConfirmModal} showTitle={false}>
+        <Text style={styles.modalTitle}>
+          {t('profile.deleteAccountFlow.confirmModalTitle', { defaultValue: 'Confirmação final' })}
+        </Text>
+        <Text style={styles.modalInstruction}>
+          {t('profile.deleteAccountFlow.confirmModalInstructionPrefix', {
+            defaultValue: 'Para confirmar, digite ',
+          })}
+          <Text style={styles.modalInstructionHighlight}>{ACCOUNT_DELETION_CONFIRMATION_WORD}</Text>
+          {t('profile.deleteAccountFlow.confirmModalInstructionSuffix', {
+            defaultValue: ' no campo abaixo.',
+          })}
+        </Text>
         <TextInput
           value={confirmationText}
           onChangeText={setConfirmationText}
-          placeholder={t('profile.deleteAccountFlow.confirmModalPlaceholder')}
+          placeholder={t('profile.deleteAccountFlow.confirmModalPlaceholder', {
+            defaultValue: 'Digite EXCLUIR',
+          })}
+          placeholderTextColor={COLORS.TEXT_LIGHT}
           autoCapitalize='characters'
           autoCorrect={false}
           editable={!deletingAccount}
           style={styles.confirmInput}
         />
+        <View style={styles.modalFooter}>
+          <PrimaryButton
+            label={t('profile.deleteAccountFlow.confirmDeleteButton', { defaultValue: 'Excluir conta' })}
+            onPress={() => void runDeleteAccount()}
+            disabled={!canConfirmDeletion}
+            loading={deletingAccount}
+            solidDisabled={!canConfirmDeletion}
+            size='medium'
+          />
+          <SecondaryButton
+            label={t('profile.deleteAccountFlow.cancelButton', { defaultValue: 'Cancelar' })}
+            onPress={handleCloseConfirmModal}
+            disabled={deletingAccount}
+            size='medium'
+          />
+        </View>
       </ModalBase>
     </ScreenWithHeader>
   );
