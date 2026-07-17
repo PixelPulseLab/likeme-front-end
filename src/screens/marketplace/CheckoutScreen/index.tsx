@@ -22,7 +22,7 @@ import PaymentForm from './payment/PaymentForm';
 import CheckoutVoucherSection from './voucher/CheckoutVoucherSection';
 import { ProductRowCard } from '@/components/ui/cards';
 import OrderSummary from './order/OrderSummary';
-import OrderScreen from './order/OrderScreen';
+import OrderScreen, { type OrderScreenStatus } from './order/OrderScreen';
 import type { CreateOrderData } from '@/types/order';
 import { useAnalyticsScreen } from '@/analytics';
 import { useCart } from '@/hooks';
@@ -67,6 +67,7 @@ const CheckoutScreen: React.FC<Props> = ({ navigation, route }) => {
   const [shipping, setShipping] = useState(0);
   const [shippingLoading, setShippingLoading] = useState(false);
   const [orderId, setOrderId] = useState('');
+  const [orderCompletionStatus, setOrderCompletionStatus] = useState<OrderScreenStatus>('success');
 
   const { shippingRequired, isResolving: shippingPolicyLoading } = useCartShippingPolicy(cartItems);
   const isShippingDisabled = shippingRequired === false;
@@ -370,6 +371,7 @@ const CheckoutScreen: React.FC<Props> = ({ navigation, route }) => {
       setCheckoutSubmitCompleted(true);
 
       setOrderId(orderResponse.data.id);
+      setOrderCompletionStatus(orderPaymentStatus === 'pending' ? 'pending' : 'success');
       await storageService.clearCart();
       checkoutVoucher.removeCoupon();
       setCurrentStep('order');
@@ -623,7 +625,9 @@ const CheckoutScreen: React.FC<Props> = ({ navigation, route }) => {
             </>
           )}
 
-          {currentStep === 'order' && <OrderScreen onViewOrdersPress={handleViewOrdersPress} />}
+          {currentStep === 'order' && (
+            <OrderScreen status={orderCompletionStatus} onViewOrdersPress={handleViewOrdersPress} />
+          )}
         </ScrollView>
       </KeyboardAvoidingView>
 

@@ -150,7 +150,11 @@ jest.mock('./order/OrderScreen', () => {
   const React = require('react');
   const { View, Text } = require('react-native');
   return (props: any) =>
-    React.createElement(View, { testID: 'order-screen' }, React.createElement(Text, null, 'Order Screen'));
+    React.createElement(
+      View,
+      { testID: 'order-screen' },
+      React.createElement(Text, { testID: 'order-screen-status' }, props.status ?? 'success'),
+    );
 });
 
 // Criar os mocks como variáveis que serão preenchidas
@@ -466,6 +470,27 @@ describe('CheckoutScreen', () => {
     expect(mockNavigation.navigate).toHaveBeenCalledWith('Activities', {
       initialTab: 'history',
       initialFilter: 'orders',
+    });
+  });
+
+  it('shows pending confirmation when backend has not confirmed payment yet', async () => {
+    const { getByTestId } = render(<CheckoutScreen navigation={mockNavigation as any} route={mockRoute as any} />);
+
+    await waitFor(() => {
+      expect(getByTestId('address-form')).toBeTruthy();
+    });
+
+    fireEvent.press(getByTestId('button-continue'));
+
+    await waitFor(() => {
+      expect(getByTestId('payment-form')).toBeTruthy();
+    });
+
+    fireEvent.press(getByTestId('button-continue'));
+
+    await waitFor(() => {
+      expect(mockOrderService.createOrder).toHaveBeenCalled();
+      expect(getByTestId('order-screen-status').props.children).toBe('pending');
     });
   });
 
