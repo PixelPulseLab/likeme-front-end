@@ -197,3 +197,21 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 ### Corrigido
 - Atividades aparecem logo após criar lembrete de evento da comunidade (APP-344)
 - Banner de evento sem subtítulo duplicado abaixo do título
+
+## [1.10.0] - 2026-07-17
+
+### Adicionado
+- Gestão e cancelamento de protocolo pelo app (APP-318)
+- Exclusão de conta com motivo e fluxo alinhado ao Figma (APP-358)
+- Mensagem personalizada antes de compartilhar o link (APP-362)
+- Atividades com abas ativo/histórico, edição e link no card
+
+### Alterado
+- Menu do perfil reorganizado com Configurações e segurança (APP-356)
+- Etapas vencidas do protocolo marcadas automaticamente (APP-363)
+- Telas de protocolo alinhadas ao Figma
+
+### Corrigido
+- Assinatura distingue status em cancelamento de cancelado
+- Links compartilháveis usam app.likeme.global
+- Troca de aba em atividades sem piscar e título no card de evento

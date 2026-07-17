@@ -79,7 +79,7 @@ const ManageProtocolSubscriptionScreen: React.FC<Props> = ({ navigation, route }
       subscriptionId,
       programName: programName || t('profile.subscriptionManage.programFallback', { defaultValue: 'Programa' }),
       lastBillingAt: manage.lastBillingAt,
-      accessValidUntil: manage.accessValidUntil ?? manage.nextBillingAt,
+      accessValidUntil: manage.accessValidUntil,
     });
   }, [manage, navigation, programName, subscriptionId, t]);
 
@@ -215,7 +215,9 @@ const ManageProtocolSubscriptionScreen: React.FC<Props> = ({ navigation, route }
                     <Text style={styles.fieldLabel}>
                       {t('profile.subscriptionManage.accessEndsAt', { defaultValue: 'Acesso encerra em' })}
                     </Text>
-                    <Text style={styles.fieldValue}>{formatSubscriptionManageDate(manage.accessValidUntil)}</Text>
+                    <Text style={styles.fieldValue}>
+                      {formatSubscriptionManageDate(manage.accessValidUntil ?? manage.nextBillingAt)}
+                    </Text>
                   </View>
                   <View style={styles.separator} />
                   <View style={styles.fieldBlock}>

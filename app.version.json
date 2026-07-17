@@ -1,19 +1,28 @@
 {
-  "version": "1.9.3",
-  "releasedAt": "2026-07-07",
+  "version": "1.10.0",
+  "releasedAt": "2026-07-17",
   "android": {
-    "versionCode": 248
+    "versionCode": 249
   },
   "ios": {
-    "buildNumber": 24
+    "buildNumber": 25
   },
   "changelog": {
+    "added": [
+      "Gestão e cancelamento de protocolo pelo app (APP-318)",
+      "Exclusão de conta com motivo e fluxo alinhado ao Figma (APP-358)",
+      "Mensagem personalizada antes de compartilhar o link (APP-362)",
+      "Atividades com abas ativo/histórico, edição e link no card"
+    ],
     "changed": [
-      "Lista de atividades recarrega mais rápido ao voltar de outras telas"
+      "Menu do perfil reorganizado com Configurações e segurança (APP-356)",
+      "Etapas vencidas do protocolo marcadas automaticamente (APP-363)",
+      "Telas de protocolo alinhadas ao Figma"
     ],
     "fixed": [
-      "Atividades aparecem logo após criar lembrete de evento da comunidade (APP-344)",
-      "Banner de evento sem subtítulo duplicado abaixo do título"
+      "Assinatura distingue status em cancelamento de cancelado",
+      "Links compartilháveis usam app.likeme.global",
+      "Troca de aba em atividades sem piscar e título no card de evento"
     ]
   }
 }
