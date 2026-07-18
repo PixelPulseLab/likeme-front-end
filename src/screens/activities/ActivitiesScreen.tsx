@@ -35,6 +35,7 @@ import { navigateToOrderDetail } from '@/utils/navigation/activitiesNavigation';
 import { navigateRootStack, rootStackNavigationFrom } from '@/utils/navigation/rootStackNavigation';
 import { orderCardStatusPresentation, orderCardTitle } from '@/utils/marketplace/orderStatusDisplay';
 import { navigateToProductDetailsScreen } from '@/utils/navigation/productNavigation';
+import { invalidateActivityListCache } from '@/utils/activity/activityListCache';
 import { styles } from './styles';
 
 type ActivitiesScreenProps = {
@@ -482,6 +483,12 @@ const ActivitiesScreen: React.FC<ActivitiesScreenProps> = ({ navigation, route }
     navigateRootStack(rootNavigation, 'Cart');
   };
 
+  const reloadActivitiesAfterMutation = useCallback(async () => {
+    const listScope = activityListScopeForTab(activeTab);
+    invalidateActivityListCache(listScope);
+    await loadActivities(listScope);
+  }, [activeTab, loadActivities]);
+
   const handleMarkAsDone = async (activityId: string) => {
     try {
       const activity = activities.find((a) => a.id === activityId);
@@ -500,7 +507,7 @@ const ActivitiesScreen: React.FC<ActivitiesScreenProps> = ({ navigation, route }
       // Marcar atividade como concluída (deletada) para que apareça no histórico como completada
       await activityService.deleteActivity(activityId);
       // Recarregar atividades para atualizar a lista
-      await loadActivities(activityListScopeForTab(activeTab));
+      await reloadActivitiesAfterMutation();
     } catch (error) {
       logger.error('Error marking activity as done:', error);
       Alert.alert(t('errors.error'), t('activities.markError'));
@@ -523,7 +530,7 @@ const ActivitiesScreen: React.FC<ActivitiesScreenProps> = ({ navigation, route }
         onPress: async () => {
           try {
             await activityService.deleteActivity(activityId);
-            await loadActivities(activityListScopeForTab(activeTab));
+            await reloadActivitiesAfterMutation();
             setMenuVisibleForId(null);
           } catch (error) {
             logger.error('Error deleting activity:', error);
@@ -547,7 +554,7 @@ const ActivitiesScreen: React.FC<ActivitiesScreenProps> = ({ navigation, route }
       // Marcar atividade como declinada (deletada) para que apareça no histórico como declinada
       await activityService.deleteActivity(activityId);
       // Recarregar atividades para atualizar a lista
-      await loadActivities(activityListScopeForTab(activeTab));
+      await reloadActivitiesAfterMutation();
     } catch (error) {
       logger.error('Error skipping activity:', error);
       Alert.alert(t('errors.error'), t('activities.skipError'));
@@ -999,7 +1006,7 @@ const ActivitiesScreen: React.FC<ActivitiesScreenProps> = ({ navigation, route }
             // Verificar se a operação foi bem-sucedida antes de recarregar
             if (response && response.success && response.data) {
               // Refresh activities list after save
-              await loadActivities(activityListScopeForTab(activeTab));
+              await reloadActivitiesAfterMutation();
             } else {
               throw new Error(response?.message || 'Failed to save activity');
             }
