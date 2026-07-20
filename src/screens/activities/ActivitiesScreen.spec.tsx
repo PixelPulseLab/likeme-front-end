@@ -3,6 +3,11 @@ import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import { Alert } from 'react-native';
 import ActivitiesScreen from './ActivitiesScreen';
 import { activityService, orderService } from '@/services';
+import {
+  invalidateActivityListCache,
+  readCachedActivityList,
+  writeActivityListCache,
+} from '@/utils/activity/activityListCache';
 
 jest.mock('@react-navigation/native', () => ({
   useFocusEffect: (callback: () => void | (() => void)) => {
@@ -357,6 +362,7 @@ describe('ActivitiesScreen', () => {
     jest.clearAllMocks();
     console.log = jest.fn();
     console.error = jest.fn();
+    invalidateActivityListCache();
 
     mockLoadActivities.mockClear();
     mockActivitiesHook.mockReturnValue(buildUseActivitiesReturn('active'));
@@ -552,6 +558,8 @@ describe('ActivitiesScreen', () => {
     });
 
     it('creates new activity when save is pressed', async () => {
+      writeActivityListCache('active', [mockActivities[0]]);
+
       const { getByText, getByTestId } = renderWithProvider(<ActivitiesScreen navigation={mockNavigation} />);
 
       await waitFor(() => {
@@ -566,6 +574,8 @@ describe('ActivitiesScreen', () => {
 
       await waitFor(() => {
         expect(activityService.createActivity).toHaveBeenCalled();
+        expect(readCachedActivityList('active')).toBeNull();
+        expect(mockLoadActivities).toHaveBeenLastCalledWith('active');
       });
     });
 
