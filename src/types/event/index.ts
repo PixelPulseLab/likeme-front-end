@@ -66,7 +66,7 @@ export interface Event {
   description?: string;
   startsAt?: string;
   endsAt?: string;
-  status: 'scheduled' | 'live' | 'ended' | 'error' | 'unknown';
+  status: 'draft' | 'scheduled' | 'live' | 'ended' | 'error' | 'unknown';
   provider: 'zoom' | 'unknown';
   externalUrl?: string;
   source: 'social_plus';
