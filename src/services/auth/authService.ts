@@ -4,6 +4,7 @@ import { AUTH_BOOTSTRAP_HTTP_TIMEOUT_MS, AUTH_LOGOUT_AND_POLICY_HTTP_TIMEOUT_MS 
 import { invalidateApiClientAuthTokenMemoryCache } from '@/services/infrastructure/apiClient';
 import notificationService from '@/services/notification/notificationService';
 import { clearPublicUserCache } from '@/services/user/publicUserCache';
+import { invalidateActivityListCache } from '@/utils/activity/activityListCache';
 import { fetchWithTimeout } from '@/utils/network/fetchWithTimeout';
 import { setOnboardingStep } from './setOnboardingStep';
 import storageService from './storageService';
@@ -38,6 +39,12 @@ async function withTimeout<T>(promise: Promise<T>, timeoutMs: number, label: str
 }
 
 class AuthService {
+  private clearAuthenticatedMemoryCaches(): void {
+    invalidateApiClientAuthTokenMemoryCache();
+    clearPublicUserCache();
+    invalidateActivityListCache();
+  }
+
   private getTokenUrl(): string {
     return `https://${AUTH0_CONFIG.domain}/oauth/token`;
   }
@@ -246,7 +253,7 @@ class AuthService {
 
       try {
         await storageService.clearAll();
-        invalidateApiClientAuthTokenMemoryCache();
+        this.clearAuthenticatedMemoryCaches();
       } catch (clearError) {
         logger.warn('Falha ao limpar sessão local após erro de login', { cause: clearError });
       }
@@ -407,6 +414,7 @@ class AuthService {
       }
 
       await storageService.clearLocalUserDataIfOwnerChanged(authResult.user.email);
+      this.clearAuthenticatedMemoryCaches();
 
       await storageService.setUser({
         ...authResult.user,
@@ -416,8 +424,6 @@ class AuthService {
       });
 
       await setOnboardingStep(backendResponse);
-
-      invalidateApiClientAuthTokenMemoryCache();
 
       return backendResponse;
     } catch (error) {
@@ -511,13 +517,11 @@ class AuthService {
       }
 
       await storageService.clearAll();
-      invalidateApiClientAuthTokenMemoryCache();
-      clearPublicUserCache();
+      this.clearAuthenticatedMemoryCaches();
     } catch (error) {
       logger.error('Logout error:', error);
       await storageService.clearAll();
-      invalidateApiClientAuthTokenMemoryCache();
-      clearPublicUserCache();
+      this.clearAuthenticatedMemoryCaches();
     }
   }
 
