@@ -6,6 +6,7 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import { ColoredTwoDotsIcon } from '@/assets/ui';
 import { CachedImage } from '@/components/ui/media/CachedImage';
 import { PlatformBlurView } from '@/components/ui/PlatformBlurView';
+import { E2E_TEST_IDS, floatingMenuTestId } from '@/constants/e2eTestIds';
 import { styles } from './styles';
 
 type MenuItem = {
@@ -45,6 +46,7 @@ const FloatingMenu: React.FC<Props> = ({ items, selectedId }) => {
           style={[styles.pill, selectedId === 'home' && styles.pillSelected]}
           accessibilityRole='button'
           accessibilityLabel='Home'
+          testID={E2E_TEST_IDS.FLOATING_MENU_HOME}
         >
           <ColoredTwoDotsIcon width={HOME_MARK_SIZE} height={HOME_MARK_SIZE} />
           {selectedId === 'home' && <Text style={styles.pillLabel}>Home</Text>}
@@ -60,6 +62,7 @@ const FloatingMenu: React.FC<Props> = ({ items, selectedId }) => {
               activeOpacity={0.8}
               accessibilityRole='button'
               accessibilityLabel={item.fullLabel || item.label}
+              testID={floatingMenuTestId(item.id)}
             >
               {item.iconImage != null ? (
                 <CachedImage source={item.iconImage} style={styles.menuIconImage} contentFit='contain' />

@@ -15,6 +15,7 @@ type Props = React.PropsWithChildren<{
   contentBackgroundColor?: string;
   /** Estilo opcional extra para o container do conteúdo. */
   contentContainerStyle?: ViewStyle | ViewStyle[];
+  testID?: string;
 }>;
 
 const ScreenWithHeader: React.FC<Props> = ({
@@ -23,12 +24,13 @@ const ScreenWithHeader: React.FC<Props> = ({
   contentBackgroundColor = COLORS.BACKGROUND,
   contentContainerStyle,
   children,
+  testID,
 }) => {
   const defaultOnLogoPress = navigation != null ? () => navigateRootStack(navigation, 'Summary') : undefined;
   const headerBackgroundColor = headerProps?.backgroundColor ?? COLORS.BACKGROUND_SECONDARY;
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: headerBackgroundColor }} edges={['top']}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: headerBackgroundColor }} edges={['top']} testID={testID}>
       <Header {...headerProps} onLogoPress={headerProps?.onLogoPress ?? defaultOnLogoPress} />
       <View
         style={[

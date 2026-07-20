@@ -1,0 +1,12 @@
+appId: app.likeme.com
+name: Cart — abre pelo header
+tags:
+  - marketplace
+  - cart
+---
+- runFlow: ../shared/bootstrap-authenticated.yaml
+- tapOn:
+    id: "e2e.header.cart"
+# Sem testID da tela Cart ainda — garante que o app não crashou
+- assertVisible:
+    id: "e2e.header.cart"

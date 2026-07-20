@@ -1,0 +1,11 @@
+appId: app.likeme.com
+name: Marketplace — browse sem checkout
+tags:
+  - hub
+  - marketplace
+---
+- runFlow: ../shared/bootstrap-authenticated.yaml
+- tapOn:
+    id: "e2e.nav.marketplace"
+- assertVisible:
+    id: "e2e.marketplace.root"

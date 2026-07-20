@@ -1,0 +1,17 @@
+# Shared: sessão autenticada E2E (onboarding completo) → Summary
+# Uso: runFlow a partir de flows/ com tags smoke|hub|…
+appId: app.likeme.com
+---
+- launchApp:
+    clearState: true
+    clearKeychain: true
+    permissions:
+      all: allow
+- extendedWaitUntil:
+    visible:
+      id: "e2e.unauth.e2eContinue"
+    timeout: 90000
+- tapOn:
+    id: "e2e.unauth.e2eContinue"
+- assertVisible:
+    id: "e2e.summary.root"

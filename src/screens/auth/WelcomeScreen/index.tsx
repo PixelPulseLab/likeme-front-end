@@ -10,6 +10,7 @@ import { useAnalyticsScreen, logButtonClick, logFormSubmit, logNavigation } from
 import { getNextOnboardingScreen } from '@/utils';
 import { personsService, storageService, userService } from '@/services';
 import { parseFullName, validateFullNameForPerson } from '@/utils/person/fullNameValidation';
+import { E2E_TEST_IDS } from '@/constants/e2eTestIds';
 import { logger } from '@/utils/logger';
 import { styles } from './styles';
 
@@ -113,6 +114,7 @@ const WelcomeScreen: React.FC<Props> = ({ navigation }) => {
               }}
               disabled={isContinuing}
               size='large'
+              testID={E2E_TEST_IDS.WELCOME_NEXT}
             />
           </View>
         }
@@ -139,6 +141,7 @@ const WelcomeScreen: React.FC<Props> = ({ navigation }) => {
                 onChangeText={setName}
                 placeholder={t('auth.yourNamePlaceholder')}
                 returnKeyType='next'
+                testID={E2E_TEST_IDS.WELCOME_NAME_INPUT}
                 onSubmitEditing={() => {
                   void handleContinue();
                 }}

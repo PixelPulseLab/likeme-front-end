@@ -1,0 +1,13 @@
+appId: app.likeme.com
+name: Protocol — sessão autenticada + deep link opcional
+tags:
+  - profile
+  - protocol
+---
+- runFlow: ../shared/bootstrap-authenticated.yaml
+- assertVisible:
+    id: "e2e.summary.root"
+# Com seed: E2E_PROTOCOL_PRODUCT_ID=uuid npm run test:e2e:staging -- …
+- openLink: likeme://protocol/${E2E_PROTOCOL_PRODUCT_ID}
+- assertVisible:
+    id: "e2e.nav.home"

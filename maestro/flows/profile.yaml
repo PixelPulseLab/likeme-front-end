@@ -1,0 +1,14 @@
+appId: app.likeme.com
+name: Profile — menu avatar → Meu Perfil
+tags:
+  - profile
+---
+- runFlow: ../shared/bootstrap-authenticated.yaml
+- tapOn:
+    id: "e2e.header.profileMenu"
+- assertVisible:
+    id: "e2e.profileMenu.my-profile"
+- tapOn:
+    id: "e2e.profileMenu.my-profile"
+- assertVisible:
+    id: "e2e.header.profileMenu"

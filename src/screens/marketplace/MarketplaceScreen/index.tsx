@@ -578,6 +578,7 @@ const MarketplaceScreen: React.FC<MarketplaceScreenProps> = ({ navigation, route
   return (
     <ScreenWithHeader
       navigation={navigation}
+      testID='e2e.marketplace.root'
       headerProps={{
         showBackButton: false,
         showMenuWithAvatar: true,

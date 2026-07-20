@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { View, Text, Animated, Dimensions } from 'react-native';
 import { CachedImage } from '@/components/ui/media/CachedImage';
 import { PrimaryButton, ButtonGroup } from '@/components/ui';
+import { E2E_TEST_IDS } from '@/constants/e2eTestIds';
 import { useTranslation } from '@/hooks/i18n';
 import { GradientSplash2, PartialLogo, PartialLogo2 } from '@/assets/auth';
 import { styles } from './UnauthenticatedStep1.styles';
@@ -9,9 +10,16 @@ import { styles } from './UnauthenticatedStep1.styles';
 interface UnauthenticatedStep1Props {
   onLogin: () => void;
   isLoading?: boolean;
+  onE2eContinue?: () => void;
+  e2eLoading?: boolean;
 }
 
-const UnauthenticatedStep1: React.FC<UnauthenticatedStep1Props> = ({ onLogin, isLoading = false }) => {
+const UnauthenticatedStep1: React.FC<UnauthenticatedStep1Props> = ({
+  onLogin,
+  isLoading = false,
+  onE2eContinue,
+  e2eLoading = false,
+}) => {
   const { t } = useTranslation();
   const { width } = Dimensions.get('window');
   const slideLeft = useRef(new Animated.Value(0)).current;
@@ -56,9 +64,21 @@ const UnauthenticatedStep1: React.FC<UnauthenticatedStep1Props> = ({ onLogin, is
             label={t('auth.login')}
             onPress={onLogin}
             loading={isLoading}
-            disabled={isLoading}
+            disabled={isLoading || e2eLoading}
             size='large'
+            testID={E2E_TEST_IDS.UNAUTH_LOGIN}
           />
+          {onE2eContinue ? (
+            <PrimaryButton
+              label='Continuar E2E'
+              onPress={onE2eContinue}
+              loading={e2eLoading}
+              disabled={isLoading || e2eLoading}
+              size='large'
+              variant='light'
+              testID={E2E_TEST_IDS.UNAUTH_E2E_CONTINUE}
+            />
+          ) : null}
         </ButtonGroup>
       </Animated.View>
 

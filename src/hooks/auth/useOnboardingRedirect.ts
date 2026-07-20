@@ -3,6 +3,7 @@ import { AUTH_BOOTSTRAP_HTTP_TIMEOUT_MS, FORCE_START_ONBOARDING_LOCALLY } from '
 import { getNextOnboardingDestination } from '@/utils';
 import { storageService, AuthService, userService } from '@/services';
 import { invalidateApiClientAuthTokenMemoryCache } from '@/services/infrastructure/apiClient';
+import { isE2eAuthBypassEnabled } from '@/utils/e2e/e2eAuthBypass';
 import { logger } from '@/utils/logger';
 
 type NavigationReplace = (screen: string, params?: object) => void;
@@ -12,7 +13,7 @@ type NavigationReplace = (screen: string, params?: object) => void;
  * Com `FORCE_START_ONBOARDING_LOCALLY` não chama a API (onboarding forçado só no device).
  */
 async function syncOnboardingStateFromBackend(): Promise<void> {
-  if (FORCE_START_ONBOARDING_LOCALLY) {
+  if (FORCE_START_ONBOARDING_LOCALLY || isE2eAuthBypassEnabled()) {
     return;
   }
   const token = await storageService.getToken();

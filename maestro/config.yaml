@@ -1,0 +1,8 @@
+# Workspace Maestro — defaults da suíte LikeMe (staging)
+# Docs: preferir id/testID, tags, subflows; evitar waitForAnimationToEnd cego.
+flows:
+  - "flows/*"
+includeTags: []
+excludeTags:
+  - wip
+  - archive

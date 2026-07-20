@@ -1,4 +1,4 @@
-appId: com.likeme.app
+appId: app.likeme.com
 ---
 # Teste E2E Simples: Verifica se o app carrega corretamente
 # Este teste verifica elementos básicos e navega até a tela Welcome

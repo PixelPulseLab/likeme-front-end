@@ -1,28 +1,19 @@
 {
-  "version": "1.10.0",
-  "releasedAt": "2026-07-17",
+  "version": "1.11.0",
+  "releasedAt": "2026-07-20",
   "android": {
-    "versionCode": 249
+    "versionCode": 250
   },
   "ios": {
-    "buildNumber": 25
+    "buildNumber": 26
   },
   "changelog": {
     "added": [
-      "Gestão e cancelamento de protocolo pelo app (APP-318)",
-      "Exclusão de conta com motivo e fluxo alinhado ao Figma (APP-358)",
-      "Mensagem personalizada antes de compartilhar o link (APP-362)",
-      "Atividades com abas ativo/histórico, edição e link no card"
+      "Suíte E2E Maestro em staging (smoke, hub, onboarding) sem Auth0",
+      "Bypass E2E com trava que impede uso contra API de produção"
     ],
     "changed": [
-      "Menu do perfil reorganizado com Configurações e segurança (APP-356)",
-      "Etapas vencidas do protocolo marcadas automaticamente (APP-363)",
-      "Telas de protocolo alinhadas ao Figma"
-    ],
-    "fixed": [
-      "Assinatura distingue status em cancelamento de cancelado",
-      "Links compartilháveis usam app.likeme.global",
-      "Troca de aba em atividades sem piscar e título no card de evento"
+      "Flows Maestro reorganizados (tags, subflows e seletores por testID)"
     ]
   }
 }

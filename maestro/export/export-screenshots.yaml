@@ -1,4 +1,4 @@
-appId: com.likeme.app
+appId: app.likeme.com
 ---
 # Exporta todas as telas do app como screenshots (PNG)
 # Execute: npm run export:screenshots

@@ -29,6 +29,7 @@ type Props = {
   iconSize?: number;
   iconColor?: string;
   iconPosition?: 'left' | 'right';
+  testID?: string;
 };
 
 const PrimaryButton: React.FC<Props> = ({
@@ -45,6 +46,7 @@ const PrimaryButton: React.FC<Props> = ({
   iconSize = 16,
   iconColor,
   iconPosition = 'right',
+  testID,
 }) => {
   const isDisabled = loading || disabled;
   const baseButtonStyle = variant === 'light' ? styles.buttonLight : styles.button;
@@ -79,6 +81,7 @@ const PrimaryButton: React.FC<Props> = ({
       onPress={onPress}
       disabled={isDisabled}
       activeOpacity={0.7}
+      testID={testID}
     >
       {loading ? (
         <ActivityIndicator size='small' color={indicatorColor} />

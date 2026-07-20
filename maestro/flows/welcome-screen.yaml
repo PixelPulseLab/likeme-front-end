@@ -1,0 +1,21 @@
+appId: app.likeme.com
+name: Welcome — nome obrigatório e avanço
+tags:
+  - onboarding
+  - welcome
+---
+- runFlow: ../shared/bootstrap-welcome.yaml
+- tapOn:
+    id: "e2e.welcome.next"
+# Alerta de nome vazio (i18n) — validamos que o input permanece
+- assertVisible:
+    id: "e2e.welcome.nameInput"
+- tapOn:
+    id: "e2e.welcome.nameInput"
+- inputText: "${E2E_WELCOME_NAME}"
+- tapOn:
+    id: "e2e.welcome.next"
+- extendedWaitUntil:
+    notVisible:
+      id: "e2e.welcome.nameInput"
+    timeout: 60000

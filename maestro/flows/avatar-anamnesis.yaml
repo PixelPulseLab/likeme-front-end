@@ -1,0 +1,10 @@
+appId: app.likeme.com
+name: Avatar / Anamnese — placeholder autenticado
+tags:
+  - wip
+  - avatar
+---
+# CTAs de entrada comentados no app — marcado wip (excluído do gate default)
+- runFlow: ../shared/bootstrap-authenticated.yaml
+- assertVisible:
+    id: "e2e.summary.root"

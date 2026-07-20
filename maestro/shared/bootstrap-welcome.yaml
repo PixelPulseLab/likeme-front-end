@@ -1,0 +1,7 @@
+# Shared: seed sessão E2E sem onboarding → Welcome
+appId: app.likeme.com
+---
+- runFlow: bootstrap-unauthenticated.yaml
+- openLink: likeme://e2e/bootstrap
+- assertVisible:
+    id: "e2e.welcome.nameInput"

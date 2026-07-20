@@ -215,3 +215,12 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 - Assinatura distingue status em cancelamento de cancelado
 - Links compartilháveis usam app.likeme.global
 - Troca de aba em atividades sem piscar e título no card de evento
+
+## [1.11.0] - 2026-07-20
+
+### Adicionado
+- Suíte E2E Maestro em staging (smoke, hub, onboarding) sem Auth0
+- Bypass E2E com trava que impede uso contra API de produção
+
+### Alterado
+- Flows Maestro reorganizados (tags, subflows e seletores por testID)

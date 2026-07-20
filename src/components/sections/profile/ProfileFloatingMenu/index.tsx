@@ -12,6 +12,7 @@ import { COLORS } from '@/constants';
 import { logger } from '@/utils/logger';
 import { navigateToActivitiesOrders } from '@/utils/navigation/activitiesNavigation';
 import { navigateRootStack, rootStackNavigationFrom } from '@/utils/navigation/rootStackNavigation';
+import { E2E_TEST_IDS, profileMenuTestId } from '@/constants/e2eTestIds';
 import { styles } from './styles';
 
 type Props = {
@@ -152,7 +153,12 @@ const ProfileFloatingMenu: React.FC<Props> = ({ visible, navigation, onClose }) 
                 const MenuIcon = item.IconComponent;
                 return (
                   <View key={item.key} style={styles.menuItemBlock}>
-                    <TouchableOpacity style={styles.menuItem} onPress={item.onPress} activeOpacity={0.7}>
+                    <TouchableOpacity
+                      style={styles.menuItem}
+                      onPress={item.onPress}
+                      activeOpacity={0.7}
+                      testID={profileMenuTestId(item.key)}
+                    >
                       <View style={styles.menuItemLeft}>
                         <MenuIcon width={PROFILE_MENU_ICON_SIZE.width} height={PROFILE_MENU_ICON_SIZE.height} />
                         <Text style={styles.menuItemLabel}>{item.label}</Text>
@@ -169,7 +175,12 @@ const ProfileFloatingMenu: React.FC<Props> = ({ visible, navigation, onClose }) 
             </View>
 
             <View style={styles.bottomButtons}>
-              <PrimaryButton label='Logout' onPress={handleLogout} size='large' />
+              <PrimaryButton
+                label='Logout'
+                onPress={handleLogout}
+                size='large'
+                testID={E2E_TEST_IDS.PROFILE_MENU_LOGOUT}
+              />
             </View>
           </View>
         </View>

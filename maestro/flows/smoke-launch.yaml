@@ -1,0 +1,15 @@
+appId: app.likeme.com
+name: Smoke — cold start E2E até hub
+tags:
+  - smoke
+  - critical
+---
+- runFlow: ../shared/bootstrap-authenticated.yaml
+- assertVisible:
+    id: "e2e.nav.home"
+- assertVisible:
+    id: "e2e.nav.activities"
+- assertVisible:
+    id: "e2e.nav.community"
+- assertVisible:
+    id: "e2e.nav.marketplace"

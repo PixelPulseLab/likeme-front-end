@@ -794,7 +794,7 @@ const CommunityScreen: React.FC<Props> = ({ navigation }) => {
   }
 
   return (
-    <View style={styles.screenRoot}>
+    <View style={styles.screenRoot} testID='e2e.community.root'>
       {eventJoinUrl ? <EventWebViewSession url={eventJoinUrl} onClose={closeEventSession} /> : null}
       <ScreenWithHeader
         navigation={rootNavigation}
