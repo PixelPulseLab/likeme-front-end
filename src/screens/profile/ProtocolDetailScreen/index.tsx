@@ -129,16 +129,17 @@ const ProtocolDetailScreen: React.FC<Props> = ({ navigation, route }) => {
   const heroImageUri = protocol?.image?.trim() || (hasCommunity ? MEMBER_PROTOCOL_COMMUNITY_IMAGE_FALLBACK : '');
 
   const { course, loading: courseLoading } = useProgramCourse(communityId, hasCommunity);
-  const { eventBanner, eventJoinUrl, closeEventSession, handleEventBannerPress } = useCommunityEventBanner({
-    enabled: hasCommunity,
-    communityId,
-    communityAvatarUrl: heroImageUri,
-    communityProviderName: protocol?.name ?? '',
-    defaultThumbnailUrl: heroImageUri,
-    programProductId: productId || undefined,
-    hasProgramAccess: true,
-    navigation,
-  });
+  const { eventBanner, eventJoinUrl, closeEventSession, handleEventBannerPress, handleEventBannerCtaPress } =
+    useCommunityEventBanner({
+      enabled: hasCommunity,
+      communityId,
+      communityAvatarUrl: heroImageUri,
+      communityProviderName: protocol?.name ?? '',
+      defaultThumbnailUrl: heroImageUri,
+      programProductId: productId || undefined,
+      hasProgramAccess: true,
+      navigation,
+    });
 
   const [protocolAccessedAt, setProtocolAccessedAt] = useState(() => Date.now());
 
@@ -422,7 +423,7 @@ const ProtocolDetailScreen: React.FC<Props> = ({ navigation, route }) => {
         {isCancelingSubscription ? renderCancelingNotice() : null}
         {eventBanner ? (
           <View style={styles.eventBannerContainer}>
-            <EventBanner event={eventBanner} onPress={handleEventBannerPress} />
+            <EventBanner event={eventBanner} onPress={handleEventBannerPress} onCtaPress={handleEventBannerCtaPress} />
           </View>
         ) : null}
         {showLessons ? (

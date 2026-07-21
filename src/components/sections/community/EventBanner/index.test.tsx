@@ -9,7 +9,7 @@ jest.mock('@/hooks/i18n', () => ({
       const labels: Record<string, string> = {
         'community.eventBanner.purchaseTitlePrefix': 'Participe da',
         'community.eventBanner.reminderTitlePrefix': 'Não perca a',
-        'community.eventBanner.reminderCreated': 'Lembrete criado',
+        'community.eventBanner.viewReminder': 'Ver lembrete',
       };
       if (params?.host) {
         return `${key}:${params.host}`;
@@ -56,14 +56,28 @@ describe('EventBanner (APP-344)', () => {
     expect(schedule).toBeTruthy();
   });
 
-  it('desabilita CTA e mostra Lembrete criado após registro', () => {
+  it('toque no botão Ver lembrete dispara onCtaPress, não onPress do card', () => {
     const onPress = jest.fn();
+    const onCtaPress = jest.fn();
     const { getByText } = render(
-      <EventBanner event={{ ...baseEvent, variant: 'reminder_created' }} onPress={onPress} />,
+      <EventBanner event={{ ...baseEvent, variant: 'reminder_created' }} onPress={onPress} onCtaPress={onCtaPress} />,
     );
 
-    expect(getByText('Lembrete criado')).toBeTruthy();
-    fireEvent.press(getByText('Lembrete criado'));
+    expect(getByText('Ver lembrete')).toBeTruthy();
+    fireEvent.press(getByText('Ver lembrete'));
+    expect(onCtaPress).toHaveBeenCalledWith(expect.objectContaining({ id: 'evt-1', variant: 'reminder_created' }));
     expect(onPress).not.toHaveBeenCalled();
+  });
+
+  it('toque fora do botão dispara onPress do card', () => {
+    const onPress = jest.fn();
+    const onCtaPress = jest.fn();
+    const { getByText } = render(
+      <EventBanner event={{ ...baseEvent, variant: 'reminder_created' }} onPress={onPress} onCtaPress={onCtaPress} />,
+    );
+
+    fireEvent.press(getByText('Não perca a Yoga ao vivo'));
+    expect(onPress).toHaveBeenCalledWith(expect.objectContaining({ id: 'evt-1', variant: 'reminder_created' }));
+    expect(onCtaPress).not.toHaveBeenCalled();
   });
 });

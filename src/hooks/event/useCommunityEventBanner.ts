@@ -48,6 +48,7 @@ export type UseCommunityEventBannerReturn = {
   eventJoinUrl: string | null;
   closeEventSession: () => void;
   handleEventBannerPress: (banner: EventBannerData) => Promise<void>;
+  handleEventBannerCtaPress: (banner: EventBannerData) => Promise<void>;
   refreshReminderState: () => Promise<void>;
 };
 
@@ -157,6 +158,7 @@ export function useCommunityEventBanner(options: UseCommunityEventBannerOptions 
       }
 
       if (variant === 'reminder_created') {
+        await openLiveSession(bannerData);
         return;
       }
 
@@ -209,11 +211,26 @@ export function useCommunityEventBanner(options: UseCommunityEventBannerOptions 
     [navigation, openLiveSession, refreshReminderState, t],
   );
 
+  const handleEventBannerCtaPress = useCallback(
+    async (bannerData: EventBannerData) => {
+      if (bannerData.variant === 'reminder_created') {
+        await prefetchActivityList('active');
+        if (navigation) {
+          navigateToActivitiesActives(navigation);
+        }
+        return;
+      }
+      await handleEventBannerPress(bannerData);
+    },
+    [handleEventBannerPress, navigation],
+  );
+
   return {
     eventBanner: banner,
     eventJoinUrl,
     closeEventSession,
     handleEventBannerPress,
+    handleEventBannerCtaPress,
     refreshReminderState,
   };
 }

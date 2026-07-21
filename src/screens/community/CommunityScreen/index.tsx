@@ -238,13 +238,14 @@ const CommunityScreen: React.FC<Props> = ({ navigation }) => {
   const communityProviderId = advertiser?.id;
   const communityProviderName = advertiser?.name?.trim() ?? null;
 
-  const { eventBanner, eventJoinUrl, closeEventSession, handleEventBannerPress } = useCommunityEventBanner({
-    enabled: loadCommunityEvents,
-    communityId: selectedCommunityId,
-    communityAvatarUrl: selectedCommunity?.avatarUrl,
-    communityProviderName,
-    navigation: rootNavigation as StackNavigationProp<RootStackParamList>,
-  });
+  const { eventBanner, eventJoinUrl, closeEventSession, handleEventBannerPress, handleEventBannerCtaPress } =
+    useCommunityEventBanner({
+      enabled: loadCommunityEvents,
+      communityId: selectedCommunityId,
+      communityAvatarUrl: selectedCommunity?.avatarUrl,
+      communityProviderName,
+      navigation: rootNavigation as StackNavigationProp<RootStackParamList>,
+    });
 
   const handleProductPress = useCallback(
     (product: Product) => {
@@ -686,7 +687,7 @@ const CommunityScreen: React.FC<Props> = ({ navigation }) => {
       <>
         {eventBanner ? (
           <View style={socialListStyles.eventBannerContainer}>
-            <EventBanner event={eventBanner} onPress={handleEventBannerPress} />
+            <EventBanner event={eventBanner} onPress={handleEventBannerPress} onCtaPress={handleEventBannerCtaPress} />
           </View>
         ) : null}
         <CommunityDescriptionSection
@@ -698,7 +699,15 @@ const CommunityScreen: React.FC<Props> = ({ navigation }) => {
         {feedInformationSlot}
       </>
     ),
-    [eventBanner, handleEventBannerPress, specialistData, welcomeDismissed, handleWelcomeClose, feedInformationSlot],
+    [
+      eventBanner,
+      handleEventBannerPress,
+      handleEventBannerCtaPress,
+      specialistData,
+      welcomeDismissed,
+      handleWelcomeClose,
+      feedInformationSlot,
+    ],
   );
 
   const feedRecommendationsBlock = useMemo(

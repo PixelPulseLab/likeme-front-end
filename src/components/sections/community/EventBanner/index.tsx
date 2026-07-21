@@ -10,6 +10,8 @@ import { styles } from './styles';
 type Props = {
   event: EventBannerData;
   onPress: (event: EventBannerData) => void;
+  /** Toque no botão de CTA; quando ausente, usa `onPress`. */
+  onCtaPress?: (event: EventBannerData) => void;
 };
 
 function titleKey(variant: EventBannerVariant | undefined): string {
@@ -33,7 +35,7 @@ function ctaLabelKey(variant: EventBannerVariant | undefined): string {
     case 'reminder':
       return 'community.eventBanner.createReminder';
     case 'reminder_created':
-      return 'community.eventBanner.reminderCreated';
+      return 'community.eventBanner.viewReminder';
     case 'live_join':
       return 'community.eventBanner.joinLive';
     default:
@@ -41,17 +43,16 @@ function ctaLabelKey(variant: EventBannerVariant | undefined): string {
   }
 }
 
-const EventBanner: React.FC<Props> = ({ event, onPress }) => {
+const EventBanner: React.FC<Props> = ({ event, onPress, onCtaPress }) => {
   const { t } = useTranslation();
   const isImageUri = typeof event.thumbnail === 'string';
   const eventScheduleLabel =
     formatEventScheduleLabel(event.startTime, event.endTime) || t('community.eventBanner.todayFallback');
   const variant = event.variant;
-  const ctaDisabled = variant === 'reminder_created';
   const title = variant === 'live_join' ? t(titleKey(variant)) : `${t(titleKey(variant))} ${event.title}`.trim();
 
   return (
-    <View style={styles.container}>
+    <TouchableOpacity style={styles.container} onPress={() => onPress(event)} activeOpacity={0.8}>
       <View style={styles.imageSide}>
         {isImageUri ? (
           <CachedImage source={{ uri: event.thumbnail as string }} style={styles.image} />
@@ -59,12 +60,7 @@ const EventBanner: React.FC<Props> = ({ event, onPress }) => {
           <CachedImage source={event.thumbnail as ImageSourcePropType} style={styles.image} />
         )}
         <View style={styles.imageOverlay}>
-          <TouchableOpacity
-            style={[styles.ctaButton, ctaDisabled ? styles.ctaButtonDisabled : null]}
-            onPress={() => onPress(event)}
-            activeOpacity={0.8}
-            disabled={ctaDisabled}
-          >
+          <TouchableOpacity style={styles.ctaButton} onPress={() => (onCtaPress ?? onPress)(event)} activeOpacity={0.8}>
             <Text style={styles.ctaButtonText}>{t(ctaLabelKey(variant))}</Text>
           </TouchableOpacity>
         </View>
@@ -95,7 +91,7 @@ const EventBanner: React.FC<Props> = ({ event, onPress }) => {
           </View>
         </View>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 };
 

@@ -150,4 +150,63 @@ describe('useCommunityEventBanner', () => {
     expect(navigateToActivitiesActives).toHaveBeenCalledWith(navigation);
     expect(Alert.alert).not.toHaveBeenCalled();
   });
+
+  it('CTA com reminder_created navega para Minhas atividades', async () => {
+    const { result } = renderHook(() =>
+      useCommunityEventBanner({
+        enabled: true,
+        communityId: 'community-1',
+        hasProgramAccess: true,
+        navigation,
+      }),
+    );
+
+    await act(async () => {
+      await result.current.handleEventBannerCtaPress({
+        id: 'evt-reminder',
+        title: 'Sessão',
+        host: 'Host',
+        status: 'Scheduled',
+        startTime: '2026-06-30T18:00:00.000Z',
+        endTime: '',
+        thumbnail: '',
+        variant: 'reminder_created',
+        communityId: 'community-1',
+      });
+    });
+
+    expect(eventService.registerScheduledCommunityEventReminder).not.toHaveBeenCalled();
+    expect(prefetchActivityList).toHaveBeenCalledWith('active');
+    expect(navigateToActivitiesActives).toHaveBeenCalledWith(navigation);
+    expect(Linking.openURL).not.toHaveBeenCalled();
+  });
+
+  it('card com reminder_created abre o link do evento', async () => {
+    const { result } = renderHook(() =>
+      useCommunityEventBanner({
+        enabled: true,
+        communityId: 'community-1',
+        hasProgramAccess: true,
+        navigation,
+      }),
+    );
+
+    await act(async () => {
+      await result.current.handleEventBannerPress({
+        id: 'evt-reminder',
+        title: 'Sessão',
+        host: 'Host',
+        status: 'Scheduled',
+        startTime: '2026-06-30T18:00:00.000Z',
+        endTime: '',
+        thumbnail: '',
+        externalUrl: 'https://us02web.zoom.us/j/987654321',
+        variant: 'reminder_created',
+        communityId: 'community-1',
+      });
+    });
+
+    expect(Linking.openURL).toHaveBeenCalledWith('https://us02web.zoom.us/j/987654321');
+    expect(navigateToActivitiesActives).not.toHaveBeenCalled();
+  });
 });

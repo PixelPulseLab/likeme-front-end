@@ -174,14 +174,15 @@ const SummaryScreen: React.FC<Props> = ({ navigation }) => {
   const homeBannerCommunity = filteredJoinCommunities[0];
   const homeBannerCommunityId = homeBannerCommunity?.id?.trim() ?? '';
 
-  const { eventBanner, eventJoinUrl, closeEventSession, handleEventBannerPress } = useCommunityEventBanner({
-    enabled: hasSessionToken && Boolean(homeBannerCommunityId),
-    communityId: homeBannerCommunityId,
-    communityAvatarUrl: homeBannerCommunity?.image,
-    communityProviderName: homeBannerCommunity?.title,
-    onlyOnEventDay: true,
-    navigation: rootNavigation as StackNavigationProp<RootStackParamList>,
-  });
+  const { eventBanner, eventJoinUrl, closeEventSession, handleEventBannerPress, handleEventBannerCtaPress } =
+    useCommunityEventBanner({
+      enabled: hasSessionToken && Boolean(homeBannerCommunityId),
+      communityId: homeBannerCommunityId,
+      communityAvatarUrl: homeBannerCommunity?.image,
+      communityProviderName: homeBannerCommunity?.title,
+      onlyOnEventDay: true,
+      navigation: rootNavigation as StackNavigationProp<RootStackParamList>,
+    });
 
   const [popularProviders, setPopularProviders] = useState<Provider[]>([]);
 
@@ -318,7 +319,11 @@ const SummaryScreen: React.FC<Props> = ({ navigation }) => {
 
           {eventBanner ? (
             <View style={socialListStyles.eventBannerContainer}>
-              <EventBanner event={eventBanner} onPress={handleEventBannerPress} />
+              <EventBanner
+                event={eventBanner}
+                onPress={handleEventBannerPress}
+                onCtaPress={handleEventBannerCtaPress}
+              />
             </View>
           ) : null}
 
