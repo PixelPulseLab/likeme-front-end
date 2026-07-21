@@ -5,7 +5,6 @@ import type { Product as ApiProduct } from '@/types/product';
 import { useCategories } from '@/hooks/category/useCategories';
 import { logger } from '@/utils/logger';
 import { buildMarketplaceCategoryBadgeLabels } from '@/utils/marketplace/buildMarketplaceCategoryBadgeLabels';
-import { pickRandomItems } from '@/utils/array/shuffleArray';
 import { prefetchImageUris } from '@/utils/image/prefetchImageUris';
 
 /** Lista padrão de produtos sugeridos (Home Summary, Activities, Comunidade sem filtro extra). */
@@ -13,14 +12,6 @@ export const SUGGESTED_PRODUCTS_HOME_ACTIVITIES_DEFAULTS = {
   limit: 4,
   status: 'active' as const,
 };
-
-/** Pool máximo trazido da API. Margem pequena sobre o `limit` apenas para variar o slice final. */
-const SUGGESTED_PRODUCTS_FETCH_POOL_MAX = 24;
-
-function getSuggestedProductsFetchLimit(displayLimit: number): number {
-  const minimum = Math.max(displayLimit, 4);
-  return Math.min(Math.max(displayLimit * 2, minimum), SUGGESTED_PRODUCTS_FETCH_POOL_MAX);
-}
 
 const SUGGESTED_PRODUCT_PLACEHOLDER_IMAGE = 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=400';
 
@@ -58,12 +49,8 @@ interface UseSuggestedProductsReturn {
 export const useSuggestedProducts = (options: UseSuggestedProductsOptions = {}): UseSuggestedProductsReturn => {
   const { limit = 4, status = 'active', enabled = true, categoryId, type } = options;
   const { categories } = useCategories({ enabled });
-  /**
-   * Pool já com `pickRandomItems` aplicado: o sorteio acontece uma única vez por load
-   * (não a cada render nem quando `categories` chega depois). Isso evita o "pisca"
-   * de conteúdo diferente sempre que a tela remonta sem motivo.
-   */
-  const [shuffledApiProducts, setShuffledApiProducts] = useState<ApiProduct[]>([]);
+  /** Ordem da API (ranking personalizado no backend) — sem shuffle no client. */
+  const [apiProducts, setApiProducts] = useState<ApiProduct[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
@@ -76,24 +63,22 @@ export const useSuggestedProducts = (options: UseSuggestedProductsOptions = {}):
     setError(null);
 
     try {
-      const fetchLimit = getSuggestedProductsFetchLimit(limit);
       const productsResponse = await productService.listProducts({
-        limit: fetchLimit,
+        limit,
         status,
         ...(categoryId != null && categoryId !== '' ? { categoryId } : {}),
         ...(type != null && type !== '' ? { type } : {}),
       });
 
       if (productsResponse.success && productsResponse.data) {
-        const shuffled = pickRandomItems(productsResponse.data.products, limit);
-        setShuffledApiProducts(shuffled);
+        setApiProducts(productsResponse.data.products.slice(0, limit));
       } else {
-        setShuffledApiProducts([]);
+        setApiProducts([]);
       }
     } catch (err) {
       logger.error('[useSuggestedProducts] Erro ao carregar produtos sugeridos', err);
       setError(err instanceof Error ? err : new Error('Failed to load suggested products'));
-      setShuffledApiProducts([]);
+      setApiProducts([]);
     } finally {
       setLoading(false);
     }
@@ -106,11 +91,11 @@ export const useSuggestedProducts = (options: UseSuggestedProductsOptions = {}):
    */
   const products = useMemo<CarouselProduct[]>(
     () =>
-      shuffledApiProducts.map((p) => {
+      apiProducts.map((p) => {
         const tags = buildMarketplaceCategoryBadgeLabels(p, categories);
         return mapApiProductToCarouselProduct(p, tags);
       }),
-    [shuffledApiProducts, categories],
+    [apiProducts, categories],
   );
 
   useEffect(() => {
