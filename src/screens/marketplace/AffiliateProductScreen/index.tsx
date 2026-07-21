@@ -361,7 +361,6 @@ const AffiliateProductScreen: React.FC<AffiliateProductScreenProps> = ({ navigat
 
           <RecommendedProductsSection
             excludeProductId={product?.id ?? route.params?.productId}
-            categoryId={product?.categoryId}
             providerName={partnerData.name}
             navigation={navigation}
             analyticsScreenName='affiliate_product'

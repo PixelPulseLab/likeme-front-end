@@ -92,4 +92,30 @@ describe('useSuggestedProducts', () => {
 
     expect(productService.listProducts).toHaveBeenCalledWith(expect.objectContaining({ limit: 4 }));
   });
+
+  it('solicita complemento de outras categorias excluindo o produto atual', async () => {
+    (productService.listProducts as jest.Mock).mockResolvedValue({
+      success: true,
+      data: { products: rankedProducts },
+    });
+
+    renderHook(() =>
+      useSuggestedProducts({
+        categoryId: 'cat-current',
+        excludeProductId: 'product-current',
+        fillWithOtherCategories: true,
+      }),
+    );
+
+    await waitFor(() => {
+      expect(productService.listProducts).toHaveBeenCalledWith(
+        expect.objectContaining({
+          categoryId: 'cat-current',
+          excludeProductId: 'product-current',
+          fillWithOtherCategories: true,
+          status: 'active',
+        }),
+      );
+    });
+  });
 });

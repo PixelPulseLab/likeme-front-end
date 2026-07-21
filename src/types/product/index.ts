@@ -97,6 +97,8 @@ export interface ListProductsParams {
   categoryId?: string; // domain category (Estresse, Sono, etc.)
   status?: string;
   search?: string;
+  excludeProductId?: string;
+  fillWithOtherCategories?: boolean;
 }
 
 export type ListProductsApiResponse = ApiResponse<{

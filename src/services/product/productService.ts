@@ -42,6 +42,14 @@ class ProductService {
         queryParams.search = params.search;
       }
 
+      if (params.excludeProductId) {
+        queryParams.excludeProductId = params.excludeProductId;
+      }
+
+      if (params.fillWithOtherCategories !== undefined) {
+        queryParams.fillWithOtherCategories = String(params.fillWithOtherCategories);
+      }
+
       const response = await apiClient.get<ListProductsApiResponse>(this.productsEndpoint, queryParams, true, false);
       return response;
     } catch (error) {

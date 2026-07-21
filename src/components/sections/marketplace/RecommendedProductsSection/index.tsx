@@ -20,7 +20,6 @@ type RecommendedProductsSectionProps = {
   enabled?: boolean;
   /** Exclui o produto atual da lista (PDP). */
   excludeProductId?: string;
-  categoryId?: string | null;
   providerName?: string;
   limit?: number;
   style?: StyleProp<ViewStyle>;
@@ -31,7 +30,6 @@ export function RecommendedProductsSection({
   analyticsScreenName,
   enabled = true,
   excludeProductId,
-  categoryId,
   providerName = '',
   limit = SUGGESTED_PRODUCTS_HOME_ACTIVITIES_DEFAULTS.limit,
   style,
@@ -40,7 +38,7 @@ export function RecommendedProductsSection({
   const { products: suggestedProducts, loading } = useSuggestedProducts({
     ...SUGGESTED_PRODUCTS_HOME_ACTIVITIES_DEFAULTS,
     limit,
-    categoryId: categoryId ?? undefined,
+    excludeProductId,
     enabled,
   });
 

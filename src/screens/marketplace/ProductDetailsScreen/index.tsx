@@ -466,7 +466,6 @@ const ProductDetailsScreen: React.FC<ProductDetailsScreenProps> = ({ navigation,
               {!isProgramProduct ? renderSpecialistPartnerSection(false, true) : null}
               <RecommendedProductsSection
                 excludeProductId={product?.id}
-                categoryId={product?.categoryId}
                 providerName={partnerData.name}
                 navigation={navigation}
                 analyticsScreenName='product_details'

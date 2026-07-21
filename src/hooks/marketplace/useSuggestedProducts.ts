@@ -37,6 +37,8 @@ interface UseSuggestedProductsOptions {
   categoryId?: string | null; // domain category filter (Estresse, Sono, etc.)
   /** Filtro por `Product.type` (catálogo ou ex.: `service`). */
   type?: string;
+  excludeProductId?: string;
+  fillWithOtherCategories?: boolean;
 }
 
 interface UseSuggestedProductsReturn {
@@ -47,7 +49,15 @@ interface UseSuggestedProductsReturn {
 }
 
 export const useSuggestedProducts = (options: UseSuggestedProductsOptions = {}): UseSuggestedProductsReturn => {
-  const { limit = 4, status = 'active', enabled = true, categoryId, type } = options;
+  const {
+    limit = 4,
+    status = 'active',
+    enabled = true,
+    categoryId,
+    type,
+    excludeProductId,
+    fillWithOtherCategories,
+  } = options;
   const { categories } = useCategories({ enabled });
   /** Ordem da API (ranking personalizado no backend) — sem shuffle no client. */
   const [apiProducts, setApiProducts] = useState<ApiProduct[]>([]);
@@ -68,6 +78,8 @@ export const useSuggestedProducts = (options: UseSuggestedProductsOptions = {}):
         status,
         ...(categoryId != null && categoryId !== '' ? { categoryId } : {}),
         ...(type != null && type !== '' ? { type } : {}),
+        ...(excludeProductId ? { excludeProductId } : {}),
+        ...(fillWithOtherCategories !== undefined ? { fillWithOtherCategories } : {}),
       });
 
       if (productsResponse.success && productsResponse.data) {
@@ -82,7 +94,7 @@ export const useSuggestedProducts = (options: UseSuggestedProductsOptions = {}):
     } finally {
       setLoading(false);
     }
-  }, [enabled, limit, status, categoryId, type]);
+  }, [enabled, limit, status, categoryId, type, excludeProductId, fillWithOtherCategories]);
 
   /**
    * Tags vêm de `categoryNames` na resposta da API (join no banco).
