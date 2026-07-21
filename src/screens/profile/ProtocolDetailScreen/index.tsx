@@ -136,7 +136,6 @@ const ProtocolDetailScreen: React.FC<Props> = ({ navigation, route }) => {
     communityProviderName: protocol?.name ?? '',
     defaultThumbnailUrl: heroImageUri,
     programProductId: productId || undefined,
-    hasProgramAccess: true,
     navigation,
   });
 
