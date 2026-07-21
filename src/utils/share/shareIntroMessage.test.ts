@@ -16,7 +16,7 @@ jest.mock('@/i18n', () => ({
   default: {
     t: (key: string, options?: { type?: string }) => {
       if (key === 'share.message' && options?.type) {
-        return `Vi ${options.type} no Like:Me e quis compartilhar com você. Dá uma olhada!`;
+        return `Vi ${options.type} no Like:Me e lembrei de você. Se ainda não tiver o app, baixe gratuitamente na loja.`;
       }
       return SHARE_TYPE_LABELS[key] ?? key;
     },
@@ -39,13 +39,34 @@ describe('shareContentTypePhrase', () => {
 
 describe('shareIntroMessageForContentType', () => {
   it.each([
-    [SHARE_CONTENT_TYPES.COMMUNITY_POST, 'Vi esse post no Like:Me e quis compartilhar com você. Dá uma olhada!'],
-    [SHARE_CONTENT_TYPES.COMMUNITY, 'Vi essa comunidade no Like:Me e quis compartilhar com você. Dá uma olhada!'],
-    [SHARE_CONTENT_TYPES.PROTOCOL, 'Vi esse protocolo no Like:Me e quis compartilhar com você. Dá uma olhada!'],
-    [SHARE_CONTENT_TYPES.PRODUCT, 'Vi esse produto no Like:Me e quis compartilhar com você. Dá uma olhada!'],
-    [SHARE_CONTENT_TYPES.SERVICE, 'Vi esse serviço no Like:Me e quis compartilhar com você. Dá uma olhada!'],
-    [SHARE_CONTENT_TYPES.PROVIDER, 'Vi esse profissional no Like:Me e quis compartilhar com você. Dá uma olhada!'],
-    [SHARE_CONTENT_TYPES.AFFILIATE, 'Vi esse produto no Like:Me e quis compartilhar com você. Dá uma olhada!'],
+    [
+      SHARE_CONTENT_TYPES.COMMUNITY_POST,
+      'Vi esse post no Like:Me e lembrei de você. Se ainda não tiver o app, baixe gratuitamente na loja.',
+    ],
+    [
+      SHARE_CONTENT_TYPES.COMMUNITY,
+      'Vi essa comunidade no Like:Me e lembrei de você. Se ainda não tiver o app, baixe gratuitamente na loja.',
+    ],
+    [
+      SHARE_CONTENT_TYPES.PROTOCOL,
+      'Vi esse protocolo no Like:Me e lembrei de você. Se ainda não tiver o app, baixe gratuitamente na loja.',
+    ],
+    [
+      SHARE_CONTENT_TYPES.PRODUCT,
+      'Vi esse produto no Like:Me e lembrei de você. Se ainda não tiver o app, baixe gratuitamente na loja.',
+    ],
+    [
+      SHARE_CONTENT_TYPES.SERVICE,
+      'Vi esse serviço no Like:Me e lembrei de você. Se ainda não tiver o app, baixe gratuitamente na loja.',
+    ],
+    [
+      SHARE_CONTENT_TYPES.PROVIDER,
+      'Vi esse profissional no Like:Me e lembrei de você. Se ainda não tiver o app, baixe gratuitamente na loja.',
+    ],
+    [
+      SHARE_CONTENT_TYPES.AFFILIATE,
+      'Vi esse produto no Like:Me e lembrei de você. Se ainda não tiver o app, baixe gratuitamente na loja.',
+    ],
   ])('monta mensagem com type para %s', (contentType, expected) => {
     expect(shareIntroMessageForContentType(contentType)).toBe(expected);
   });
