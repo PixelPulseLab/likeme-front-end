@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import type { StackNavigationProp } from '@react-navigation/stack';
 import { PartnerSection } from '@/components/sections/advertiser';
+import { RecommendedProductsSection } from '@/components/sections/marketplace/RecommendedProductsSection';
 import { ScreenWithHeader } from '@/components/ui/layout';
 import { ShareContentUnavailable } from '@/components/ui/feedback';
 import { CachedImage } from '@/components/ui/media/CachedImage';
@@ -357,6 +358,15 @@ const AffiliateProductScreen: React.FC<AffiliateProductScreenProps> = ({ navigat
               {t('marketplace.amazonDisclaimer')} <Text style={styles.learnMoreLink}>{t('marketplace.learnMore')}</Text>
             </Text>
           </View>
+
+          <RecommendedProductsSection
+            excludeProductId={product?.id ?? route.params?.productId}
+            categoryId={product?.categoryId}
+            providerName={partnerData.name}
+            navigation={navigation}
+            analyticsScreenName='affiliate_product'
+            enabled={!!(product?.id ?? route.params?.productId)}
+          />
         </View>
       </ScrollView>
     </ScreenWithHeader>

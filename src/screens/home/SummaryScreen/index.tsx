@@ -26,7 +26,7 @@ import { communityService, storageService, advertiserService } from '@/services'
 import { PopularProvidersSection, type Provider } from '@/components/sections/community';
 import { type JoinCardItem } from '@/components/ui/cards';
 import { JoinCardList } from '@/components/ui/lists/JoinCardList';
-import { ProductsCarousel, type Product } from '@/components/sections/product';
+import { RecommendedProductsSection } from '@/components/sections/marketplace/RecommendedProductsSection';
 import ProfileFloatingMenu from '@/components/sections/profile/ProfileFloatingMenu';
 // TODO: Temporariamente desabilitados
 // import { AnamnesisPromptCard } from '@/components/sections/anamnesis';
@@ -220,11 +220,6 @@ const SummaryScreen: React.FC<Props> = ({ navigation }) => {
     loadProviders();
   }, [hasSessionToken]);
 
-  const { products: recommendedProducts } = useSuggestedProducts({
-    ...SUGGESTED_PRODUCTS_HOME_ACTIVITIES_DEFAULTS,
-    enabled: hasSessionToken,
-  });
-
   const { products: suggestedPrograms } = useSuggestedProducts({
     ...SUGGESTED_PRODUCTS_HOME_ACTIVITIES_DEFAULTS,
     enabled: hasSessionToken,
@@ -250,10 +245,6 @@ const SummaryScreen: React.FC<Props> = ({ navigation }) => {
       setMenu(menuItems, 'home');
     }, [menuItems, setMenu]),
   );
-
-  const handleProductPress = (product: Product) => {
-    navigateToProductDetailsScreen(rootNavigation, { productId: product.id });
-  };
 
   const handleProviderPress = (provider: Provider) => {
     navigateToProviderProfile(rootNavigation, {
@@ -377,19 +368,17 @@ const SummaryScreen: React.FC<Props> = ({ navigation }) => {
               <PopularProvidersSection providers={popularProviders} onProviderPress={handleProviderPress} />
             </View>
           )}
-          {recommendedProducts.length > 0 && (
-            <View style={[styles.productsContainer, styles.sectionDivider]}>
-              <Text style={styles.sectionTitle}>{t('home.recommendedProductsTitle')}</Text>
-              <View style={[styles.sectionContainer, styles.sectionRetreatedContainer]}>
-                <ProductsCarousel
-                  title={t('home.productsRecommended', { provider: '' })}
-                  subtitle={t('home.discoverProducts')}
-                  products={recommendedProducts}
-                  onProductPress={handleProductPress}
-                />
-              </View>
-            </View>
-          )}
+          <RecommendedProductsSection
+            navigation={rootNavigation as StackNavigationProp<RootStackParamList, keyof RootStackParamList>}
+            analyticsScreenName='summary'
+            enabled={hasSessionToken}
+            style={[
+              styles.productsContainer,
+              styles.sectionDivider,
+              styles.sectionContainer,
+              styles.sectionRetreatedContainer,
+            ]}
+          />
         </ScrollView>
       </View>
       <ProfileFloatingMenu

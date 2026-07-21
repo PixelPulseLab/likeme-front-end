@@ -168,6 +168,13 @@ jest.mock('@/components/sections/product', () => {
   };
 });
 
+jest.mock('@/components/sections/marketplace/RecommendedProductsSection', () => {
+  const { View } = require('react-native');
+  return {
+    RecommendedProductsSection: () => <View testID='recommended-products-section' />,
+  };
+});
+
 jest.mock('@/components/ui/cards', () => {
   const { View, Text } = require('react-native');
   return {
@@ -196,7 +203,6 @@ const mockActivitiesHook = jest.fn();
 
 jest.mock('@/hooks', () => ({
   useActivities: (...args: any[]) => mockActivitiesHook(...args),
-  useSuggestedProducts: () => ({ products: [] }),
   useMenuItems: () => [],
 }));
 

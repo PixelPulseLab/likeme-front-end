@@ -1,10 +1,11 @@
 import React, { type ReactNode } from 'react';
 import { View, ScrollView } from 'react-native';
+import type { StackNavigationProp } from '@react-navigation/stack';
 import { EventBanner, PostsSection, NextEventsSection } from '@/components/sections/community';
+import { RecommendedProductsSection } from '@/components/sections/marketplace/RecommendedProductsSection';
 import type { EventBannerData, FeedEvent } from '@/types/event';
-import { ProductsCarousel, Product } from '@/components/sections/product';
-import { useTranslation } from '@/hooks/i18n';
 import type { Post } from '@/types';
+import type { RootStackParamList } from '@/types/navigation';
 import { styles } from './styles';
 
 type Props = {
@@ -18,9 +19,9 @@ type Props = {
   events?: FeedEvent[];
   onEventPress?: (event: FeedEvent) => void;
   onEventSave?: (event: FeedEvent) => void;
-  products?: Product[];
-  onProductPress?: (product: Product) => void;
-  onProductLike?: (product: Product) => void;
+  navigation?: StackNavigationProp<RootStackParamList, keyof RootStackParamList>;
+  analyticsScreenName?: string;
+  recommendedProductsEnabled?: boolean;
   /** Quando true, não usa ScrollView próprio; o conteúdo é renderizado para ficar dentro do scroll do pai. */
   embedInParentScroll?: boolean;
   /** Renderizado antes do feed de posts (ex.: menu Informações), após CommunityDescriptionSection no pai. */
@@ -45,15 +46,14 @@ const SocialList: React.FC<Props> = ({
   events,
   onEventPress,
   onEventSave,
-  products,
-  onProductPress,
-  onProductLike,
+  navigation,
+  analyticsScreenName = 'community',
+  recommendedProductsEnabled = true,
   embedInParentScroll = false,
   betweenSpecialistAndPosts,
   renderPostsFeed = true,
   renderFeedRecommendations: renderFeedRecommendationsProp,
 }) => {
-  const { t } = useTranslation();
   const showFeedRecommendations = renderFeedRecommendationsProp ?? renderPostsFeed;
 
   const listContent = (
@@ -71,17 +71,14 @@ const SocialList: React.FC<Props> = ({
             </View>
           )}
 
-          {products && products.length > 0 && (
-            <View style={styles.recommendedSection}>
-              <ProductsCarousel
-                title={t('home.productsRecommended', { provider: '' })}
-                subtitle={t('home.discoverProducts')}
-                products={products}
-                onProductPress={onProductPress}
-                onProductLike={onProductLike}
-              />
-            </View>
-          )}
+          {navigation ? (
+            <RecommendedProductsSection
+              navigation={navigation}
+              analyticsScreenName={analyticsScreenName}
+              enabled={recommendedProductsEnabled}
+              style={styles.recommendedSection}
+            />
+          ) : null}
         </>
       ) : null}
     </View>
@@ -97,18 +94,7 @@ const SocialList: React.FC<Props> = ({
       {embedInParentScroll ? (
         listContent
       ) : (
-        <ScrollView
-          style={styles.scrollView}
-          showsVerticalScrollIndicator={false}
-          onMomentumScrollEnd={(event) => {
-            const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
-            const paddingToBottom = 20;
-            if (layoutMeasurement.height + contentOffset.y >= contentSize.height - paddingToBottom) {
-              onLoadMore();
-            }
-          }}
-          scrollEventThrottle={400}
-        >
+        <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
           {listContent}
         </ScrollView>
       )}

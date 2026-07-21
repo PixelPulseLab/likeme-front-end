@@ -76,6 +76,11 @@ jest.mock('@/services/category/categoryService', () => ({
 
 jest.mock('@/analytics', () => ({
   useAnalyticsScreen: jest.fn(),
+  logSelectContent: jest.fn(),
+}));
+
+jest.mock('@/components/sections/marketplace/RecommendedProductsSection', () => ({
+  RecommendedProductsSection: () => null,
 }));
 
 jest.mock('@/components/ui/buttons', () => {

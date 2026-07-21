@@ -7,36 +7,27 @@ import { HeroImage, ScreenWithHeader } from '@/components/ui/layout';
 import { ShareContentUnavailable } from '@/components/ui/feedback';
 import { Toggle } from '@/components/ui';
 import { SecondaryButton } from '@/components/ui/buttons';
-import { ProductsCarousel } from '@/components/sections/product';
 import {
   ProductDetailsPriceQuantityRow,
   ProductHeroFooter,
   ProgramParticipationTermsRequiredModal,
 } from '@/components/sections/marketplace';
+import { RecommendedProductsSection } from '@/components/sections/marketplace/RecommendedProductsSection';
 import { Checkbox } from '@/components/ui/inputs';
 import { MarkdownText } from '@/components/ui/text/MarkdownText';
 import { PartnerSection } from '@/components/sections/advertiser/PartnerSection';
 import { ContactButtonsRow } from '@/components/sections/advertiser/ContactButtonsRow';
 import { type ButtonCarouselOption } from '@/components/ui/carousel';
 import InfoSectionTabsRow from '@/components/ui/carousel/InfoSectionTabsRow';
-import { useMenuItems, useProductDetails, useProductPartner, useSuggestedProducts } from '@/hooks';
+import { useMenuItems, useProductDetails, useProductPartner } from '@/hooks';
 import { useSetFloatingMenu } from '@/contexts/FloatingMenuContext';
 import { useTranslation } from '@/hooks/i18n';
 import { formatPrice, getProductModeTranslationKey } from '@/utils';
-import { formatPriceLabel } from '@/utils/formatters/priceFormatter';
-import {
-  useAnalyticsScreen,
-  logButtonClick,
-  logTabSelect,
-  logAddToCart,
-  logSelectContent,
-  logError,
-} from '@/analytics';
+import { useAnalyticsScreen, logButtonClick, logTabSelect, logAddToCart, logError } from '@/analytics';
 import { MARKETPLACE_PRODUCT_PLACEHOLDER_IMAGE_URI } from '@/constants';
 import type { RootStackParamList } from '@/types/navigation';
 import { PRODUCT_CATALOG_TYPE, catalogTypeTranslatedBadgeLabels, isProgramCatalogType } from '@/types/product';
 import { navigateToProviderProfile } from '@/utils/navigation/marketplaceNavigation';
-import { navigateToProductDetailsScreen } from '@/utils/navigation/productNavigation';
 import { goBackOrShareHome, navigateToShareHome } from '@/utils/navigation/shareHomeNavigation';
 import { navigateToShareDiscover } from '@/utils/navigation/shareDiscoverNavigation';
 import { shareContent, shareInputForProduct } from '@/utils/share/shareContent';
@@ -95,17 +86,6 @@ const ProductDetailsScreen: React.FC<ProductDetailsScreenProps> = ({ navigation,
     routeProduct: route.params?.product,
     productIdFallback: route.params?.productId,
   });
-
-  const { products: suggestedProducts, loading: loadingSuggested } = useSuggestedProducts({
-    limit: 5,
-    categoryId: product?.categoryId ?? undefined,
-    enabled: !!product?.id,
-  });
-
-  const recommendedProducts = useMemo(
-    () => (suggestedProducts || []).filter((p) => p.id !== product?.id).slice(0, 5),
-    [suggestedProducts, product?.id],
-  );
 
   const displayData = useMemo(() => {
     if (!product) {
@@ -484,7 +464,14 @@ const ProductDetailsScreen: React.FC<ProductDetailsScreenProps> = ({ navigation,
                 </>
               )}
               {!isProgramProduct ? renderSpecialistPartnerSection(false, true) : null}
-              {renderRecommendedProducts()}
+              <RecommendedProductsSection
+                excludeProductId={product?.id}
+                categoryId={product?.categoryId}
+                providerName={partnerData.name}
+                navigation={navigation}
+                analyticsScreenName='product_details'
+                enabled={!!product?.id}
+              />
             </View>
           </View>
         </ScrollView>
@@ -499,41 +486,6 @@ const ProductDetailsScreen: React.FC<ProductDetailsScreenProps> = ({ navigation,
       />
     </>
   );
-
-  function renderRecommendedProducts() {
-    const providerName = partnerData.name;
-    const recommendedTitle = t('marketplace.recommendedProductsForJourney', { provider: providerName });
-
-    if (loadingSuggested && recommendedProducts.length === 0) return null;
-    if (recommendedProducts.length === 0) return null;
-
-    return (
-      <View style={styles.recommendedSection}>
-        <ProductsCarousel
-          title={recommendedTitle}
-          subtitle={t('marketplace.discoverOptionsForYou')}
-          products={recommendedProducts}
-          onProductPress={(p) => {
-            logSelectContent({
-              content_type: 'product',
-              item_id: p.id,
-              item_name: p.title,
-              screen_name: 'product_details',
-            });
-            navigateToProductDetailsScreen(navigation, {
-              productId: p.id,
-              product: {
-                id: p.id,
-                title: p.title,
-                price: formatPriceLabel(p.price),
-                image: p.image || MARKETPLACE_PRODUCT_PLACEHOLDER_IMAGE_URI,
-              },
-            });
-          }}
-        />
-      </View>
-    );
-  }
 
   function renderInfoSection() {
     return <View style={styles.tabsContainer}>{renderAboutContent()}</View>;

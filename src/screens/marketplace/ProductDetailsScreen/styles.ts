@@ -261,9 +261,6 @@ export const styles = StyleSheet.create({
     color: COLORS.NEUTRAL.LOW.PURE,
     letterSpacing: 0.2,
   },
-  recommendedSection: {
-    marginTop: 0,
-  },
   tabsContainerInCard: {
     paddingBottom: SPACING.LG,
   },

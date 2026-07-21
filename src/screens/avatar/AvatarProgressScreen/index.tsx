@@ -6,7 +6,7 @@ import { SecondaryButton, IconButton } from '@/components/ui/buttons';
 import { PeriodSelector } from '@/components/ui/inputs';
 import { CTACard } from '@/components/ui/cards';
 import ProgressBar from '@/components/ui/feedback/ProgressBar';
-import { useMenuItems, useCommunities, useSuggestedProducts, useAnamnesisScores } from '@/hooks';
+import { useMenuItems, useCommunities, useAnamnesisScores } from '@/hooks';
 import { useSetFloatingMenu } from '@/contexts/FloatingMenuContext';
 import { mapChannelsToEvents } from '@/utils';
 import { chatService, communityService, anamnesisService, userService } from '@/services';
@@ -18,13 +18,14 @@ import type { FeedEvent } from '@/types/event';
 import { NextEventsSection, PopularProvidersSection, type Provider } from '@/components/sections/community';
 import { type JoinCardItem } from '@/components/ui/cards';
 import { JoinCardList } from '@/components/ui/lists/JoinCardList';
-import { ProductsCarousel, type Product } from '@/components/sections/product';
+import { RecommendedProductsSection } from '@/components/sections/marketplace/RecommendedProductsSection';
 import Carousel from '@/components/sections/product/Carousel';
 import { useAnalyticsScreen } from '@/analytics';
 import { logger } from '@/utils/logger';
 import { navigateToCommunity } from '@/utils/navigation/communityNavigation';
 import { rootStackNavigationFrom } from '@/utils/navigation/rootStackNavigation';
-import { navigateToProductDetailsScreen } from '@/utils/navigation/productNavigation';
+import type { RootStackParamList } from '@/types/navigation';
+import type { StackNavigationProp } from '@react-navigation/stack';
 import { styles } from './styles';
 
 type Props = {
@@ -54,12 +55,6 @@ const AvatarProgressScreen: React.FC<Props> = ({ navigation }) => {
     setMarkerRowWidth(width);
   }, []);
   const { scores: anamnesisScores } = useAnamnesisScores();
-
-  const { products: recommendedProducts } = useSuggestedProducts({
-    limit: 3,
-    status: 'active',
-    enabled: true,
-  });
 
   const { communities: rawCommunities, categories } = useCommunities({
     enabled: true,
@@ -242,10 +237,6 @@ const AvatarProgressScreen: React.FC<Props> = ({ navigation }) => {
 
   const handleProviderPress = (provider: Provider) => {
     logger.debug('[AvatarProgressScreen] provider press (stub)', { providerId: provider.id });
-  };
-
-  const handleProductPress = (product: Product) => {
-    navigateToProductDetailsScreen(rootNavigation, { productId: product.id });
   };
 
   const handleJoinCommunityPress = (_community: JoinCardItem) => {
@@ -496,16 +487,11 @@ const AvatarProgressScreen: React.FC<Props> = ({ navigation }) => {
 
           <PopularProvidersSection providers={popularProviders} onProviderPress={handleProviderPress} />
 
-          {recommendedProducts && recommendedProducts.length > 0 && (
-            <View style={styles.productsSection}>
-              <ProductsCarousel
-                title={t('home.productsRecommended', { provider: '' })}
-                subtitle={t('home.discoverProducts')}
-                products={recommendedProducts}
-                onProductPress={handleProductPress}
-              />
-            </View>
-          )}
+          <RecommendedProductsSection
+            navigation={rootNavigation as StackNavigationProp<RootStackParamList, keyof RootStackParamList>}
+            analyticsScreenName='avatar_progress'
+            style={styles.productsSection}
+          />
 
           <JoinCardList items={joinCommunities} onItemPress={handleJoinCommunityPress} />
 

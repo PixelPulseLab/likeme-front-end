@@ -11,18 +11,14 @@ import { CreateActivityModal } from '@/components/sections/activity';
 import ProfileFloatingMenu from '@/components/sections/profile/ProfileFloatingMenu';
 import { DoneIcon, CloseIcon } from '@/assets/ui';
 import { HOME_MVP_ASSETS } from '@/assets/homeMvp';
-import { ProductsCarousel, PlansCarousel, type Plan } from '@/components/sections/product';
+import { PlansCarousel, type Plan } from '@/components/sections/product';
+import { RecommendedProductsSection } from '@/components/sections/marketplace/RecommendedProductsSection';
 import { EventReminder } from '@/components/ui/cards';
 import { orderService, activityService } from '@/services';
 import { storageService } from '@/services';
 import { formatPrice, sortByDateTime, sortByDateField } from '@/utils';
 import { COLORS } from '@/constants';
-import {
-  useActivities,
-  useSuggestedProducts,
-  SUGGESTED_PRODUCTS_HOME_ACTIVITIES_DEFAULTS,
-  useMenuItems,
-} from '@/hooks';
+import { useActivities, useMenuItems } from '@/hooks';
 import { useSetFloatingMenu } from '@/contexts/FloatingMenuContext';
 import { useTranslation } from '@/hooks/i18n';
 // import { AnamnesisPromptCard } from '@/components/sections/anamnesis';
@@ -34,7 +30,6 @@ import { formatOrderDisplayId } from '@/utils/marketplace/orderDisplayId';
 import { navigateToOrderDetail } from '@/utils/navigation/activitiesNavigation';
 import { navigateRootStack, rootStackNavigationFrom } from '@/utils/navigation/rootStackNavigation';
 import { orderCardStatusPresentation, orderCardTitle } from '@/utils/marketplace/orderStatusDisplay';
-import { navigateToProductDetailsScreen } from '@/utils/navigation/productNavigation';
 import { invalidateActivityListCache } from '@/utils/activity/activityListCache';
 import { styles } from './styles';
 
@@ -270,11 +265,6 @@ const ActivitiesScreen: React.FC<ActivitiesScreenProps> = ({ navigation, route }
 
     void loadUser();
   }, []);
-
-  const { products: suggestedProducts } = useSuggestedProducts({
-    ...SUGGESTED_PRODUCTS_HOME_ACTIVITIES_DEFAULTS,
-    enabled: true,
-  });
 
   // Função para encontrar a próxima atividade que acontece hoje usando dados originais
   const getUpcomingActivity = useMemo(() => {
@@ -945,18 +935,12 @@ const ActivitiesScreen: React.FC<ActivitiesScreenProps> = ({ navigation, route }
                   />
                 </View>
               )}
-              {activeTab === 'actives' && suggestedProducts.length > 0 && (
-                <View>
-                  <ProductsCarousel
-                    title={t('activities.productsRecommended', { provider: '' })}
-                    subtitle={t('activities.discoverOptions')}
-                    products={suggestedProducts}
-                    onProductPress={(product) => {
-                      navigateToProductDetailsScreen(rootNavigation, { productId: product.id });
-                    }}
-                  />
-                </View>
-              )}
+              {activeTab === 'actives' ? (
+                <RecommendedProductsSection
+                  navigation={rootNavigation as StackNavigationProp<RootStackParamList, keyof RootStackParamList>}
+                  analyticsScreenName='activities'
+                />
+              ) : null}
             </>
           )}
         </ScrollView>

@@ -13,7 +13,7 @@ import {
   type CommunityDescriptionSpecialist,
 } from '@/components/sections/community';
 import { styles as socialListStyles } from '@/components/sections/community/SocialList/styles';
-import { Product, ProductsCarousel } from '@/components/sections/product';
+import { RecommendedProductsSection } from '@/components/sections/marketplace/RecommendedProductsSection';
 import { EmptyState, ShareContentUnavailable } from '@/components/ui';
 import { SHARE_CONTENT_TYPES } from '@/constants/share';
 import type { Post } from '@/types';
@@ -29,8 +29,6 @@ import {
   useCommunityFeaturedPost,
   useCommunities,
   useCommunity,
-  useSuggestedProducts,
-  SUGGESTED_PRODUCTS_HOME_ACTIVITIES_DEFAULTS,
   useAdvertisers,
   useProviderAds,
   useMenuItems,
@@ -43,7 +41,6 @@ import { storageService } from '@/services';
 import { logger } from '@/utils/logger';
 import { resolveCommunityHeroImageUri } from '@/utils/community/mappers';
 import { navigateToProviderProfile } from '@/utils/navigation/marketplaceNavigation';
-import { navigateToProductDetailsScreen } from '@/utils/navigation/productNavigation';
 import { goBackOrShareHome, navigateToShareHome } from '@/utils/navigation/shareHomeNavigation';
 import { navigateToShareDiscover } from '@/utils/navigation/shareDiscoverNavigation';
 import { navigateRootStack, rootStackNavigationFrom } from '@/utils/navigation/rootStackNavigation';
@@ -247,14 +244,6 @@ const CommunityScreen: React.FC<Props> = ({ navigation }) => {
       navigation: rootNavigation as StackNavigationProp<RootStackParamList>,
     });
 
-  const handleProductPress = useCallback(
-    (product: Product) => {
-      if (!rootNavigation) return;
-      navigateToProductDetailsScreen(rootNavigation, { productId: product.id });
-    },
-    [rootNavigation],
-  );
-
   const handleProfessionalPress = (advertiser: Advertiser) => {
     if (!rootNavigation) return;
     navigateToProviderProfile(rootNavigation, { providerId: advertiser.id });
@@ -262,11 +251,6 @@ const CommunityScreen: React.FC<Props> = ({ navigation }) => {
 
   const feedRecommendationsEnabled =
     isFeedMode && (activeInfoTab === 'posts' || activeInfoTab === 'about') && (!feedLoading || posts.length > 0);
-
-  const { products: suggestedProducts } = useSuggestedProducts({
-    ...SUGGESTED_PRODUCTS_HOME_ACTIVITIES_DEFAULTS,
-    enabled: feedRecommendationsEnabled,
-  });
 
   const [selectedShopTabId, setSelectedShopTabId] = useState<ShopTabId>('products');
   const [shopProductsPage, setShopProductsPage] = useState(1);
@@ -719,19 +703,24 @@ const CommunityScreen: React.FC<Props> = ({ navigation }) => {
               <NextEventsSection events={feedEvents} onEventPress={handleEventPress} onEventSave={handleEventSave} />
             </View>
           )}
-          {suggestedProducts.length > 0 && (
-            <View style={socialListStyles.recommendedSection}>
-              <ProductsCarousel
-                title={t('home.productsRecommended', { provider: '' })}
-                subtitle={t('home.discoverProducts')}
-                products={suggestedProducts}
-                onProductPress={handleProductPress}
-              />
-            </View>
-          )}
+          {rootNavigation ? (
+            <RecommendedProductsSection
+              navigation={rootNavigation as StackNavigationProp<RootStackParamList, keyof RootStackParamList>}
+              analyticsScreenName='community'
+              enabled={feedRecommendationsEnabled}
+              style={socialListStyles.recommendedSection}
+            />
+          ) : null}
         </>
       ) : null,
-    [showFeedRecommendations, feedEvents, handleEventPress, handleEventSave, suggestedProducts, handleProductPress, t],
+    [
+      showFeedRecommendations,
+      feedEvents,
+      handleEventPress,
+      handleEventSave,
+      rootNavigation,
+      feedRecommendationsEnabled,
+    ],
   );
 
   const feedListHeader = useMemo(

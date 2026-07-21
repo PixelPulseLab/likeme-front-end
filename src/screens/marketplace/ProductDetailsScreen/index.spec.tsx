@@ -194,9 +194,13 @@ jest.mock('@/hooks', () => ({
   useProductDetails: (...args: any[]) => mockUseProductDetails(...args),
   useProductPartner: (...args: any[]) => mockUseProductPartner(...args),
   useUserFeed: (...args: any[]) => mockUseUserFeed(...args),
-  useSuggestedProducts: (...args: any[]) => mockUseSuggestedProducts(...args),
   useCategories: (...args: any[]) => mockUseCategories(...args),
   useMenuItems: () => [],
+}));
+
+jest.mock('@/hooks/marketplace/useSuggestedProducts', () => ({
+  useSuggestedProducts: (...args: any[]) => mockUseSuggestedProducts(...args),
+  SUGGESTED_PRODUCTS_HOME_ACTIVITIES_DEFAULTS: { limit: 4, status: 'active' },
 }));
 
 jest.mock('@/contexts/FloatingMenuContext', () => ({
