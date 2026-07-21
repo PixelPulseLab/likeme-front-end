@@ -111,6 +111,41 @@ describe('useCommunityEventBanner', () => {
     expect(navigateToProductDetailsScreen).toHaveBeenCalledWith(navigation, { productId: 'product-99' });
   });
 
+  it('mantem banner de compra quando API informa que usuario nao tem acesso ao programa', () => {
+    useEventListMock.mockReturnValue({
+      banner: {
+        id: 'evt-live',
+        title: 'Sessao ao vivo',
+        host: 'Host',
+        status: 'live',
+        startsAt: '2026-06-30T18:00:00.000Z',
+        endsAt: '2026-06-30T19:00:00.000Z',
+        externalUrl: 'https://us02web.zoom.us/j/123456789',
+        provider: 'zoom',
+        joinMode: 'external_browser',
+        variant: 'purchase',
+        communityId: 'community-1',
+        programProductId: 'product-99',
+      },
+      programProductId: 'product-99',
+      hasProgramAccess: false,
+      loading: false,
+      error: null,
+      refresh: refreshEventsMock,
+    });
+
+    const { result } = renderHook(() =>
+      useCommunityEventBanner({
+        enabled: true,
+        communityId: 'community-1',
+        programProductId: 'product-99',
+        navigation,
+      }),
+    );
+
+    expect(result.current.eventBanner).toEqual(expect.objectContaining({ variant: 'purchase' }));
+  });
+
   it('variant reminder registra lembrete e atualiza lista de eventos', async () => {
     (eventService.registerScheduledCommunityEventReminder as jest.Mock).mockResolvedValue({
       data: { registered: true },
