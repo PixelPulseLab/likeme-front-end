@@ -31,6 +31,15 @@ jest.mock('@/components/ui/layout', () => {
   return {
     Header,
     Background: () => null,
+    HeroImage: ({ name, badges, footer }: any) => (
+      <View testID='hero-image'>
+        {(badges ?? []).map((badge: string) => (
+          <Text key={badge}>{badge}</Text>
+        ))}
+        {name ? <Text>{name}</Text> : null}
+        {footer}
+      </View>
+    ),
     ScreenWithHeader: ({ children, headerProps }: any) => (
       <View>
         <Header {...headerProps} />
@@ -82,6 +91,25 @@ jest.mock('@/analytics', () => ({
 jest.mock('@/components/sections/marketplace/RecommendedProductsSection', () => ({
   RecommendedProductsSection: () => null,
 }));
+
+jest.mock('@/components/ui/carousel/InfoSectionTabsRow', () => {
+  const { View, Text, TouchableOpacity } = require('react-native');
+  return {
+    __esModule: true,
+    default: ({ options, onSharePress }: any) => (
+      <View testID='info-section-tabs-row'>
+        {options.map((opt: any) => (
+          <Text key={opt.id}>{opt.label}</Text>
+        ))}
+        {onSharePress ? (
+          <TouchableOpacity onPress={onSharePress} testID='icon-button'>
+            <Text>share</Text>
+          </TouchableOpacity>
+        ) : null}
+      </View>
+    ),
+  };
+});
 
 jest.mock('@/components/ui/buttons', () => {
   const { TouchableOpacity, Text } = require('react-native');

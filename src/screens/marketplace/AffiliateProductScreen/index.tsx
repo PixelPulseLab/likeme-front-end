@@ -1,16 +1,16 @@
-import React, { useState, useMemo, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Linking, StyleSheet } from 'react-native';
-import { IconButton, SecondaryButton } from '@/components/ui/buttons';
+import React, { useState, useMemo } from 'react';
+import { View, Text, ScrollView, Linking } from 'react-native';
+import { SecondaryButton } from '@/components/ui/buttons';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
 import type { StackNavigationProp } from '@react-navigation/stack';
 import { PartnerSection } from '@/components/sections/advertiser';
+import { ProductHeroFooter } from '@/components/sections/marketplace/ProductHeroFooter';
 import { RecommendedProductsSection } from '@/components/sections/marketplace/RecommendedProductsSection';
-import { ScreenWithHeader } from '@/components/ui/layout';
+import { HeroImage, ScreenWithHeader } from '@/components/ui/layout';
 import { ShareContentUnavailable } from '@/components/ui/feedback';
-import { CachedImage } from '@/components/ui/media/CachedImage';
+import InfoSectionTabsRow from '@/components/ui/carousel/InfoSectionTabsRow';
 import { MarkdownText } from '@/components/ui/text/MarkdownText';
-import { IMAGE_PRIORITY_HIGH, MARKETPLACE_PRODUCT_PLACEHOLDER_IMAGE_URI } from '@/constants';
+import { MARKETPLACE_PRODUCT_PLACEHOLDER_IMAGE_URI } from '@/constants';
 import { useMenuItems, useProductDetails, useProductPartner } from '@/hooks';
 import { useTranslation } from '@/hooks/i18n';
 import type { RootStackParamList } from '@/types/navigation';
@@ -186,15 +186,9 @@ const AffiliateProductScreen: React.FC<AffiliateProductScreenProps> = ({ navigat
     return all.filter((tab) => tab.text.length > 0);
   }, [t, displayGoal, displayDescriptionTrimmed, displayComposition]);
 
-  useEffect(() => {
-    if (tabs.length === 0) {
-      return;
-    }
-    if (!tabs.some((tab) => tab.id === activeTab)) {
-      setActiveTab(tabs[0].id);
-    }
-  }, [tabs, activeTab]);
-
+  // Não persistir fallback em estado: enquanto o produto completo carrega, a aba
+  // "Objetivo" ainda não existe e gravar tabs[0] fixaria "Descrição" para sempre.
+  // resolvedTabId já deriva a aba exibida quando activeTab não está disponível.
   const resolvedTabId = useMemo((): TabType | null => {
     if (tabs.length === 0) return null;
     return tabs.some((tab) => tab.id === activeTab) ? activeTab : tabs[0].id;
@@ -216,29 +210,6 @@ const AffiliateProductScreen: React.FC<AffiliateProductScreenProps> = ({ navigat
       </View>
     );
   };
-
-  const renderTabs = () => (
-    <View style={styles.tabsRow}>
-      <View style={styles.tabsContainer}>
-        {tabs.map((tab) => (
-          <TouchableOpacity
-            key={tab.id}
-            style={[styles.tab, resolvedTabId === tab.id && styles.tabActive]}
-            onPress={() => setActiveTab(tab.id)}
-            activeOpacity={0.7}
-          >
-            <Text style={[styles.tabText, resolvedTabId === tab.id && styles.tabTextActive]}>{tab.label}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-      <IconButton
-        icon='share'
-        onPress={handleSharePress}
-        backgroundSize='medium'
-        containerStyle={styles.tabsShareButton}
-      />
-    </View>
-  );
 
   const renderTabContent = () => {
     if (resolvedTabId == null) {
@@ -296,34 +267,12 @@ const AffiliateProductScreen: React.FC<AffiliateProductScreenProps> = ({ navigat
       contentContainerStyle={styles.container}
     >
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        <View style={styles.heroSection}>
-          <View style={styles.heroImage}>
-            <CachedImage
-              source={{ uri: displayImage }}
-              style={[StyleSheet.absoluteFill, styles.heroImageStyle]}
-              priority={IMAGE_PRIORITY_HIGH}
-            />
-            <View style={styles.heroOverlay}>
-              <LinearGradient
-                colors={['rgba(48, 48, 48, 0)', 'rgba(41, 41, 41, 1)']}
-                locations={[0.64, 1]}
-                style={styles.heroGradient}
-              />
-              <View style={styles.heroContent}>
-                {heroBadges.length > 0 ? (
-                  <View style={styles.badgesContainer}>
-                    {heroBadges.map((label, index) => (
-                      <View key={`${label}-${index}`} style={styles.badge}>
-                        <Text style={styles.badgeText}>{label}</Text>
-                      </View>
-                    ))}
-                  </View>
-                ) : null}
-                <Text style={styles.heroTitle}>{displayTitle}</Text>
-              </View>
-            </View>
-          </View>
-        </View>
+        <HeroImage
+          imageUri={displayImage}
+          name={displayTitle}
+          badges={heroBadges}
+          footer={<ProductHeroFooter isOutOfStock={false} price={product?.price} onCartPress={handleBuyOnAmazon} />}
+        />
 
         {productImages.length > 1 && (
           <View style={styles.paginationContainer}>
@@ -336,7 +285,13 @@ const AffiliateProductScreen: React.FC<AffiliateProductScreenProps> = ({ navigat
         <View style={styles.contentSection}>
           {tabs.length > 0 ? (
             <>
-              {renderTabs()}
+              <Text style={styles.sectionTitle}>Informações</Text>
+              <InfoSectionTabsRow
+                options={tabs}
+                selectedId={resolvedTabId}
+                onSelect={(tabId) => setActiveTab(tabId)}
+                onSharePress={handleSharePress}
+              />
               {renderTabContent()}
             </>
           ) : null}
@@ -358,15 +313,16 @@ const AffiliateProductScreen: React.FC<AffiliateProductScreenProps> = ({ navigat
               {t('marketplace.amazonDisclaimer')} <Text style={styles.learnMoreLink}>{t('marketplace.learnMore')}</Text>
             </Text>
           </View>
-
-          <RecommendedProductsSection
-            excludeProductId={product?.id ?? route.params?.productId}
-            providerName={partnerData.name}
-            navigation={navigation}
-            analyticsScreenName='affiliate_product'
-            enabled={!!(product?.id ?? route.params?.productId)}
-          />
         </View>
+
+        <RecommendedProductsSection
+          excludeProductId={product?.id ?? route.params?.productId}
+          providerName={partnerData.name}
+          navigation={navigation}
+          analyticsScreenName='affiliate_product'
+          enabled={!!(product?.id ?? route.params?.productId)}
+          style={styles.recommendedSection}
+        />
       </ScrollView>
     </ScreenWithHeader>
   );
