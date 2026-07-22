@@ -316,6 +316,26 @@ jest.mock('react-native-safe-area-context', () => ({
 - **iOS**: Xcode recente e CocoaPods para a pasta `ios/`
 - **Android**: Android Studio / SDK e Java 17+ para a pasta `android/`
 
+## 🔢 Versão (SemVer)
+
+A versão do app fica em [`app.version.json`](./app.version.json) e segue **SemVer** (Semantic Versioning): convenção de numeração no formato `MAJOR.MINOR.PATCH` (ex.: `1.10.0`).
+
+Cada número sobe com um significado:
+
+- **MAJOR** — mudança que quebra compatibilidade (API/contrato/uso anterior deixa de funcionar como antes).
+- **MINOR** — funcionalidade nova, sem quebrar o que já existia.
+- **PATCH** — correção de bug, sem mudar o contrato.
+
+### Quando bumpa o quê
+
+| De → Para | Motivo |
+|-----------|--------|
+| `1.9.0` → `1.9.1` | bug fix |
+| `1.9.0` → `1.10.0` | feature |
+| `1.x` → `2.0.0` | breaking no app (como um layout v2) |
+
+Após editar `app.version.json`, rode `npm run version:sync` (ou `npm run version:check` para validar).
+
 ## 📚 Documentação
 
 - [README.md](./README.md) — visão geral
@@ -325,6 +345,7 @@ jest.mock('react-native-safe-area-context', () => ({
 - [BUILD_TESTFLIGHT.md](./BUILD_TESTFLIGHT.md) — build iOS local / TestFlight
 - [.github/workflows/README.md](./.github/workflows/README.md) — CI (Gradle + Xcode)
 - [maestro/README.md](./maestro/README.md) — testes E2E
+- [app.version.json](./app.version.json) — versão SemVer, builds nativos e changelog da release
 
 ## 📄 Licença
 
