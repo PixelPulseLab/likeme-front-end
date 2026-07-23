@@ -215,3 +215,17 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 - Assinatura distingue status em cancelamento de cancelado
 - Links compartilháveis usam app.likeme.global
 - Troca de aba em atividades sem piscar e título no card de evento
+
+## [1.11.0] - 2026-07-23
+
+### Adicionado
+- Seção unificada de produtos recomendados no marketplace (APP-281)
+- Ver lembrete no CTA de eventos e card clicável para o link
+
+### Alterado
+- Sugestões da home preservam ordem ranqueada (APP-352)
+- PDP de afiliado alinhada ao layout da página de produto
+
+### Corrigido
+- Recomendações da PDP sem filtro incorreto de categoria
+- Cache de atividades invalidado após alterações

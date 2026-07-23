@@ -1,28 +1,24 @@
 {
-  "version": "1.10.0",
-  "releasedAt": "2026-07-17",
+  "version": "1.11.0",
+  "releasedAt": "2026-07-23",
   "android": {
-    "versionCode": 249
+    "versionCode": 250
   },
   "ios": {
-    "buildNumber": 25
+    "buildNumber": 26
   },
   "changelog": {
     "added": [
-      "Gestão e cancelamento de protocolo pelo app (APP-318)",
-      "Exclusão de conta com motivo e fluxo alinhado ao Figma (APP-358)",
-      "Mensagem personalizada antes de compartilhar o link (APP-362)",
-      "Atividades com abas ativo/histórico, edição e link no card"
+      "Seção unificada de produtos recomendados no marketplace (APP-281)",
+      "Ver lembrete no CTA de eventos e card clicável para o link"
     ],
     "changed": [
-      "Menu do perfil reorganizado com Configurações e segurança (APP-356)",
-      "Etapas vencidas do protocolo marcadas automaticamente (APP-363)",
-      "Telas de protocolo alinhadas ao Figma"
+      "Sugestões da home preservam ordem ranqueada (APP-352)",
+      "PDP de afiliado alinhada ao layout da página de produto"
     ],
     "fixed": [
-      "Assinatura distingue status em cancelamento de cancelado",
-      "Links compartilháveis usam app.likeme.global",
-      "Troca de aba em atividades sem piscar e título no card de evento"
+      "Recomendações da PDP sem filtro incorreto de categoria",
+      "Cache de atividades invalidado após alterações"
     ]
   }
 }
