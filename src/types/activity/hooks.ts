@@ -37,6 +37,7 @@ export interface UseActivitiesReturn {
   historyActivities: ActivityItem[];
   activeActivities: ActivityItem[];
   loadActivities: (listScope?: ActivityListScope, options?: { silent?: boolean }) => Promise<void>;
+  removeActivityLocally: (activityId: string, scopes?: ActivityListScope[]) => void;
   refresh: () => Promise<void>;
   formatDate: (date: Date) => string;
   parseTimeString: (timeString: string, baseDate: Date) => Date;

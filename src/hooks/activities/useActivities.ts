@@ -3,6 +3,7 @@ import type { ActivityListScope, UserActivity } from '@/types/activity';
 import type { ActivityItem, UseActivitiesOptions, UseActivitiesReturn } from '@/types/activity/hooks';
 import {
   fetchActivityList,
+  isStaleActivityListRequestError,
   readCachedActivityList,
   shouldSkipActivityListFetch,
 } from '@/utils/activity/activityListCache';
@@ -174,6 +175,11 @@ export const useActivities = (options: UseActivitiesOptions = {}): UseActivities
           silent,
         });
       } catch (err) {
+        if (isStaleActivityListRequestError(err)) {
+          logger.debug('Ignoring stale activities response after cache invalidation', { listScope });
+          return;
+        }
+
         const errorMessage = err instanceof Error ? err.message : 'Erro ao carregar atividades';
         setError(errorMessage);
         if (!hasCachedData && !hasDisplayedData) {
@@ -197,6 +203,35 @@ export const useActivities = (options: UseActivitiesOptions = {}): UseActivities
     await loadActivities(displayedScope);
   }, [displayedScope, loadActivities]);
 
+  const removeActivityLocally = useCallback(
+    (activityId: string, scopes: ActivityListScope[] = ['active', 'history']) => {
+      setDataByScope((current) => {
+        let next = current;
+
+        for (const scope of scopes) {
+          const currentRawActivities = current[scope].rawActivities;
+          const nextRawActivities = currentRawActivities.filter((activity) => activity.id !== activityId);
+
+          if (nextRawActivities.length === currentRawActivities.length) {
+            continue;
+          }
+
+          if (next === current) {
+            next = { ...current };
+          }
+
+          next[scope] = {
+            rawActivities: nextRawActivities,
+            activities: userActivitiesToItems(nextRawActivities),
+          };
+        }
+
+        return next;
+      });
+    },
+    [],
+  );
+
   const historyActivities = useMemo(() => dataByScope.history.activities, [dataByScope.history.activities]);
   const activeActivities = useMemo(() => dataByScope.active.activities, [dataByScope.active.activities]);
 
@@ -216,6 +251,7 @@ export const useActivities = (options: UseActivitiesOptions = {}): UseActivities
     historyActivities,
     activeActivities,
     loadActivities,
+    removeActivityLocally,
     refresh,
     formatDate,
     parseTimeString,
