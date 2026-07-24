@@ -80,6 +80,7 @@ const ActivitiesScreen: React.FC<ActivitiesScreenProps> = ({ navigation, route }
     rawActivities,
     loading: _isLoadingActivities,
     loadActivities,
+    removeActivityLocally,
     formatDate,
     parseTimeString,
     isToday,
@@ -475,7 +476,7 @@ const ActivitiesScreen: React.FC<ActivitiesScreenProps> = ({ navigation, route }
 
   const reloadActivitiesAfterMutation = useCallback(async () => {
     const listScope = activityListScopeForTab(activeTab);
-    invalidateActivityListCache(listScope);
+    invalidateActivityListCache();
     await loadActivities(listScope);
   }, [activeTab, loadActivities]);
 
@@ -496,6 +497,7 @@ const ActivitiesScreen: React.FC<ActivitiesScreenProps> = ({ navigation, route }
 
       // Marcar atividade como concluída (deletada) para que apareça no histórico como completada
       await activityService.deleteActivity(activityId);
+      removeActivityLocally(activityId);
       // Recarregar atividades para atualizar a lista
       await reloadActivitiesAfterMutation();
     } catch (error) {
@@ -520,6 +522,7 @@ const ActivitiesScreen: React.FC<ActivitiesScreenProps> = ({ navigation, route }
         onPress: async () => {
           try {
             await activityService.deleteActivity(activityId);
+            removeActivityLocally(activityId);
             await reloadActivitiesAfterMutation();
             setMenuVisibleForId(null);
           } catch (error) {
@@ -543,6 +546,7 @@ const ActivitiesScreen: React.FC<ActivitiesScreenProps> = ({ navigation, route }
     try {
       // Marcar atividade como declinada (deletada) para que apareça no histórico como declinada
       await activityService.deleteActivity(activityId);
+      removeActivityLocally(activityId);
       // Recarregar atividades para atualizar a lista
       await reloadActivitiesAfterMutation();
     } catch (error) {
