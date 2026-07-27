@@ -144,13 +144,12 @@ class UserService {
    */
   async deleteMyAccount(reason?: string): Promise<void> {
     const body = reason ? { reason } : undefined;
-    const response = await apiClient.delete<ApiResponse<null>>('/api/auth/account', body, true);
-    if (
-      !response ||
-      typeof response !== 'object' ||
-      !('success' in response) ||
-      !(response as ApiResponse<null>).success
-    ) {
+    const response = await apiClient.delete<ApiResponse<null> | undefined>('/api/auth/account', body, true);
+    if (response == null) {
+      return;
+    }
+
+    if (typeof response !== 'object' || !('success' in response) || !(response as ApiResponse<null>).success) {
       throw new Error((response as ApiResponse<null>)?.message || 'Erro ao eliminar a conta.');
     }
   }

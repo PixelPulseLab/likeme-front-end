@@ -84,6 +84,22 @@ describe('userService profile avatar', () => {
     });
   });
 
+  describe('deleteMyAccount', () => {
+    it('aceita sucesso sem corpo para permitir logout local após HTTP 204', async () => {
+      mockApiClient.delete.mockResolvedValue(undefined as any);
+
+      await expect(userService.deleteMyAccount('price_too_high')).resolves.toBeUndefined();
+
+      expect(mockApiClient.delete).toHaveBeenCalledWith('/api/auth/account', { reason: 'price_too_high' }, true);
+    });
+
+    it('propaga mensagem de erro quando a API retorna success false', async () => {
+      mockApiClient.delete.mockResolvedValue({ success: false, message: 'Falha ao excluir' } as any);
+
+      await expect(userService.deleteMyAccount()).rejects.toThrow('Falha ao excluir');
+    });
+  });
+
   describe('syncStoredUserPicture', () => {
     it('atualiza picture no storage local quando há avatar', async () => {
       mockStorage.getUser.mockResolvedValue({ email: 'a@b.com', name: 'Ana', picture: 'old.jpg' });
