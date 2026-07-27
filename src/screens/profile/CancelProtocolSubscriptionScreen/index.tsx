@@ -39,40 +39,48 @@ const CancelProtocolSubscriptionScreen: React.FC<Props> = ({ navigation, route }
   const [submitting, setSubmitting] = useState(false);
 
   const accessUntilIso = subscriptionAccessUntilIso(accessValidUntil, nextBillingAt);
-  const accessUntilLabel = formatSubscriptionManageDate(accessUntilIso);
+  const accessUntilLabel = accessUntilIso ? formatSubscriptionManageDate(accessUntilIso) : null;
   const scrollBottomPadding = BOTTOM_DOCK_BAR_HEIGHT + Math.max(insets.bottom, SPACING.MD) + SPACING.MD;
 
-  const consequenceItems = useMemo(
-    () => [
-      {
+  const consequenceItems = useMemo(() => {
+    const items: Array<{ positive: boolean; text: string }> = [];
+
+    if (accessUntilLabel) {
+      items.push({
         positive: true,
         text: t('profile.subscriptionCancel.consequenceKeepAccess', {
           defaultValue: `Você continua com acesso completo até ${accessUntilLabel}`,
           date: accessUntilLabel,
         }),
-      },
-      {
-        positive: true,
-        text: t('profile.subscriptionCancel.consequenceNoCharges', {
-          defaultValue: 'Nenhuma nova cobrança será realizada',
-        }),
-      },
-      {
+      });
+    }
+
+    items.push({
+      positive: true,
+      text: t('profile.subscriptionCancel.consequenceNoCharges', {
+        defaultValue: 'Nenhuma nova cobrança será realizada',
+      }),
+    });
+
+    if (accessUntilLabel) {
+      items.push({
         positive: false,
         text: t('profile.subscriptionCancel.consequenceLoseAccess', {
           defaultValue: `Após ${accessUntilLabel} seu acesso ao protocolo será removido`,
           date: accessUntilLabel,
         }),
-      },
-      {
-        positive: false,
-        text: t('profile.subscriptionCancel.consequenceLoseSessions', {
-          defaultValue: 'Você não terá mais acesso as sessões e ao material de apoio.',
-        }),
-      },
-    ],
-    [accessUntilLabel, t],
-  );
+      });
+    }
+
+    items.push({
+      positive: false,
+      text: t('profile.subscriptionCancel.consequenceLoseSessions', {
+        defaultValue: 'Você não terá mais acesso as sessões e ao material de apoio.',
+      }),
+    });
+
+    return items;
+  }, [accessUntilLabel, t]);
 
   const handleKeepPlan = useCallback(() => {
     navigation.goBack();
@@ -200,13 +208,17 @@ const CancelProtocolSubscriptionScreen: React.FC<Props> = ({ navigation, route }
               </Text>
               <Text style={styles.fieldValue}>{formatSubscriptionManageDate(lastBillingAt)}</Text>
             </View>
-            <View style={styles.separator} />
-            <View style={styles.fieldBlock}>
-              <Text style={styles.fieldLabel}>
-                {t('profile.subscriptionCancel.accessUntil', { defaultValue: 'Acesso disponível até' })}
-              </Text>
-              <Text style={styles.fieldValue}>{accessUntilLabel}</Text>
-            </View>
+            {accessUntilLabel ? (
+              <>
+                <View style={styles.separator} />
+                <View style={styles.fieldBlock}>
+                  <Text style={styles.fieldLabel}>
+                    {t('profile.subscriptionCancel.accessUntil', { defaultValue: 'Acesso disponível até' })}
+                  </Text>
+                  <Text style={styles.fieldValue}>{accessUntilLabel}</Text>
+                </View>
+              </>
+            ) : null}
           </View>
         </View>
 
