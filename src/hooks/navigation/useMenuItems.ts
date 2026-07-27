@@ -1,7 +1,6 @@
 import { useMemo } from 'react';
 import type { ImageSourcePropType } from 'react-native';
 import { HOME_MVP_ASSETS } from '@/assets/homeMvp';
-import { useTranslation } from '@/hooks/i18n';
 import { FEATURE_FLAGS } from '@/constants';
 import { useFeatureFlag } from '@/hooks/featureFlags/useFeatureFlag';
 import { navigateToCommunity } from '@/utils/navigation/communityNavigation';
@@ -19,8 +18,6 @@ type MenuItem = {
 
 export const useMenuItems = (navigation: any): MenuItem[] => {
   const rootNavigation = rootStackNavigationFrom(navigation) ?? navigation;
-  const { t } = useTranslation();
-  const shopLabel = t('community.solutions');
   const { isEnabled: isChatEnabled } = useFeatureFlag(FEATURE_FLAGS.CHAT_ENABLED);
 
   return useMemo(() => {
@@ -37,16 +34,16 @@ export const useMenuItems = (navigation: any): MenuItem[] => {
         id: 'community',
         icon: 'group',
         iconImage: HOME_MVP_ASSETS.navCommunity,
-        label: 'Comunidade',
-        fullLabel: 'Comunidade',
+        label: 'Comunidades',
+        fullLabel: 'Comunidades',
         onPress: () => navigateToCommunity(rootNavigation, { openFeedFromMenu: true }),
       },
       {
         id: 'marketplace',
         icon: 'store',
         iconImage: HOME_MVP_ASSETS.navMarketplace,
-        label: shopLabel,
-        fullLabel: shopLabel,
+        label: 'Loja',
+        fullLabel: 'Loja',
         onPress: () => navigateToMarketplace(rootNavigation),
       },
     ];
@@ -63,5 +60,5 @@ export const useMenuItems = (navigation: any): MenuItem[] => {
     }
 
     return items;
-  }, [isChatEnabled, rootNavigation, shopLabel]);
+  }, [isChatEnabled, rootNavigation]);
 };

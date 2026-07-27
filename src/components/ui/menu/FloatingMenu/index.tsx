@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, TouchableOpacity, Text, type ImageSourcePropType } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { navigateRootStack } from '@/utils/navigation/rootStackNavigation';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { ColoredTwoDotsIcon } from '@/assets/ui';
@@ -23,19 +24,20 @@ type Props = {
   selectedId?: string;
 };
 
-const HOME_MARK_SIZE = 32;
-const MENU_VECTOR_SIZE = 20;
+const MENU_ICON_SIZE = 24;
 const BLUR_INTENSITY = 24;
+const MINIMUM_BOTTOM_PADDING = 4;
 
 const FloatingMenu: React.FC<Props> = ({ items, selectedId }) => {
   const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
 
   const handleHomePress = () => {
     navigateRootStack(navigation, 'Home');
   };
 
   return (
-    <View style={[styles.container]}>
+    <View style={[styles.container, { paddingBottom: Math.max(insets.bottom, MINIMUM_BOTTOM_PADDING) }]}>
       <PlatformBlurView intensity={BLUR_INTENSITY} tint='light' style={styles.blur} />
       <View style={styles.overlay} />
 
@@ -45,11 +47,17 @@ const FloatingMenu: React.FC<Props> = ({ items, selectedId }) => {
           activeOpacity={0.8}
           style={[styles.pill, selectedId === 'home' && styles.pillSelected]}
           accessibilityRole='button'
-          accessibilityLabel='Home'
+          accessibilityLabel='Início'
           testID={E2E_TEST_IDS.FLOATING_MENU_HOME}
         >
-          <ColoredTwoDotsIcon width={HOME_MARK_SIZE} height={HOME_MARK_SIZE} />
-          {selectedId === 'home' && <Text style={styles.pillLabel}>Home</Text>}
+          <ColoredTwoDotsIcon width={MENU_ICON_SIZE} height={MENU_ICON_SIZE} />
+          <Text
+            style={[styles.pillLabel, selectedId === 'home' && styles.pillLabelSelected]}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+          >
+            Início
+          </Text>
         </TouchableOpacity>
 
         {items.map((item) => {
@@ -69,11 +77,17 @@ const FloatingMenu: React.FC<Props> = ({ items, selectedId }) => {
               ) : (
                 <Icon
                   name={item.icon ?? 'help-outline'}
-                  size={MENU_VECTOR_SIZE}
+                  size={MENU_ICON_SIZE}
                   color={isSelected ? '#0154F8' : '#001137'}
                 />
               )}
-              {isSelected && <Text style={styles.pillLabel}>{item.fullLabel || item.label}</Text>}
+              <Text
+                style={[styles.pillLabel, isSelected && styles.pillLabelSelected]}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+              >
+                {item.fullLabel || item.label}
+              </Text>
             </TouchableOpacity>
           );
         })}

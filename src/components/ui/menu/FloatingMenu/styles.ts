@@ -1,7 +1,8 @@
-import { COLORS, SPACING } from '@/constants';
+import { COLORS, FONT_SIZES, SPACING } from '@/constants';
 import { StyleSheet } from 'react-native';
 
 const ACCENT_BLUE = '#0154F8';
+const MENU_BACKGROUND = 'rgba(253, 251, 238, 0.6)';
 
 export const styles = StyleSheet.create({
   container: {
@@ -10,11 +11,11 @@ export const styles = StyleSheet.create({
     left: 0,
     right: 0,
     zIndex: 1000,
-    paddingHorizontal: 12,
-    paddingVertical: SPACING.SM,
+    paddingHorizontal: SPACING.XS,
+    paddingTop: SPACING.XS,
     backgroundColor: 'transparent',
-    borderTopLeftRadius: 32,
-    borderTopRightRadius: 32,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
     overflow: 'hidden',
   },
   blur: {
@@ -22,7 +23,7 @@ export const styles = StyleSheet.create({
   },
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(255,255,255,0.6)',
+    backgroundColor: MENU_BACKGROUND,
   },
   row: {
     flexDirection: 'row',
@@ -30,20 +31,17 @@ export const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   pill: {
-    flexDirection: 'row',
+    flex: 1,
+    flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 12,
+    paddingHorizontal: SPACING.XS,
     backgroundColor: 'transparent',
-    borderRadius: 24,
-    minHeight: 48,
-    minWidth: 48,
+    borderRadius: 20,
+    minWidth: 44,
   },
   pillSelected: {
-    gap: 4,
-    paddingHorizontal: 16,
-    backgroundColor: COLORS.SECONDARY.PURE,
-    borderRadius: 48,
+    backgroundColor: COLORS.WHITE,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
@@ -52,65 +50,19 @@ export const styles = StyleSheet.create({
   },
   pillLabel: {
     fontFamily: 'DM Sans',
-    fontSize: 14,
+    fontSize: FONT_SIZES.XS,
     fontWeight: '500',
-    lineHeight: 18,
+    lineHeight: 22,
+    letterSpacing: 0.2,
+    textAlign: 'center',
+    color: COLORS.TEXT,
+  },
+  pillLabelSelected: {
     color: ACCENT_BLUE,
   },
-  homeIcon: {
-    width: 20,
-    height: 20,
-    resizeMode: 'contain',
-  },
-
   menuIconImage: {
-    width: 32,
-    height: 32,
+    width: 24,
+    height: 24,
     backgroundColor: 'transparent',
-  },
-
-  shopIconWrap: {
-    width: 32,
-    height: 32,
-    position: 'relative',
-    overflow: 'hidden',
-  },
-  shopIconLayer: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    width: '100%',
-    height: '100%',
-  },
-  shopIconOverlay: {
-    // Pequeno ajuste para o overlay ficar visível sem cobrir tudo.
-    opacity: 1,
-  },
-
-  communityIconWrap: {
-    width: 32,
-    height: 32,
-    position: 'relative',
-    overflow: 'hidden',
-  },
-  communityIconLayer: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    width: '100%',
-    height: '100%',
-  },
-  communityWordmarkLayer: {
-    position: 'absolute',
-    top: -2,
-    left: -2,
-    right: -2,
-    bottom: -2,
-    width: '100%',
-    height: '100%',
   },
 });
