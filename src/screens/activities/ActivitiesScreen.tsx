@@ -934,6 +934,7 @@ const ActivitiesScreen: React.FC<ActivitiesScreenProps> = ({ navigation, route }
   return (
     <ScreenWithHeader
       navigation={navigation}
+      testID='e2e.activities.root'
       headerProps={{
         showBackButton: false,
         showMenuWithAvatar: true,

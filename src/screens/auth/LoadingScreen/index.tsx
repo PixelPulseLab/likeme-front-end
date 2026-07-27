@@ -14,6 +14,7 @@ import { getInstalledAppVersion, resolveStoreUrlForPlatform } from '@/utils/app/
 import { ensureI18nHydrated, startI18nHydration } from '@/i18n/hydration';
 import { logger } from '@/utils/logger';
 import { openStoreListingWithFallback } from '@/utils/url/storeListingUrl';
+import { isE2eAuthBypassEnabled } from '@/utils/e2e/e2eAuthBypass';
 
 const AnimatedImage = Animated.createAnimatedComponent(ExpoImage);
 const GRADIENT_SOURCES = [GradientSplash7, GradientSplash8, GradientSplash9];
@@ -115,6 +116,9 @@ const LoadingScreen: React.FC<Props> = ({ navigation }) => {
           hadStoredTokenLocal = Boolean(token);
           if (!token) {
             return { hadStoredToken: false, shouldAuthenticate: false };
+          }
+          if (isE2eAuthBypassEnabled()) {
+            return { hadStoredToken: true, shouldAuthenticate: true };
           }
           const { ok } = await AuthService.refreshBackendSessionFromStoredCredentials();
           return { hadStoredToken: true, shouldAuthenticate: ok };

@@ -1,0 +1,15 @@
+appId: app.likeme.com
+name: Onboarding — Welcome até próxima tela
+tags:
+  - onboarding
+---
+- runFlow: ../shared/bootstrap-welcome.yaml
+- tapOn:
+    id: "e2e.welcome.nameInput"
+- inputText: "${E2E_ONBOARDING_NAME}"
+- tapOn:
+    id: "e2e.welcome.next"
+- extendedWaitUntil:
+    notVisible:
+      id: "e2e.welcome.nameInput"
+    timeout: 60000

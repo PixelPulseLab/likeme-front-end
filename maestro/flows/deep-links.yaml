@@ -1,0 +1,12 @@
+appId: app.likeme.com
+name: Deep links autenticados (env seeds)
+tags:
+  - deeplink
+---
+- runFlow: ../shared/bootstrap-authenticated.yaml
+- openLink: likeme://product/${E2E_PRODUCT_ID}
+- openLink: likeme://community/${E2E_COMMUNITY_ID}
+- openLink: likeme://protocol/${E2E_PROTOCOL_PRODUCT_ID}
+# App permanece vivo e com menu após deep links (mesmo com IDs inexistentes)
+- assertVisible:
+    id: "e2e.nav.home"

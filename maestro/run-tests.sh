@@ -48,11 +48,14 @@ if [ -z "$APP_INSTALLED" ]; then
 fi
 
 # Executar testes
-TEST_FILE=${1:-"maestro/"}
+TEST_FILE=${1:-"maestro/flows"}
 
-echo -e "${GREEN}🚀 Executando testes E2E...${NC}"
+echo -e "${GREEN}🚀 Executando testes E2E (staging)...${NC}"
 echo -e "${BLUE}Arquivo de teste: $TEST_FILE${NC}"
 echo ""
+
+export ENV_FILE_PATH="${ENV_FILE_PATH:-$PWD/.env.staging}"
+bash "$(dirname "$0")/../scripts/assert-e2e-staging-env.sh"
 
 ~/.maestro/bin/maestro test "$TEST_FILE" --verbose
 

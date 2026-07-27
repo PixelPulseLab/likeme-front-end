@@ -1,0 +1,25 @@
+appId: app.likeme.com
+---
+# Export autenticado via bootstrap E2E staging
+- runFlow: ../shared/bootstrap-authenticated.yaml
+- takeScreenshot: screens-app/01-Summary
+- tapOn:
+    id: "e2e.nav.activities"
+- assertVisible:
+    id: "e2e.activities.root"
+- takeScreenshot: screens-app/02-Activities
+- tapOn:
+    id: "e2e.nav.marketplace"
+- assertVisible:
+    id: "e2e.marketplace.root"
+- takeScreenshot: screens-app/03-Marketplace
+- tapOn:
+    id: "e2e.nav.community"
+- assertVisible:
+    id: "e2e.community.root"
+- takeScreenshot: screens-app/04-Community
+- tapOn:
+    id: "e2e.nav.home"
+- assertVisible:
+    id: "e2e.summary.root"
+- takeScreenshot: screens-app/05-Home

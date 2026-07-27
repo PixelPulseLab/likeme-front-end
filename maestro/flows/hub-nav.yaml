@@ -1,0 +1,24 @@
+appId: app.likeme.com
+name: Hub — FloatingMenu entre abas principais
+tags:
+  - smoke
+  - hub
+  - critical
+---
+- runFlow: ../shared/bootstrap-authenticated.yaml
+- tapOn:
+    id: "e2e.nav.activities"
+- assertVisible:
+    id: "e2e.activities.root"
+- tapOn:
+    id: "e2e.nav.community"
+- assertVisible:
+    id: "e2e.community.root"
+- tapOn:
+    id: "e2e.nav.marketplace"
+- assertVisible:
+    id: "e2e.marketplace.root"
+- tapOn:
+    id: "e2e.nav.home"
+- assertVisible:
+    id: "e2e.summary.root"

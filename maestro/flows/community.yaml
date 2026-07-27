@@ -1,0 +1,11 @@
+appId: app.likeme.com
+name: Community — lista via menu
+tags:
+  - hub
+  - community
+---
+- runFlow: ../shared/bootstrap-authenticated.yaml
+- tapOn:
+    id: "e2e.nav.community"
+- assertVisible:
+    id: "e2e.community.root"

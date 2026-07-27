@@ -1,0 +1,11 @@
+appId: app.likeme.com
+name: Activities — abre via menu
+tags:
+  - hub
+  - activities
+---
+- runFlow: ../shared/bootstrap-authenticated.yaml
+- tapOn:
+    id: "e2e.nav.activities"
+- assertVisible:
+    id: "e2e.activities.root"

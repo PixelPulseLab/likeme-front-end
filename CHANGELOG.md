@@ -221,10 +221,13 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 ### Adicionado
 - Seção unificada de produtos recomendados no marketplace (APP-281)
 - Ver lembrete no CTA de eventos e card clicável para o link
+- Suíte E2E Maestro em staging (smoke, hub, onboarding) sem Auth0
+- Bypass E2E com trava que impede uso contra API de produção
 
 ### Alterado
 - Sugestões da home preservam ordem ranqueada (APP-352)
 - PDP de afiliado alinhada ao layout da página de produto
+- Flows Maestro reorganizados (tags, subflows e seletores por testID)
 
 ### Corrigido
 - Recomendações da PDP sem filtro incorreto de categoria

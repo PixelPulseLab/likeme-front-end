@@ -1,0 +1,8 @@
+appId: app.likeme.com
+name: Interest categories — hub pós-seed completo
+tags:
+  - onboarding
+---
+- runFlow: ../shared/bootstrap-authenticated.yaml
+- assertVisible:
+    id: "e2e.summary.root"

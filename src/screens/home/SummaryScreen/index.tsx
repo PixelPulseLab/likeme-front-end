@@ -276,6 +276,7 @@ const SummaryScreen: React.FC<Props> = ({ navigation }) => {
   return (
     <ScreenWithHeader
       navigation={navigation}
+      testID='e2e.summary.root'
       headerProps={{
         showBackButton: false,
         showMenuWithAvatar: true,

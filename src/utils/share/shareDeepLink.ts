@@ -23,6 +23,8 @@ import {
   type PendingDeepLinkNavigationTarget,
 } from '@/utils/navigation/pendingDeepLinkNavigation';
 import { shareEntityIdFromPath, sharePathFromUrl, shareQueryParamFromUrl } from '@/utils/share/sharePath';
+import { isE2eBootstrapDeepLinkPath } from '@/utils/e2e/isE2eBootstrapDeepLinkPath';
+import { logger } from '@/utils/logger';
 
 const SHARE_RESET_STACK_SCREENS = new Set<keyof RootStackParamList>([
   'Community',
@@ -237,6 +239,21 @@ export async function openDeepLinkTarget(
 
   const path = sharePathFromUrl(url);
   if (!path) {
+    return;
+  }
+
+  if (isE2eBootstrapDeepLinkPath(path)) {
+    try {
+      const [{ isE2eAuthBypassEnabled }, { bootstrapE2eSessionAndNavigate, bootstrapOptionsFromDeepLinkUrl }] =
+        await Promise.all([import('@/utils/e2e/e2eAuthBypass'), import('@/utils/e2e/bootstrapE2eSession')]);
+      if (!isE2eAuthBypassEnabled()) {
+        logger.error('[deepLink] /e2e/bootstrap ignorado — bypass E2E desabilitado ou backend inválido');
+        return;
+      }
+      await bootstrapE2eSessionAndNavigate(navigationRef, bootstrapOptionsFromDeepLinkUrl(url));
+    } catch (error) {
+      logger.error('[deepLink] Falha no bootstrap E2E', error);
+    }
     return;
   }
 

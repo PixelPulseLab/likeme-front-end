@@ -15,7 +15,7 @@ function CartHeaderButton({ onPress }: { onPress: () => void }) {
   const cartItemCount = useCartItemCount();
   const label = cartItemCount > 99 ? '99+' : String(cartItemCount);
   return (
-    <View style={styles.cartButtonWrapper}>
+    <View style={styles.cartButtonWrapper} testID='e2e.header.cart'>
       <IconButton iconImageSource={HOME_MVP_ASSETS.cart} iconSize={22} onPress={onPress} backgroundSize='medium' />
       {cartItemCount > 0 ? (
         <View style={styles.cartBadge}>
@@ -89,7 +89,12 @@ const Header: React.FC<HeaderProps> = ({
     <View style={[styles.container, backgroundColor ? { backgroundColor } : null]}>
       <View style={styles.header}>
         {showMenuWithAvatar && onMenuPress && (
-          <TouchableOpacity style={styles.menuWithAvatarPill} onPress={onMenuPress} activeOpacity={0.7}>
+          <TouchableOpacity
+            style={styles.menuWithAvatarPill}
+            onPress={onMenuPress}
+            activeOpacity={0.7}
+            testID='e2e.header.profileMenu'
+          >
             <CachedImage source={HOME_MVP_ASSETS.menu} style={styles.menuIconImage} contentFit='contain' />
             {userAvatarUri ? (
               <CachedImage source={{ uri: userAvatarUri }} style={styles.headerAvatar} priority={IMAGE_PRIORITY_HIGH} />
