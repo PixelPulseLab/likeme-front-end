@@ -55,10 +55,12 @@ export interface UserSubscriptionListItem {
   status: string;
   nextBillingAt: string | null;
   createdAt: string;
+  updatedAt?: string | null;
   accessValidUntil?: string | null;
   cancelAtPeriodEnd?: boolean;
   canceledAt?: string | null;
   cancelRequestedAt?: string | null;
+  orderId?: string | null;
   product: {
     id: string;
     name: string;
@@ -98,6 +100,8 @@ export interface SubscriptionManageResult {
   lastBillingAt: string | null;
   nextBillingAt: string | null;
   accessValidUntil: string | null;
+  canceledAt?: string | null;
+  cancelRequestedAt?: string | null;
   priceCents: number;
   billingPeriod: string;
   benefits: string[];

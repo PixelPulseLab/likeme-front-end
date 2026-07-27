@@ -115,6 +115,7 @@ type RootStackParamListCore = {
     programName: string;
     lastBillingAt: string | null;
     accessValidUntil: string | null;
+    nextBillingAt: string | null;
   };
   CancelProtocolSubscriptionConfirm: {
     programName: string;

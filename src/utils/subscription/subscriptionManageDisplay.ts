@@ -10,11 +10,38 @@ const BILLING_PERIOD_SUFFIX: Record<string, string> = {
   YEARLY: '/ ano',
 };
 
+/**
+ * Datas de assinatura/cobrança são dias de calendário em UTC (ex.: D−1 de nextBillingAt).
+ * Formatar em UTC evita o shift de um dia em America/Sao_Paulo.
+ */
 export function formatSubscriptionManageDate(iso: string | null | undefined): string {
   if (!iso) return '—';
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return '—';
-  return date.toLocaleDateString('pt-BR');
+  const day = String(date.getUTCDate()).padStart(2, '0');
+  const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+  const year = date.getUTCFullYear();
+  return `${day}/${month}/${year}`;
+}
+
+/** Preview do fim de acesso: persistido ou D−1 da próxima cobrança (espelha o backend). */
+export function subscriptionAccessUntilIso(
+  accessValidUntil: string | null | undefined,
+  nextBillingAt: string | null | undefined,
+): string | null {
+  if (accessValidUntil) {
+    return accessValidUntil;
+  }
+  if (!nextBillingAt) {
+    return null;
+  }
+  const nextBilling = new Date(nextBillingAt);
+  if (Number.isNaN(nextBilling.getTime())) {
+    return null;
+  }
+  const accessUntil = new Date(nextBilling.getTime());
+  accessUntil.setUTCDate(accessUntil.getUTCDate() - 1);
+  return accessUntil.toISOString();
 }
 
 export function formatSubscriptionManagePrice(priceCents: number, billingPeriod: string): string {

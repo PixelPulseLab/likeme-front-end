@@ -2,7 +2,7 @@ import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import { Alert } from 'react-native';
 import ActivitiesScreen from './ActivitiesScreen';
-import { activityService, orderService } from '@/services';
+import { activityService } from '@/services';
 import {
   invalidateActivityListCache,
   readCachedActivityList,
@@ -230,12 +230,10 @@ jest.mock('@/constants', () => ({
 jest.mock('@/services', () => ({
   activityService: {
     listActivities: jest.fn(),
+    getHistory: jest.fn(),
     createActivity: jest.fn(),
     updateActivity: jest.fn(),
     deleteActivity: jest.fn(),
-  },
-  orderService: {
-    listOrders: jest.fn(),
   },
   storageService: {
     getAnamnesisCompletedAt: jest.fn().mockResolvedValue(null),
@@ -385,16 +383,12 @@ describe('ActivitiesScreen', () => {
       },
     });
 
-    (orderService.listOrders as jest.Mock).mockResolvedValue({
+    (activityService.getHistory as jest.Mock).mockResolvedValue({
       success: true,
       data: {
+        activities: historyMockActivities,
         orders: mockOrders,
-        pagination: {
-          page: 1,
-          limit: 50,
-          total: 1,
-          totalPages: 1,
-        },
+        subscriptionEvents: [],
       },
     });
 
@@ -469,10 +463,7 @@ describe('ActivitiesScreen', () => {
       fireEvent.press(historyTab);
 
       await waitFor(() => {
-        expect(orderService.listOrders).toHaveBeenCalledWith({
-          page: 1,
-          limit: 50,
-        });
+        expect(activityService.getHistory).toHaveBeenCalled();
       });
     });
 
@@ -691,7 +682,7 @@ describe('ActivitiesScreen', () => {
       fireEvent.press(historyTab);
 
       await waitFor(() => {
-        expect(orderService.listOrders).toHaveBeenCalled();
+        expect(activityService.getHistory).toHaveBeenCalled();
       });
     });
 
@@ -781,16 +772,12 @@ describe('ActivitiesScreen', () => {
         isToday: jest.fn(() => false),
       });
 
-      (orderService.listOrders as jest.Mock).mockResolvedValue({
+      (activityService.getHistory as jest.Mock).mockResolvedValue({
         success: true,
         data: {
+          activities: [],
           orders: [],
-          pagination: {
-            page: 1,
-            limit: 50,
-            total: 0,
-            totalPages: 0,
-          },
+          subscriptionEvents: [],
         },
       });
 

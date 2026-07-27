@@ -14,9 +14,12 @@ import {
 } from '@/constants/subscription/subscriptionCancelReason';
 import { subscriptionService } from '@/services/payment/subscriptionService';
 import type { RootStackParamList } from '@/types/navigation';
-import { COLORS, SPACING } from '@/constants';
+import { BOTTOM_DOCK_BAR_HEIGHT, COLORS, SPACING } from '@/constants';
 import { logger } from '@/utils/logger';
-import { formatSubscriptionManageDate } from '@/utils/subscription/subscriptionManageDisplay';
+import {
+  formatSubscriptionManageDate,
+  subscriptionAccessUntilIso,
+} from '@/utils/subscription/subscriptionManageDisplay';
 import { styles } from './styles';
 
 type Props = StackScreenProps<RootStackParamList, 'CancelProtocolSubscription'>;
@@ -30,12 +33,14 @@ const CancelProtocolSubscriptionScreen: React.FC<Props> = ({ navigation, route }
   });
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
-  const { subscriptionId, programName, lastBillingAt, accessValidUntil } = route.params;
+  const { subscriptionId, programName, lastBillingAt, accessValidUntil, nextBillingAt } = route.params;
 
   const [selectedReason, setSelectedReason] = useState<SubscriptionCancelReason | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  const accessUntilLabel = formatSubscriptionManageDate(accessValidUntil);
+  const accessUntilIso = subscriptionAccessUntilIso(accessValidUntil, nextBillingAt);
+  const accessUntilLabel = formatSubscriptionManageDate(accessUntilIso);
+  const scrollBottomPadding = BOTTOM_DOCK_BAR_HEIGHT + Math.max(insets.bottom, SPACING.MD) + SPACING.MD;
 
   const consequenceItems = useMemo(
     () => [
@@ -123,10 +128,7 @@ const CancelProtocolSubscriptionScreen: React.FC<Props> = ({ navigation, route }
     >
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={[
-          styles.scrollContent,
-          { paddingBottom: SPACING.XXL + Math.max(insets.bottom, SPACING.MD) },
-        ]}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: scrollBottomPadding }]}
       >
         <Text style={styles.title}>
           {t('profile.subscriptionCancel.title', { defaultValue: 'Cancelar o programa' })}

@@ -20,6 +20,7 @@ import { SHARE_CONTENT_TYPES } from '@/constants/share';
 import type { ProtocolDetailProtocol, RootStackParamList } from '@/types/navigation';
 import type { ModuleItem } from '@/components/sections/program/ModuleAccordion';
 import productService from '@/services/product/productService';
+import { subscriptionService } from '@/services/payment/subscriptionService';
 import { COLORS } from '@/constants';
 import { moduleItemsFromProgramCourse } from '@/utils/course/programCourseModules';
 import { protocolDetailFromProduct } from '@/utils/profile/protocolDetailFromProduct';
@@ -121,6 +122,12 @@ const ProtocolDetailScreen: React.FC<Props> = ({ navigation, route }) => {
   const communityId = protocol?.communityId?.trim() ?? '';
   const hasCommunity = Boolean(communityId);
   const productId = protocol?.productId?.trim() ?? '';
+  const subscriptionLifecycleFields = {
+    status: protocol?.subscriptionStatus,
+    cancelAtPeriodEnd: protocol?.cancelAtPeriodEnd,
+    canceledAt: protocol?.canceledAt,
+  };
+  const hasActiveProtocolAccess = Boolean(protocol) && !subscriptionIsCanceledPresentation(subscriptionLifecycleFields);
 
   const [activeTab, setActiveTab] = useState<ProtocolTabId>('content');
   const [agreementsText, setAgreementsText] = useState(protocol?.agreements?.trim() ?? '');
@@ -128,16 +135,16 @@ const ProtocolDetailScreen: React.FC<Props> = ({ navigation, route }) => {
 
   const heroImageUri = protocol?.image?.trim() || (hasCommunity ? MEMBER_PROTOCOL_COMMUNITY_IMAGE_FALLBACK : '');
 
-  const { course, loading: courseLoading } = useProgramCourse(communityId, hasCommunity);
+  const { course, loading: courseLoading } = useProgramCourse(communityId, hasCommunity && hasActiveProtocolAccess);
   const { eventBanner, eventJoinUrl, closeEventSession, handleEventBannerPress, handleEventBannerCtaPress } =
     useCommunityEventBanner({
-      enabled: hasCommunity,
+      enabled: hasCommunity && hasActiveProtocolAccess,
       communityId,
       communityAvatarUrl: heroImageUri,
       communityProviderName: protocol?.name ?? '',
       defaultThumbnailUrl: heroImageUri,
       programProductId: productId || undefined,
-      hasProgramAccess: true,
+      hasProgramAccess: hasActiveProtocolAccess,
       navigation,
     });
 
@@ -194,7 +201,45 @@ const ProtocolDetailScreen: React.FC<Props> = ({ navigation, route }) => {
     useCallback(() => {
       setMenu(menuItems, 'profile');
       setProtocolAccessedAt(Date.now());
-    }, [menuItems, setMenu]),
+
+      const subscriptionId = resolvedProtocol?.subscriptionId?.trim();
+      if (!subscriptionId) {
+        return;
+      }
+
+      let cancelled = false;
+      void (async () => {
+        try {
+          const response = await subscriptionService.getManageSubscription(subscriptionId);
+          if (cancelled || !response.success || !response.data) {
+            return;
+          }
+          const manage = response.data;
+          setResolvedProtocol((current) => {
+            if (!current || current.subscriptionId !== subscriptionId) {
+              return current;
+            }
+            return {
+              ...current,
+              subscriptionStatus: manage.status,
+              cancelAtPeriodEnd: manage.cancelAtPeriodEnd,
+              accessValidUntil: manage.accessValidUntil,
+              canceledAt: manage.canceledAt ?? null,
+              cancelRequestedAt: manage.cancelRequestedAt ?? null,
+            };
+          });
+        } catch (error) {
+          logger.warn('[ProtocolDetailScreen] Falha ao sincronizar ciclo da assinatura', {
+            subscriptionId,
+            cause: error,
+          });
+        }
+      })();
+
+      return () => {
+        cancelled = true;
+      };
+    }, [menuItems, resolvedProtocol?.subscriptionId, setMenu]),
   );
 
   const handleBack = () => {

@@ -14,7 +14,7 @@ import { HOME_MVP_ASSETS } from '@/assets/homeMvp';
 import { PlansCarousel, type Plan } from '@/components/sections/product';
 import { RecommendedProductsSection } from '@/components/sections/marketplace/RecommendedProductsSection';
 import { EventReminder } from '@/components/ui/cards';
-import { orderService, activityService } from '@/services';
+import { activityService } from '@/services';
 import { storageService } from '@/services';
 import { formatPrice, sortByDateTime, sortByDateField } from '@/utils';
 import { COLORS } from '@/constants';
@@ -30,7 +30,13 @@ import { formatOrderDisplayId } from '@/utils/marketplace/orderDisplayId';
 import { navigateToOrderDetail } from '@/utils/navigation/activitiesNavigation';
 import { navigateRootStack, rootStackNavigationFrom } from '@/utils/navigation/rootStackNavigation';
 import { orderCardStatusPresentation, orderCardTitle } from '@/utils/marketplace/orderStatusDisplay';
-import { invalidateActivityListCache } from '@/utils/activity/activityListCache';
+import { invalidateActivityListCache, writeActivityListCache } from '@/utils/activity/activityListCache';
+import { formatSubscriptionManageDate } from '@/utils/subscription/subscriptionManageDisplay';
+import {
+  SUBSCRIPTION_LIFECYCLE_HISTORY_KIND,
+  type SubscriptionLifecycleHistoryEvent,
+  type UserActivity,
+} from '@/types/activity';
 import { styles } from './styles';
 
 type ActivitiesScreenProps = {
@@ -52,7 +58,6 @@ function activityListScopeForTab(tab: TabType): 'active' | 'history' {
 type FilterType = 'all' | 'activities' | 'appointments' | 'orders';
 
 import type { ActivityItem } from '@/types/activity/hooks';
-import type { UserActivity } from '@/types/activity';
 
 const ActivitiesScreen: React.FC<ActivitiesScreenProps> = ({ navigation, route }) => {
   useAnalyticsScreen({ screenName: 'Activities', screenClass: 'ActivitiesScreen' });
@@ -66,6 +71,9 @@ const ActivitiesScreen: React.FC<ActivitiesScreenProps> = ({ navigation, route }
   const [editingActivityData, setEditingActivityData] = useState<any>(null);
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoadingOrders, setIsLoadingOrders] = useState(false);
+  const [subscriptionLifecycleEvents, setSubscriptionLifecycleEvents] = useState<SubscriptionLifecycleHistoryEvent[]>(
+    [],
+  );
   const [daySortOrder, setDaySortOrder] = useState<'asc' | 'desc'>('desc');
   const [menuVisibleForId, setMenuVisibleForId] = useState<string | null>(null);
   const [menuPosition, setMenuPosition] = useState<{ x: number; y: number } | null>(null);
@@ -131,34 +139,40 @@ const ActivitiesScreen: React.FC<ActivitiesScreenProps> = ({ navigation, route }
     [openActivityEditorFromUserActivity, rawActivities, t],
   );
 
-  const loadOrders = useCallback(async (options?: { silent?: boolean }) => {
-    try {
-      if (!options?.silent) {
-        setIsLoadingOrders(true);
-      }
-      const response = await orderService.listOrders({
-        page: 1,
-        limit: 50,
-      });
-      if (response.success && response.data?.orders) {
-        setOrders(response.data.orders);
-      }
-    } catch (error) {
-      logger.error('Error loading orders:', error);
-    } finally {
-      setIsLoadingOrders(false);
-    }
-  }, []);
+  const loadHistory = useCallback(
+    async (options?: { silent?: boolean }) => {
+      try {
+        if (!options?.silent) {
+          setIsLoadingOrders(true);
+        }
+        const response = await activityService.getHistory();
+        if (!response.success || !response.data) {
+          setOrders([]);
+          setSubscriptionLifecycleEvents([]);
+          return;
+        }
 
-  useEffect(() => {
-    void loadActivities(activityListScopeForTab(activeTab), { silent: true });
-  }, [activeTab, loadActivities]);
+        writeActivityListCache('history', response.data.activities);
+        setOrders(response.data.orders);
+        setSubscriptionLifecycleEvents(response.data.subscriptionEvents);
+        await loadActivities('history', { silent: true });
+      } catch (error) {
+        logger.error('[ActivitiesScreen] Erro ao carregar histórico de atividades', error);
+        setSubscriptionLifecycleEvents([]);
+      } finally {
+        setIsLoadingOrders(false);
+      }
+    },
+    [loadActivities],
+  );
 
   useEffect(() => {
     if (activeTab === 'history') {
-      void loadOrders();
+      void loadHistory();
+      return;
     }
-  }, [activeTab, loadOrders]);
+    void loadActivities('active', { silent: true });
+  }, [activeTab, loadActivities, loadHistory]);
 
   useFocusEffect(
     useCallback(() => {
@@ -167,11 +181,12 @@ const ActivitiesScreen: React.FC<ActivitiesScreenProps> = ({ navigation, route }
         return;
       }
 
-      void loadActivities(activityListScopeForTab(activeTab), { silent: true });
       if (activeTab === 'history') {
-        void loadOrders({ silent: orders.length > 0 });
+        void loadHistory({ silent: orders.length > 0 });
+        return;
       }
-    }, [activeTab, loadActivities, loadOrders, orders.length]),
+      void loadActivities('active', { silent: true });
+    }, [activeTab, loadActivities, loadHistory, orders.length]),
   );
 
   useFocusEffect(
@@ -476,8 +491,12 @@ const ActivitiesScreen: React.FC<ActivitiesScreenProps> = ({ navigation, route }
   const reloadActivitiesAfterMutation = useCallback(async () => {
     const listScope = activityListScopeForTab(activeTab);
     invalidateActivityListCache(listScope);
-    await loadActivities(listScope);
-  }, [activeTab, loadActivities]);
+    if (activeTab === 'history') {
+      await loadHistory({ silent: true });
+      return;
+    }
+    await loadActivities('active');
+  }, [activeTab, loadActivities, loadHistory]);
 
   const handleMarkAsDone = async (activityId: string) => {
     try {
@@ -666,6 +685,70 @@ const ActivitiesScreen: React.FC<ActivitiesScreenProps> = ({ navigation, route }
   const sortedOrders = useMemo(() => {
     return sortByDateField(orders, 'createdAt', daySortOrder);
   }, [orders, daySortOrder]);
+
+  const sortedSubscriptionLifecycleEvents = useMemo(() => {
+    return sortByDateField(subscriptionLifecycleEvents, 'at', daySortOrder);
+  }, [subscriptionLifecycleEvents, daySortOrder]);
+
+  const subscriptionLifecycleLabel = useCallback(
+    (kind: SubscriptionLifecycleHistoryEvent['kind']) => {
+      switch (kind) {
+        case SUBSCRIPTION_LIFECYCLE_HISTORY_KIND.CANCEL_REQUESTED:
+          return t('activities.subscriptionCancelRequested', {
+            defaultValue: 'Solicitação de cancelamento',
+          });
+        case SUBSCRIPTION_LIFECYCLE_HISTORY_KIND.CANCEL_REACTIVATED:
+          return t('activities.subscriptionCancelReactivated', {
+            defaultValue: 'Reativação da assinatura',
+          });
+        case SUBSCRIPTION_LIFECYCLE_HISTORY_KIND.CANCEL_FINALIZED:
+          return t('activities.subscriptionCancelFinalized', {
+            defaultValue: 'Cancelamento efetivado',
+          });
+        default:
+          return t('activities.subscriptionLifecycle', { defaultValue: 'Assinatura' });
+      }
+    },
+    [t],
+  );
+
+  const renderSubscriptionLifecycleCard = (event: SubscriptionLifecycleHistoryEvent) => {
+    const handlePress = () => {
+      if (event.orderId) {
+        navigateToOrderDetail(rootNavigation, event.orderId);
+        return;
+      }
+      navigateRootStack(rootNavigation, 'SubscriptionList');
+    };
+
+    return (
+      <TouchableOpacity
+        key={event.id}
+        style={styles.activityCard}
+        onPress={handlePress}
+        activeOpacity={0.7}
+        accessibilityRole='button'
+        accessibilityLabel={`${subscriptionLifecycleLabel(event.kind)} ${event.productName}`}
+      >
+        <View style={styles.cardContent}>
+          <View style={styles.cardHeader}>
+            <Badge label={subscriptionLifecycleLabel(event.kind)} color='orange' />
+          </View>
+          <Text style={styles.orderCardTitle} numberOfLines={2}>
+            {event.productName}
+          </Text>
+          <View style={styles.orderCardDetails}>
+            <Text style={styles.orderCardDetailLine}>
+              {t('activities.subscriptionLifecycleDate', {
+                defaultValue: 'Data',
+              })}
+              : {formatSubscriptionManageDate(event.at)}
+            </Text>
+          </View>
+        </View>
+      </TouchableOpacity>
+    );
+  };
 
   const renderOrderCard = (order: Order) => {
     const statusPresentation = orderCardStatusPresentation(order);
@@ -879,14 +962,21 @@ const ActivitiesScreen: React.FC<ActivitiesScreenProps> = ({ navigation, route }
               {selectedFilter === 'all' && (
                 <>
                   {filteredActivities.map(renderActivityCard)}
+                  {sortedSubscriptionLifecycleEvents.map(renderSubscriptionLifecycleCard)}
                   {sortedOrders.map(renderOrderCard)}
                 </>
               )}
               {selectedFilter === 'activities' && filteredActivities.map(renderActivityCard)}
               {selectedFilter === 'appointments' && filteredActivities.map(renderActivityCard)}
-              {selectedFilter === 'orders' && sortedOrders.map(renderOrderCard)}
+              {selectedFilter === 'orders' && (
+                <>
+                  {sortedSubscriptionLifecycleEvents.map(renderSubscriptionLifecycleCard)}
+                  {sortedOrders.map(renderOrderCard)}
+                </>
+              )}
               {selectedFilter === 'all' &&
                 filteredActivities.length === 0 &&
+                sortedSubscriptionLifecycleEvents.length === 0 &&
                 sortedOrders.length === 0 &&
                 !isLoadingOrders && (
                   <View style={styles.emptyContainer}>
@@ -903,11 +993,14 @@ const ActivitiesScreen: React.FC<ActivitiesScreenProps> = ({ navigation, route }
                   <Text style={styles.emptyText}>{t('activities.noAppointmentsFound')}</Text>
                 </View>
               )}
-              {selectedFilter === 'orders' && sortedOrders.length === 0 && !isLoadingOrders && (
-                <View style={styles.emptyContainer}>
-                  <Text style={styles.emptyText}>{t('activities.noOrdersFound')}</Text>
-                </View>
-              )}
+              {selectedFilter === 'orders' &&
+                sortedOrders.length === 0 &&
+                sortedSubscriptionLifecycleEvents.length === 0 &&
+                !isLoadingOrders && (
+                  <View style={styles.emptyContainer}>
+                    <Text style={styles.emptyText}>{t('activities.noOrdersFound')}</Text>
+                  </View>
+                )}
             </>
           ) : (
             <>

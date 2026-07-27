@@ -5,6 +5,7 @@ import type {
   ListActivitiesParams,
   ListActivitiesApiResponse,
   GetActivityApiResponse,
+  ActivityHistoryApiResponse,
   CreateActivityData,
   UpdateActivityData,
 } from '@/types/activity';
@@ -12,6 +13,29 @@ import type { ApiResponse } from '@/types/infrastructure';
 
 class ActivityService {
   private readonly activitiesEndpoint = '/api/activities';
+
+  async getHistory(): Promise<ActivityHistoryApiResponse> {
+    try {
+      const response = await apiClient.get<ActivityHistoryApiResponse>(
+        `${this.activitiesEndpoint}/history`,
+        undefined,
+        true,
+        false,
+      );
+
+      logger.debug('Activity history response:', {
+        success: response.success,
+        activitiesCount: response.data?.activities?.length ?? 0,
+        ordersCount: response.data?.orders?.length ?? 0,
+        subscriptionEventsCount: response.data?.subscriptionEvents?.length ?? 0,
+      });
+
+      return response;
+    } catch (error) {
+      logger.error('Error fetching activity history:', error);
+      throw error;
+    }
+  }
 
   async listActivities(params: ListActivitiesParams = {}): Promise<ListActivitiesApiResponse> {
     try {

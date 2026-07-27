@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Dimensions, Modal, Pressable, Text, View, type StyleProp, type ViewStyle } from 'react-native';
 import { IconButton } from '@/components/ui/buttons';
 import ButtonCarousel, { type ButtonCarouselOption } from '@/components/ui/carousel/ButtonCarousel';
+import { COLORS } from '@/constants';
 import { styles } from './styles';
 
 export type InfoSectionMenuOption = {
@@ -91,7 +92,14 @@ function InfoSectionTabsRow<T extends string | number = string>({
       ) : null}
       {showMenu ? (
         <View ref={menuButtonRef} collapsable={false} style={styles.trailingAction}>
-          <IconButton icon='more-vert' onPress={openMenu} variant='dark' backgroundSize='medium' />
+          <IconButton
+            icon='more-vert'
+            onPress={openMenu}
+            variant='light'
+            backgroundSize='medium'
+            backgroundTintColor={isMenuOpen ? COLORS.PRIMARY.PURE : COLORS.SECONDARY.PURE}
+            iconColor={isMenuOpen ? COLORS.WHITE : COLORS.TEXT}
+          />
         </View>
       ) : null}
 

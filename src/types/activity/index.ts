@@ -1,4 +1,5 @@
 import type { ApiResponse } from '@/types/infrastructure';
+import type { Order } from '@/types/order';
 
 export type ActivityType = 'task' | 'event';
 
@@ -44,6 +45,33 @@ export type ListActivitiesApiResponse = ApiResponse<{
 }>;
 
 export type GetActivityApiResponse = ApiResponse<UserActivity>;
+
+export const SUBSCRIPTION_LIFECYCLE_HISTORY_KIND = {
+  CANCEL_REQUESTED: 'cancel_requested',
+  CANCEL_REACTIVATED: 'cancel_reactivated',
+  CANCEL_FINALIZED: 'cancel_finalized',
+} as const;
+
+export type SubscriptionLifecycleHistoryKind =
+  (typeof SUBSCRIPTION_LIFECYCLE_HISTORY_KIND)[keyof typeof SUBSCRIPTION_LIFECYCLE_HISTORY_KIND];
+
+export type SubscriptionLifecycleHistoryEvent = {
+  id: string;
+  kind: SubscriptionLifecycleHistoryKind;
+  at: string;
+  subscriptionId: string;
+  productId: string;
+  productName: string;
+  orderId: string | null;
+};
+
+export type ActivityHistoryPayload = {
+  activities: UserActivity[];
+  orders: Order[];
+  subscriptionEvents: SubscriptionLifecycleHistoryEvent[];
+};
+
+export type ActivityHistoryApiResponse = ApiResponse<ActivityHistoryPayload>;
 
 export interface CreateActivityData {
   name: string;

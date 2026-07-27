@@ -5,7 +5,6 @@ import { useFocusEffect } from '@react-navigation/native';
 import { ScreenWithHeader } from '@/components/ui/layout';
 import { SearchBar } from '@/components/ui/inputs';
 import { EmptyState } from '@/components/ui/feedback';
-import { JoinCard } from '@/components/ui/cards';
 import { JoinCardList } from '@/components/ui/lists/JoinCardList';
 import ProtocolList from '@/components/sections/subscription/ProtocolList';
 import { useSubscriptionList } from '@/hooks/subscription/useSubscriptionList';
@@ -47,6 +46,7 @@ const SubscriptionListScreen: React.FC<Props> = ({ navigation }) => {
     protocols: subscriptionProtocols,
     services,
     hasContent: hasSubscriptionContent,
+    reload: reloadSubscriptions,
   } = useSubscriptionList(appliedSearchQuery);
 
   const {
@@ -58,7 +58,8 @@ const SubscriptionListScreen: React.FC<Props> = ({ navigation }) => {
   useFocusEffect(
     useCallback(() => {
       setMenu(menuItems, 'profile');
-    }, [menuItems, setMenu]),
+      void reloadSubscriptions();
+    }, [menuItems, reloadSubscriptions, setMenu]),
   );
 
   const handleBack = useCallback(() => {

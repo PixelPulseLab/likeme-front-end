@@ -9,7 +9,7 @@ import Badge from '@/components/ui/badge';
 import { useTranslation } from '@/hooks/i18n';
 import { useAnalyticsScreen } from '@/analytics';
 import type { RootStackParamList } from '@/types/navigation';
-import { COLORS, SPACING } from '@/constants';
+import { BOTTOM_DOCK_BAR_HEIGHT, COLORS, SPACING } from '@/constants';
 import { formatSubscriptionManageDate } from '@/utils/subscription/subscriptionManageDisplay';
 import { styles } from './styles';
 
@@ -24,6 +24,7 @@ const CancelProtocolSubscriptionConfirmScreen: React.FC<Props> = ({ navigation, 
   const insets = useSafeAreaInsets();
   const { programName, accessValidUntil } = route.params;
   const accessUntilLabel = formatSubscriptionManageDate(accessValidUntil);
+  const scrollBottomPadding = BOTTOM_DOCK_BAR_HEIGHT + Math.max(insets.bottom, SPACING.MD) + SPACING.MD;
 
   const handleBackToList = useCallback(() => {
     navigation.navigate('SubscriptionList');
@@ -43,10 +44,7 @@ const CancelProtocolSubscriptionConfirmScreen: React.FC<Props> = ({ navigation, 
       <GradientBackground colors={['#958AAA', '#D8E4D6', '#F4F3EC']} />
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={[
-          styles.scrollContent,
-          { paddingBottom: SPACING.XXL + Math.max(insets.bottom, SPACING.MD) },
-        ]}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: scrollBottomPadding }]}
       >
         <View style={styles.hero}>
           <Icon name='check-circle' size={68} color={COLORS.TEXT} />

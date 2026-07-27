@@ -62,13 +62,16 @@ export function useSubscriptionList(appliedSearchQuery = '') {
   const appliedSearchRef = useRef(appliedSearchQuery);
   appliedSearchRef.current = appliedSearchQuery;
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (options?: { silent?: boolean }) => {
     if (loadingRef.current) return;
     loadingRef.current = true;
     const searchTerm = appliedSearchRef.current.trim();
+    const silent = Boolean(options?.silent);
 
     try {
-      setLoading(true);
+      if (!silent) {
+        setLoading(true);
+      }
 
       const subscriptionsResponse = await subscriptionService.listUserSubscriptions(
         searchTerm ? { search: searchTerm } : {},
@@ -108,6 +111,8 @@ export function useSubscriptionList(appliedSearchQuery = '') {
   useEffect(() => {
     void load();
   }, [load, appliedSearchQuery]);
+
+  const reload = useCallback(() => load({ silent: true }), [load]);
 
   const protocols = useMemo((): SubscriptionListItem[] => {
     return subscriptions.map((sub) => {
@@ -167,6 +172,6 @@ export function useSubscriptionList(appliedSearchQuery = '') {
     allProtocols: protocols,
     allServices: enrichedServices,
     hasContent,
-    reload: load,
+    reload,
   };
 }

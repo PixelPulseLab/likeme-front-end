@@ -1,10 +1,24 @@
 import {
+  formatSubscriptionManageDate,
+  subscriptionAccessUntilIso,
   subscriptionIsCancelingPresentation,
   subscriptionIsCanceledPresentation,
   subscriptionManageStatusLabel,
 } from '@/utils/subscription/subscriptionManageDisplay';
 
 describe('subscriptionManageDisplay', () => {
+  it('formata dia de calendário UTC sem shift de fuso', () => {
+    expect(formatSubscriptionManageDate('2026-07-31T00:00:00.000Z')).toBe('31/07/2026');
+    expect(formatSubscriptionManageDate(null)).toBe('—');
+  });
+
+  it('prevê accessValidUntil como D−1 da próxima cobrança', () => {
+    expect(subscriptionAccessUntilIso(null, '2026-08-01T00:00:00.000Z')).toBe('2026-07-31T00:00:00.000Z');
+    expect(subscriptionAccessUntilIso('2026-07-15T00:00:00.000Z', '2026-08-01T00:00:00.000Z')).toBe(
+      '2026-07-15T00:00:00.000Z',
+    );
+  });
+
   it('trata cancelAtPeriodEnd como em cancelamento, não como cancelado efetivo', () => {
     const row = { status: 'ACTIVE', cancelAtPeriodEnd: true };
 

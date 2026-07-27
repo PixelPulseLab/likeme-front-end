@@ -10,12 +10,13 @@ import { useAnalyticsScreen } from '@/analytics';
 import { DEFAULT_SUBSCRIPTION_BENEFIT_KEYS } from '@/constants/subscription/subscriptionCancelReason';
 import { subscriptionService, type SubscriptionManageResult } from '@/services/payment/subscriptionService';
 import type { RootStackParamList } from '@/types/navigation';
-import { COLORS, SPACING } from '@/constants';
+import { BOTTOM_DOCK_BAR_HEIGHT, COLORS, SPACING } from '@/constants';
 import { logger } from '@/utils/logger';
 import { navigateToProductDetailsScreen } from '@/utils/navigation/productNavigation';
 import {
   formatSubscriptionManageDate,
   formatSubscriptionManagePrice,
+  subscriptionAccessUntilIso,
   subscriptionIsCancelingPresentation,
   subscriptionIsCanceledPresentation,
   subscriptionManageStatusLabel,
@@ -80,6 +81,7 @@ const ManageProtocolSubscriptionScreen: React.FC<Props> = ({ navigation, route }
       programName: programName || t('profile.subscriptionManage.programFallback', { defaultValue: 'Programa' }),
       lastBillingAt: manage.lastBillingAt,
       accessValidUntil: manage.accessValidUntil,
+      nextBillingAt: manage.nextBillingAt,
     });
   }, [manage, navigation, programName, subscriptionId, t]);
 
@@ -153,7 +155,10 @@ const ManageProtocolSubscriptionScreen: React.FC<Props> = ({ navigation, route }
       ? manage.benefits
       : DEFAULT_SUBSCRIPTION_BENEFIT_KEYS.map((item) => t(item.key, { defaultValue: item.defaultValue }));
 
-  const reactivateDeadline = formatSubscriptionManageDate(manage?.accessValidUntil);
+  const reactivateDeadline = formatSubscriptionManageDate(
+    subscriptionAccessUntilIso(manage?.accessValidUntil, manage?.nextBillingAt),
+  );
+  const scrollBottomPadding = BOTTOM_DOCK_BAR_HEIGHT + Math.max(insets.bottom, SPACING.MD) + SPACING.MD;
 
   return (
     <ScreenWithHeader
@@ -187,10 +192,7 @@ const ManageProtocolSubscriptionScreen: React.FC<Props> = ({ navigation, route }
       ) : (
         <ScrollView
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={[
-            styles.scrollContent,
-            { paddingBottom: SPACING.XXL + Math.max(insets.bottom, SPACING.MD) },
-          ]}
+          contentContainerStyle={[styles.scrollContent, { paddingBottom: scrollBottomPadding }]}
         >
           <Text style={styles.title}>
             {t('profile.subscriptionManage.title', { defaultValue: 'Sobre o programa' })}
@@ -216,7 +218,9 @@ const ManageProtocolSubscriptionScreen: React.FC<Props> = ({ navigation, route }
                       {t('profile.subscriptionManage.accessEndsAt', { defaultValue: 'Acesso encerra em' })}
                     </Text>
                     <Text style={styles.fieldValue}>
-                      {formatSubscriptionManageDate(manage.accessValidUntil ?? manage.nextBillingAt)}
+                      {formatSubscriptionManageDate(
+                        subscriptionAccessUntilIso(manage.accessValidUntil, manage.nextBillingAt),
+                      )}
                     </Text>
                   </View>
                   <View style={styles.separator} />
