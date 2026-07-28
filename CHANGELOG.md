@@ -232,3 +232,9 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 ### Corrigido
 - Recomendações da PDP sem filtro incorreto de categoria
 - Cache de atividades invalidado após alterações
+
+## [1.11.1] - 2026-07-28
+
+### Corrigido
+- Menu flutuante com labels sempre visíveis e fundo bege
+- Campo Acesso disponível até oculto quando a data não está disponível
