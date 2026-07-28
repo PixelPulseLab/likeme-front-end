@@ -13,8 +13,6 @@ import { ACCOUNT_CONFIG } from '@/config/environment';
 import { logger } from '@/utils/logger';
 import { styles } from './styles';
 
-const TERMS_OF_USE_URL = 'https://www.likeme.global/terms';
-
 type Props = StackScreenProps<RootStackParamList, 'SettingsAndSecurity'>;
 
 type SettingsMenuItem = {
@@ -38,17 +36,9 @@ const SettingsAndSecurityScreen: React.FC<Props> = ({ navigation }) => {
     navigation.navigate('PrivacyPolicies');
   }, [navigation]);
 
-  const handleTermsOfUsePress = useCallback(async () => {
-    try {
-      await Linking.openURL(TERMS_OF_USE_URL);
-    } catch (error) {
-      logger.error('[SettingsAndSecurity] Falha ao abrir Termos e Condições de Uso', {
-        url: TERMS_OF_USE_URL,
-        cause: error,
-      });
-      Alert.alert(t('common.error'), t('profile.settingsAndSecurity.termsOpenError'));
-    }
-  }, [t]);
+  const handleTermsOfUsePress = useCallback(() => {
+    navigation.navigate('TermsOfUse');
+  }, [navigation]);
 
   const handleDeleteAccountPress = useCallback(() => {
     navigation.navigate('DeleteAccount');
@@ -78,9 +68,7 @@ const SettingsAndSecurityScreen: React.FC<Props> = ({ navigation }) => {
       labelKey: 'profile.settingsAndSecurity.termsOfUse',
       labelDefault: 'Termos e Condições de Uso',
       IconComponent: PROFILE_HOME_MENU_ICONS.termsOfUse,
-      onPress: () => {
-        void handleTermsOfUsePress();
-      },
+      onPress: handleTermsOfUsePress,
     },
     {
       key: 'delete-account',

@@ -122,6 +122,7 @@ type RootStackParamListCore = {
     accessValidUntil: string;
   };
   PrivacyPolicies: { userName?: string };
+  TermsOfUse: undefined;
   Home: undefined;
   Summary: undefined;
   AvatarProgress: undefined;

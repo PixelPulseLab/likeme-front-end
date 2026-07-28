@@ -92,6 +92,8 @@ export const getCancelProtocolSubscriptionConfirmScreen = (): RootStackScreen =>
   asScreen(require('../screens/profile/CancelProtocolSubscriptionConfirmScreen') as { default: RootStackScreen });
 export const getPrivacyPoliciesScreen = (): RootStackScreen =>
   asScreen(require('../screens/policies/PrivacyPoliciesScreen') as { default: RootStackScreen });
+export const getTermsOfUseScreen = (): RootStackScreen =>
+  asScreen(require('../screens/policies/TermsOfUseScreen') as { default: RootStackScreen });
 export const getHomeScreen = (): RootStackScreen =>
   asScreen(require('../screens/home/HomeScreen') as { default: RootStackScreen });
 export const getSummaryScreen = (): RootStackScreen =>

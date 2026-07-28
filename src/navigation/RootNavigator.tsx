@@ -53,6 +53,7 @@ import {
   getCancelProtocolSubscriptionScreen,
   getCancelProtocolSubscriptionConfirmScreen,
   getPrivacyPoliciesScreen,
+  getTermsOfUseScreen,
   getHomeScreen,
   getSummaryScreen,
   getAvatarProgressScreen,
@@ -290,6 +291,11 @@ const RootNavigator: React.FC = () => {
                       name='PrivacyPolicies'
                       getComponent={getPrivacyPoliciesScreen}
                       options={{ title: 'Política de Privacidade' }}
+                    />
+                    <Stack.Screen
+                      name='TermsOfUse'
+                      getComponent={getTermsOfUseScreen}
+                      options={{ title: 'Termos de Uso' }}
                     />
                     <Stack.Screen name='Home' getComponent={getHomeScreen} options={{ title: 'Home' }} />
                     <Stack.Screen name='Summary' getComponent={getSummaryScreen} options={{ title: 'Resumo' }} />
