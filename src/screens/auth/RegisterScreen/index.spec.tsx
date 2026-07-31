@@ -68,7 +68,7 @@ jest.mock('@/analytics', () => ({
   },
 }));
 
-jest.mock('@/assets', () => ({
+jest.mock('@/assets/auth', () => ({
   GradientSplash5: 'GradientSplash5',
 }));
 

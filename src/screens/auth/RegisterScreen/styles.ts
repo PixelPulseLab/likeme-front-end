@@ -15,15 +15,30 @@ export const styles = StyleSheet.create({
   },
   topSection: {
     width: '100%',
+    backgroundColor: COLORS.SECONDARY.PURE,
+    borderBottomLeftRadius: 64,
+    borderBottomRightRadius: 64,
+    overflow: 'hidden',
   },
   headerContent: {
     width: '100%',
-    paddingBottom: SPACING.XL,
-    gap: 24,
+    position: 'relative',
+    paddingBottom: SPACING.LG,
+    gap: SPACING.LG,
     marginTop: 31,
     paddingHorizontal: SPACING.MD,
   },
+  titleAdornment: {
+    position: 'absolute',
+    zIndex: 1,
+  } as ImageStyle,
+  invitationSection: {
+    width: '100%',
+    alignItems: 'flex-start',
+    gap: SPACING.MD,
+  },
   invitationQuestion: {
+    maxWidth: 236,
     color: COLORS.NEUTRAL.LOW.PURE,
     fontFamily: 'DM Sans',
     fontSize: 20,
@@ -31,9 +46,11 @@ export const styles = StyleSheet.create({
     lineHeight: 24,
     textAlign: 'left',
   },
-  titleAdornment: {
-    position: 'absolute',
-  } as ImageStyle,
+  affiliateCodeField: {
+    width: '100%',
+    alignSelf: 'stretch',
+    paddingBottom: SPACING.LG,
+  },
   content: {
     alignItems: 'stretch',
     display: 'flex',
@@ -60,9 +77,5 @@ export const styles = StyleSheet.create({
   scrollContentInner: {
     flexGrow: 1,
     width: '100%',
-  },
-  affiliateCodeField: {
-    width: '100%',
-    alignSelf: 'stretch',
   },
 });

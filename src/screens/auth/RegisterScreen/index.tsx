@@ -1,11 +1,13 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { View, ScrollView, Alert, Text } from 'react-native';
+import { View, ScrollView, Alert, Text, useWindowDimensions } from 'react-native';
 import type { StackScreenProps } from '@react-navigation/stack';
 import { Title, PrimaryButton, SecondaryButton, ButtonGroup, TextInput } from '@/components/ui';
 import { KeyboardAwareScreen, ScreenWithHeader } from '@/components/ui/layout';
+import { CachedImage } from '@/components/ui/media/CachedImage';
 import PersonalDataFieldsForm, {
   type PersonalDataFieldErrors,
 } from '@/components/sections/person/PersonalDataFieldsForm';
+import { GradientSplash5 } from '@/assets/auth';
 import { advertiserAffiliateService, personsService, userService } from '@/services';
 import { useTranslation } from '@/hooks/i18n';
 import { useLoadPersonalData, useScrollToFocusedField } from '@/hooks';
@@ -25,6 +27,7 @@ type Props = StackScreenProps<RootStackParamList, 'Register'>;
 const RegisterScreen: React.FC<Props> = ({ navigation, route }) => {
   useAnalyticsScreen({ screenName: 'Register', screenClass: 'RegisterScreen' });
   const { t } = useTranslation();
+  const { width: windowWidth } = useWindowDimensions();
   const { loadPersonalData } = useLoadPersonalData();
   const [fullName, setFullName] = useState(route.params?.userName || '');
   const [birthdate, setBirthdate] = useState('');
@@ -40,6 +43,16 @@ const RegisterScreen: React.FC<Props> = ({ navigation, route }) => {
   const scrollViewRef = useRef<ScrollView>(null);
   const { scrollToFocusedField, handleContentLayout, handleContainerLayout, handleFieldLayout } =
     useScrollToFocusedField(scrollViewRef);
+
+  const adornmentStyle = useMemo(() => {
+    const adornmentSize = windowWidth * 0.45;
+    return {
+      width: adornmentSize,
+      height: adornmentSize,
+      right: -adornmentSize * 0.25,
+      top: -adornmentSize * 0.36,
+    };
+  }, [windowWidth]);
 
   useEffect(() => {
     let cancelled = false;
@@ -243,21 +256,30 @@ const RegisterScreen: React.FC<Props> = ({ navigation, route }) => {
           <View style={topSectionStyle}>
             <View style={styles.headerContent}>
               <Title title={t('auth.registerTitle')} />
-              <Text style={styles.invitationQuestion}>{t('auth.registerInvitationQuestion')}</Text>
-              <View collapsable={false} style={styles.affiliateCodeField} onLayout={handleFieldLayout('affiliateCode')}>
-                <TextInput
-                  label={t('auth.registerEnterCode')}
-                  value={affiliateCode}
-                  onChangeText={(text) => {
-                    setAffiliateCode(text);
-                    if (affiliateCodeError) setAffiliateCodeError(undefined);
-                  }}
-                  placeholder={t('auth.registerCodePlaceholder')}
-                  autoCapitalize='characters'
-                  autoCorrect={false}
-                  onFocus={() => scrollToFocusedField('affiliateCode')}
-                  errorText={affiliateCodeError}
+              <View style={styles.invitationSection}>
+                <CachedImage
+                  source={GradientSplash5}
+                  style={[styles.titleAdornment, adornmentStyle]}
+                  contentFit='contain'
                 />
+                <Text style={styles.invitationQuestion}>{t('auth.registerInvitationQuestion')}</Text>
+                <View style={styles.affiliateCodeField}>
+                  <TextInput
+                    label={t('auth.registerEnterCode')}
+                    value={affiliateCode}
+                    onChangeText={(text) => {
+                      setAffiliateCode(text);
+                      if (affiliateCodeError) setAffiliateCodeError(undefined);
+                    }}
+                    placeholder={t('auth.registerCodePlaceholder')}
+                    autoCapitalize='characters'
+                    autoCorrect={false}
+                    onFocus={() => {
+                      scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+                    }}
+                    errorText={affiliateCodeError}
+                  />
+                </View>
               </View>
             </View>
           </View>
