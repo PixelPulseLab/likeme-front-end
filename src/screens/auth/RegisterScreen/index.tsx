@@ -1,12 +1,12 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { View, ScrollView, Alert } from 'react-native';
+import { View, ScrollView, Alert, Text } from 'react-native';
 import type { StackScreenProps } from '@react-navigation/stack';
-import { Title, PrimaryButton, SecondaryButton, ButtonGroup } from '@/components/ui';
+import { Title, PrimaryButton, SecondaryButton, ButtonGroup, TextInput } from '@/components/ui';
 import { KeyboardAwareScreen, ScreenWithHeader } from '@/components/ui/layout';
 import PersonalDataFieldsForm, {
   type PersonalDataFieldErrors,
 } from '@/components/sections/person/PersonalDataFieldsForm';
-import { personsService, userService } from '@/services';
+import { advertiserAffiliateService, personsService, userService } from '@/services';
 import { useTranslation } from '@/hooks/i18n';
 import { useLoadPersonalData, useScrollToFocusedField } from '@/hooks';
 import type { PersonData } from '@/types/person';
@@ -31,6 +31,8 @@ const RegisterScreen: React.FC<Props> = ({ navigation, route }) => {
   const [gender, setGender] = useState('');
   const [weight, setWeight] = useState('');
   const [height, setHeight] = useState('');
+  const [affiliateCode, setAffiliateCode] = useState('');
+  const [affiliateCodeError, setAffiliateCodeError] = useState<string | undefined>();
   const [isLoading, setIsLoading] = useState(false);
   const [isSkipLoading, setIsSkipLoading] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<PersonalDataFieldErrors>({});
@@ -84,10 +86,22 @@ const RegisterScreen: React.FC<Props> = ({ navigation, route }) => {
     setFieldErrors((current) => (current[field] ? { ...current, [field]: undefined } : current));
   }, []);
 
+  const navigateAfterRegister = useCallback(
+    (parsedFirstName: string) => {
+      const nextScreen = getNextOnboardingScreen('Register');
+      const params = {
+        firstName: parsedFirstName || fullName.trim() || route.params?.userName || 'Usuário',
+      };
+      navigation.navigate(nextScreen as never, params as never);
+    },
+    [fullName, navigation, route.params?.userName],
+  );
+
   const handleNext = useCallback(async () => {
     try {
       setIsLoading(true);
       setFieldErrors({});
+      setAffiliateCodeError(undefined);
 
       const errors: PersonalDataFieldErrors = {};
 
@@ -146,11 +160,19 @@ const RegisterScreen: React.FC<Props> = ({ navigation, route }) => {
       await personsService.createOrUpdatePerson(personData);
       await userService.syncStoredUserName(fullName.trim());
 
-      const nextScreen = getNextOnboardingScreen('Register');
-      const params = {
-        firstName: firstName || fullName.trim() || route.params?.userName || 'Usuário',
-      };
-      navigation.navigate(nextScreen as never, params as never);
+      const trimmedAffiliateCode = affiliateCode.trim();
+      if (trimmedAffiliateCode) {
+        try {
+          await advertiserAffiliateService.linkByAffiliateCode(trimmedAffiliateCode);
+        } catch (error: unknown) {
+          logger.error('[RegisterScreen] Código de afiliado inválido ou falha no vínculo', error);
+          setAffiliateCodeError(getReadableErrorMessage(error, t('auth.affiliateCodeInvalid')));
+          setIsLoading(false);
+          return;
+        }
+      }
+
+      navigateAfterRegister(firstName || fullName.trim());
     } catch (error: unknown) {
       const message = getReadableErrorMessage(error, t('auth.registerError'));
       logger.error('[RegisterScreen] Erro ao salvar dados da pessoa', error);
@@ -158,7 +180,7 @@ const RegisterScreen: React.FC<Props> = ({ navigation, route }) => {
     } finally {
       setIsLoading(false);
     }
-  }, [fullName, gender, birthdate, weight, height, navigation, route.params?.userName, t, validateNumericField]);
+  }, [affiliateCode, fullName, gender, birthdate, weight, height, navigateAfterRegister, t, validateNumericField]);
 
   const handleSkip = useCallback(async () => {
     try {
@@ -176,9 +198,7 @@ const RegisterScreen: React.FC<Props> = ({ navigation, route }) => {
         }
       }
       const firstName = trimmedName.split(/\s+/)[0] || fullName || route.params?.userName || 'Usuário';
-      const nextScreen = getNextOnboardingScreen('Register');
-      const params = { firstName };
-      navigation.navigate(nextScreen as never, params as never);
+      navigateAfterRegister(firstName);
     } catch (error: unknown) {
       const message = getReadableErrorMessage(error, t('auth.registerError'));
       logger.error('[RegisterScreen] Erro ao pular registro', error);
@@ -186,7 +206,7 @@ const RegisterScreen: React.FC<Props> = ({ navigation, route }) => {
     } finally {
       setIsSkipLoading(false);
     }
-  }, [fullName, navigation, route.params?.userName, t]);
+  }, [fullName, navigateAfterRegister, route.params?.userName, t]);
 
   return (
     <ScreenWithHeader
@@ -223,6 +243,22 @@ const RegisterScreen: React.FC<Props> = ({ navigation, route }) => {
           <View style={topSectionStyle}>
             <View style={styles.headerContent}>
               <Title title={t('auth.registerTitle')} />
+              <Text style={styles.invitationQuestion}>{t('auth.registerInvitationQuestion')}</Text>
+              <View collapsable={false} style={styles.affiliateCodeField} onLayout={handleFieldLayout('affiliateCode')}>
+                <TextInput
+                  label={t('auth.registerEnterCode')}
+                  value={affiliateCode}
+                  onChangeText={(text) => {
+                    setAffiliateCode(text);
+                    if (affiliateCodeError) setAffiliateCodeError(undefined);
+                  }}
+                  placeholder={t('auth.registerCodePlaceholder')}
+                  autoCapitalize='characters'
+                  autoCorrect={false}
+                  onFocus={() => scrollToFocusedField('affiliateCode')}
+                  errorText={affiliateCodeError}
+                />
+              </View>
             </View>
           </View>
 

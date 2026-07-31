@@ -23,6 +23,14 @@ export const styles = StyleSheet.create({
     marginTop: 31,
     paddingHorizontal: SPACING.MD,
   },
+  invitationQuestion: {
+    color: COLORS.NEUTRAL.LOW.PURE,
+    fontFamily: 'DM Sans',
+    fontSize: 20,
+    fontWeight: '400',
+    lineHeight: 24,
+    textAlign: 'left',
+  },
   titleAdornment: {
     position: 'absolute',
   } as ImageStyle,
@@ -52,5 +60,9 @@ export const styles = StyleSheet.create({
   scrollContentInner: {
     flexGrow: 1,
     width: '100%',
+  },
+  affiliateCodeField: {
+    width: '100%',
+    alignSelf: 'stretch',
   },
 });
