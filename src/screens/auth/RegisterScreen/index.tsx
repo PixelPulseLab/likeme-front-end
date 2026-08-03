@@ -15,6 +15,7 @@ import type { PersonData } from '@/types/person';
 import type { RootStackParamList } from '@/types/navigation';
 import { getNextOnboardingScreen } from '@/utils';
 import { birthdateToISO, ageFromBirthdateISO } from '@/utils/formatters/personFormats';
+import { isOptionalBrazilianPhoneValid, phoneDigits } from '@/utils/formatters/inputFormatters';
 import { styles } from './styles';
 import { COLORS, SPACING } from '@/constants';
 import { useAnalyticsScreen } from '@/analytics';
@@ -34,6 +35,7 @@ const RegisterScreen: React.FC<Props> = ({ navigation, route }) => {
   const [gender, setGender] = useState('');
   const [weight, setWeight] = useState('');
   const [height, setHeight] = useState('');
+  const [phone, setPhone] = useState('');
   const [affiliateCode, setAffiliateCode] = useState('');
   const [affiliateCodeError, setAffiliateCodeError] = useState<string | undefined>();
   const [isLoading, setIsLoading] = useState(false);
@@ -63,6 +65,7 @@ const RegisterScreen: React.FC<Props> = ({ navigation, route }) => {
       setGender(data.gender);
       setWeight(data.weight);
       setHeight(data.height);
+      setPhone(data.phone);
     });
     return () => {
       cancelled = true;
@@ -85,12 +88,22 @@ const RegisterScreen: React.FC<Props> = ({ navigation, route }) => {
   );
 
   const handleFormChange = useCallback(
-    (patch: Partial<{ fullName: string; birthdate: string; gender: string; weight: string; height: string }>) => {
+    (
+      patch: Partial<{
+        fullName: string;
+        birthdate: string;
+        gender: string;
+        weight: string;
+        height: string;
+        phone: string;
+      }>,
+    ) => {
       if (patch.fullName !== undefined) setFullName(patch.fullName);
       if (patch.birthdate !== undefined) setBirthdate(patch.birthdate);
       if (patch.gender !== undefined) setGender(patch.gender);
       if (patch.weight !== undefined) setWeight(patch.weight);
       if (patch.height !== undefined) setHeight(patch.height);
+      if (patch.phone !== undefined) setPhone(patch.phone);
     },
     [],
   );
@@ -153,6 +166,10 @@ const RegisterScreen: React.FC<Props> = ({ navigation, route }) => {
       const heightError = validateNumericField(heightNormalized, 1, 499, true);
       if (heightError) errors.height = heightError;
 
+      if (!isOptionalBrazilianPhoneValid(phone)) {
+        errors.phone = t('auth.validationInvalidPhone');
+      }
+
       if (Object.keys(errors).length > 0) {
         setFieldErrors(errors);
         setIsLoading(false);
@@ -168,6 +185,7 @@ const RegisterScreen: React.FC<Props> = ({ navigation, route }) => {
         birthdate: birthdateISO!,
         weight: weight.trim().replace(/,/g, '.'),
         height: height.trim().replace(/,/g, '.'),
+        phone: phoneDigits(phone),
       };
 
       await personsService.createOrUpdatePerson(personData);
@@ -193,7 +211,18 @@ const RegisterScreen: React.FC<Props> = ({ navigation, route }) => {
     } finally {
       setIsLoading(false);
     }
-  }, [affiliateCode, fullName, gender, birthdate, weight, height, navigateAfterRegister, t, validateNumericField]);
+  }, [
+    affiliateCode,
+    fullName,
+    gender,
+    birthdate,
+    weight,
+    height,
+    phone,
+    navigateAfterRegister,
+    t,
+    validateNumericField,
+  ]);
 
   const handleSkip = useCallback(async () => {
     try {
@@ -287,7 +316,7 @@ const RegisterScreen: React.FC<Props> = ({ navigation, route }) => {
           <View style={styles.content} onLayout={handleContentLayout}>
             <PersonalDataFieldsForm
               variant='register'
-              values={{ fullName, birthdate, gender, weight, height }}
+              values={{ fullName, birthdate, gender, weight, height, phone }}
               fieldErrors={fieldErrors}
               onChange={handleFormChange}
               onClearFieldError={handleClearFieldError}

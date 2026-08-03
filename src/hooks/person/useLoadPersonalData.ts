@@ -2,6 +2,7 @@ import { useCallback } from 'react';
 import { userService, personsService, storageService, AuthService } from '@/services';
 import type { PersonWithContacts } from '@/services/user/userService';
 import type { PersonResponse } from '@/types/person';
+import { formatPhone } from '@/utils/formatters/inputFormatters';
 import { isoToBirthdateMask } from '@/utils/formatters/personFormats';
 import { logger } from '@/utils/logger';
 
@@ -12,6 +13,7 @@ export interface PersonFormData {
   gender: string;
   weight: string;
   height: string;
+  phone: string;
 }
 
 /** Converte valor de peso/altura da API (number ou string) para string do formulário (vírgula decimal). */
@@ -20,6 +22,18 @@ function toFormNumber(value: unknown): string {
   const s = typeof value === 'number' ? String(value) : String(value).trim();
   if (s === '') return '';
   return s.replace('.', ',');
+}
+
+function phoneFromPersonContacts(person: PersonWithContacts | PersonResponse): string {
+  const contacts = person.contacts;
+  if (!contacts?.length) return '';
+  const phoneContact = contacts.find((contact) => {
+    if (contact.type !== 'phone') return false;
+    const deletedAt = (contact as { deletedAt?: string | null }).deletedAt;
+    return deletedAt == null;
+  });
+  const raw = phoneContact?.value?.trim() ?? '';
+  return raw ? formatPhone(raw) : '';
 }
 
 function mapPersonToFormData(person: PersonWithContacts | PersonResponse): PersonFormData {
@@ -38,8 +52,9 @@ function mapPersonToFormData(person: PersonWithContacts | PersonResponse): Perso
 
   const weight = toFormNumber(person.weight);
   const height = toFormNumber(person.height);
+  const phone = phoneFromPersonContacts(person);
 
-  return { fullName, birthdate, gender, weight, height };
+  return { fullName, birthdate, gender, weight, height, phone };
 }
 
 function emptyPersonFormData(fallbackName = ''): PersonFormData {
@@ -49,6 +64,7 @@ function emptyPersonFormData(fallbackName = ''): PersonFormData {
     gender: '',
     weight: '',
     height: '',
+    phone: '',
   };
 }
 

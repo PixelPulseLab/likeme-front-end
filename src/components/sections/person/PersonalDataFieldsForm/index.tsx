@@ -10,6 +10,7 @@ import {
   parseHeightInput,
   formatBirthdateInput,
 } from '@/utils/formatters/personFormats';
+import { formatPhone } from '@/utils/formatters/inputFormatters';
 import { COLORS } from '@/constants';
 import { styles } from './styles';
 
@@ -27,6 +28,7 @@ export type PersonalDataFieldErrors = {
   gender?: string;
   weight?: string;
   height?: string;
+  phone?: string;
 };
 
 type Props = {
@@ -147,6 +149,21 @@ const PersonalDataFieldsForm: React.FC<Props> = ({
           onFocus={() => scrollToFocusedField?.('height')}
           errorText={fieldErrors.height}
           required
+        />
+      </View>
+
+      <View collapsable={false} style={styles.fieldRow} onLayout={onFieldLayout?.('phone')}>
+        <TextInput
+          label={t('auth.phone')}
+          value={values.phone}
+          onChangeText={(text) => {
+            onChange({ phone: formatPhone(text) });
+            onClearFieldError('phone');
+          }}
+          placeholder={t('auth.phonePlaceholder')}
+          keyboardType='phone-pad'
+          onFocus={() => scrollToFocusedField?.('phone')}
+          errorText={fieldErrors.phone}
         />
       </View>
     </View>

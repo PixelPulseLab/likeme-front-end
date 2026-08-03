@@ -28,8 +28,11 @@ export const formatExpiryDate = (text: string): string => {
   return cleaned;
 };
 
+export const BR_PHONE_MIN_DIGITS = 10;
+export const BR_PHONE_MAX_DIGITS = 11;
+
 export const formatPhone = (text: string): string => {
-  const numbers = text.replace(/\D/g, '').slice(0, 11);
+  const numbers = text.replace(/\D/g, '').slice(0, BR_PHONE_MAX_DIGITS);
 
   if (numbers.length === 0) return '';
   if (numbers.length <= 2) {
@@ -39,6 +42,14 @@ export const formatPhone = (text: string): string => {
     return `(${numbers.slice(0, 2)}) ${numbers.slice(2)}`;
   }
   return `(${numbers.slice(0, 2)}) ${numbers.slice(2, 7)}-${numbers.slice(7)}`;
+};
+
+export const phoneDigits = (value: string): string => value.replace(/\D/g, '');
+
+export const isOptionalBrazilianPhoneValid = (value: string): boolean => {
+  const digits = phoneDigits(value);
+  if (!digits) return true;
+  return digits.length >= BR_PHONE_MIN_DIGITS && digits.length <= BR_PHONE_MAX_DIGITS;
 };
 
 /** CEP: apenas dígitos, formata como 00000-000 (máx. 8 dígitos). */
