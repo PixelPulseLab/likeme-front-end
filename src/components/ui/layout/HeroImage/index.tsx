@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { View, Text, Dimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { CachedImage } from '@/components/ui/media/CachedImage';
+import { DesaturatedImage } from '@/components/ui/media/DesaturatedImage';
 import { PlatformBlurView } from '@/components/ui/PlatformBlurView';
 import { IMAGE_PRIORITY_HIGH } from '@/constants';
 import { styles } from './styles';
@@ -50,9 +51,10 @@ const HeroImage = ({
   return (
     <View style={[styles.section, sectionStyle]}>
       {desaturated ? (
-        <View style={styles.desaturatedImageWrap}>
-          <CachedImage source={source} style={[styles.image, styles.imageStyle]} priority={IMAGE_PRIORITY_HIGH} />
-        </View>
+        <DesaturatedImage
+          uri={imageUri || DEFAULT_IMAGE_URI}
+          style={[styles.desaturatedImageWrap, styles.imageStyle]}
+        />
       ) : (
         <CachedImage source={source} style={[styles.image, styles.imageStyle]} priority={IMAGE_PRIORITY_HIGH} />
       )}

@@ -20,7 +20,6 @@ export const styles = StyleSheet.create({
   },
   desaturatedImageWrap: {
     ...StyleSheet.absoluteFillObject,
-    filter: [{ grayscale: 1 }],
   },
   content: {
     flex: 1,

@@ -5,6 +5,7 @@ import { PRODUCT_CATALOG_TYPE, catalogTypeTranslatedBadgeLabels } from '@/types/
 import {
   subscriptionIsCancelingPresentation,
   subscriptionIsCanceledPresentation,
+  subscriptionIsDesaturatedPresentation,
 } from '@/utils/subscription/subscriptionManageDisplay';
 
 const DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=400';
@@ -24,7 +25,6 @@ function subscriptionStatusBadge(row: UserSubscriptionListItem, t: TranslateFn):
 export function mapSubscriptionToListItem(row: UserSubscriptionListItem, t: TranslateFn): SubscriptionListItem {
   const typeBadges = catalogTypeTranslatedBadgeLabels(row.product.type, t);
   const statusBadge = subscriptionStatusBadge(row, t);
-  const isCanceled = subscriptionIsCanceledPresentation(row);
   const badges = [...typeBadges, ...(statusBadge ? [statusBadge] : [])];
 
   return {
@@ -43,7 +43,7 @@ export function mapSubscriptionToListItem(row: UserSubscriptionListItem, t: Tran
     canceledAt: row.canceledAt ?? null,
     cancelRequestedAt: row.cancelRequestedAt ?? null,
     accessValidUntil: row.accessValidUntil ?? null,
-    desaturated: isCanceled,
+    desaturated: subscriptionIsDesaturatedPresentation(row),
   };
 }
 

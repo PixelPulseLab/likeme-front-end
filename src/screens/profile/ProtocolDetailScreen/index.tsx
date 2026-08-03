@@ -33,6 +33,7 @@ import {
   subscriptionCanceledOnDate,
   subscriptionIsCancelingPresentation,
   subscriptionIsCanceledPresentation,
+  subscriptionIsDesaturatedPresentation,
 } from '@/utils/subscription/subscriptionManageDisplay';
 import { styles } from './styles';
 
@@ -538,7 +539,7 @@ const ProtocolDetailScreen: React.FC<Props> = ({ navigation, route }) => {
           name={protocol.name}
           badges={heroBadges}
           heightRatio={0.6}
-          desaturated={isCanceledSubscription}
+          desaturated={subscriptionIsDesaturatedPresentation(subscriptionFields)}
           footer={
             aboutText ? (
               <View style={styles.heroFooter}>

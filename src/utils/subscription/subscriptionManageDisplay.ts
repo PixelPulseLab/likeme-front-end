@@ -78,6 +78,11 @@ export function subscriptionIsCanceledPresentation(subscription: SubscriptionCan
   return normalized === 'CANCELED' || normalized === 'CANCELLED';
 }
 
+/** Card/hero em PB: em cancelamento ou cancelado (APP-318 / APP-325). */
+export function subscriptionIsDesaturatedPresentation(subscription: SubscriptionCanceledFields): boolean {
+  return subscriptionIsCancelingPresentation(subscription) || subscriptionIsCanceledPresentation(subscription);
+}
+
 export function subscriptionCanceledOnDate(
   subscription: SubscriptionCanceledFields & { cancelRequestedAt?: string | null },
 ): string | null {

@@ -31,7 +31,7 @@ describe('subscriptionListMapper', () => {
     expect(item.desaturated).toBe(false);
   });
 
-  it('marca protocolo em cancelamento com badge sem dessaturar o card', () => {
+  it('marca protocolo em cancelamento com badge e card dessaturado', () => {
     const row: UserSubscriptionListItem = {
       id: 'sub-canceling',
       productId: 'prod-1',
@@ -50,7 +50,7 @@ describe('subscriptionListMapper', () => {
     };
 
     const item = mapSubscriptionToListItem(row, (key, options) => options?.defaultValue ?? key);
-    expect(item.desaturated).toBe(false);
+    expect(item.desaturated).toBe(true);
     expect(item.badges).toContain('Em cancelamento');
     expect(item.cancelAtPeriodEnd).toBe(true);
   });
