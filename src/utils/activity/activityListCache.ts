@@ -1,4 +1,4 @@
-import { activityService } from '@/services';
+import activityService from '@/services/activity/activityService';
 import type { ActivityListScope, UserActivity } from '@/types/activity';
 
 const CACHE_MAX_AGE_MS = 120_000;

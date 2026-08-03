@@ -5,10 +5,11 @@ import {
   shouldSkipActivityListFetch,
   writeActivityListCache,
 } from '@/utils/activity/activityListCache';
-import { activityService } from '@/services';
+import activityService from '@/services/activity/activityService';
 
-jest.mock('@/services', () => ({
-  activityService: {
+jest.mock('@/services/activity/activityService', () => ({
+  __esModule: true,
+  default: {
     listActivities: jest.fn(),
   },
 }));
