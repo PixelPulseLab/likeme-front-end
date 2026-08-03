@@ -2,6 +2,7 @@ import { findFocusedRoute, type NavigationState } from '@react-navigation/native
 
 export const CHAT_STACK_LIST_ROUTE = 'ChatList' as const;
 export const POST_DETAIL_ROUTE = 'PostDetail' as const;
+export const APP_LOADING_ROUTE = 'AppLoading' as const;
 
 export const ROUTES_SHOW_MENU = new Set<string>([
   'Home',
@@ -96,6 +97,24 @@ type RouteWithParams = {
   state?: NavigationState;
 };
 
+/**
+ * Destino do hop `AppLoading` (Community/Marketplace/…).
+ * Sem isso o overlay some no intermediário e remonta no destino — “pisca” no menu.
+ */
+export function getAppLoadingTargetRouteName(state: NavigationState | undefined): string | undefined {
+  if (!state?.routes?.length) return undefined;
+
+  const rootIdx = typeof state.index === 'number' ? state.index : 0;
+  const rootRoute = state.routes[rootIdx] as RouteWithParams | undefined;
+  if (rootRoute?.name !== APP_LOADING_ROUTE) return undefined;
+
+  const target = rootRoute.params?.target;
+  if (target == null || typeof target !== 'object') return undefined;
+
+  const targetName = (target as { name?: unknown }).name;
+  return typeof targetName === 'string' ? targetName : undefined;
+}
+
 /** Post aberto via link compartilhado (`{ postId }`); fluxo in-app usa `{ post }`. */
 export function isSharedCommunityPostDetailRoute(state: NavigationState | undefined): boolean {
   if (!state?.routes?.length) {
@@ -126,6 +145,11 @@ export function shouldShowFloatingMenuByRoute(state: NavigationState | undefined
   const focusedName = getFocusedRouteNameFromNavState(state);
   const rootName = getRootRouteName(state);
 
+  if (rootName === APP_LOADING_ROUTE) {
+    const targetName = getAppLoadingTargetRouteName(state);
+    return targetName != null && ROUTES_SHOW_MENU.has(targetName);
+  }
+
   if (rootName === 'Chat') {
     return focusedName === CHAT_STACK_LIST_ROUTE;
   }
@@ -147,4 +171,16 @@ export function shouldShowFloatingMenuByRoute(state: NavigationState | undefined
 export function getSelectedIdFromRoute(routeName: string | undefined): string | undefined {
   if (!routeName) return undefined;
   return ROUTE_TO_SELECTED_ID[routeName];
+}
+
+/** Inclui destino do `AppLoading` para o pill acompanhar o hop sem remount do overlay. */
+export function getSelectedIdFromNavState(state: NavigationState | undefined): string | undefined {
+  const appLoadingTarget = getAppLoadingTargetRouteName(state);
+  if (appLoadingTarget != null) {
+    return getSelectedIdFromRoute(appLoadingTarget);
+  }
+
+  const focusedName = getFocusedRouteNameFromNavState(state);
+  const rootName = getRootRouteName(state);
+  return getSelectedIdFromRoute(focusedName) ?? getSelectedIdFromRoute(rootName);
 }

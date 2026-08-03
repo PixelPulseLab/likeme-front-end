@@ -2,12 +2,7 @@ import React, { createContext, useCallback, useContext, useMemo, useState } from
 import { StyleSheet, View, type ImageSourcePropType } from 'react-native';
 import { useNavigationState } from '@react-navigation/native';
 import { FloatingMenu } from '@/components/ui/menu';
-import {
-  getFocusedRouteNameFromNavState,
-  getRootRouteName,
-  getSelectedIdFromRoute,
-  shouldShowFloatingMenuByRoute,
-} from '@/utils/floatingMenuRoutePolicy';
+import { getSelectedIdFromNavState, shouldShowFloatingMenuByRoute } from '@/utils/floatingMenuRoutePolicy';
 
 export type FloatingMenuItem = {
   id: string;
@@ -58,13 +53,8 @@ const FloatingMenuStateContext = createContext<StateValue>(floatingMenuStateFall
 export const FloatingMenuProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [menu, setMenuState] = useState<MenuState>(null);
 
-  const currentRouteName = useNavigationState((state) => getRootRouteName(state));
-  const focusedRouteName = useNavigationState((state) => getFocusedRouteNameFromNavState(state));
   const showMenuByRoute = useNavigationState((state) => shouldShowFloatingMenuByRoute(state));
-  const selectedIdFromRoute = useMemo(
-    () => getSelectedIdFromRoute(focusedRouteName) ?? getSelectedIdFromRoute(currentRouteName),
-    [currentRouteName, focusedRouteName],
-  );
+  const selectedIdFromRoute = useNavigationState((state) => getSelectedIdFromNavState(state));
 
   const setMenu = useCallback((items: FloatingMenuItem[], selectedId?: string) => {
     setMenuState({ items, selectedId });

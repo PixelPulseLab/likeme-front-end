@@ -1,7 +1,9 @@
 import type { NavigationState } from '@react-navigation/native';
 import {
+  getAppLoadingTargetRouteName,
   getFocusedRouteNameFromNavState,
   getRootRouteName,
+  getSelectedIdFromNavState,
   getSelectedIdFromRoute,
   isSharedCommunityPostDetailRoute,
   shouldShowFloatingMenuByRoute,
@@ -172,6 +174,30 @@ describe('floatingMenuRoutePolicy', () => {
       expect(getSelectedIdFromRoute('Cart')).toBe('marketplace');
       expect(getSelectedIdFromRoute('ProtocolDetail')).toBe('profile');
       expect(getSelectedIdFromRoute('Profile')).toBe('profile');
+    });
+  });
+
+  describe('AppLoading (hop do menu Comunidade/Loja)', () => {
+    it('mantém overlay quando o destino do hop tem menu (Community)', () => {
+      const state = makeStack(0, [
+        { name: 'AppLoading', params: { target: { name: 'Community', params: { screen: 'CommunityList' } } } },
+      ]);
+      expect(getAppLoadingTargetRouteName(state)).toBe('Community');
+      expect(shouldShowFloatingMenuByRoute(state)).toBe(true);
+      expect(getSelectedIdFromNavState(state)).toBe('community');
+    });
+
+    it('mantém overlay quando o destino do hop tem menu (Marketplace)', () => {
+      const state = makeStack(0, [{ name: 'AppLoading', params: { target: { name: 'Marketplace' } } }]);
+      expect(getAppLoadingTargetRouteName(state)).toBe('Marketplace');
+      expect(shouldShowFloatingMenuByRoute(state)).toBe(true);
+      expect(getSelectedIdFromNavState(state)).toBe('marketplace');
+    });
+
+    it('esconde overlay se AppLoading não tiver target com menu', () => {
+      const state = makeStack(0, [{ name: 'AppLoading', params: {} }]);
+      expect(getAppLoadingTargetRouteName(state)).toBeUndefined();
+      expect(shouldShowFloatingMenuByRoute(state)).toBe(false);
     });
   });
 });
