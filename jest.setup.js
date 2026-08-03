@@ -37,6 +37,17 @@ jest.mock('expo-image', () => {
   return { Image };
 });
 
+// Mock para color-matrix (ESM + módulo nativo; no Jest só precisa passar o children)
+jest.mock('react-native-color-matrix-image-filters', () => {
+  const React = require('react');
+  const { View } = require('react-native');
+  const Passthrough = ({ children, style }) => React.createElement(View, { style }, children);
+  return {
+    Grayscale: Passthrough,
+    ColorMatrix: Passthrough,
+  };
+});
+
 // Mock para expo-auth-session
 jest.mock('expo-auth-session', () => ({
   AuthRequest: jest.fn(),
