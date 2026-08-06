@@ -1,12 +1,41 @@
 ---
 description: Evitar comentários desnecessários (priorizar autocomentar)
-globs: **/*.{ts,tsx}
 alwaysApply: true
 ---
 
 # Regra de comentários
 
-- Evite adicionar comentários “de decoração” (ex.: “incrementa”, “atribui valor”, “passo 1”).
+- Evite comentários “de decoração” (ex.: “incrementa”, “atribui valor”, “passo 1”).
 - Prefira código autocomentado: nomes claros, funções pequenas, estrutura explícita e tipos bem definidos.
-- Use comentários somente quando a intenção não for óbvia ou quando houver trade-off relevante (ex.: workaround, requisito externo, efeitos colaterais importantes).
-- Se precisar explicar uma lógica complexa, documente a decisão (o por que), não o óbvio (o que).
+- Use comentários **somente** quando a intenção não for óbvia ou houver trade-off relevante (workaround, requisito externo, efeito colateral).
+- Se precisar explicar lógica complexa, documente a **decisão** (o porquê), não o óbvio (o quê).
+
+## Proibido (mesmo em JSDoc / `/** */`)
+
+- Restatar o nome do tipo/função/arquivo (“Metadados de reprodução…”, “Payload → domínio…”).
+- Documentar props/campos cujo nome já diz o contrato (`courseVideoId`, `playerUrl`).
+- Bloco JSDoc em cima de `export type` / `export function` só para “parecer documentado”.
+- Comentário que um leitor competente lê no signature + tipos.
+
+```typescript
+// ❌ BAD
+/** Metadados de reprodução de vídeo — contrato da API. */
+export type CourseVideoPlayback = { videoId: string; streamUrl: string | null };
+
+/** ID do vídeo da aula. */
+courseVideoId?: string | null;
+
+// ✅ GOOD — sem comentário; nome + tipo bastam
+export type CourseVideoPlayback = { videoId: string; streamUrl: string | null };
+courseVideoId?: string | null;
+
+// ✅ GOOD — porquê não-óbvio (contrato externo / quirk)
+// Provedor: GET /videos/{id}?external_id — id = UUID do metadata (upload TUS).
+async getVideoPlaybackByExternalId(videoExternalId: string)
+```
+
+## Checklist antes de merge
+
+1. Diff adiciona `//` ou `/**`? → só fica se explica **porquê** que o código sozinho não diz.
+2. Dá para renomear em vez de comentar? → renomeie e apague o comentário.
+3. Code review: JSDoc decorativo = pedir remoção (não “deixar”).
