@@ -98,7 +98,7 @@ export function useAdvertiserRecommendation({ targetId, targetType, enabled = tr
 
   const recommenders = useMemo((): AdvertiserRecommenderPreview[] => {
     return recommendations
-      .map((item) => {
+      .map((item): AdvertiserRecommenderPreview | null => {
         const advertiserId = item.advertiserId?.trim();
         if (!advertiserId) {
           return null;
@@ -108,13 +108,20 @@ export function useAdvertiserRecommendation({ targetId, targetType, enabled = tr
         if (!name) {
           return null;
         }
-        return {
+        const preview: AdvertiserRecommenderPreview = {
           id: item.id,
           advertiserId,
           name,
-          avatar: profile?.logo || undefined,
-          specialty: profile?.description?.trim() || undefined,
         };
+        const avatar = profile?.logo?.trim();
+        if (avatar) {
+          preview.avatar = avatar;
+        }
+        const specialty = profile?.description?.trim();
+        if (specialty) {
+          preview.specialty = specialty;
+        }
+        return preview;
       })
       .filter((item): item is AdvertiserRecommenderPreview => item != null);
   }, [recommendations, profilesByAdvertiserId]);
