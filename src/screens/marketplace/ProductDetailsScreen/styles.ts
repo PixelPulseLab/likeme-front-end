@@ -322,13 +322,15 @@ export const styles = StyleSheet.create({
     marginTop: SPACING.LG,
     paddingHorizontal: SPACING.SM,
   },
+  /** Figma: gap 20 acima / 40 abaixo da seção `recomendacao` até o preço. */
   partnerSectionAbovePrice: {
-    marginTop: SPACING.LG,
-    gap: SPACING.MD,
+    marginTop: SPACING.GAP_20,
+    marginBottom: SPACING.SECTION,
   },
   partnerSectionAtScreenEnd: {
     paddingHorizontal: SPACING.LG,
     paddingBottom: SPACING.XL,
+    marginBottom: 0,
   },
   addToCartSecondary: {
     width: '100%',

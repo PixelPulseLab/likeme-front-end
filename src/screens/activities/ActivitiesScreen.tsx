@@ -32,11 +32,7 @@ import { navigateRootStack, rootStackNavigationFrom } from '@/utils/navigation/r
 import { orderCardStatusPresentation, orderCardTitle } from '@/utils/marketplace/orderStatusDisplay';
 import { invalidateActivityListCache, writeActivityListCache } from '@/utils/activity/activityListCache';
 import { formatSubscriptionManageDate } from '@/utils/subscription/subscriptionManageDisplay';
-import {
-  SUBSCRIPTION_LIFECYCLE_HISTORY_KIND,
-  type SubscriptionLifecycleHistoryEvent,
-  type UserActivity,
-} from '@/types/activity';
+import { SUBSCRIPTION_HISTORY_STATUS, type SubscriptionHistory, type UserActivity } from '@/types/activity';
 import { styles } from './styles';
 
 type ActivitiesScreenProps = {
@@ -71,9 +67,7 @@ const ActivitiesScreen: React.FC<ActivitiesScreenProps> = ({ navigation, route }
   const [editingActivityData, setEditingActivityData] = useState<any>(null);
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoadingOrders, setIsLoadingOrders] = useState(false);
-  const [subscriptionLifecycleEvents, setSubscriptionLifecycleEvents] = useState<SubscriptionLifecycleHistoryEvent[]>(
-    [],
-  );
+  const [subscriptionLifecycleEvents, setSubscriptionLifecycleEvents] = useState<SubscriptionHistory[]>([]);
   const [daySortOrder, setDaySortOrder] = useState<'asc' | 'desc'>('desc');
   const [menuVisibleForId, setMenuVisibleForId] = useState<string | null>(null);
   const [menuPosition, setMenuPosition] = useState<{ x: number; y: number } | null>(null);
@@ -691,17 +685,21 @@ const ActivitiesScreen: React.FC<ActivitiesScreenProps> = ({ navigation, route }
   }, [subscriptionLifecycleEvents, daySortOrder]);
 
   const subscriptionLifecycleLabel = useCallback(
-    (kind: SubscriptionLifecycleHistoryEvent['kind']) => {
-      switch (kind) {
-        case SUBSCRIPTION_LIFECYCLE_HISTORY_KIND.CANCEL_REQUESTED:
+    (subscriptionStatus: SubscriptionHistory['subscriptionStatus']) => {
+      switch (subscriptionStatus) {
+        case SUBSCRIPTION_HISTORY_STATUS.CREATED:
+          return t('activities.subscriptionCreated', {
+            defaultValue: 'Assinatura iniciada',
+          });
+        case SUBSCRIPTION_HISTORY_STATUS.CANCEL_REQUESTED:
           return t('activities.subscriptionCancelRequested', {
             defaultValue: 'Solicitação de cancelamento',
           });
-        case SUBSCRIPTION_LIFECYCLE_HISTORY_KIND.CANCEL_REACTIVATED:
+        case SUBSCRIPTION_HISTORY_STATUS.CANCEL_REACTIVATED:
           return t('activities.subscriptionCancelReactivated', {
             defaultValue: 'Reativação da assinatura',
           });
-        case SUBSCRIPTION_LIFECYCLE_HISTORY_KIND.CANCEL_FINALIZED:
+        case SUBSCRIPTION_HISTORY_STATUS.CANCEL_FINALIZED:
           return t('activities.subscriptionCancelFinalized', {
             defaultValue: 'Cancelamento efetivado',
           });
@@ -712,7 +710,7 @@ const ActivitiesScreen: React.FC<ActivitiesScreenProps> = ({ navigation, route }
     [t],
   );
 
-  const renderSubscriptionLifecycleCard = (event: SubscriptionLifecycleHistoryEvent) => {
+  const renderSubscriptionLifecycleCard = (event: SubscriptionHistory) => {
     const handlePress = () => {
       if (event.orderId) {
         navigateToOrderDetail(rootNavigation, event.orderId);
@@ -728,11 +726,11 @@ const ActivitiesScreen: React.FC<ActivitiesScreenProps> = ({ navigation, route }
         onPress={handlePress}
         activeOpacity={0.7}
         accessibilityRole='button'
-        accessibilityLabel={`${subscriptionLifecycleLabel(event.kind)} ${event.productName}`}
+        accessibilityLabel={`${subscriptionLifecycleLabel(event.subscriptionStatus)} ${event.productName}`}
       >
         <View style={styles.cardContent}>
           <View style={styles.cardHeader}>
-            <Badge label={subscriptionLifecycleLabel(event.kind)} color='orange' />
+            <Badge label={subscriptionLifecycleLabel(event.subscriptionStatus)} color='orange' />
           </View>
           <Text style={styles.orderCardTitle} numberOfLines={2}>
             {event.productName}

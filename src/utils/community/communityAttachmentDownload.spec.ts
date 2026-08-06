@@ -26,7 +26,7 @@ describe('communityAttachmentDownload', () => {
     await downloadCommunityAttachment({
       id: 'doc-1',
       url: 'https://cdn.example.com/guide.pdf',
-      kind: 'pdf',
+      type: 'pdf',
       fileName: 'guide.pdf',
     });
 
@@ -43,7 +43,7 @@ describe('communityAttachmentDownload', () => {
     await downloadCommunityAttachment({
       id: 'doc-1',
       url: 'https://cdn.example.com/guide.pdf',
-      kind: 'pdf',
+      type: 'pdf',
       fileName: 'guide.pdf',
     });
 
@@ -55,13 +55,13 @@ describe('communityAttachmentDownload', () => {
       {
         id: 'doc-1',
         url: 'https://cdn.example.com/guide.pdf',
-        kind: 'pdf',
+        type: 'pdf',
         fileName: 'guide.pdf',
       },
       {
         id: 'doc-2',
         url: 'https://cdn.example.com/checklist.pdf',
-        kind: 'pdf',
+        type: 'pdf',
         fileName: 'checklist.pdf',
       },
     ]);
@@ -75,7 +75,7 @@ describe('communityAttachmentDownload', () => {
 
     await openCommunityAttachmentUrl('https://cdn.example.com/guide.pdf', {
       attachmentId: 'doc-1',
-      kind: 'pdf',
+      type: 'pdf',
     });
 
     expect(Linking.openURL).not.toHaveBeenCalled();

@@ -15,6 +15,7 @@ import { birthdateToISO, ageFromBirthdateISO } from '@/utils/formatters/personFo
 import { useAnalyticsScreen } from '@/analytics';
 import { logger } from '@/utils/logger';
 import { parseFullName, validateFullNameForPerson } from '@/utils/person/fullNameValidation';
+import { isOptionalBrazilianPhoneValid, phoneDigits } from '@/utils/formatters/inputFormatters';
 import { COLORS, SPACING } from '@/constants';
 import { styles } from './styles';
 
@@ -24,6 +25,7 @@ const EMPTY_FORM: PersonFormData = {
   gender: '',
   weight: '',
   height: '',
+  phone: '',
 };
 
 type Props = StackScreenProps<RootStackParamList, 'PersonalDataEdit'>;
@@ -34,7 +36,8 @@ function personFormDataEqual(left: PersonFormData, right: PersonFormData): boole
     left.birthdate === right.birthdate &&
     left.gender === right.gender &&
     left.weight === right.weight &&
-    left.height === right.height
+    left.height === right.height &&
+    left.phone === right.phone
   );
 }
 
@@ -142,6 +145,10 @@ const PersonalDataEditScreen: React.FC<Props> = ({ navigation }) => {
       const heightError = validateNumericField(heightNormalized, 1, 499, true);
       if (heightError) errors.height = heightError;
 
+      if (!isOptionalBrazilianPhoneValid(formData.phone)) {
+        errors.phone = t('auth.validationInvalidPhone');
+      }
+
       if (Object.keys(errors).length > 0) {
         setFieldErrors(errors);
         return;
@@ -156,6 +163,7 @@ const PersonalDataEditScreen: React.FC<Props> = ({ navigation }) => {
         birthdate: birthdateISO!,
         weight: formData.weight.trim().replace(/,/g, '.'),
         height: formData.height.trim().replace(/,/g, '.'),
+        phone: phoneDigits(formData.phone),
       };
 
       await personsService.createOrUpdatePerson(personData);

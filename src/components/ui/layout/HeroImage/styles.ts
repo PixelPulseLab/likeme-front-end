@@ -26,7 +26,6 @@ export const styles = StyleSheet.create({
   },
   desaturatedImageWrap: {
     ...StyleSheet.absoluteFillObject,
-    filter: [{ grayscale: 1 }],
     borderBottomLeftRadius: 40,
     borderBottomRightRadius: 40,
     overflow: 'hidden',
@@ -82,6 +81,7 @@ export const styles = StyleSheet.create({
   },
   badgesContainer: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 10,
     marginBottom: 10,
     paddingTop: SPACING.MD,
@@ -95,8 +95,10 @@ export const styles = StyleSheet.create({
     paddingVertical: 0,
     borderRadius: 16,
     minHeight: 24,
+    maxWidth: '100%',
     justifyContent: 'center',
     alignItems: 'center',
+    alignSelf: 'flex-start',
   },
   badgeText: {
     fontSize: 12,

@@ -10,20 +10,20 @@ describe('variedMediaFeedMock', () => {
     expect(posts.length).toBeGreaterThanOrEqual(6);
 
     const singleImage = posts.find((post) => post.id === 'mock-post-single-image');
-    expect(singleImage?.attachments?.some((item) => item.kind === 'image')).toBe(true);
+    expect(singleImage?.attachments?.some((item) => item.type === 'image')).toBe(true);
 
     const multiImage = posts.find((post) => post.id === 'mock-post-multi-image');
-    expect(multiImage?.attachments?.filter((item) => item.kind === 'image').length).toBeGreaterThanOrEqual(2);
+    expect(multiImage?.attachments?.filter((item) => item.type === 'image').length).toBeGreaterThanOrEqual(2);
 
     const videoOnly = posts.find((post) => post.id === 'mock-post-video');
     expect(videoOnly?.videoUrl).toBeTruthy();
 
     const mixed = posts.find((post) => post.id === 'mock-post-images-and-video');
-    expect(mixed?.attachments?.filter((item) => item.kind === 'image').length).toBeGreaterThanOrEqual(2);
+    expect(mixed?.attachments?.filter((item) => item.type === 'image').length).toBeGreaterThanOrEqual(2);
     expect(mixed?.videoUrl).toBeTruthy();
 
     const pdfPost = posts.find((post) => post.id === 'mock-post-pdf');
-    expect(pdfPost?.attachments?.some((item) => item.kind === 'pdf')).toBe(true);
+    expect(pdfPost?.attachments?.some((item) => item.type === 'pdf')).toBe(true);
   });
 
   it('responde API paginada na primeira página', () => {

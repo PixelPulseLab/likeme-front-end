@@ -1,24 +1,33 @@
 import apiClient from '@/services/infrastructure/apiClient';
-import {
-  programMultiDocCourseApiResponse,
-  shouldUseProgramMultiDocCourseMock,
-} from '@/dev/course/programMultiDocCourseMock';
-import type { ApiResponse } from '@/types/infrastructure';
 import type { ProgramCourse } from '@/types/course/course';
+import type { ApiResponse } from '@/types/infrastructure';
 
 class CourseService {
   async getProgramCourseByCommunityId(communityId: string): Promise<ApiResponse<ProgramCourse>> {
     const trimmed = communityId.trim();
 
-    if (shouldUseProgramMultiDocCourseMock(trimmed)) {
-      return programMultiDocCourseApiResponse();
-    }
-
-    return apiClient.get<ApiResponse<ProgramCourse>>(
+    const response = await apiClient.get<ApiResponse<ProgramCourse>>(
       `/api/courses/program/communities/${encodeURIComponent(trimmed)}`,
       undefined,
       true,
     );
+
+    if (!response.data) {
+      return response;
+    }
+
+    return {
+      ...response,
+      data: {
+        type: response.data.type,
+        communityId: response.data.communityId,
+        steps: (response.data.steps ?? []).map((step) => ({
+          ...step,
+          attachments: step.attachments ?? [],
+          video: step.video?.id?.trim() ? step.video : null,
+        })),
+      },
+    };
   }
 }
 

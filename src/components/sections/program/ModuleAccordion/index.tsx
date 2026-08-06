@@ -3,19 +3,22 @@ import { View, Text, TouchableOpacity } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { BackgroundIconOutline } from '@/assets/ui';
 import { IconButton } from '@/components/ui/buttons';
-import PostAttachmentsSection, {
-  type PostMediaSource,
-} from '@/components/sections/community/PostAttachments/PostAttachmentsSection';
+import PostAttachmentsSection from '@/components/sections/community/PostAttachments/PostAttachmentsSection';
+import { VideoPlayer } from '@/components/sections/program/VideoPlayer';
 import { MarkdownText } from '@/components/ui/text/MarkdownText';
 import { storageService } from '@/services';
+import type { Attachment } from '@/types/attachment';
 import { COLORS } from '@/constants';
 import { logger } from '@/utils/logger';
 import { styles } from './styles';
 
-export type ModuleItem = PostMediaSource & {
+export type ModuleItem = {
+  id: string;
   title: string;
   completed?: boolean;
   body?: string | null;
+  attachments: Attachment[];
+  video?: Attachment | null;
 };
 
 type Props = {
@@ -187,6 +190,7 @@ const ModuleAccordion: React.FC<Props> = ({
             </View>
             {isExpanded ? (
               <View style={styles.moduleBody}>
+                {module.video ? <VideoPlayer video={module.video} /> : null}
                 <PostAttachmentsSection post={module} expanded>
                   {module.body?.trim() ? (
                     <MarkdownText style={styles.moduleBodyText} text={module.body.trim()} />

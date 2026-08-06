@@ -330,7 +330,15 @@ const CheckoutScreen: React.FC<Props> = ({ navigation, route }) => {
           releaseCheckoutSubmitLock();
           return;
         }
-        orderData.cardData = cardDataObj;
+        const checkoutPhoneDigits = billingAddressData.phone.replace(/\D/g, '');
+        const checkoutPhone = checkoutPhoneDigits.length >= 10 ? checkoutPhoneDigits : undefined;
+        if (checkoutPhone) {
+          orderData.phone = checkoutPhone;
+        }
+        orderData.cardData = {
+          ...cardDataObj,
+          ...(checkoutPhone ? { phone: checkoutPhone } : {}),
+        };
       }
 
       if (cartHasProgram) {

@@ -68,6 +68,8 @@ export const getCheckoutScreen = (): RootStackScreen =>
   asScreen(require('../screens/marketplace/CheckoutScreen') as { default: RootStackScreen });
 export const getProviderProfileScreen = (): RootStackScreen =>
   asScreen(require('../screens/marketplace/ProviderProfileScreen') as { default: RootStackScreen });
+export const getProductRecommendersScreen = (): RootStackScreen =>
+  asScreen(require('../screens/marketplace/ProductRecommendersScreen') as { default: RootStackScreen });
 export const getProfileScreen = (): RootStackScreen =>
   asScreen(require('../screens/profile/ProfileScreen') as { default: RootStackScreen });
 export const getUserProfileHomeScreen = (): RootStackScreen =>
@@ -92,6 +94,8 @@ export const getCancelProtocolSubscriptionConfirmScreen = (): RootStackScreen =>
   asScreen(require('../screens/profile/CancelProtocolSubscriptionConfirmScreen') as { default: RootStackScreen });
 export const getPrivacyPoliciesScreen = (): RootStackScreen =>
   asScreen(require('../screens/policies/PrivacyPoliciesScreen') as { default: RootStackScreen });
+export const getTermsOfUseScreen = (): RootStackScreen =>
+  asScreen(require('../screens/policies/TermsOfUseScreen') as { default: RootStackScreen });
 export const getHomeScreen = (): RootStackScreen =>
   asScreen(require('../screens/home/HomeScreen') as { default: RootStackScreen });
 export const getSummaryScreen = (): RootStackScreen =>

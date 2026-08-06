@@ -48,3 +48,10 @@ export function marketplaceRouteParamsFromFilterClear(): MarketplaceRouteParams 
 export function navigateToProviderProfile(navigation: Navigation, params: RootStackParamList['ProviderProfile']): void {
   navigateWithAppLoading(navigation, { name: 'ProviderProfile', params });
 }
+
+export function navigateToProductRecommenders(
+  navigation: Navigation,
+  params: RootStackParamList['ProductRecommenders'],
+): void {
+  navigation.navigate('ProductRecommenders', params);
+}

@@ -19,7 +19,8 @@ import { PartnerSection } from '@/components/sections/advertiser/PartnerSection'
 import { ContactButtonsRow } from '@/components/sections/advertiser/ContactButtonsRow';
 import { type ButtonCarouselOption } from '@/components/ui/carousel';
 import InfoSectionTabsRow from '@/components/ui/carousel/InfoSectionTabsRow';
-import { useMenuItems, useProductDetails, useProductPartner } from '@/hooks';
+import { useMenuItems, useProductDetails, useProductPartner, useAdvertiserRecommendation } from '@/hooks';
+import { ADVERTISER_RECOMMENDATION_TARGET_TYPE } from '@/constants/recommendation/advertiserRecommendationTargetType';
 import { useSetFloatingMenu } from '@/contexts/FloatingMenuContext';
 import { useTranslation } from '@/hooks/i18n';
 import { formatPrice, getProductModeTranslationKey } from '@/utils';
@@ -27,7 +28,7 @@ import { useAnalyticsScreen, logButtonClick, logTabSelect, logAddToCart, logErro
 import { MARKETPLACE_PRODUCT_PLACEHOLDER_IMAGE_URI } from '@/constants';
 import type { RootStackParamList } from '@/types/navigation';
 import { PRODUCT_CATALOG_TYPE, catalogTypeTranslatedBadgeLabels, isProgramCatalogType } from '@/types/product';
-import { navigateToProviderProfile } from '@/utils/navigation/marketplaceNavigation';
+import { navigateToProductRecommenders, navigateToProviderProfile } from '@/utils/navigation/marketplaceNavigation';
 import { goBackOrShareHome, navigateToShareHome } from '@/utils/navigation/shareHomeNavigation';
 import { navigateToShareDiscover } from '@/utils/navigation/shareDiscoverNavigation';
 import { shareContent, shareInputForProduct } from '@/utils/share/shareContent';
@@ -79,12 +80,18 @@ const ProductDetailsScreen: React.FC<ProductDetailsScreenProps> = ({ navigation,
     navigation,
   });
 
-  const { partnerData, hasSpecialistPartner, partnerDisplayName } = useProductPartner({
+  const { partnerData } = useProductPartner({
     product,
     ad,
     advertiserId,
     routeProduct: route.params?.product,
     productIdFallback: route.params?.productId,
+  });
+
+  const { recommenders, loading: recommendationsLoading } = useAdvertiserRecommendation({
+    targetId: product?.id ?? route.params?.productId,
+    targetType: ADVERTISER_RECOMMENDATION_TARGET_TYPE.product,
+    enabled: Boolean(product?.id ?? route.params?.productId),
   });
 
   const displayData = useMemo(() => {
@@ -248,7 +255,10 @@ const ProductDetailsScreen: React.FC<ProductDetailsScreenProps> = ({ navigation,
   };
 
   const handleSeeProviderProfile = () => {
-    const providerId = advertiserId ?? partnerData.id ?? '';
+    const providerId = recommenders[0]?.advertiserId?.trim() || '';
+    if (!providerId) {
+      return;
+    }
 
     logButtonClick({
       screen_name: 'product_details',
@@ -262,22 +272,42 @@ const ProductDetailsScreen: React.FC<ProductDetailsScreenProps> = ({ navigation,
     });
   };
 
+  const handleOpenProductRecommenders = () => {
+    const targetId = (product?.id ?? route.params?.productId)?.trim() || '';
+    if (!targetId) {
+      return;
+    }
+
+    logButtonClick({
+      screen_name: 'product_details',
+      button_label: 'see_product_recommenders',
+      action_name: 'navigate_product_recommenders',
+      item_id: targetId,
+    });
+
+    navigateToProductRecommenders(navigation, {
+      targetId,
+      targetType: ADVERTISER_RECOMMENDATION_TARGET_TYPE.product,
+    });
+  };
+
   const renderSpecialistPartnerSection = (showProfileButton: boolean, atScreenEnd = false) => {
-    if (!hasSpecialistPartner) {
+    if (recommendationsLoading || recommenders.length === 0) {
       return null;
     }
 
+    const canOpenSingleProfile = showProfileButton && recommenders.length === 1;
+
     return (
-      <View style={[styles.partnerSectionAbovePrice, atScreenEnd && styles.partnerSectionAtScreenEnd]}>
-        <PartnerSection
-          recommendedByLabel={t('marketplace.recommendedBy')}
-          name={partnerDisplayName}
-          avatar={partnerData.avatar}
-          specialistLabel={partnerData.description?.trim() || t('marketplace.specialistLabel')}
-          profileButtonLabel={showProfileButton ? t('marketplace.seePartnerProfile') : undefined}
-          onPressProfile={showProfileButton ? handleSeeProviderProfile : undefined}
-        />
-      </View>
+      <PartnerSection
+        style={[styles.partnerSectionAbovePrice, atScreenEnd && styles.partnerSectionAtScreenEnd]}
+        recommendedByLabel={t('marketplace.recommendedBy')}
+        recommenders={recommenders}
+        recommendationsCountLabel={t('marketplace.recommendationsCount', { count: recommenders.length })}
+        profileButtonLabel={canOpenSingleProfile ? t('marketplace.seePartnerProfile') : undefined}
+        onPressProfile={canOpenSingleProfile ? handleSeeProviderProfile : undefined}
+        onPressRecommenders={recommenders.length > 1 ? handleOpenProductRecommenders : undefined}
+      />
     );
   };
 
@@ -418,6 +448,7 @@ const ProductDetailsScreen: React.FC<ProductDetailsScreenProps> = ({ navigation,
                       </View>
                     )}
                     {renderProductTabContent()}
+                    {!isProgramProduct ? renderSpecialistPartnerSection(false) : null}
                     {!isProgramProduct && displayData.price != null ? (
                       <ProductDetailsPriceQuantityRow
                         formattedPrice={formatPrice(displayData.price * quantity)}
@@ -461,9 +492,9 @@ const ProductDetailsScreen: React.FC<ProductDetailsScreenProps> = ({ navigation,
                       />
                     </View>
                   ) : null}
+                  {!isProgramProduct ? renderSpecialistPartnerSection(false, true) : null}
                 </>
               )}
-              {!isProgramProduct ? renderSpecialistPartnerSection(false, true) : null}
               <RecommendedProductsSection
                 excludeProductId={product?.id}
                 providerName={partnerData.name}

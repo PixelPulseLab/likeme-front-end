@@ -1,18 +1,21 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { View, ScrollView, Alert } from 'react-native';
+import { View, ScrollView, Alert, Text, useWindowDimensions } from 'react-native';
 import type { StackScreenProps } from '@react-navigation/stack';
-import { Title, PrimaryButton, SecondaryButton, ButtonGroup } from '@/components/ui';
+import { Title, PrimaryButton, SecondaryButton, ButtonGroup, TextInput } from '@/components/ui';
 import { KeyboardAwareScreen, ScreenWithHeader } from '@/components/ui/layout';
+import { CachedImage } from '@/components/ui/media/CachedImage';
 import PersonalDataFieldsForm, {
   type PersonalDataFieldErrors,
 } from '@/components/sections/person/PersonalDataFieldsForm';
-import { personsService, userService } from '@/services';
+import { GradientSplash5 } from '@/assets/auth';
+import { advertiserAffiliateService, personsService, userService } from '@/services';
 import { useTranslation } from '@/hooks/i18n';
 import { useLoadPersonalData, useScrollToFocusedField } from '@/hooks';
 import type { PersonData } from '@/types/person';
 import type { RootStackParamList } from '@/types/navigation';
 import { getNextOnboardingScreen } from '@/utils';
 import { birthdateToISO, ageFromBirthdateISO } from '@/utils/formatters/personFormats';
+import { isOptionalBrazilianPhoneValid, phoneDigits } from '@/utils/formatters/inputFormatters';
 import { styles } from './styles';
 import { COLORS, SPACING } from '@/constants';
 import { useAnalyticsScreen } from '@/analytics';
@@ -25,12 +28,16 @@ type Props = StackScreenProps<RootStackParamList, 'Register'>;
 const RegisterScreen: React.FC<Props> = ({ navigation, route }) => {
   useAnalyticsScreen({ screenName: 'Register', screenClass: 'RegisterScreen' });
   const { t } = useTranslation();
+  const { width: windowWidth } = useWindowDimensions();
   const { loadPersonalData } = useLoadPersonalData();
   const [fullName, setFullName] = useState(route.params?.userName || '');
   const [birthdate, setBirthdate] = useState('');
   const [gender, setGender] = useState('');
   const [weight, setWeight] = useState('');
   const [height, setHeight] = useState('');
+  const [phone, setPhone] = useState('');
+  const [affiliateCode, setAffiliateCode] = useState('');
+  const [affiliateCodeError, setAffiliateCodeError] = useState<string | undefined>();
   const [isLoading, setIsLoading] = useState(false);
   const [isSkipLoading, setIsSkipLoading] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<PersonalDataFieldErrors>({});
@@ -38,6 +45,16 @@ const RegisterScreen: React.FC<Props> = ({ navigation, route }) => {
   const scrollViewRef = useRef<ScrollView>(null);
   const { scrollToFocusedField, handleContentLayout, handleContainerLayout, handleFieldLayout } =
     useScrollToFocusedField(scrollViewRef);
+
+  const adornmentStyle = useMemo(() => {
+    const adornmentSize = windowWidth * 0.45;
+    return {
+      width: adornmentSize,
+      height: adornmentSize,
+      right: -adornmentSize * 0.25,
+      top: -adornmentSize * 0.36,
+    };
+  }, [windowWidth]);
 
   useEffect(() => {
     let cancelled = false;
@@ -48,6 +65,7 @@ const RegisterScreen: React.FC<Props> = ({ navigation, route }) => {
       setGender(data.gender);
       setWeight(data.weight);
       setHeight(data.height);
+      setPhone(data.phone);
     });
     return () => {
       cancelled = true;
@@ -70,12 +88,22 @@ const RegisterScreen: React.FC<Props> = ({ navigation, route }) => {
   );
 
   const handleFormChange = useCallback(
-    (patch: Partial<{ fullName: string; birthdate: string; gender: string; weight: string; height: string }>) => {
+    (
+      patch: Partial<{
+        fullName: string;
+        birthdate: string;
+        gender: string;
+        weight: string;
+        height: string;
+        phone: string;
+      }>,
+    ) => {
       if (patch.fullName !== undefined) setFullName(patch.fullName);
       if (patch.birthdate !== undefined) setBirthdate(patch.birthdate);
       if (patch.gender !== undefined) setGender(patch.gender);
       if (patch.weight !== undefined) setWeight(patch.weight);
       if (patch.height !== undefined) setHeight(patch.height);
+      if (patch.phone !== undefined) setPhone(patch.phone);
     },
     [],
   );
@@ -84,10 +112,22 @@ const RegisterScreen: React.FC<Props> = ({ navigation, route }) => {
     setFieldErrors((current) => (current[field] ? { ...current, [field]: undefined } : current));
   }, []);
 
+  const navigateAfterRegister = useCallback(
+    (parsedFirstName: string) => {
+      const nextScreen = getNextOnboardingScreen('Register');
+      const params = {
+        firstName: parsedFirstName || fullName.trim() || route.params?.userName || 'Usuário',
+      };
+      navigation.navigate(nextScreen as never, params as never);
+    },
+    [fullName, navigation, route.params?.userName],
+  );
+
   const handleNext = useCallback(async () => {
     try {
       setIsLoading(true);
       setFieldErrors({});
+      setAffiliateCodeError(undefined);
 
       const errors: PersonalDataFieldErrors = {};
 
@@ -126,6 +166,10 @@ const RegisterScreen: React.FC<Props> = ({ navigation, route }) => {
       const heightError = validateNumericField(heightNormalized, 1, 499, true);
       if (heightError) errors.height = heightError;
 
+      if (!isOptionalBrazilianPhoneValid(phone)) {
+        errors.phone = t('auth.validationInvalidPhone');
+      }
+
       if (Object.keys(errors).length > 0) {
         setFieldErrors(errors);
         setIsLoading(false);
@@ -141,16 +185,25 @@ const RegisterScreen: React.FC<Props> = ({ navigation, route }) => {
         birthdate: birthdateISO!,
         weight: weight.trim().replace(/,/g, '.'),
         height: height.trim().replace(/,/g, '.'),
+        phone: phoneDigits(phone),
       };
 
       await personsService.createOrUpdatePerson(personData);
       await userService.syncStoredUserName(fullName.trim());
 
-      const nextScreen = getNextOnboardingScreen('Register');
-      const params = {
-        firstName: firstName || fullName.trim() || route.params?.userName || 'Usuário',
-      };
-      navigation.navigate(nextScreen as never, params as never);
+      const trimmedAffiliateCode = affiliateCode.trim();
+      if (trimmedAffiliateCode) {
+        try {
+          await advertiserAffiliateService.linkByAffiliateCode(trimmedAffiliateCode);
+        } catch (error: unknown) {
+          logger.error('[RegisterScreen] Código de afiliado inválido ou falha no vínculo', error);
+          setAffiliateCodeError(getReadableErrorMessage(error, t('auth.affiliateCodeInvalid')));
+          setIsLoading(false);
+          return;
+        }
+      }
+
+      navigateAfterRegister(firstName || fullName.trim());
     } catch (error: unknown) {
       const message = getReadableErrorMessage(error, t('auth.registerError'));
       logger.error('[RegisterScreen] Erro ao salvar dados da pessoa', error);
@@ -158,7 +211,18 @@ const RegisterScreen: React.FC<Props> = ({ navigation, route }) => {
     } finally {
       setIsLoading(false);
     }
-  }, [fullName, gender, birthdate, weight, height, navigation, route.params?.userName, t, validateNumericField]);
+  }, [
+    affiliateCode,
+    fullName,
+    gender,
+    birthdate,
+    weight,
+    height,
+    phone,
+    navigateAfterRegister,
+    t,
+    validateNumericField,
+  ]);
 
   const handleSkip = useCallback(async () => {
     try {
@@ -176,9 +240,7 @@ const RegisterScreen: React.FC<Props> = ({ navigation, route }) => {
         }
       }
       const firstName = trimmedName.split(/\s+/)[0] || fullName || route.params?.userName || 'Usuário';
-      const nextScreen = getNextOnboardingScreen('Register');
-      const params = { firstName };
-      navigation.navigate(nextScreen as never, params as never);
+      navigateAfterRegister(firstName);
     } catch (error: unknown) {
       const message = getReadableErrorMessage(error, t('auth.registerError'));
       logger.error('[RegisterScreen] Erro ao pular registro', error);
@@ -186,7 +248,7 @@ const RegisterScreen: React.FC<Props> = ({ navigation, route }) => {
     } finally {
       setIsSkipLoading(false);
     }
-  }, [fullName, navigation, route.params?.userName, t]);
+  }, [fullName, navigateAfterRegister, route.params?.userName, t]);
 
   return (
     <ScreenWithHeader
@@ -223,13 +285,38 @@ const RegisterScreen: React.FC<Props> = ({ navigation, route }) => {
           <View style={topSectionStyle}>
             <View style={styles.headerContent}>
               <Title title={t('auth.registerTitle')} />
+              <View style={styles.invitationSection}>
+                <CachedImage
+                  source={GradientSplash5}
+                  style={[styles.titleAdornment, adornmentStyle]}
+                  contentFit='contain'
+                />
+                <Text style={styles.invitationQuestion}>{t('auth.registerInvitationQuestion')}</Text>
+                <View style={styles.affiliateCodeField}>
+                  <TextInput
+                    label={t('auth.registerEnterCode')}
+                    value={affiliateCode}
+                    onChangeText={(text) => {
+                      setAffiliateCode(text);
+                      if (affiliateCodeError) setAffiliateCodeError(undefined);
+                    }}
+                    placeholder={t('auth.registerCodePlaceholder')}
+                    autoCapitalize='characters'
+                    autoCorrect={false}
+                    onFocus={() => {
+                      scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+                    }}
+                    errorText={affiliateCodeError}
+                  />
+                </View>
+              </View>
             </View>
           </View>
 
           <View style={styles.content} onLayout={handleContentLayout}>
             <PersonalDataFieldsForm
               variant='register'
-              values={{ fullName, birthdate, gender, weight, height }}
+              values={{ fullName, birthdate, gender, weight, height, phone }}
               fieldErrors={fieldErrors}
               onChange={handleFormChange}
               onClearFieldError={handleClearFieldError}

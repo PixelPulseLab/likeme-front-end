@@ -37,6 +37,7 @@ export { useActivities } from './activities/useActivities';
 // Marketplace hooks
 export { useProductDetails } from './marketplace/useProductDetails';
 export { useProductPartner } from './marketplace/useProductPartner';
+export { useAdvertiserRecommendation } from './recommendation/useAdvertiserRecommendation';
 export { useAdvertisers } from './marketplace/useAdvertisers';
 export { useAdvertiser } from './marketplace/useAdvertiser';
 export { useMarketplaceAds } from './marketplace/useMarketplaceAds';

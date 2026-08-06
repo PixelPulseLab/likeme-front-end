@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { communityService } from '@/services';
 import type { Community, CommunityCategory, CommunityFile } from '@/types/community';
 import { MEMBER_PROTOCOL_COMMUNITY_IMAGE_FALLBACK } from '@/constants/community/communityProtocol';
-import { memberProtocolCommunitiesWithMultiDocTestStub } from '@/constants/course/programMultiDocTest';
 import { communityProtocolCardBadges } from '@/utils/community/communityProtocolCardBadges';
 import { resolveCommunityHeroImageUri } from '@/utils/community/mappers';
 import { logger } from '@/utils/logger';
@@ -61,7 +60,7 @@ export function useMemberProtocolCommunities(appliedSearchQuery = '') {
         throw new Error(response.message || 'Erro ao listar protocolos');
       }
 
-      const nextCommunities = memberProtocolCommunitiesWithMultiDocTestStub(response.data.communities ?? []);
+      const nextCommunities = response.data.communities ?? [];
       const nextCategories = response.data.categories ?? [];
       const nextFiles = response.data.files ?? [];
 

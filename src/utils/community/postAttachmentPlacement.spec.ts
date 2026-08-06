@@ -26,7 +26,7 @@ describe('postAttachmentPlacement', () => {
         {
           id: 'f1',
           url: 'https://cdn/doc.pdf',
-          kind: 'pdf' as const,
+          type: 'pdf' as const,
           fileName: 'doc.pdf',
           extension: '.pdf',
         },
@@ -45,14 +45,14 @@ describe('postAttachmentPlacement', () => {
         {
           id: 'i1',
           url: 'https://cdn.example.com/a.jpg',
-          kind: 'image' as const,
+          type: 'image' as const,
           fileName: 'a.jpg',
           extension: '.jpg',
         },
         {
           id: 'i2',
           url: 'https://cdn.example.com/b.jpg',
-          kind: 'image' as const,
+          type: 'image' as const,
           fileName: 'b.jpg',
           extension: '.jpg',
         },
@@ -70,14 +70,14 @@ describe('postAttachmentPlacement', () => {
         {
           id: 'i1',
           url: 'https://cdn/img.jpg',
-          kind: 'image' as const,
+          type: 'image' as const,
           fileName: 'img.jpg',
           extension: '.jpg',
         },
         {
           id: 'f1',
           url: 'https://cdn/doc.pdf',
-          kind: 'pdf' as const,
+          type: 'pdf' as const,
           fileName: 'doc.pdf',
           extension: '.pdf',
         },

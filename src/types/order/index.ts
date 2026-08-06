@@ -103,6 +103,7 @@ export interface CreateOrderData {
   shippingAddress?: string;
   billingAddress: BillingAddress; // Backend sempre exige como objeto estruturado
   cardData?: CardData; // Obrigatório quando paymentMethod é 'credit_card'
+  phone?: string;
   notes?: string;
   paymentMethod?: string;
   /** Código do voucher; desconto calculado no servidor. */

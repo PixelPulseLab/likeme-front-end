@@ -30,19 +30,25 @@ const t = (key: string, opts?: Record<string, string>) => {
     'auth.genderNonBinary': 'Não binário',
     'auth.genderOther': 'Outro',
     'auth.genderPreferNotToSay': 'Prefiro não dizer',
-    'auth.registerInvitationQuestion': 'Convite?',
-    'auth.registerEnterCode': 'Código',
+    'auth.registerInvitationQuestion': 'Você veio a convite de um de nossos parceiros?',
+    'auth.registerEnterCode': 'Insira o código',
     'auth.registerCodePlaceholder': 'Código',
     'auth.registerInfoMessage': 'Info',
     'auth.weight': 'Peso',
     'auth.weightPlaceholder': 'Peso',
     'auth.height': 'Altura',
     'auth.heightPlaceholder': 'Altura',
+    'auth.phone': 'Telefone',
+    'auth.phonePlaceholder': '(00) 00000-0000',
+    'auth.validationInvalidPhone': 'Informe um telefone válido com DDD.',
     'auth.insurance': 'Convênio',
     'auth.insurancePlaceholder': 'Convênio',
     'common.close': 'Fechar',
     'common.error': 'Erro',
     'auth.registerError': 'Não foi possível salvar. Tente novamente.',
+    'auth.affiliateCode': 'Código de afiliado',
+    'auth.affiliateCodePlaceholder': 'Digite o código (opcional)',
+    'auth.affiliateCodeInvalid': 'Código de afiliado inválido',
   };
   return map[key] ?? key;
 };
@@ -65,7 +71,7 @@ jest.mock('@/analytics', () => ({
   },
 }));
 
-jest.mock('@/assets', () => ({
+jest.mock('@/assets/auth', () => ({
   GradientSplash5: 'GradientSplash5',
 }));
 
@@ -81,6 +87,9 @@ jest.mock('@/services', () => ({
   userService: {
     getProfile: jest.fn().mockResolvedValue({ success: false }),
     syncStoredUserName: jest.fn().mockResolvedValue(undefined),
+  },
+  advertiserAffiliateService: {
+    linkByAffiliateCode: jest.fn().mockResolvedValue({ success: true }),
   },
 }));
 
@@ -137,6 +146,7 @@ describe('RegisterScreen', () => {
     jest.clearAllMocks();
     getServices().personsService.createOrUpdatePerson.mockResolvedValue(undefined);
     getServices().personsService.getPerson.mockResolvedValue(null);
+    getServices().advertiserAffiliateService.linkByAffiliateCode.mockResolvedValue({ success: true });
   });
 
   it('renders correctly', () => {
@@ -146,6 +156,8 @@ describe('RegisterScreen', () => {
     const { getByText } = render(<RegisterScreen navigation={mockNavigation} route={mockRoute as any} />);
 
     expect(getByText('Vamos começar!')).toBeTruthy();
+    expect(getByText('Você veio a convite de um de nossos parceiros?')).toBeTruthy();
+    expect(getByText('Insira o código')).toBeTruthy();
     expect(getByText('Salvar')).toBeTruthy();
     expect(getByText('Configurar depois')).toBeTruthy();
   });
@@ -192,6 +204,53 @@ describe('RegisterScreen', () => {
         lastName: 'Silva',
       }),
     );
+  });
+
+  it('links affiliate code when informed on save', async () => {
+    const mockNavigation = { navigate: jest.fn(), goBack: jest.fn() };
+    const mockRoute = { params: {} };
+
+    const { getByText, getByTestId } = render(<RegisterScreen navigation={mockNavigation} route={mockRoute as any} />);
+
+    fireEvent.changeText(getByTestId('input-Nome completo'), 'Maria Silva');
+    fireEvent.changeText(getByTestId('input-DD/MM/AAAA'), '15/06/1985');
+    fireEvent.press(getByText('Selecione'));
+    fireEvent.press(getByText('Feminino'));
+    fireEvent.changeText(getByTestId('input-60'), '60');
+    fireEvent.changeText(getByTestId('input-1,60'), '1,65');
+    fireEvent.changeText(getByTestId('input-Código'), 'abc123xy');
+    fireEvent.press(getByText('Salvar'));
+
+    await waitFor(() => {
+      expect(getServices().advertiserAffiliateService.linkByAffiliateCode).toHaveBeenCalledWith('abc123xy');
+      expect(mockNavigation.navigate).toHaveBeenCalledWith('InterestCategories', {
+        firstName: 'Maria',
+      });
+    });
+  });
+
+  it('blocks navigation when affiliate code is invalid', async () => {
+    getServices().advertiserAffiliateService.linkByAffiliateCode.mockRejectedValue(
+      Object.assign(new Error('Código de afiliado inválido'), { status: 400 }),
+    );
+    const mockNavigation = { navigate: jest.fn(), goBack: jest.fn() };
+    const mockRoute = { params: {} };
+
+    const { getByText, getByTestId } = render(<RegisterScreen navigation={mockNavigation} route={mockRoute as any} />);
+
+    fireEvent.changeText(getByTestId('input-Nome completo'), 'Maria Silva');
+    fireEvent.changeText(getByTestId('input-DD/MM/AAAA'), '15/06/1985');
+    fireEvent.press(getByText('Selecione'));
+    fireEvent.press(getByText('Feminino'));
+    fireEvent.changeText(getByTestId('input-60'), '60');
+    fireEvent.changeText(getByTestId('input-1,60'), '1,65');
+    fireEvent.changeText(getByTestId('input-Código'), 'INVALID1');
+    fireEvent.press(getByText('Salvar'));
+
+    await waitFor(() => {
+      expect(getByText('Código de afiliado inválido')).toBeTruthy();
+      expect(mockNavigation.navigate).not.toHaveBeenCalled();
+    });
   });
 
   it('navigates to InterestCategories with fullName when Salvar is pressed and fullName is set', async () => {

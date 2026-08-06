@@ -1,3 +1,5 @@
+import type { Contact } from '@/types/contact';
+
 export interface PersonData {
   firstName: string;
   lastName: string;
@@ -9,6 +11,7 @@ export interface PersonData {
   weight?: string;
   height?: string;
   insurance?: string;
+  phone?: string;
 }
 
 export interface PersonResponse {
@@ -23,6 +26,7 @@ export interface PersonResponse {
   weight?: string;
   height?: string;
   insurance?: string;
+  contacts?: Array<Contact & { id?: string; deletedAt?: string | null }>;
   createdAt: string;
   updatedAt: string;
 }

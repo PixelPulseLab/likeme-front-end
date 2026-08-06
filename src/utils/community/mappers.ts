@@ -233,17 +233,17 @@ export const mapCommunityPostToPost = (
   const imageUrl = attachments.length > 0 ? fromAttachments.imageUrl : legacyMedia.imageUrl;
   const videoUrl = attachments.length > 0 ? fromAttachments.videoUrl ?? legacyMedia.videoUrl : legacyMedia.videoUrl;
 
-  if (videoUrl && !attachments.some((item) => item.kind === 'video')) {
+  if (videoUrl && !attachments.some((item) => item.type === 'video')) {
     attachments = [
       ...attachments,
       {
         id: `${postId}-resolved-video`,
         url: videoUrl,
-        kind: 'video',
+        type: 'video',
         fileName: 'Vídeo',
         extension: '',
         posterUrl:
-          fromAttachments.imageUrl ?? legacyMedia.imageUrl ?? attachments.find((item) => item.kind === 'image')?.url,
+          fromAttachments.imageUrl ?? legacyMedia.imageUrl ?? attachments.find((item) => item.type === 'image')?.url,
       },
     ];
   }

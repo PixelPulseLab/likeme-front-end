@@ -3,7 +3,7 @@ import { Pressable, Text, TouchableOpacity, View, type ImageStyle, type StylePro
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { CachedImage } from '@/components/ui/media/CachedImage';
 import { useTranslation } from '@/hooks/i18n';
-import type { Post, PostAttachment } from '@/types';
+import type { PostAttachment } from '@/types';
 import { logger } from '@/utils/logger';
 import { postImageGridLayout, postImageGridMoreCount } from '@/utils/community/postAttachmentImageLayout';
 import {
@@ -13,13 +13,14 @@ import {
   postHasBeforeTextAttachments,
   postHasEndOfPostAttachments,
   type PostAttachmentPlacement,
+  type PostMediaFields,
 } from '@/utils/community/postAttachmentPlacement';
 import PostAttachmentDownloadButton from './PostAttachmentDownloadButton';
 import PostImageFullscreenModal from './PostImageFullscreenModal';
 import { PostEmbeddedVideo } from '../PostCard/PostEmbeddedVideo';
 import { attachmentStyles as styles } from './styles';
 
-export type PostMediaSource = Pick<Post, 'id' | 'image' | 'videoUrl' | 'attachments'>;
+export type PostMediaSource = PostMediaFields;
 
 type Props = {
   post: PostMediaSource;

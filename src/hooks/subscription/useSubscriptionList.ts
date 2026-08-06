@@ -15,6 +15,7 @@ import { logger } from '@/utils/logger';
 import {
   subscriptionIsCancelingPresentation,
   subscriptionIsCanceledPresentation,
+  subscriptionIsDesaturatedPresentation,
 } from '@/utils/subscription/subscriptionManageDisplay';
 
 const DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=400';
@@ -145,7 +146,7 @@ export function useSubscriptionList(appliedSearchQuery = '') {
         canceledAt: sub.canceledAt ?? null,
         cancelRequestedAt: sub.cancelRequestedAt ?? null,
         accessValidUntil: sub.accessValidUntil ?? null,
-        desaturated: isCanceled,
+        desaturated: subscriptionIsDesaturatedPresentation(sub),
       };
     });
   }, [subscriptions, productMap, categories]);

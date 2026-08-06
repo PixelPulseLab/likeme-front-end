@@ -4,3 +4,4 @@ export { default as AffiliateProductScreen } from './AffiliateProductScreen';
 export { default as CartScreen } from './CartScreen';
 export { default as CheckoutScreen } from './CheckoutScreen';
 export { default as ProviderProfileScreen } from './ProviderProfileScreen';
+export { default as ProductRecommendersScreen } from './ProductRecommendersScreen';

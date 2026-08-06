@@ -8,6 +8,7 @@ const loadedFormData = {
   gender: 'male',
   weight: '78',
   height: '1,73',
+  phone: '',
 };
 
 const t = (key: string, opts?: Record<string, string>) => {
@@ -25,6 +26,9 @@ const t = (key: string, opts?: Record<string, string>) => {
     'auth.genderMale': 'Masculino',
     'auth.weight': 'Peso',
     'auth.height': 'Altura',
+    'auth.phone': 'Telefone',
+    'auth.phonePlaceholder': '(00) 00000-0000',
+    'auth.validationInvalidPhone': 'Informe um telefone válido com DDD.',
     'auth.requiredField': 'Campo obrigatório',
     'auth.fillFullName': 'Por favor, preencha o nome completo.',
     'auth.validationFullNameRequiresSurname': 'Informe nome e sobrenome.',

@@ -81,7 +81,7 @@ function attachmentFromRow(row: FeedFileRow, hintsVideo: boolean, rows: FeedFile
   return {
     id: id ?? url,
     url,
-    kind,
+    type: kind,
     fileName,
     extension: extension ? `.${extension.replace(/^\./, '')}` : '',
     mimeType,
@@ -182,11 +182,11 @@ export function resolveCommunityPostAttachmentsWithChildren(
     }
   }
 
-  const videos = attachments.filter((item) => item.kind === 'video');
+  const videos = attachments.filter((item) => item.type === 'video');
   if (videos.length > 0) {
     const thumbnailUrls = new Set(videos.map((video) => video.posterUrl).filter((url): url is string => Boolean(url)));
     return attachments.filter((item) => {
-      if (item.kind !== 'image') return true;
+      if (item.type !== 'image') return true;
       if (thumbnailUrls.has(item.url)) return false;
       if (communityFileIsThumbnail({ fileUrl: item.url } as Parameters<typeof communityFileIsThumbnail>[0])) {
         return false;
@@ -202,9 +202,9 @@ export function firstImageAndVideoFromAttachments(attachments: PostAttachment[])
   imageUrl?: string;
   videoUrl?: string;
 } {
-  const video = attachments.find((item) => item.kind === 'video');
+  const video = attachments.find((item) => item.type === 'video');
   const image =
-    attachments.find((item) => item.kind === 'image') ?? (video?.posterUrl ? { url: video.posterUrl } : undefined);
+    attachments.find((item) => item.type === 'image') ?? (video?.posterUrl ? { url: video.posterUrl } : undefined);
 
   return {
     imageUrl: image?.url ?? video?.posterUrl,

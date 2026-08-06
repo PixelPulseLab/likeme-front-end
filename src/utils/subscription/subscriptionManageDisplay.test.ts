@@ -3,6 +3,7 @@ import {
   subscriptionAccessUntilIso,
   subscriptionIsCancelingPresentation,
   subscriptionIsCanceledPresentation,
+  subscriptionIsDesaturatedPresentation,
   subscriptionManageStatusLabel,
 } from '@/utils/subscription/subscriptionManageDisplay';
 
@@ -24,6 +25,7 @@ describe('subscriptionManageDisplay', () => {
 
     expect(subscriptionIsCancelingPresentation(row)).toBe(true);
     expect(subscriptionIsCanceledPresentation(row)).toBe(false);
+    expect(subscriptionIsDesaturatedPresentation(row)).toBe(true);
     expect(subscriptionManageStatusLabel('ACTIVE', true)).toEqual({
       label: 'Em cancelamento',
       badgeColor: 'orange',
@@ -35,6 +37,7 @@ describe('subscriptionManageDisplay', () => {
 
     expect(subscriptionIsCancelingPresentation(row)).toBe(false);
     expect(subscriptionIsCanceledPresentation(row)).toBe(true);
+    expect(subscriptionIsDesaturatedPresentation(row)).toBe(true);
     expect(subscriptionManageStatusLabel('CANCELED', false)).toEqual({
       label: 'Cancelado',
       badgeColor: 'orange',

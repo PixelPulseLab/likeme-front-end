@@ -142,6 +142,12 @@ describe('floatingMenuRoutePolicy', () => {
       expect(getSelectedIdFromRoute('ProviderProfile')).toBe('marketplace');
     });
 
+    it('ProductRecommenders permite overlay com aba marketplace selecionada', () => {
+      const state = makeStack(0, ['ProductRecommenders']);
+      expect(shouldShowFloatingMenuByRoute(state)).toBe(true);
+      expect(getSelectedIdFromRoute('ProductRecommenders')).toBe('marketplace');
+    });
+
     it('Checkout permite overlay na confirmação do pedido', () => {
       const state = makeStack(0, ['Checkout']);
       expect(shouldShowFloatingMenuByRoute(state)).toBe(true);

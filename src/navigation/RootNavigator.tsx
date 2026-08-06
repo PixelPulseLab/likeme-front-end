@@ -41,6 +41,7 @@ import {
   getCartScreen,
   getCheckoutScreen,
   getProviderProfileScreen,
+  getProductRecommendersScreen,
   getProfileScreen,
   getUserProfileHomeScreen,
   getInterestCategoriesEditScreen,
@@ -53,6 +54,7 @@ import {
   getCancelProtocolSubscriptionScreen,
   getCancelProtocolSubscriptionConfirmScreen,
   getPrivacyPoliciesScreen,
+  getTermsOfUseScreen,
   getHomeScreen,
   getSummaryScreen,
   getAvatarProgressScreen,
@@ -217,6 +219,11 @@ const RootNavigator: React.FC = () => {
                       getComponent={getProviderProfileScreen}
                       options={{ title: 'Provider Profile' }}
                     />
+                    <Stack.Screen
+                      name='ProductRecommenders'
+                      getComponent={getProductRecommendersScreen}
+                      options={{ title: 'Recomendados por' }}
+                    />
                     <Stack.Screen name='Profile' getComponent={getProfileScreen} options={{ title: 'Perfil' }} />
                     <Stack.Screen
                       name='UserProfileHome'
@@ -290,6 +297,11 @@ const RootNavigator: React.FC = () => {
                       name='PrivacyPolicies'
                       getComponent={getPrivacyPoliciesScreen}
                       options={{ title: 'Política de Privacidade' }}
+                    />
+                    <Stack.Screen
+                      name='TermsOfUse'
+                      getComponent={getTermsOfUseScreen}
+                      options={{ title: 'Termos de Uso' }}
                     />
                     <Stack.Screen name='Home' getComponent={getHomeScreen} options={{ title: 'Home' }} />
                     <Stack.Screen name='Summary' getComponent={getSummaryScreen} options={{ title: 'Resumo' }} />

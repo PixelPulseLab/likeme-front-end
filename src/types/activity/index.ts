@@ -46,18 +46,18 @@ export type ListActivitiesApiResponse = ApiResponse<{
 
 export type GetActivityApiResponse = ApiResponse<UserActivity>;
 
-export const SUBSCRIPTION_LIFECYCLE_HISTORY_KIND = {
+export const SUBSCRIPTION_HISTORY_STATUS = {
+  CREATED: 'created',
   CANCEL_REQUESTED: 'cancel_requested',
   CANCEL_REACTIVATED: 'cancel_reactivated',
   CANCEL_FINALIZED: 'cancel_finalized',
 } as const;
 
-export type SubscriptionLifecycleHistoryKind =
-  (typeof SUBSCRIPTION_LIFECYCLE_HISTORY_KIND)[keyof typeof SUBSCRIPTION_LIFECYCLE_HISTORY_KIND];
+export type SubscriptionHistoryStatus = (typeof SUBSCRIPTION_HISTORY_STATUS)[keyof typeof SUBSCRIPTION_HISTORY_STATUS];
 
-export type SubscriptionLifecycleHistoryEvent = {
+export type SubscriptionHistory = {
   id: string;
-  kind: SubscriptionLifecycleHistoryKind;
+  subscriptionStatus: SubscriptionHistoryStatus;
   at: string;
   subscriptionId: string;
   productId: string;
@@ -68,7 +68,7 @@ export type SubscriptionLifecycleHistoryEvent = {
 export type ActivityHistoryPayload = {
   activities: UserActivity[];
   orders: Order[];
-  subscriptionEvents: SubscriptionLifecycleHistoryEvent[];
+  subscriptionEvents: SubscriptionHistory[];
 };
 
 export type ActivityHistoryApiResponse = ApiResponse<ActivityHistoryPayload>;
