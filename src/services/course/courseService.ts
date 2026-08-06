@@ -1,27 +1,6 @@
 import apiClient from '@/services/infrastructure/apiClient';
-import type { CourseStep, ProgramCourse } from '@/types/course/course';
+import type { ProgramCourse } from '@/types/course/course';
 import type { ApiResponse } from '@/types/infrastructure';
-
-function courseStepFromApi(step: CourseStep): CourseStep {
-  return {
-    stepNumber: step.stepNumber,
-    title: step.title,
-    postId: step.postId,
-    body: step.body,
-    attachments: step.attachments ?? [],
-    video: step.video?.id?.trim() ? step.video : null,
-    createdAt: step.createdAt,
-    updatedAt: step.updatedAt,
-  };
-}
-
-function programCourseFromApi(course: ProgramCourse): ProgramCourse {
-  return {
-    type: course.type,
-    communityId: course.communityId,
-    steps: (course.steps ?? []).map(courseStepFromApi),
-  };
-}
 
 class CourseService {
   async getProgramCourseByCommunityId(communityId: string): Promise<ApiResponse<ProgramCourse>> {
@@ -39,7 +18,15 @@ class CourseService {
 
     return {
       ...response,
-      data: programCourseFromApi(response.data),
+      data: {
+        type: response.data.type,
+        communityId: response.data.communityId,
+        steps: (response.data.steps ?? []).map((step) => ({
+          ...step,
+          attachments: step.attachments ?? [],
+          video: step.video?.id?.trim() ? step.video : null,
+        })),
+      },
     };
   }
 }

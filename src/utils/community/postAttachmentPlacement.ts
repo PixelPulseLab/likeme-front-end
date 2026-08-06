@@ -1,8 +1,16 @@
-import type { Post, PostAttachment } from '@/types';
+import type { PostAttachment } from '@/types';
 
 const FILE_KINDS = new Set<PostAttachment['type']>(['pdf', 'spreadsheet', 'document', 'generic']);
 
 export type PostAttachmentPlacement = 'beforeText' | 'afterText' | 'endOfPost' | 'all';
+
+/** Mídia de post/módulo: attachments como fonte; image/videoUrl só para feed legado. */
+export type PostMediaFields = {
+  id: string;
+  attachments?: PostAttachment[] | null;
+  image?: string | null;
+  videoUrl?: string | null;
+};
 
 const VIDEO_URL_PATTERN = /\.(mp4|webm|mov|m3u8)(\?|$)/i;
 
@@ -27,7 +35,7 @@ function normalizeAttachmentKind(item: PostAttachment): PostAttachment {
   return { ...item, type: 'video' };
 }
 
-function legacyAttachmentsFromPost(post: Pick<Post, 'id' | 'image' | 'videoUrl'>): PostAttachment[] {
+function legacyAttachmentsFromPost(post: PostMediaFields): PostAttachment[] {
   const out: PostAttachment[] = [];
   const imageUri = post.image?.trim();
   const videoUri = post.videoUrl?.trim();
@@ -56,7 +64,7 @@ function legacyAttachmentsFromPost(post: Pick<Post, 'id' | 'image' | 'videoUrl'>
   return out;
 }
 
-function attachmentsWithLegacyVideo(post: Pick<Post, 'id' | 'image' | 'videoUrl' | 'attachments'>): PostAttachment[] {
+function attachmentsWithLegacyVideo(post: PostMediaFields): PostAttachment[] {
   const base = post.attachments?.length ? [...post.attachments] : legacyAttachmentsFromPost(post);
   const normalized = base.map(normalizeAttachmentKind);
 
@@ -76,7 +84,7 @@ function attachmentsWithLegacyVideo(post: Pick<Post, 'id' | 'image' | 'videoUrl'
   return normalized;
 }
 
-export function postAttachmentsForPlacement(post: Pick<Post, 'id' | 'image' | 'videoUrl' | 'attachments'>) {
+export function postAttachmentsForPlacement(post: PostMediaFields) {
   const attachments = attachmentsWithLegacyVideo(post);
   const images = attachments.filter((item) => item.type === 'image');
   const videos = attachments.filter((item) => item.type === 'video');
@@ -91,22 +99,19 @@ export function postAttachmentsForPlacement(post: Pick<Post, 'id' | 'image' | 'v
   };
 }
 
-export function postHasBeforeTextAttachments(post: Pick<Post, 'id' | 'image' | 'videoUrl' | 'attachments'>): boolean {
+export function postHasBeforeTextAttachments(post: PostMediaFields): boolean {
   return postAttachmentsForPlacement(post).images.length > 0;
 }
 
-export function postHasAfterTextAttachments(post: Pick<Post, 'id' | 'image' | 'videoUrl' | 'attachments'>): boolean {
+export function postHasAfterTextAttachments(post: PostMediaFields): boolean {
   return postAttachmentsForPlacement(post).hasVideo;
 }
 
-export function postHasEndOfPostAttachments(post: Pick<Post, 'id' | 'image' | 'videoUrl' | 'attachments'>): boolean {
+export function postHasEndOfPostAttachments(post: PostMediaFields): boolean {
   return postAttachmentsForPlacement(post).files.length > 0;
 }
 
-export function placementHasAttachments(
-  placement: PostAttachmentPlacement,
-  post: Pick<Post, 'id' | 'image' | 'videoUrl' | 'attachments'>,
-): boolean {
+export function placementHasAttachments(placement: PostAttachmentPlacement, post: PostMediaFields): boolean {
   if (placement === 'all') {
     return postHasBeforeTextAttachments(post) || postHasAfterTextAttachments(post) || postHasEndOfPostAttachments(post);
   }
