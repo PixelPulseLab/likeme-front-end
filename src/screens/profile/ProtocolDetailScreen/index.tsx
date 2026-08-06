@@ -23,6 +23,7 @@ import productService from '@/services/product/productService';
 import { subscriptionService } from '@/services/payment/subscriptionService';
 import { COLORS } from '@/constants';
 import { isProtocolStepAutoCompleted } from '@/utils/course/protocolStepAutoCompleted';
+import { firstImageAndVideoFromAttachments } from '@/utils/community/resolvePostAttachments';
 import { protocolDetailFromProduct } from '@/utils/profile/protocolDetailFromProduct';
 import { goBackOrShareHome, navigateToShareHome } from '@/utils/navigation/shareHomeNavigation';
 import { navigateToShareDiscover } from '@/utils/navigation/shareDiscoverNavigation';
@@ -157,16 +158,21 @@ const ProtocolDetailScreen: React.FC<Props> = ({ navigation, route }) => {
     }
 
     const now = new Date(protocolAccessedAt);
-    return course.steps.map((step) => ({
-      id: step.postId,
-      title: step.title,
-      completed: isProtocolStepAutoCompleted(step.updatedAt, now),
-      body: step.body,
-      image: step.image ?? undefined,
-      videoUrl: step.videoUrl ?? undefined,
-      attachments: step.attachments,
-      video: step.video?.id?.trim() ? step.video : null,
-    }));
+    return course.steps.map((step) => {
+      const attachments = step.attachments ?? [];
+      const media = firstImageAndVideoFromAttachments(attachments);
+
+      return {
+        id: step.postId,
+        title: step.title,
+        completed: isProtocolStepAutoCompleted(step.updatedAt, now),
+        body: step.body,
+        image: media.imageUrl,
+        videoUrl: media.videoUrl,
+        attachments,
+        video: step.video?.id?.trim() ? step.video : null,
+      };
+    });
   }, [course, protocolAccessedAt]);
 
   const aboutText = protocol?.description?.trim() || protocol?.shortDescription?.trim() || null;
