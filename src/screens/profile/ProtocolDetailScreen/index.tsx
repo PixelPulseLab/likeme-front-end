@@ -22,7 +22,7 @@ import type { ModuleItem } from '@/components/sections/program/ModuleAccordion';
 import productService from '@/services/product/productService';
 import { subscriptionService } from '@/services/payment/subscriptionService';
 import { COLORS } from '@/constants';
-import { moduleItemsFromProgramCourse } from '@/utils/course/programCourseModules';
+import { isProtocolStepAutoCompleted } from '@/utils/course/protocolStepAutoCompleted';
 import { protocolDetailFromProduct } from '@/utils/profile/protocolDetailFromProduct';
 import { goBackOrShareHome, navigateToShareHome } from '@/utils/navigation/shareHomeNavigation';
 import { navigateToShareDiscover } from '@/utils/navigation/shareDiscoverNavigation';
@@ -152,11 +152,21 @@ const ProtocolDetailScreen: React.FC<Props> = ({ navigation, route }) => {
   const [protocolAccessedAt, setProtocolAccessedAt] = useState(() => Date.now());
 
   const courseModules: ModuleItem[] = useMemo(() => {
-    if (course?.steps?.length) {
-      return moduleItemsFromProgramCourse(course, { now: new Date(protocolAccessedAt) });
+    if (!course?.steps?.length) {
+      return [];
     }
 
-    return [];
+    const now = new Date(protocolAccessedAt);
+    return course.steps.map((step) => ({
+      id: step.postId,
+      title: step.title,
+      completed: isProtocolStepAutoCompleted(step.updatedAt, now),
+      body: step.body,
+      image: step.image ?? undefined,
+      videoUrl: step.videoUrl ?? undefined,
+      attachments: step.attachments,
+      video: step.video?.id?.trim() ? step.video : null,
+    }));
   }, [course, protocolAccessedAt]);
 
   const aboutText = protocol?.description?.trim() || protocol?.shortDescription?.trim() || null;

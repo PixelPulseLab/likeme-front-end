@@ -3,7 +3,7 @@ import { Linking, Platform, Share } from 'react-native';
 import type { PostAttachment } from '@/types';
 import { logger } from '@/utils/logger';
 
-type AttachmentContext = Pick<PostAttachment, 'id' | 'url' | 'fileName' | 'kind'>;
+type AttachmentContext = Pick<PostAttachment, 'id' | 'url' | 'fileName' | 'type'>;
 
 function safeAttachmentFileName(attachment: AttachmentContext): string {
   const raw = attachment.fileName?.trim() || `arquivo-${attachment.id}`;
@@ -12,7 +12,7 @@ function safeAttachmentFileName(attachment: AttachmentContext): string {
 
 export async function openCommunityAttachmentUrl(
   url: string,
-  context: { attachmentId: string; kind: string },
+  context: { attachmentId: string; type: string },
 ): Promise<void> {
   try {
     const canOpen = await Linking.canOpenURL(url);
@@ -39,14 +39,14 @@ async function shareDownloadedFile(localUri: string, fileName: string): Promise<
 export async function downloadCommunityAttachment(attachment: AttachmentContext): Promise<void> {
   const url = attachment.url?.trim();
   if (!url) {
-    logger.warn('Download de anexo ignorado: URL vazia', { attachmentId: attachment.id, kind: attachment.kind });
+    logger.warn('Download de anexo ignorado: URL vazia', { attachmentId: attachment.id, type: attachment.type });
     return;
   }
 
   const fileName = safeAttachmentFileName(attachment);
   const cacheDir = FileSystem.cacheDirectory;
   if (!cacheDir) {
-    await openCommunityAttachmentUrl(url, { attachmentId: attachment.id, kind: attachment.kind });
+    await openCommunityAttachmentUrl(url, { attachmentId: attachment.id, type: attachment.type });
     return;
   }
 
@@ -58,11 +58,11 @@ export async function downloadCommunityAttachment(attachment: AttachmentContext)
   } catch (error) {
     logger.warn('Falha ao baixar anexo do post; abrindo URL', {
       attachmentId: attachment.id,
-      kind: attachment.kind,
+      type: attachment.type,
       url,
       cause: error,
     });
-    await openCommunityAttachmentUrl(url, { attachmentId: attachment.id, kind: attachment.kind });
+    await openCommunityAttachmentUrl(url, { attachmentId: attachment.id, type: attachment.type });
   }
 }
 

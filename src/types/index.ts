@@ -1,3 +1,5 @@
+import type { Attachment, AttachmentType } from '@/types/attachment';
+
 export * from './navigation';
 export * from './community';
 export * from './auth';
@@ -13,6 +15,9 @@ export * from './cart';
 export * from './category';
 export * from './contact';
 export * from './solution';
+export type { Attachment, AttachmentType };
+export type PostAttachment = Attachment;
+export type PostAttachmentKind = AttachmentType;
 
 export interface User {
   id: string;
@@ -90,18 +95,6 @@ export interface Poll {
   isFinished: boolean;
 }
 
-export type PostAttachmentKind = 'image' | 'video' | 'pdf' | 'spreadsheet' | 'document' | 'generic';
-
-export interface PostAttachment {
-  id: string;
-  url: string;
-  kind: PostAttachmentKind;
-  fileName: string;
-  extension: string;
-  mimeType?: string;
-  posterUrl?: string;
-}
-
 export interface Post {
   id: string;
   userId?: string;
@@ -109,7 +102,7 @@ export interface Post {
   image?: string;
   /** URL de reprodução quando o post é vídeo (feed Amity / arquivo com mime vídeo). */
   videoUrl?: string;
-  attachments?: PostAttachment[];
+  attachments?: Attachment[];
   likes?: number;
   isLiked?: boolean;
   /** Nomes das reações do usuário atual neste post (cópia do backend, sem filtrar tipo). */

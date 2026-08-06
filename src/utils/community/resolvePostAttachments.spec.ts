@@ -20,7 +20,7 @@ describe('resolveCommunityPostAttachmentsWithChildren', () => {
     const attachments = resolveCommunityPostAttachmentsWithChildren(communityPost, files);
 
     expect(attachments).toHaveLength(1);
-    expect(attachments[0]?.kind).toBe('pdf');
+    expect(attachments[0]?.type).toBe('pdf');
     expect(attachments[0]?.fileName).toBe('material.pdf');
   });
 
@@ -63,7 +63,7 @@ describe('resolveCommunityPostAttachmentsWithChildren', () => {
 
     const attachments = resolveCommunityPostAttachmentsWithChildren(parent, files);
 
-    expect(attachments.map((item) => item.kind)).toEqual(['image', 'spreadsheet']);
+    expect(attachments.map((item) => item.type)).toEqual(['image', 'spreadsheet']);
   });
 
   it('mantém vídeo quando há várias imagens em posts filhos', () => {
@@ -119,8 +119,8 @@ describe('resolveCommunityPostAttachmentsWithChildren', () => {
 
     const attachments = resolveCommunityPostAttachmentsWithChildren(parent, files);
 
-    expect(attachments.filter((item) => item.kind === 'image')).toHaveLength(2);
-    expect(attachments.find((item) => item.kind === 'video')?.url).toBe('https://cdn.example.com/clip.mp4');
+    expect(attachments.filter((item) => item.type === 'image')).toHaveLength(2);
+    expect(attachments.find((item) => item.type === 'video')?.url).toBe('https://cdn.example.com/clip.mp4');
   });
 
   it('mantém vídeo quando o pai tem vários fileIds', () => {
@@ -150,8 +150,8 @@ describe('resolveCommunityPostAttachmentsWithChildren', () => {
 
     const attachments = resolveCommunityPostAttachmentsWithChildren(communityPost, files);
 
-    expect(attachments.filter((item) => item.kind === 'image')).toHaveLength(2);
-    expect(attachments.some((item) => item.kind === 'video')).toBe(true);
+    expect(attachments.filter((item) => item.type === 'image')).toHaveLength(2);
+    expect(attachments.some((item) => item.type === 'video')).toBe(true);
   });
 
   it('não duplica thumbnail de vídeo como imagem separada', () => {
@@ -178,7 +178,7 @@ describe('resolveCommunityPostAttachmentsWithChildren', () => {
     const attachments = resolveCommunityPostAttachmentsWithChildren(communityPost, files);
 
     expect(attachments).toHaveLength(1);
-    expect(attachments[0]?.kind).toBe('video');
+    expect(attachments[0]?.type).toBe('video');
     expect(attachments[0]?.posterUrl).toBe('https://cdn.example.com/clip_thumb.jpg');
   });
 });

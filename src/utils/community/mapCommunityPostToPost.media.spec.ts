@@ -94,7 +94,7 @@ describe('mapCommunityPostToPost (mídia)', () => {
     expect(post).not.toBeNull();
     expect(post!.videoUrl).toBe('https://cdn.example.com/clip.mp4');
     expect(post!.image).toBe('https://cdn.example.com/clip_thumb.jpg');
-    expect(post!.attachments?.some((item) => item.kind === 'video')).toBe(true);
+    expect(post!.attachments?.some((item) => item.type === 'video')).toBe(true);
   });
 
   it('preenche videoUrl quando há várias imagens e um vídeo nos anexos', () => {
@@ -145,7 +145,7 @@ describe('mapCommunityPostToPost (mídia)', () => {
 
     const post = mapCommunityPostToPost(parent, files);
 
-    expect(post?.attachments?.filter((item) => item.kind === 'image')).toHaveLength(2);
+    expect(post?.attachments?.filter((item) => item.type === 'image')).toHaveLength(2);
     expect(post?.videoUrl).toBe('https://cdn.example.com/clip.mp4');
   });
 
@@ -166,7 +166,7 @@ describe('mapCommunityPostToPost (mídia)', () => {
 
     const post = mapCommunityPostToPost(communityPost, files);
 
-    expect(post?.attachments?.[0]?.kind).toBe('pdf');
+    expect(post?.attachments?.[0]?.type).toBe('pdf');
     expect(post?.image).toBeUndefined();
   });
 });
