@@ -15,6 +15,8 @@ type Params = {
   enabled?: boolean;
 };
 
+const RECOMMENDATIONS_PAGE_SIZE = 100;
+
 async function loadAdvertiserProfilesById(advertiserIds: string[]): Promise<Map<string, Advertiser>> {
   const uniqueIds = [...new Set(advertiserIds.map((id) => id.trim()).filter(Boolean))];
   const entries = await Promise.all(
@@ -37,6 +39,35 @@ async function loadAdvertiserProfilesById(advertiserIds: string[]): Promise<Map<
   return new Map(entries.filter((entry): entry is readonly [string, Advertiser] => entry != null));
 }
 
+async function listAllActiveRecommendations(params: {
+  targetType: AdvertiserRecommendationTargetType;
+  targetId: string;
+}): Promise<AdvertiserRecommendation[]> {
+  const all: AdvertiserRecommendation[] = [];
+  let page = 1;
+  let totalPages = 1;
+
+  do {
+    const response = await advertiserRecommendationService.list({
+      targetType: params.targetType,
+      targetId: params.targetId,
+      activeOnly: true,
+      page,
+      limit: RECOMMENDATIONS_PAGE_SIZE,
+    });
+
+    if (!response.success) {
+      break;
+    }
+
+    all.push(...(response.data?.recommendations ?? []));
+    totalPages = Math.max(1, response.data?.pagination?.totalPages ?? 1);
+    page += 1;
+  } while (page <= totalPages);
+
+  return all;
+}
+
 export function useAdvertiserRecommendation({ targetId, targetType, enabled = true }: Params) {
   const [recommendations, setRecommendations] = useState<AdvertiserRecommendation[]>([]);
   const [profilesByAdvertiserId, setProfilesByAdvertiserId] = useState<Map<string, Advertiser>>(() => new Map());
@@ -57,16 +88,14 @@ export function useAdvertiserRecommendation({ targetId, targetType, enabled = tr
 
     void (async () => {
       try {
-        const response = await advertiserRecommendationService.list({
+        const rows = await listAllActiveRecommendations({
           targetType,
           targetId: resolvedTargetId,
-          activeOnly: true,
         });
         if (cancelled) {
           return;
         }
 
-        const rows = response.success ? response.data?.recommendations ?? [] : [];
         setRecommendations(rows);
 
         const advertiserIds = rows.map((row) => row.advertiserId?.trim()).filter((id): id is string => Boolean(id));

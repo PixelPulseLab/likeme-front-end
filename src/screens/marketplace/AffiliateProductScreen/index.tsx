@@ -21,7 +21,7 @@ import { getProductModeTranslationKey } from '@/utils';
 import { logger } from '@/utils/logger';
 import { catalogTypeTranslatedBadgeLabels } from '@/types/product';
 import { SHARE_CONTENT_TYPES } from '@/constants/share';
-import { navigateToProductRecommenders } from '@/utils/navigation/marketplaceNavigation';
+import { navigateToProductRecommenders, navigateToProviderProfile } from '@/utils/navigation/marketplaceNavigation';
 import { goBackOrShareHome, navigateToShareHome } from '@/utils/navigation/shareHomeNavigation';
 import { navigateToShareDiscover } from '@/utils/navigation/shareDiscoverNavigation';
 import { shareContent } from '@/utils/share/shareContent';
@@ -214,10 +214,20 @@ const AffiliateProductScreen: React.FC<AffiliateProductScreenProps> = ({ navigat
     });
   };
 
+  const handleSeeProviderProfile = () => {
+    const providerId = recommenders[0]?.advertiserId?.trim() || '';
+    if (!providerId) {
+      return;
+    }
+    navigateToProviderProfile(navigation, { providerId });
+  };
+
   const renderSpecialistPartnerSection = () => {
     if (recommendationsLoading || recommenders.length === 0) {
       return null;
     }
+
+    const canOpenSingleProfile = recommenders.length === 1;
 
     return (
       <PartnerSection
@@ -225,6 +235,8 @@ const AffiliateProductScreen: React.FC<AffiliateProductScreenProps> = ({ navigat
         recommendedByLabel={t('marketplace.recommendedBy')}
         recommenders={recommenders}
         recommendationsCountLabel={t('marketplace.recommendationsCount', { count: recommenders.length })}
+        profileButtonLabel={canOpenSingleProfile ? t('marketplace.seePartnerProfile') : undefined}
+        onPressProfile={canOpenSingleProfile ? handleSeeProviderProfile : undefined}
         onPressRecommenders={recommenders.length > 1 ? handleOpenProductRecommenders : undefined}
       />
     );
