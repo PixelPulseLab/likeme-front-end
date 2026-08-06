@@ -54,9 +54,10 @@ Depois edite só `app.version.json` e rode `npm run version:sync` (o CI roda iss
 
 ## Fluxo do workflow
 
-1. **Test & Lint** — `npm run lint`, `npm test`
-2. **Aprovar envio para lojas** — gate manual (`store-submit`)
-3. **Build Android** — Gradle `bundleRelease` + keystore dos secrets
-4. **Build iOS** — Xcode 26, archive + export IPA
-5. **Submit Android** — faixa `internal` na Play Store
-6. **iOS App Store Pipeline** — validate + upload via ASC API
+1. **Cancel previous waiting runs** — `force_cancel` de runs anteriores (inclui Waiting por aprovação do `store-submit`; o `cancel-in-progress` nativo não cobre esse estado)
+2. **Test & Lint** — `npm run lint`, `npm test`
+3. **Aprovar envio para lojas** — gate manual (`store-submit`)
+4. **Build Android** — Gradle `bundleRelease` + keystore dos secrets
+5. **Build iOS** — Xcode 26, archive + export IPA
+6. **Submit Android** — faixa `internal` na Play Store
+7. **iOS App Store Pipeline** — validate + upload via ASC API

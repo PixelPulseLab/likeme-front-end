@@ -31,8 +31,22 @@ env:
   SKIP_IOS_POD_INSTALL: 'true'
 
 jobs:
+  cancel-previous:
+    name: Cancel previous waiting runs
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    permissions:
+      actions: write
+    steps:
+      # cancel-in-progress nativo não cancela run em Waiting (aprovação store-submit).
+      - uses: styfle/cancel-workflow-action@0.13.1
+        with:
+          access_token: ${{ github.token }}
+          force_cancel: true
+
   test:
     name: Test & Lint
+    needs: cancel-previous
     runs-on: ubuntu-latest
     if: ${{ github.event_name == 'push' || github.event.inputs.skip_tests != 'true' }}
     steps:
