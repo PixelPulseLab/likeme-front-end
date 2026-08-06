@@ -238,3 +238,22 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 ### Corrigido
 - Menu flutuante com labels sempre visíveis e fundo bege
 - Campo Acesso disponível até oculto quando a data não está disponível
+
+## [1.12.0] - 2026-08-06
+
+### Adicionado
+- Vídeo das aulas do protocolo no detalhe do programa
+- Lista completa de recomendadores na página do produto
+- Código de afiliado no cadastro
+- Termos de Uso no app
+- Histórico de assinatura nas atividades
+
+### Alterado
+- Telefone opcional nos dados pessoais do cadastro
+
+### Corrigido
+- Menu sem piscar no carregamento inicial do app
+- Visual de programas em cancelamento e cancelados
+- Layout do convite e scroll do código de afiliado no cadastro
+- Telefone enviado corretamente no checkout
+- Menu fixo na tela de recomendadores do produto

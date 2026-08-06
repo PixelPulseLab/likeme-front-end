@@ -1,16 +1,29 @@
 {
-  "version": "1.11.1",
-  "releasedAt": "2026-07-28",
+  "version": "1.12.0",
+  "releasedAt": "2026-08-06",
   "android": {
-    "versionCode": 251
+    "versionCode": 252
   },
   "ios": {
-    "buildNumber": 27
+    "buildNumber": 28
   },
   "changelog": {
+    "added": [
+      "Vídeo das aulas do protocolo no detalhe do programa",
+      "Lista completa de recomendadores na página do produto",
+      "Código de afiliado no cadastro",
+      "Termos de Uso no app",
+      "Histórico de assinatura nas atividades"
+    ],
+    "changed": [
+      "Telefone opcional nos dados pessoais do cadastro"
+    ],
     "fixed": [
-      "Menu flutuante com labels sempre visíveis e fundo bege",
-      "Campo Acesso disponível até oculto quando a data não está disponível"
+      "Menu sem piscar no carregamento inicial do app",
+      "Visual de programas em cancelamento e cancelados",
+      "Layout do convite e scroll do código de afiliado no cadastro",
+      "Telefone enviado corretamente no checkout",
+      "Menu fixo na tela de recomendadores do produto"
     ]
   }
 }
