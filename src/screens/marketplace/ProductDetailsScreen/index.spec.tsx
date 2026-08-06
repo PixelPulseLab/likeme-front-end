@@ -4,6 +4,7 @@ import { PRODUCT_CATALOG_TYPE } from '@/types/product';
 
 const mockUseProductDetails = jest.fn();
 const mockUseProductPartner = jest.fn();
+const mockUseAdvertiserRecommendation = jest.fn();
 const mockUseUserFeed = jest.fn();
 const mockUseSuggestedProducts = jest.fn();
 const mockUseCategories = jest.fn();
@@ -20,6 +21,14 @@ const emptyProductPartner = {
   hasSpecialistPartner: false,
   partnerDisplayName: '',
   partnerContacts: undefined as undefined | { type: string; value: string }[],
+};
+
+const emptyAdvertiserRecommendation = {
+  recommendations: [] as unknown[],
+  recommenders: [] as unknown[],
+  recommendersCount: 0,
+  hasMultipleRecommenders: false,
+  loading: false,
 };
 
 jest.mock('react-native-safe-area-context', () => {
@@ -193,6 +202,7 @@ jest.mock('@/components/sections/community', () => {
 jest.mock('@/hooks', () => ({
   useProductDetails: (...args: any[]) => mockUseProductDetails(...args),
   useProductPartner: (...args: any[]) => mockUseProductPartner(...args),
+  useAdvertiserRecommendation: (...args: any[]) => mockUseAdvertiserRecommendation(...args),
   useUserFeed: (...args: any[]) => mockUseUserFeed(...args),
   useCategories: (...args: any[]) => mockUseCategories(...args),
   useMenuItems: () => [],
@@ -275,6 +285,7 @@ describe('ProductDetailsScreen', () => {
     });
 
     mockUseProductPartner.mockReturnValue(emptyProductPartner);
+    mockUseAdvertiserRecommendation.mockReturnValue(emptyAdvertiserRecommendation);
 
     mockUseUserFeed.mockReturnValue({
       posts: [],

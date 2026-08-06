@@ -1,4 +1,5 @@
 import type { NavigatorScreenParams } from '@react-navigation/native';
+import type { AdvertiserRecommendationTargetType } from '@/constants/recommendation/advertiserRecommendationTargetType';
 import type { CategoryName } from '@/types';
 import type { MarketplaceSolutionTab, SolutionFilterId } from '@/types/solution';
 
@@ -146,6 +147,10 @@ type RootStackParamListCore = {
       rating?: number;
       specialties?: string[];
     };
+  };
+  ProductRecommenders: {
+    targetId: string;
+    targetType?: AdvertiserRecommendationTargetType;
   };
 };
 

@@ -11,7 +11,8 @@ import { ShareContentUnavailable } from '@/components/ui/feedback';
 import InfoSectionTabsRow from '@/components/ui/carousel/InfoSectionTabsRow';
 import { MarkdownText } from '@/components/ui/text/MarkdownText';
 import { MARKETPLACE_PRODUCT_PLACEHOLDER_IMAGE_URI } from '@/constants';
-import { useMenuItems, useProductDetails, useProductPartner } from '@/hooks';
+import { useMenuItems, useProductDetails, useProductPartner, useAdvertiserRecommendation } from '@/hooks';
+import { ADVERTISER_RECOMMENDATION_TARGET_TYPE } from '@/constants/recommendation/advertiserRecommendationTargetType';
 import { useTranslation } from '@/hooks/i18n';
 import type { RootStackParamList } from '@/types/navigation';
 import { useAnalyticsScreen } from '@/analytics';
@@ -20,6 +21,7 @@ import { getProductModeTranslationKey } from '@/utils';
 import { logger } from '@/utils/logger';
 import { catalogTypeTranslatedBadgeLabels } from '@/types/product';
 import { SHARE_CONTENT_TYPES } from '@/constants/share';
+import { navigateToProductRecommenders } from '@/utils/navigation/marketplaceNavigation';
 import { goBackOrShareHome, navigateToShareHome } from '@/utils/navigation/shareHomeNavigation';
 import { navigateToShareDiscover } from '@/utils/navigation/shareDiscoverNavigation';
 import { shareContent } from '@/utils/share/shareContent';
@@ -103,12 +105,18 @@ const AffiliateProductScreen: React.FC<AffiliateProductScreenProps> = ({ navigat
     supplementalExternalUrl: route.params?.product?.externalUrl,
   });
 
-  const { partnerData, hasSpecialistPartner, partnerDisplayName } = useProductPartner({
+  const { partnerData } = useProductPartner({
     product,
     ad,
     advertiserId,
     routeProduct: route.params?.product,
     productIdFallback: route.params?.productId,
+  });
+
+  const { recommenders, loading: recommendationsLoading } = useAdvertiserRecommendation({
+    targetId: product?.id ?? route.params?.productId,
+    targetType: ADVERTISER_RECOMMENDATION_TARGET_TYPE.product,
+    enabled: Boolean(product?.id ?? route.params?.productId),
   });
 
   const handleBackPress = () => {
@@ -194,20 +202,31 @@ const AffiliateProductScreen: React.FC<AffiliateProductScreenProps> = ({ navigat
     return tabs.some((tab) => tab.id === activeTab) ? activeTab : tabs[0].id;
   }, [tabs, activeTab]);
 
+  const handleOpenProductRecommenders = () => {
+    const targetId = (product?.id ?? route.params?.productId)?.trim() || '';
+    if (!targetId) {
+      return;
+    }
+
+    navigateToProductRecommenders(navigation, {
+      targetId,
+      targetType: ADVERTISER_RECOMMENDATION_TARGET_TYPE.product,
+    });
+  };
+
   const renderSpecialistPartnerSection = () => {
-    if (!hasSpecialistPartner) {
+    if (recommendationsLoading || recommenders.length === 0) {
       return null;
     }
 
     return (
-      <View style={styles.partnerSection}>
-        <PartnerSection
-          recommendedByLabel={t('marketplace.recommendedBy')}
-          name={partnerDisplayName}
-          avatar={partnerData.avatar}
-          specialistLabel={partnerData.description?.trim() || t('marketplace.specialistLabel')}
-        />
-      </View>
+      <PartnerSection
+        style={styles.partnerSection}
+        recommendedByLabel={t('marketplace.recommendedBy')}
+        recommenders={recommenders}
+        recommendationsCountLabel={t('marketplace.recommendationsCount', { count: recommenders.length })}
+        onPressRecommenders={recommenders.length > 1 ? handleOpenProductRecommenders : undefined}
+      />
     );
   };
 

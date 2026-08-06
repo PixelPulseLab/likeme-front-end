@@ -14,6 +14,7 @@ export const SUPPORT_FLOATING_MAIN_APP_ROOT_ROUTE_NAMES = [
   'Cart',
   'Checkout',
   'ProviderProfile',
+  'ProductRecommenders',
   'SubscriptionList',
   'Profile',
   'AvatarProgress',

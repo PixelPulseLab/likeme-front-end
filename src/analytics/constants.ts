@@ -136,6 +136,7 @@ export const SCREEN_NAMES = {
   Cart: 'cart',
   Checkout: 'checkout',
   ProviderProfile: 'provider_profile',
+  ProductRecommenders: 'product_recommenders',
   SubscriptionList: 'subscription_list',
   Profile: 'profile',
   Home: 'home',

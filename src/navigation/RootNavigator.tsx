@@ -41,6 +41,7 @@ import {
   getCartScreen,
   getCheckoutScreen,
   getProviderProfileScreen,
+  getProductRecommendersScreen,
   getProfileScreen,
   getUserProfileHomeScreen,
   getInterestCategoriesEditScreen,
@@ -217,6 +218,11 @@ const RootNavigator: React.FC = () => {
                       name='ProviderProfile'
                       getComponent={getProviderProfileScreen}
                       options={{ title: 'Provider Profile' }}
+                    />
+                    <Stack.Screen
+                      name='ProductRecommenders'
+                      getComponent={getProductRecommendersScreen}
+                      options={{ title: 'Recomendados por' }}
                     />
                     <Stack.Screen name='Profile' getComponent={getProfileScreen} options={{ title: 'Perfil' }} />
                     <Stack.Screen
