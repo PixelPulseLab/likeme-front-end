@@ -68,4 +68,11 @@ export const styles = StyleSheet.create({
     color: COLORS.NEUTRAL.HIGH.PURE,
     textAlign: 'center',
   },
+  statusLink: {
+    fontFamily: 'DM Sans',
+    fontSize: FONT_SIZES.SM,
+    color: COLORS.NEUTRAL.HIGH.PURE,
+    textAlign: 'center',
+    textDecorationLine: 'underline',
+  },
 });

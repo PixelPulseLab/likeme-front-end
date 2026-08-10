@@ -1,7 +1,7 @@
 import { useFocusEffect } from '@react-navigation/native';
 import React, { useCallback, useRef } from 'react';
 import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
-import Video, { type OnLoadData, type VideoRef } from 'react-native-video';
+import Video, { type OnLoadData, type OnVideoErrorData, type VideoRef } from 'react-native-video';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 
 type Props = {
@@ -9,13 +9,29 @@ type Props = {
   fillContainer?: boolean;
   onCollapse: () => void;
   containerStyle?: StyleProp<ViewStyle>;
+  onPlaybackError?: (error: OnVideoErrorData) => void;
 };
 
-const PostEmbeddedVideoInner: React.FC<Props> = ({ videoUri, fillContainer = false, onCollapse, containerStyle }) => {
+function videoSourceFromUri(videoUri: string): { uri: string; type?: 'm3u8' } {
+  if (/\.m3u8(\?|$)/i.test(videoUri)) {
+    return { uri: videoUri, type: 'm3u8' };
+  }
+  return { uri: videoUri };
+}
+
+const PostEmbeddedVideoInner: React.FC<Props> = ({
+  videoUri,
+  fillContainer = false,
+  onCollapse,
+  containerStyle,
+  onPlaybackError,
+}) => {
   const videoRef = useRef<VideoRef>(null);
   const onCollapseRef = useRef(onCollapse);
+  const onPlaybackErrorRef = useRef(onPlaybackError);
 
   onCollapseRef.current = onCollapse;
+  onPlaybackErrorRef.current = onPlaybackError;
 
   const collapse = useCallback(() => {
     videoRef.current?.pause();
@@ -35,11 +51,15 @@ const PostEmbeddedVideoInner: React.FC<Props> = ({ videoUri, fillContainer = fal
     videoRef.current?.resume();
   }, []);
 
+  const onVideoError = useCallback((error: OnVideoErrorData) => {
+    onPlaybackErrorRef.current?.(error);
+  }, []);
+
   return (
     <View style={[fillContainer ? styles.fillContainer : styles.container, containerStyle]}>
       <Video
         ref={videoRef}
-        source={{ uri: videoUri }}
+        source={videoSourceFromUri(videoUri)}
         style={styles.video}
         controls
         paused={false}
@@ -48,6 +68,7 @@ const PostEmbeddedVideoInner: React.FC<Props> = ({ videoUri, fillContainer = fal
         ignoreSilentSwitch='ignore'
         playInBackground={false}
         onLoad={onVideoLoad}
+        onError={onVideoError}
       />
       <Pressable
         style={styles.collapseTouch}

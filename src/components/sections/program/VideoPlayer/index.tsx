@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Linking, Pressable, Text, TouchableOpacity, View } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { CachedImage } from '@/components/ui/media/CachedImage';
 import { PostEmbeddedVideo } from '@/components/sections/community/PostCard/PostEmbeddedVideo';
@@ -20,8 +20,12 @@ type WebViewComponent = React.ComponentType<{
   allowsFullscreenVideo?: boolean;
   allowsInlineMediaPlayback?: boolean;
   mediaPlaybackRequiresUserAction?: boolean;
+  javaScriptEnabled?: boolean;
+  domStorageEnabled?: boolean;
+  originWhitelist?: string[];
   startInLoadingState?: boolean;
   renderLoading?: () => React.ReactElement;
+  onError?: (event: { nativeEvent?: { description?: string } }) => void;
 }>;
 
 function videoHasPlaybackUrl(video: Attachment): boolean {
@@ -32,20 +36,28 @@ export const VideoPlayer: React.FC<Props> = ({ video }) => {
   const { t } = useTranslation();
   const [playbackOpen, setPlaybackOpen] = useState(false);
   const [WebViewCmp, setWebViewCmp] = useState<WebViewComponent | null>(null);
+  const [preferStreamFallback, setPreferStreamFallback] = useState(false);
+  const [streamFailed, setStreamFailed] = useState(false);
 
   const streamUrl = video.streamUrl?.trim() || '';
   const playerUrl = video.playerUrl?.trim() || (!streamUrl ? video.url?.trim() || '' : '');
   const posterUri = video.posterUrl?.trim() || undefined;
   const playable = video.playable !== false && videoHasPlaybackUrl(video);
+  const canUseWebView = isRncWebViewTurboModuleLinked();
 
-  const needsWebViewPlayer = playbackOpen && !streamUrl && Boolean(playerUrl);
+  // Embed do provedor quando há WebView; HLS como fallback (ou único caminho sem módulo nativo).
+  const useEmbedPlayer = Boolean(playerUrl) && !preferStreamFallback && canUseWebView;
+  const useStreamPlayer = Boolean(streamUrl) && !streamFailed && (!playerUrl || preferStreamFallback || !canUseWebView);
+  const needsWebViewPlayer = playbackOpen && useEmbedPlayer;
 
   useEffect(() => {
     setPlaybackOpen(false);
+    setPreferStreamFallback(false);
+    setStreamFailed(false);
   }, [video.id]);
 
   useEffect(() => {
-    if (!needsWebViewPlayer || !isRncWebViewTurboModuleLinked()) {
+    if (!needsWebViewPlayer) {
       return;
     }
 
@@ -61,12 +73,15 @@ export const VideoPlayer: React.FC<Props> = ({ video }) => {
           videoId: video.id,
           cause,
         });
+        if (streamUrl) {
+          setPreferStreamFallback(true);
+        }
       });
 
     return () => {
       cancelled = true;
     };
-  }, [needsWebViewPlayer, video.id]);
+  }, [needsWebViewPlayer, streamUrl, video.id]);
 
   if (!playable) {
     return (
@@ -83,12 +98,21 @@ export const VideoPlayer: React.FC<Props> = ({ video }) => {
     );
   }
 
-  const renderPlayer = () => {
-    if (streamUrl) {
-      return <PostEmbeddedVideo videoUri={streamUrl} fillContainer onCollapse={() => setPlaybackOpen(false)} />;
+  const openPlayerExternally = () => {
+    if (!playerUrl) {
+      return;
     }
+    void Linking.openURL(playerUrl).catch((cause) => {
+      logger.error('[VideoPlayer] Falha ao abrir player externo', {
+        videoId: video.id,
+        playerUrl,
+        cause,
+      });
+    });
+  };
 
-    if (playerUrl && WebViewCmp) {
+  const renderPlayer = () => {
+    if (useEmbedPlayer && WebViewCmp) {
       const WV = WebViewCmp;
       return (
         <>
@@ -98,12 +122,27 @@ export const VideoPlayer: React.FC<Props> = ({ video }) => {
             allowsFullscreenVideo
             allowsInlineMediaPlayback
             mediaPlaybackRequiresUserAction={false}
+            javaScriptEnabled
+            domStorageEnabled
+            originWhitelist={['*']}
             startInLoadingState
             renderLoading={() => (
               <View style={styles.webViewLoading}>
                 <ActivityIndicator size='large' color={COLORS.PRIMARY.PURE} />
               </View>
             )}
+            onError={(event) => {
+              logger.error('[VideoPlayer] Erro no WebView do player', {
+                videoId: video.id,
+                playerUrl,
+                description: event.nativeEvent?.description,
+              });
+              if (streamUrl) {
+                setPreferStreamFallback(true);
+                return;
+              }
+              openPlayerExternally();
+            }}
           />
           <Pressable
             style={styles.collapseTouch}
@@ -119,10 +158,52 @@ export const VideoPlayer: React.FC<Props> = ({ video }) => {
       );
     }
 
-    if (playerUrl) {
+    if (useEmbedPlayer) {
       return (
         <View style={styles.webViewLoading}>
           <ActivityIndicator size='large' color={COLORS.PRIMARY.PURE} />
+        </View>
+      );
+    }
+
+    if (useStreamPlayer) {
+      return (
+        <PostEmbeddedVideo
+          videoUri={streamUrl}
+          fillContainer
+          onCollapse={() => setPlaybackOpen(false)}
+          onPlaybackError={() => {
+            logger.warn('[VideoPlayer] Falha no stream HLS; tentando embed ou URL externa', {
+              videoId: video.id,
+              streamUrl,
+              hasPlayerUrl: Boolean(playerUrl),
+            });
+            setStreamFailed(true);
+            if (playerUrl && canUseWebView) {
+              setPreferStreamFallback(false);
+              return;
+            }
+            if (playerUrl) {
+              openPlayerExternally();
+            }
+          }}
+        />
+      );
+    }
+
+    if (playerUrl) {
+      return (
+        <View style={styles.placeholder}>
+          <Text style={styles.statusText}>
+            {t('course.video.openExternal', {
+              defaultValue: 'Não foi possível reproduzir aqui. Abra no navegador.',
+            })}
+          </Text>
+          <TouchableOpacity onPress={openPlayerExternally} accessibilityRole='button'>
+            <Text style={styles.statusLink}>
+              {t('course.video.openExternalCta', { defaultValue: 'Tocar no navegador' })}
+            </Text>
+          </TouchableOpacity>
         </View>
       );
     }
