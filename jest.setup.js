@@ -37,6 +37,20 @@ jest.mock('expo-image', () => {
   return { Image };
 });
 
+// Mock para expo-calendar (ESM + módulo nativo)
+jest.mock('expo-calendar', () => ({
+  EntityTypes: { EVENT: 'event', REMINDER: 'reminder' },
+  CalendarAccessLevel: { OWNER: 'owner', EDITOR: 'editor', ROOT: 'root' },
+  SourceType: { LOCAL: 'local' },
+  requestCalendarPermissionsAsync: jest.fn(() => Promise.resolve({ status: 'granted' })),
+  getDefaultCalendarAsync: jest.fn(() => Promise.resolve({ id: 'mock-calendar' })),
+  getCalendarsAsync: jest.fn(() =>
+    Promise.resolve([{ id: 'mock-calendar', allowsModifications: true, accessLevel: 'owner' }]),
+  ),
+  createCalendarAsync: jest.fn(() => Promise.resolve('mock-calendar')),
+  createEventAsync: jest.fn(() => Promise.resolve('mock-event')),
+}));
+
 // Mock para color-matrix (ESM + módulo nativo; no Jest só precisa passar o children)
 jest.mock('react-native-color-matrix-image-filters', () => {
   const React = require('react');
