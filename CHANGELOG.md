@@ -257,3 +257,8 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 - Layout do convite e scroll do código de afiliado no cadastro
 - Telefone enviado corretamente no checkout
 - Menu fixo na tela de recomendadores do produto
+
+## [1.12.1] - 2026-08-11
+
+### Corrigido
+- Vídeo das aulas do protocolo carrega corretamente no detalhe do programa
