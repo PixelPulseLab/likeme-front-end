@@ -1,15 +1,18 @@
 {
-  "version": "1.12.1",
+  "version": "1.13.0",
   "releasedAt": "2026-08-11",
   "android": {
-    "versionCode": 253
+    "versionCode": 254
   },
   "ios": {
-    "buildNumber": 29
+    "buildNumber": 30
   },
   "changelog": {
-    "fixed": [
-      "Vídeo das aulas do protocolo carrega corretamente no detalhe do programa"
+    "added": [
+      "Em Meus Pedidos, protocolos abrem a área do assinante e serviços permitem criar atividade com opção de marcar na agenda do celular"
+    ],
+    "changed": [
+      "Itens de pedido cancelados mostram a tag Cancelado no lugar das ações"
     ]
   }
 }

@@ -176,6 +176,20 @@ export const styles = StyleSheet.create({
     fontWeight: '500',
     color: COLORS.TEXT,
   },
+  orderItemCanceledTag: {
+    borderRadius: 18,
+    paddingVertical: SPACING.XS,
+    paddingHorizontal: SPACING.SM,
+    alignSelf: 'flex-start',
+    marginTop: SPACING.XS,
+    backgroundColor: COLORS.NEUTRAL.LOW.MEDIUM,
+  },
+  orderItemCanceledTagText: {
+    fontSize: FONT_SIZES.XS,
+    fontFamily: 'DM Sans',
+    fontWeight: '500',
+    color: COLORS.WHITE,
+  },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',

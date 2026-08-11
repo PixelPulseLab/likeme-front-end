@@ -31,6 +31,7 @@ import { navigateToOrderDetail } from '@/utils/navigation/activitiesNavigation';
 import { navigateRootStack, rootStackNavigationFrom } from '@/utils/navigation/rootStackNavigation';
 import { orderCardStatusPresentation, orderCardTitle } from '@/utils/marketplace/orderStatusDisplay';
 import { invalidateActivityListCache, writeActivityListCache } from '@/utils/activity/activityListCache';
+import { addActivityToDeviceCalendar } from '@/utils/activity/addActivityToDeviceCalendar';
 import { formatSubscriptionManageDate } from '@/utils/subscription/subscriptionManageDisplay';
 import { SUBSCRIPTION_HISTORY_STATUS, type SubscriptionHistory, type UserActivity } from '@/types/activity';
 import { styles } from './styles';
@@ -1048,7 +1049,6 @@ const ActivitiesScreen: React.FC<ActivitiesScreenProps> = ({ navigation, route }
           try {
             let response;
             if (activityId) {
-              // Update existing activity
               response = await activityService.updateActivity(activityId, {
                 name: data.name,
                 type: data.type,
@@ -1063,7 +1063,6 @@ const ActivitiesScreen: React.FC<ActivitiesScreenProps> = ({ navigation, route }
               });
               logger.debug('[ActivitiesScreen] activity updated', { activityId });
             } else {
-              // Create new activity
               response = await activityService.createActivity({
                 name: data.name,
                 type: data.type,
@@ -1079,9 +1078,34 @@ const ActivitiesScreen: React.FC<ActivitiesScreenProps> = ({ navigation, route }
               logger.debug('[ActivitiesScreen] activity created', { activityId: response.data?.id });
             }
 
-            // Verificar se a operação foi bem-sucedida antes de recarregar
             if (response && response.success && response.data) {
-              // Refresh activities list after save
+              if (!activityId && data.addToDeviceCalendar) {
+                try {
+                  await addActivityToDeviceCalendar({
+                    name: data.name,
+                    startDate: data.startDate,
+                    startTime: data.startTime,
+                    endDate: data.endDate,
+                    endTime: data.endTime,
+                    location: data.location,
+                    description: data.description,
+                  });
+                } catch (calendarError) {
+                  logger.error('[ActivitiesScreen] Falha ao marcar na agenda do celular', {
+                    activityId: response.data.id,
+                    cause: calendarError,
+                  });
+                  Alert.alert(
+                    t('activities.createdWithoutDeviceCalendarTitle', {
+                      defaultValue: 'Atividade salva',
+                    }),
+                    t('activities.createdWithoutDeviceCalendarMessage', {
+                      defaultValue:
+                        'A atividade foi salva em Minhas Atividades, mas não foi possível adicioná-la à agenda do celular.',
+                    }),
+                  );
+                }
+              }
               await reloadActivitiesAfterMutation();
             } else {
               throw new Error(response?.message || 'Failed to save activity');

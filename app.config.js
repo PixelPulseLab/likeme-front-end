@@ -252,6 +252,13 @@ module.exports = {
         },
       ],
       [
+        'expo-calendar',
+        {
+          calendarPermission: 'Precisamos acessar sua agenda para marcar atividades compradas no Like:Me.',
+          remindersPermission: 'Precisamos acessar seus lembretes para sincronizar atividades do Like:Me.',
+        },
+      ],
+      [
         'expo-splash-screen',
         {
           image: './assets/app/icon.png',
@@ -347,6 +354,8 @@ module.exports = {
           'Precisamos da câmera para você tirar uma foto de perfil e participar de lives com vídeo.',
         NSMicrophoneUsageDescription: 'Precisamos do microfone para você participar das lives e reuniões com áudio.',
         NSPhotoLibraryUsageDescription: 'Precisamos acessar suas fotos para você escolher uma imagem de perfil.',
+        NSCalendarsUsageDescription: 'Precisamos acessar sua agenda para marcar atividades compradas no Like:Me.',
+        NSRemindersUsageDescription: 'Precisamos acessar seus lembretes para sincronizar atividades do Like:Me.',
         LSApplicationQueriesSchemes: ['itms-apps', 'itms'],
       },
       entitlements: {

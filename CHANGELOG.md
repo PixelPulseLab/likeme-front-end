@@ -262,3 +262,11 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 
 ### Corrigido
 - Vídeo das aulas do protocolo carrega corretamente no detalhe do programa
+
+## [1.13.0] - 2026-08-11
+
+### Adicionado
+- Em Meus Pedidos, protocolos abrem a área do assinante e serviços permitem criar atividade com opção de marcar na agenda do celular
+
+### Alterado
+- Itens de pedido cancelados mostram a tag Cancelado no lugar das ações

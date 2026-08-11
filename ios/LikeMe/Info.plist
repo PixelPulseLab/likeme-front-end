@@ -19,7 +19,7 @@
 	<key>CFBundlePackageType</key>
 	<string>$(PRODUCT_BUNDLE_PACKAGE_TYPE)</string>
 	<key>CFBundleShortVersionString</key>
-	<string>1.12.1</string>
+	<string>1.13.0</string>
 	<key>CFBundleSignature</key>
 	<string>????</string>
 	<key>CFBundleURLTypes</key>
@@ -47,7 +47,7 @@
 		</dict>
 	</array>
 	<key>CFBundleVersion</key>
-	<string>29</string>
+	<string>30</string>
 	<key>CodePushDeploymentKey</key>
 	<string>1W6TD67lQb7jyIRwwW9XYgCtNAqrN1_zqwVbNl</string>
 	<key>CodePushServerURL</key>
@@ -80,6 +80,10 @@
 	<string>Precisamos do microfone para você participar das lives e reuniões com áudio.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Precisamos acessar suas fotos para você escolher uma imagem de perfil.</string>
+	<key>NSCalendarsUsageDescription</key>
+	<string>Precisamos acessar sua agenda para marcar atividades compradas no Like:Me.</string>
+	<key>NSRemindersUsageDescription</key>
+	<string>Precisamos acessar seus lembretes para sincronizar atividades do Like:Me.</string>
 	<key>RCTNewArchEnabled</key>
 	<false/>
 	<key>UIBackgroundModes</key>
