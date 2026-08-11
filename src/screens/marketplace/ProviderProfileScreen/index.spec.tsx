@@ -3,7 +3,8 @@ import { jest, describe, it, expect, beforeEach } from '@jest/globals';
 import { render, fireEvent } from '@testing-library/react-native';
 import ProviderProfileScreen from './index';
 
-const mockUseAdvertisers = jest.fn();
+const mockUseAdvertiser = jest.fn();
+const mockUseAdvertiserRecommendation = jest.fn();
 
 jest.mock('@/contexts/FloatingMenuContext', () => ({
   useSetFloatingMenu: jest.fn(),
@@ -163,24 +164,8 @@ jest.mock('@/hooks', () => ({
     loading: false,
     loadCommunities: jest.fn(),
   }),
-  useAdvertisers: (params: any) => {
-    if (params?.communityId) {
-      return {
-        advertisers: [],
-        loading: false,
-        error: null,
-        refresh: jest.fn(),
-      };
-    }
-    return mockUseAdvertisers(params);
-  },
-  useAdvertiser: (params: any) => {
-    const base: any = mockUseAdvertisers(params);
-    return {
-      ...base,
-      advertiser: base.advertisers?.[0] ?? null,
-    };
-  },
+  useAdvertiser: (params: any) => mockUseAdvertiser(params),
+  useAdvertiserRecommendation: (params: any) => mockUseAdvertiserRecommendation(params),
   useProviderAds: () => ({
     ads: [],
     loading: false,
@@ -255,8 +240,15 @@ describe('ProviderProfileScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     console.log = jest.fn();
-    mockUseAdvertisers.mockReturnValue({
-      advertisers: [],
+    mockUseAdvertiser.mockReturnValue({
+      advertiser: null,
+      loading: false,
+    });
+    mockUseAdvertiserRecommendation.mockReturnValue({
+      recommenders: [],
+      recommendersCount: 0,
+      hasMultipleRecommenders: false,
+      recommendations: [],
       loading: false,
     });
   });
@@ -272,15 +264,13 @@ describe('ProviderProfileScreen', () => {
   });
 
   it('renders correctly with default provider data when not provided', () => {
-    mockUseAdvertisers.mockReturnValue({
-      advertisers: [
-        {
-          id: 'provider-1',
-          name: 'Marcela Ferraz',
-          description: '',
-          logo: undefined,
-        },
-      ],
+    mockUseAdvertiser.mockReturnValue({
+      advertiser: {
+        id: 'provider-1',
+        name: 'Marcela Ferraz',
+        description: '',
+        logo: undefined,
+      },
       loading: false,
     });
 

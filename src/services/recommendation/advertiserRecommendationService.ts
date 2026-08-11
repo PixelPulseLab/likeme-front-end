@@ -8,22 +8,29 @@ class AdvertiserRecommendationService {
 
   async list(params: {
     targetType: AdvertiserRecommendationTargetType;
-    targetId: string;
+    targetId?: string;
+    advertiserId?: string;
     page?: number;
     limit?: number;
     activeOnly?: boolean;
   }): Promise<ListAdvertiserRecommendationsResponse> {
     try {
-      const targetId = params.targetId.trim();
-      if (!targetId) {
-        throw new Error('targetId is required');
+      const targetId = params.targetId?.trim() || '';
+      const advertiserId = params.advertiserId?.trim() || '';
+      if (!targetId && !advertiserId) {
+        throw new Error('targetId ou advertiserId é obrigatório');
       }
 
       const queryParams: Record<string, string> = {
         targetType: params.targetType,
-        targetId,
         activeOnly: params.activeOnly === false ? 'false' : 'true',
       };
+      if (targetId) {
+        queryParams.targetId = targetId;
+      }
+      if (advertiserId) {
+        queryParams.advertiserId = advertiserId;
+      }
       if (params.page != null) {
         queryParams.page = String(params.page);
       }
@@ -40,7 +47,8 @@ class AdvertiserRecommendationService {
 
       logger.debug('Advertiser recommendations list:', {
         targetType: params.targetType,
-        targetId,
+        targetId: targetId || undefined,
+        advertiserId: advertiserId || undefined,
         count: response.data?.recommendations?.length ?? 0,
       });
 
@@ -49,6 +57,7 @@ class AdvertiserRecommendationService {
       logger.error('Error fetching advertiser recommendations:', {
         targetType: params.targetType,
         targetId: params.targetId,
+        advertiserId: params.advertiserId,
         error,
       });
       throw error;
