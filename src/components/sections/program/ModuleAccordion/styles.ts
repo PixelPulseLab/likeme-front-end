@@ -4,12 +4,11 @@ import { COLORS, FONT_SIZES, SPACING } from '@/constants';
 export const styles = StyleSheet.create({
   container: {
     width: '100%',
-    paddingHorizontal: SPACING.MD,
     paddingVertical: SPACING.SM,
   },
   moduleItem: {
     paddingTop: SPACING.LG,
-    backgroundColor: 'transparent',
+    paddingHorizontal: SPACING.MD,
   },
   moduleHeader: {
     flexDirection: 'row',
