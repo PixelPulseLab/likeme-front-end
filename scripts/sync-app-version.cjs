@@ -63,28 +63,13 @@ function readAppVersion() {
   const data = JSON.parse(raw);
 
   const version = String(data.version ?? '').trim();
-  const inReviewVersion = String(data.inReviewVersion ?? '').trim();
   const releasedAt = String(data.releasedAt ?? '').trim();
   const androidVersionCode = Number(data.android?.versionCode);
   const iosBuildNumber = Number(data.ios?.buildNumber);
   const changelogSections = normalizeChangelogSections(data.changelog);
-  const semver = /^\d+\.\d+\.\d+$/;
 
   if (!version) {
     throw new Error('[sync-app-version] app.version.json: "version" é obrigatório.');
-  }
-  if (!semver.test(version)) {
-    throw new Error('[sync-app-version] app.version.json: "version" deve ser semver X.Y.Z.');
-  }
-  if (inReviewVersion) {
-    if (!semver.test(inReviewVersion)) {
-      throw new Error('[sync-app-version] app.version.json: "inReviewVersion" deve ser semver X.Y.Z.');
-    }
-    if (inReviewVersion === version) {
-      throw new Error(
-        '[sync-app-version] app.version.json: "inReviewVersion" deve ser diferente de "version".',
-      );
-    }
   }
   if (!/^\d{4}-\d{2}-\d{2}$/.test(releasedAt)) {
     throw new Error('[sync-app-version] app.version.json: "releasedAt" deve ser YYYY-MM-DD.');
@@ -103,7 +88,6 @@ function readAppVersion() {
 
   return {
     version,
-    inReviewVersion: inReviewVersion || null,
     releasedAt,
     androidVersionCode,
     iosBuildNumber,
@@ -374,16 +358,9 @@ function runSync(appVersion) {
     `[sync-app-version] Android ${appVersion.androidVersionCode}, iOS ${appVersion.iosBuildNumberText} · CHANGELOG.md e appVersion.generated.ts atualizados.`,
   );
   console.log('[sync-app-version] app.config.js lê app.version.json em tempo de execução.');
-  if (appVersion.inReviewVersion) {
-    console.log(
-      `[sync-app-version] Jira labels: Awaiting Version → v${appVersion.version}; Em análise → v${appVersion.inReviewVersion}`,
-    );
-    console.log('[sync-app-version] Após bump, rode na raiz do workspace: ./scripts/sync-jira-version-labels.mjs --apply');
-  } else {
-    console.log(
-      '[sync-app-version] Aviso: sem "inReviewVersion" — labels Jira (Em análise) não serão sincronizadas pelo script do workspace.',
-    );
-  }
+  console.log(
+    `[sync-app-version] Jira: issues sem label v* em Awaiting Version / Em análise → v${appVersion.version} (./scripts/sync-jira-version-labels.mjs --apply)`,
+  );
 }
 
 function runCheck(appVersion) {
