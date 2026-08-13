@@ -1,5 +1,6 @@
 {
   "version": "1.13.0",
+  "inReviewVersion": "1.12.1",
   "releasedAt": "2026-08-11",
   "android": {
     "versionCode": 254
