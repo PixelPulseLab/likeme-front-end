@@ -66,7 +66,6 @@ export const formatPrice = (price: number | null | undefined, currency: 'USD' | 
   return new PriceFormatter(price).format(currency);
 };
 
-/** Quando `price` é null/undefined, usa `i18n.t('marketplace.noPriceLabel')`; caso contrário, formata o valor. */
 export const formatPriceLabel = (price: number | null | undefined, currency: 'USD' | 'BRL' = 'BRL'): string => {
   if (price === null || price === undefined) {
     return i18n.t(MARKETPLACE_NO_PRICE_LABEL_KEY);

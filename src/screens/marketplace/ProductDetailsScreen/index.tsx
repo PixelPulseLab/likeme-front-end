@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Linking } from 'react-native';
 import type { ScrollView as ScrollViewType } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { StackNavigationProp } from '@react-navigation/stack';
@@ -24,6 +24,9 @@ import { ADVERTISER_RECOMMENDATION_TARGET_TYPE } from '@/constants/recommendatio
 import { useSetFloatingMenu } from '@/contexts/FloatingMenuContext';
 import { useTranslation } from '@/hooks/i18n';
 import { formatPrice, getProductModeTranslationKey } from '@/utils';
+import { primaryContactLink } from '@/utils/advertiser/primaryContact';
+import { resolveWaMePrefillFromI18n } from '@/utils/marketplace/resolveWaMePrefillFromI18n';
+import { logger } from '@/utils/logger';
 import { useAnalyticsScreen, logButtonClick, logTabSelect, logAddToCart, logError } from '@/analytics';
 import { MARKETPLACE_PRODUCT_PLACEHOLDER_IMAGE_URI } from '@/constants';
 import type { RootStackParamList } from '@/types/navigation';
@@ -135,6 +138,14 @@ const ProductDetailsScreen: React.FC<ProductDetailsScreenProps> = ({ navigation,
   }, [displayData?.description, product?.targetAudience, product?.technicalSpecifications]);
 
   const isProgramProduct = isProgramCatalogType(product?.type);
+  const isOnConsultation = displayData?.price == null;
+  const primaryContact = useMemo(
+    () =>
+      primaryContactLink(product?.contacts, {
+        waMePrefillText: advertiserId ? resolveWaMePrefillFromI18n(advertiserId) : undefined,
+      }),
+    [product?.contacts, advertiserId],
+  );
 
   const productTabOptions: ButtonCarouselOption<'about' | 'agreements'>[] = useMemo(() => {
     const isPhysicalProduct = product?.type === PRODUCT_CATALOG_TYPE.PHYSICAL;
@@ -217,6 +228,25 @@ const ProductDetailsScreen: React.FC<ProductDetailsScreenProps> = ({ navigation,
       return;
     }
     runAddToCartFlow();
+  };
+
+  const handleContactPress = () => {
+    if (!primaryContact) {
+      return;
+    }
+    logButtonClick({
+      screen_name: 'product_details',
+      button_label: 'contact_us',
+      action_name: 'open_primary_contact',
+      item_id: product?.id ?? route.params?.productId,
+    });
+    Linking.openURL(primaryContact.url).catch((error: Error) => {
+      logger.error('[ProductDetailsScreen] Erro ao abrir canal principal de contato', {
+        productId: product?.id ?? route.params?.productId,
+        contactType: primaryContact.contact.type,
+        cause: error,
+      });
+    });
   };
 
   const handleProgramTermsModalGoToAgreements = () => {
@@ -473,6 +503,15 @@ const ProductDetailsScreen: React.FC<ProductDetailsScreenProps> = ({ navigation,
                         testID='product-details-add-to-cart'
                       />
                     ) : null}
+                    {isOnConsultation && primaryContact ? (
+                      <SecondaryButton
+                        label={t('marketplace.contactUs')}
+                        onPress={handleContactPress}
+                        style={styles.addToCartSecondaryBelowPrice}
+                        size='large'
+                        testID='product-details-contact-us'
+                      />
+                    ) : null}
                   </View>
                 </>
               ) : (
@@ -489,6 +528,17 @@ const ProductDetailsScreen: React.FC<ProductDetailsScreenProps> = ({ navigation,
                         style={styles.addToCartSecondary}
                         size='large'
                         testID='product-details-add-to-cart'
+                      />
+                    </View>
+                  ) : null}
+                  {isOnConsultation && primaryContact ? (
+                    <View style={styles.addToCartSecondaryWrapper}>
+                      <SecondaryButton
+                        label={t('marketplace.contactUs')}
+                        onPress={handleContactPress}
+                        style={styles.addToCartSecondary}
+                        size='large'
+                        testID='product-details-contact-us'
                       />
                     </View>
                   ) : null}

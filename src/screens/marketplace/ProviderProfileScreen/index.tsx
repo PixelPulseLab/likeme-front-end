@@ -240,7 +240,7 @@ const ProviderProfileScreen: React.FC<ProviderProfileScreenProps> = ({ navigatio
       rows.push({
         id: p.id,
         title: p.name ?? '',
-        price: p.price ?? 0,
+        price: p.price ?? null,
         image: p.image ?? CATALOG_PRODUCT_IMAGE_FALLBACK,
         tag: primaryTag,
         tags,

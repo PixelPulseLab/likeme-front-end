@@ -226,6 +226,10 @@ export const useProductDetails = ({
     async (quantity: number = 1) => {
       if (!product) return;
 
+      if (product.price == null) {
+        return;
+      }
+
       if (product.status === 'out_of_stock' || product.quantity === 0) {
         Alert.alert(t('marketplace.outOfStock'), t('marketplace.productOutOfStockMessage'));
         return;
