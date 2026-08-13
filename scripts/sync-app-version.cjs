@@ -358,6 +358,9 @@ function runSync(appVersion) {
     `[sync-app-version] Android ${appVersion.androidVersionCode}, iOS ${appVersion.iosBuildNumberText} · CHANGELOG.md e appVersion.generated.ts atualizados.`,
   );
   console.log('[sync-app-version] app.config.js lê app.version.json em tempo de execução.');
+  console.log(
+    `[sync-app-version] Jira: issues sem label v* em Awaiting Version / Em análise → v${appVersion.version} (./scripts/sync-jira-version-labels.mjs --apply)`,
+  );
 }
 
 function runCheck(appVersion) {

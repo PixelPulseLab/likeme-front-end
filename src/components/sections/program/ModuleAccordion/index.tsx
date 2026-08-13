@@ -139,17 +139,15 @@ const ModuleAccordion: React.FC<Props> = ({
     [storageScopeId],
   );
 
-  const isAccordionExpanded = expandedId != null;
-  const accordionBackgroundColor = isAccordionExpanded ? COLORS.BACKGROUND_SECONDARY : COLORS.BACKGROUND;
-
   return (
-    <View style={[styles.container, { backgroundColor: accordionBackgroundColor }]}>
+    <View style={styles.container}>
       {modules.map((module) => {
         const isExpanded = expandedId === module.id;
         const isCompleted = completedModuleIds.has(module.id);
+        const moduleBackgroundColor = isExpanded ? COLORS.BACKGROUND_SECONDARY : COLORS.BACKGROUND;
 
         return (
-          <View key={module.id} style={styles.moduleItem}>
+          <View key={module.id} style={[styles.moduleItem, { backgroundColor: moduleBackgroundColor }]}>
             <View style={styles.moduleHeader}>
               <View style={styles.headerLeft}>
                 {isCompleted ? (
@@ -167,7 +165,7 @@ const ModuleAccordion: React.FC<Props> = ({
                 ) : (
                   <IconButton
                     showBackground={false}
-                    iconElement={<BackgroundIconOutline width={29} height={26} color={accordionBackgroundColor} />}
+                    iconElement={<BackgroundIconOutline width={29} height={26} color={moduleBackgroundColor} />}
                     onPress={() => toggleModuleCompleted(module.id)}
                     containerStyle={styles.sessionIndicatorButton}
                   />

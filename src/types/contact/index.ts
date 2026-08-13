@@ -5,4 +5,5 @@ export interface Contact {
   id?: string;
   type: ContactType;
   value: string;
+  isPrincipal?: boolean;
 }

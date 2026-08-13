@@ -12,14 +12,22 @@ import { type JoinCardItem } from '@/components/ui/cards';
 import { JoinCardList } from '@/components/ui/lists/JoinCardList';
 import { AdsList } from '@/components/sections/marketplace';
 import { Product } from '@/components/sections/product';
-import { useAdvertiser, useAdvertisers, useProviderAds, useCommunities, useFeatureFlag, useMenuItems } from '@/hooks';
+import {
+  useAdvertiser,
+  useAdvertiserRecommendation,
+  useProviderAds,
+  useCommunities,
+  useFeatureFlag,
+  useMenuItems,
+} from '@/hooks';
+import { ADVERTISER_RECOMMENDATION_TARGET_TYPE } from '@/constants/recommendation/advertiserRecommendationTargetType';
 import { useTranslation } from '@/hooks/i18n';
 import type { RootStackParamList } from '@/types/navigation';
 import { useAnalyticsScreen } from '@/analytics';
 import { styles } from './styles';
 import { styles as communityShopListStyles } from '@/components/sections/community/ShoppingList/styles';
 import { communityService, advertiserService } from '@/services';
-import type { Advertiser, AdvertiserProfile } from '@/types/ad';
+import type { AdvertiserProfile } from '@/types/ad';
 import { COLORS, FEATURE_FLAGS } from '@/constants';
 import { SHARE_CONTENT_TYPES } from '@/constants/share';
 import { DEFAULT_MARKETPLACE_SORT_ORDER, type MarketplaceSortOrderId } from '@/constants/marketplaceSortOrder';
@@ -196,21 +204,11 @@ const ProviderProfileScreen: React.FC<ProviderProfileScreenProps> = ({ navigatio
 
   const loadCommunityShop = activeTab === 'communities';
 
-  const { advertisers: communityShopAdvertisers } = useAdvertisers(
-    loadCommunityShop ? { listOptions: { limit: 50 }, fetchAllPages: true } : {},
-  );
-
-  const communityShopProfessionals = useMemo(() => {
-    const filtered = communityShopAdvertisers.filter((a) => a.id !== providerId);
-    const seen = new Set<string>();
-    return filtered.filter((a) => {
-      if (!a.id || seen.has(a.id)) {
-        return false;
-      }
-      seen.add(a.id);
-      return true;
-    });
-  }, [communityShopAdvertisers, providerId]);
+  const { recommenders: communityShopProfessionals } = useAdvertiserRecommendation({
+    targetType: ADVERTISER_RECOMMENDATION_TARGET_TYPE.advertiser,
+    advertiserId: providerId,
+    enabled: loadCommunityShop,
+  });
 
   const communityShopCatalogFlat = useMemo(() => {
     if (!loadCommunityShop) {
@@ -242,7 +240,7 @@ const ProviderProfileScreen: React.FC<ProviderProfileScreenProps> = ({ navigatio
       rows.push({
         id: p.id,
         title: p.name ?? '',
-        price: p.price ?? 0,
+        price: p.price ?? null,
         image: p.image ?? CATALOG_PRODUCT_IMAGE_FALLBACK,
         tag: primaryTag,
         tags,
@@ -270,8 +268,8 @@ const ProviderProfileScreen: React.FC<ProviderProfileScreenProps> = ({ navigatio
   );
 
   const handleCommunityShopProfessionalPress = useCallback(
-    (professional: Advertiser) => {
-      navigateToProviderProfile(rootNavigation, { providerId: professional.id });
+    (professionalAdvertiserId: string) => {
+      navigateToProviderProfile(rootNavigation, { providerId: professionalAdvertiserId });
     },
     [rootNavigation],
   );
@@ -491,11 +489,11 @@ const ProviderProfileScreen: React.FC<ProviderProfileScreenProps> = ({ navigatio
                 {communityShopProfessionals.length > 0 ? (
                   <View style={communityShopListStyles.list}>
                     {communityShopProfessionals.map((prof) => (
-                      <View key={prof.id} style={communityShopListStyles.professionalCardWrapper}>
+                      <View key={prof.advertiserId} style={communityShopListStyles.professionalCardWrapper}>
                         <View style={communityShopListStyles.professionalCardContent}>
-                          {prof.logo ? (
+                          {prof.avatar ? (
                             <CachedImage
-                              source={{ uri: prof.logo }}
+                              source={{ uri: prof.avatar }}
                               style={communityShopListStyles.professionalAvatar}
                             />
                           ) : (
@@ -505,17 +503,17 @@ const ProviderProfileScreen: React.FC<ProviderProfileScreenProps> = ({ navigatio
                           )}
                           <View style={communityShopListStyles.professionalInfo}>
                             <Text style={communityShopListStyles.professionalName} numberOfLines={1}>
-                              {prof.name ?? ''}
+                              {prof.name}
                             </Text>
-                            {prof.description ? (
+                            {prof.specialty ? (
                               <Text style={communityShopListStyles.professionalProfession} numberOfLines={1}>
-                                Especialista
+                                {prof.specialty}
                               </Text>
                             ) : null}
                           </View>
                           <SecondaryButton
                             label={t('community.viewProfile')}
-                            onPress={() => handleCommunityShopProfessionalPress(prof)}
+                            onPress={() => handleCommunityShopProfessionalPress(prof.advertiserId)}
                             size='medium'
                             style={communityShopListStyles.professionalViewProfileButton}
                           />

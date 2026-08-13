@@ -62,11 +62,12 @@ jest.mock('@/components/ui/layout', () => {
   const Header = () => null;
   return {
     Header,
-    HeroImage: ({ children, name, title, imageUri }: any) => (
+    HeroImage: ({ children, name, title, imageUri, footer }: any) => (
       <View testID='hero-image'>
         <Text testID='hero-image-uri'>{imageUri}</Text>
         {title ? <Text>{title}</Text> : null}
         {name ? <Text>{name}</Text> : null}
+        {footer}
         {children}
       </View>
     ),
@@ -132,11 +133,16 @@ jest.mock('@/components/sections/advertiser/ContactButtonsRow', () => {
 });
 
 jest.mock('@/components/ui/buttons', () => {
-  const { TouchableOpacity, Text } = require('react-native');
+  const { TouchableOpacity, Text, View } = require('react-native');
   return {
     SecondaryButton: ({ label, onPress, testID }: any) => (
       <TouchableOpacity onPress={onPress} testID={testID ?? `button-${label}`}>
         <Text>{label}</Text>
+      </TouchableOpacity>
+    ),
+    IconButton: ({ onPress, testID }: any) => (
+      <TouchableOpacity onPress={onPress} testID={testID ?? 'icon-button'}>
+        <View />
       </TouchableOpacity>
     ),
   };
@@ -586,6 +592,63 @@ describe('ProductDetailsScreen', () => {
 
     await waitFor(() => {
       expect(queryByTestId('product-details-contacts')).toBeNull();
+    });
+  });
+
+  it('exibe CTA Entrar em contato para serviço sob consulta com canal principal', async () => {
+    mockUseProductDetails.mockReturnValue({
+      product: {
+        ...mockProduct,
+        type: PRODUCT_CATALOG_TYPE.SERVICE,
+        price: null,
+        contacts: [{ type: 'whatsapp', value: '5511999999999' }],
+      },
+      ad: null,
+      advertiserId: 'adv-1',
+      relatedProducts: [],
+      loading: false,
+      isFavorite: false,
+      setIsFavorite: jest.fn(),
+      handleAddToCart: jest.fn(),
+      loadAd: jest.fn(),
+    });
+
+    const { getByTestId, queryByTestId } = render(
+      <ProductDetailsScreen navigation={mockNavigation as any} route={{ params: { productId: 'product-1' } } as any} />,
+    );
+
+    await waitFor(() => {
+      expect(getByTestId('product-hero-on-consultation')).toBeTruthy();
+      expect(getByTestId('product-details-contact-us')).toBeTruthy();
+      expect(queryByTestId('product-details-add-to-cart')).toBeNull();
+    });
+  });
+
+  it('oculta CTA Entrar em contato quando sob consulta sem canais', async () => {
+    mockUseProductDetails.mockReturnValue({
+      product: {
+        ...mockProduct,
+        type: PRODUCT_CATALOG_TYPE.SERVICE,
+        price: null,
+        contacts: [],
+      },
+      ad: null,
+      advertiserId: undefined,
+      relatedProducts: [],
+      loading: false,
+      isFavorite: false,
+      setIsFavorite: jest.fn(),
+      handleAddToCart: jest.fn(),
+      loadAd: jest.fn(),
+    });
+
+    const { queryByTestId } = render(
+      <ProductDetailsScreen navigation={mockNavigation as any} route={{ params: { productId: 'product-1' } } as any} />,
+    );
+
+    await waitFor(() => {
+      expect(queryByTestId('product-details-contact-us')).toBeNull();
+      expect(queryByTestId('product-details-add-to-cart')).toBeNull();
     });
   });
 });

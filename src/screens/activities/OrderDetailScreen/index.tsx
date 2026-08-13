@@ -1,19 +1,23 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import type { StackScreenProps } from '@react-navigation/stack';
 import { ScreenWithHeader } from '@/components/ui/layout';
 import { SecondaryButton } from '@/components/ui/buttons';
 import { CachedImage } from '@/components/ui/media/CachedImage';
-import { orderService } from '@/services';
+import CreateActivityModal, { type CreateActivityFormData } from '@/components/sections/activity/CreateActivityModal';
+import { orderService, activityService } from '@/services';
 import { useTranslation } from '@/hooks/i18n';
 import { useAnalyticsScreen } from '@/analytics';
 import { formatPrice } from '@/utils';
 import { logger } from '@/utils/logger';
 import { orderItemBadgeLabels } from '@/utils/marketplace/orderItemBadges';
-import { orderItemActionKey } from '@/utils/marketplace/orderItemAction';
+import { orderItemPrimaryAction } from '@/utils/marketplace/orderItemAction';
 import { formatOrderDisplayId } from '@/utils/marketplace/orderDisplayId';
 import { orderVoucherDiscountAmount } from '@/utils/marketplace/orderVoucherDiscount';
-import { navigateToProductDetailsScreen } from '@/utils/navigation/productNavigation';
+import { activityInitialDataFromOrderProduct } from '@/utils/activity/activityInitialDataFromOrderProduct';
+import { addActivityToDeviceCalendar } from '@/utils/activity/addActivityToDeviceCalendar';
+import { navigateRootStack } from '@/utils/navigation/rootStackNavigation';
+import { navigateToActivitiesActives } from '@/utils/navigation/activitiesNavigation';
 import { PRODUCT_CATALOG_TYPE } from '@/types/product';
 import type { Order, OrderItem } from '@/types/order';
 import type { RootStackParamList } from '@/types/navigation';
@@ -46,6 +50,8 @@ const OrderDetailScreen: React.FC<Props> = ({ navigation, route }) => {
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [isCreateActivityModalVisible, setIsCreateActivityModalVisible] = useState(false);
+  const [createActivityInitialData, setCreateActivityInitialData] = useState<CreateActivityFormData | null>(null);
   const orderIdRef = useRef(orderId);
   orderIdRef.current = orderId;
 
@@ -89,24 +95,134 @@ const OrderDetailScreen: React.FC<Props> = ({ navigation, route }) => {
   const voucherDiscount = order ? orderVoucherDiscountAmount(order) : 0;
   const voucherCode = order?.voucher?.code?.trim() ?? '';
 
-  const openProduct = useCallback(
+  const openProtocol = useCallback(
     (productId: string) => {
-      navigateToProductDetailsScreen(navigation, { productId });
+      navigateRootStack(navigation, 'ProtocolDetail', { productId });
     },
     [navigation],
   );
 
-  const renderItemAction = (item: OrderItem) => {
-    const action = orderItemActionKey(item.product?.type);
-    if (!action) return null;
+  const openCreateActivity = useCallback((item: OrderItem) => {
+    setCreateActivityInitialData(activityInitialDataFromOrderProduct(item.product));
+    setIsCreateActivityModalVisible(true);
+  }, []);
 
-    const labelKey = action === 'viewProgram' ? 'checkout.viewProgram' : 'checkout.addToCalendar';
-    const defaultLabel = action === 'viewProgram' ? 'Ver programa' : 'Adicionar no calendário';
+  const closeCreateActivityModal = useCallback(() => {
+    setIsCreateActivityModalVisible(false);
+    setCreateActivityInitialData(null);
+  }, []);
+
+  const saveActivityFromOrder = useCallback(
+    async (data: CreateActivityFormData) => {
+      try {
+        const response = await activityService.createActivity({
+          name: data.name,
+          type: data.type,
+          startDate: data.startDate,
+          startTime: data.startTime,
+          endDate: data.endDate,
+          endTime: data.endTime,
+          location: data.location,
+          description: data.description,
+          reminderEnabled: data.reminderEnabled,
+          reminderOffset: data.reminderMinutes ? `${data.reminderMinutes}` : null,
+        });
+
+        if (!response?.success || !response.data) {
+          throw new Error(response?.message || t('activities.saveError'));
+        }
+
+        if (data.addToDeviceCalendar) {
+          try {
+            await addActivityToDeviceCalendar({
+              name: data.name,
+              startDate: data.startDate,
+              startTime: data.startTime,
+              endDate: data.endDate,
+              endTime: data.endTime,
+              location: data.location,
+              description: data.description,
+            });
+          } catch (calendarError) {
+            logger.error('[OrderDetailScreen] Falha ao marcar na agenda do celular', {
+              activityId: response.data.id,
+              cause: calendarError,
+            });
+            Alert.alert(
+              t('activities.createdWithoutDeviceCalendarTitle', {
+                defaultValue: 'Atividade criada',
+              }),
+              t('activities.createdWithoutDeviceCalendarMessage', {
+                defaultValue:
+                  'A atividade foi salva em Minhas Atividades, mas não foi possível adicioná-la à agenda do celular.',
+              }),
+              [
+                { text: t('common.ok') },
+                {
+                  text: t('activities.goToMyActivities', { defaultValue: 'Ver Minhas Atividades' }),
+                  onPress: () => navigateToActivitiesActives(navigation),
+                },
+              ],
+            );
+            return;
+          }
+        }
+
+        Alert.alert(
+          t('activities.createdFromOrderTitle', { defaultValue: 'Atividade criada' }),
+          t('activities.createdFromOrderMessage', {
+            defaultValue: 'Sua atividade já está disponível em Minhas Atividades.',
+          }),
+          [
+            { text: t('common.ok') },
+            {
+              text: t('activities.goToMyActivities', { defaultValue: 'Ver Minhas Atividades' }),
+              onPress: () => navigateToActivitiesActives(navigation),
+            },
+          ],
+        );
+      } catch (error: unknown) {
+        logger.error('[OrderDetailScreen] Falha ao criar atividade a partir do pedido', {
+          orderId: orderIdRef.current,
+          cause: error,
+        });
+        const message =
+          error instanceof Error && error.message.trim() ? error.message.trim() : t('activities.saveError');
+        Alert.alert(t('errors.error'), message, [{ text: t('common.ok') }]);
+      }
+    },
+    [navigation, t],
+  );
+
+  const renderItemAction = (item: OrderItem) => {
+    if (!order) return null;
+    const primary = orderItemPrimaryAction(order, item);
+    if (!primary) return null;
+
+    if (primary.kind === 'canceled') {
+      return (
+        <View style={styles.orderItemCanceledTag} accessibilityRole='text'>
+          <Text style={styles.orderItemCanceledTagText}>
+            {t('activities.orderItemCanceled', { defaultValue: 'Cancelado' })}
+          </Text>
+        </View>
+      );
+    }
+
+    const labelKey =
+      primary.action === 'viewProtocol' ? 'activities.viewProtocol' : 'activities.createActivityFromOrder';
+    const defaultLabel = primary.action === 'viewProtocol' ? 'Ver protocolo' : 'Criar atividade';
 
     return (
       <TouchableOpacity
         style={styles.orderItemActionButton}
-        onPress={() => openProduct(item.productId)}
+        onPress={() => {
+          if (primary.action === 'viewProtocol') {
+            openProtocol(item.productId);
+            return;
+          }
+          openCreateActivity(item);
+        }}
         activeOpacity={0.7}
       >
         <Text style={styles.orderItemActionButtonText}>{t(labelKey, { defaultValue: defaultLabel })}</Text>
@@ -246,6 +362,15 @@ const OrderDetailScreen: React.FC<Props> = ({ navigation, route }) => {
           </View>
         </>
       )}
+
+      <CreateActivityModal
+        visible={isCreateActivityModalVisible}
+        onClose={closeCreateActivityModal}
+        onSave={(data) => {
+          void saveActivityFromOrder(data);
+        }}
+        initialData={createActivityInitialData ?? undefined}
+      />
     </ScreenWithHeader>
   );
 };

@@ -9,36 +9,29 @@ import { styles } from './styles';
 
 type ActivityType = 'task' | 'event';
 
+export type CreateActivityFormData = {
+  name: string;
+  type: ActivityType;
+  startDate?: string;
+  startTime?: string;
+  endDate?: string;
+  endTime?: string;
+  location?: string;
+  description?: string;
+  reminderEnabled: boolean;
+  reminderMinutes?: number;
+  addToDeviceCalendar: boolean;
+};
+
 type Props = {
   visible: boolean;
   onClose: () => void;
-  onSave: (
-    data: {
-      name: string;
-      type: ActivityType;
-      startDate?: string;
-      startTime?: string;
-      endDate?: string;
-      endTime?: string;
-      location?: string;
-      description?: string;
-      reminderEnabled: boolean;
-      reminderMinutes?: number;
-    },
-    activityId?: string,
-  ) => void;
+  onSave: (data: CreateActivityFormData, activityId?: string) => void;
   activityId?: string;
-  initialData?: {
+  initialData?: Partial<CreateActivityFormData> & {
     name: string;
     type: ActivityType;
-    startDate?: string;
-    startTime?: string;
-    endDate?: string;
-    endTime?: string;
-    location?: string;
-    description?: string;
     reminderEnabled: boolean;
-    reminderMinutes?: number;
   };
 };
 
@@ -60,6 +53,7 @@ const CreateActivityModal: React.FC<Props> = ({ visible, onClose, onSave, activi
   const [description, setDescription] = useState(initialData?.description || '');
   const [reminderEnabled, setReminderEnabled] = useState(initialData?.reminderEnabled || false);
   const [reminderMinutes, setReminderMinutes] = useState(initialData?.reminderMinutes || 5);
+  const [addToDeviceCalendar, setAddToDeviceCalendar] = useState(initialData?.addToDeviceCalendar ?? true);
 
   // Helper function to parse time string to Date
   function parseTimeToDate(timeString: string): Date {
@@ -77,7 +71,6 @@ const CreateActivityModal: React.FC<Props> = ({ visible, onClose, onSave, activi
     return date;
   }
 
-  // Reset form when modal closes or initialData changes
   React.useEffect(() => {
     if (visible) {
       if (initialData) {
@@ -91,8 +84,8 @@ const CreateActivityModal: React.FC<Props> = ({ visible, onClose, onSave, activi
         setDescription(initialData.description || '');
         setReminderEnabled(initialData.reminderEnabled || false);
         setReminderMinutes(initialData.reminderMinutes || 5);
+        setAddToDeviceCalendar(initialData.addToDeviceCalendar ?? true);
       } else {
-        // Reset to defaults for new activity
         setName('');
         setType('event');
         setStartDateValue(new Date());
@@ -103,6 +96,7 @@ const CreateActivityModal: React.FC<Props> = ({ visible, onClose, onSave, activi
         setDescription('');
         setReminderEnabled(false);
         setReminderMinutes(5);
+        setAddToDeviceCalendar(true);
       }
     }
   }, [visible, initialData]);
@@ -155,6 +149,7 @@ const CreateActivityModal: React.FC<Props> = ({ visible, onClose, onSave, activi
         description: type === 'task' ? description : undefined,
         reminderEnabled,
         reminderMinutes: reminderEnabled ? reminderMinutes : undefined,
+        addToDeviceCalendar,
       },
       activityId,
     );
@@ -473,6 +468,26 @@ const CreateActivityModal: React.FC<Props> = ({ visible, onClose, onSave, activi
               thumbColor='#FFFFFF'
             />
             <Text style={styles.switchLabel}>{reminderEnabled ? t('activities.on') : t('activities.off')}</Text>
+          </View>
+        </View>
+
+        <View style={styles.divider} />
+
+        <View style={styles.reminderContainer}>
+          <View style={styles.reminderContent}>
+            <Icon name='event' size={20} color='#001137' />
+            <Text style={styles.reminderText}>
+              {t('activities.markOnDeviceCalendar', { defaultValue: 'Marcar na agenda do celular' })}
+            </Text>
+          </View>
+          <View style={styles.switchContainer}>
+            <Switch
+              value={addToDeviceCalendar}
+              onValueChange={setAddToDeviceCalendar}
+              trackColor={{ false: '#E0E0E0', true: '#0154f8' }}
+              thumbColor='#FFFFFF'
+            />
+            <Text style={styles.switchLabel}>{addToDeviceCalendar ? t('activities.on') : t('activities.off')}</Text>
           </View>
         </View>
       </View>
