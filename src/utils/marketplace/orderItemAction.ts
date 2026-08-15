@@ -1,4 +1,5 @@
 import { PRODUCT_CATALOG_TYPE } from '@/types/product';
+import { ORDER_PAYMENT_STATUS } from '@/constants/order/orderPaymentStatus';
 import type { Order, OrderItem } from '@/types/order';
 import { orderCardStatusKey } from '@/utils/marketplace/orderStatusDisplay';
 import { subscriptionIsCanceledPresentation } from '@/utils/subscription/subscriptionManageDisplay';
@@ -49,6 +50,10 @@ export function orderItemPrimaryAction(
       return null;
     }
     return { kind: 'canceled' };
+  }
+
+  if (order.paymentStatus !== ORDER_PAYMENT_STATUS.PAID) {
+    return null;
   }
 
   const action = orderItemActionKey(item.product?.type);

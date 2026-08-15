@@ -1,4 +1,5 @@
 import { PRODUCT_CATALOG_TYPE, type Product } from '@/types/product';
+import { ORDER_PAYMENT_STATUS } from '@/constants/order/orderPaymentStatus';
 import type { OrderItem } from '@/types/order';
 import { orderItemActionKey, orderItemIsCanceled, orderItemPrimaryAction } from './orderItemAction';
 
@@ -108,6 +109,30 @@ describe('orderItemPrimaryAction', () => {
         },
       ),
     ).toEqual({ kind: 'action', action: 'createActivity' });
+  });
+
+  it('não retorna ação para protocolo com pagamento pendente', () => {
+    expect(
+      orderItemPrimaryAction(
+        { status: 'processing', paymentStatus: ORDER_PAYMENT_STATUS.PENDING, deliveryStatus: 'processing' },
+        {
+          productId: 'prog-1',
+          product: baseProduct({ id: 'prog-1', type: PRODUCT_CATALOG_TYPE.PROGRAM, name: 'Protocolo' }),
+        },
+      ),
+    ).toBeNull();
+  });
+
+  it('não retorna ação para serviço com pagamento recusado', () => {
+    expect(
+      orderItemPrimaryAction(
+        { status: 'processing', paymentStatus: ORDER_PAYMENT_STATUS.FAILED, deliveryStatus: 'processing' },
+        {
+          productId: 'svc-1',
+          product: baseProduct({ id: 'svc-1', type: PRODUCT_CATALOG_TYPE.SERVICE, name: 'Consulta' }),
+        },
+      ),
+    ).toBeNull();
   });
 
   it('retorna null para produto físico mesmo cancelado', () => {
