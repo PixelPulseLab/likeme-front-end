@@ -595,6 +595,39 @@ describe('ProductDetailsScreen', () => {
     });
   });
 
+  it('usa contatos do provider quando serviço sob consulta não tem contatos no produto', async () => {
+    mockUseProductDetails.mockReturnValue({
+      product: {
+        ...mockProduct,
+        type: PRODUCT_CATALOG_TYPE.SERVICE,
+        price: null,
+        contacts: [],
+      },
+      ad: null,
+      advertiserId: 'adv-1',
+      relatedProducts: [],
+      loading: false,
+      isFavorite: false,
+      setIsFavorite: jest.fn(),
+      handleAddToCart: jest.fn(),
+      loadAd: jest.fn(),
+    });
+    mockUseProductPartner.mockReturnValue({
+      ...emptyProductPartner,
+      partnerContacts: [{ type: 'whatsapp', value: '5511999999999' }],
+    });
+
+    const { getByTestId, queryByTestId } = render(
+      <ProductDetailsScreen navigation={mockNavigation as any} route={{ params: { productId: 'product-1' } } as any} />,
+    );
+
+    await waitFor(() => {
+      expect(getByTestId('product-details-contacts-whatsapp')).toBeTruthy();
+      expect(getByTestId('product-details-contact-us')).toBeTruthy();
+      expect(queryByTestId('product-details-add-to-cart')).toBeNull();
+    });
+  });
+
   it('exibe CTA Entrar em contato para serviço sob consulta com canal principal', async () => {
     mockUseProductDetails.mockReturnValue({
       product: {
