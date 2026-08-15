@@ -5,6 +5,7 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import { ModalBase } from '@/components/ui/modals/shared';
 import { SecondaryButton, PrimaryButton } from '@/components/ui/buttons';
 import { useTranslation } from '@/hooks/i18n';
+import { activityDateValueFromYmd, activityTimeValueFromAmPm } from '@/utils/activity/activityFormDateTime';
 import { styles } from './styles';
 
 type ActivityType = 'task' | 'event';
@@ -39,47 +40,25 @@ const CreateActivityModal: React.FC<Props> = ({ visible, onClose, onSave, activi
   const { t } = useTranslation();
   const [name, setName] = useState(initialData?.name || '');
   const [type, setType] = useState<ActivityType>(initialData?.type || 'event');
-  const [startDateValue, setStartDateValue] = useState(
-    initialData?.startDate ? new Date(initialData.startDate) : new Date(),
-  );
-  const [startTimeValue, setStartTimeValue] = useState(
-    initialData?.startTime ? parseTimeToDate(initialData.startTime) : new Date(),
-  );
-  const [endDateValue, setEndDateValue] = useState(initialData?.endDate ? new Date(initialData.endDate) : new Date());
-  const [endTimeValue, setEndTimeValue] = useState(
-    initialData?.endTime ? parseTimeToDate(initialData.endTime) : new Date(),
-  );
+  const [startDateValue, setStartDateValue] = useState(activityDateValueFromYmd(initialData?.startDate));
+  const [startTimeValue, setStartTimeValue] = useState(activityTimeValueFromAmPm(initialData?.startTime));
+  const [endDateValue, setEndDateValue] = useState(activityDateValueFromYmd(initialData?.endDate));
+  const [endTimeValue, setEndTimeValue] = useState(activityTimeValueFromAmPm(initialData?.endTime));
   const [location, setLocation] = useState(initialData?.location || '');
   const [description, setDescription] = useState(initialData?.description || '');
   const [reminderEnabled, setReminderEnabled] = useState(initialData?.reminderEnabled || false);
   const [reminderMinutes, setReminderMinutes] = useState(initialData?.reminderMinutes || 5);
   const [addToDeviceCalendar, setAddToDeviceCalendar] = useState(initialData?.addToDeviceCalendar ?? true);
 
-  // Helper function to parse time string to Date
-  function parseTimeToDate(timeString: string): Date {
-    const date = new Date();
-    const [time, period] = timeString.split(' ');
-    const [hours, minutes] = time.split(':');
-    let hour = parseInt(hours, 10);
-    if (period === 'pm' && hour !== 12) {
-      hour += 12;
-    }
-    if (period === 'am' && hour === 12) {
-      hour = 0;
-    }
-    date.setHours(hour, parseInt(minutes, 10), 0, 0);
-    return date;
-  }
-
   React.useEffect(() => {
     if (visible) {
       if (initialData) {
         setName(initialData.name || '');
         setType(initialData.type || 'event');
-        setStartDateValue(initialData.startDate ? new Date(initialData.startDate) : new Date());
-        setStartTimeValue(initialData.startTime ? parseTimeToDate(initialData.startTime) : new Date());
-        setEndDateValue(initialData.endDate ? new Date(initialData.endDate) : new Date());
-        setEndTimeValue(initialData.endTime ? parseTimeToDate(initialData.endTime) : new Date());
+        setStartDateValue(activityDateValueFromYmd(initialData.startDate));
+        setStartTimeValue(activityTimeValueFromAmPm(initialData.startTime));
+        setEndDateValue(activityDateValueFromYmd(initialData.endDate));
+        setEndTimeValue(activityTimeValueFromAmPm(initialData.endTime));
         setLocation(initialData.location || '');
         setDescription(initialData.description || '');
         setReminderEnabled(initialData.reminderEnabled || false);
