@@ -156,15 +156,19 @@ const PersonalDataEditScreen: React.FC<Props> = ({ navigation }) => {
 
       const { firstName, lastName } = parseFullName(formData.fullName);
 
+      const phoneNormalized = phoneDigits(formData.phone);
+
       const personData: PersonData = {
         firstName,
         lastName,
         gender: formData.gender.trim(),
         birthdate: birthdateISO!,
-        weight: formData.weight.trim().replace(/,/g, '.'),
-        height: formData.height.trim().replace(/,/g, '.'),
-        phone: phoneDigits(formData.phone),
+        weight: weightNormalized,
+        height: heightNormalized,
       };
+      if (phoneNormalized) {
+        personData.phone = phoneNormalized;
+      }
 
       await personsService.createOrUpdatePerson(personData);
       await userService.syncStoredUserName(formData.fullName.trim());
