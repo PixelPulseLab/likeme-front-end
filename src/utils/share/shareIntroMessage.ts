@@ -11,6 +11,7 @@ const SHARE_TYPE_I18N_KEY_BY_CONTENT_TYPE: Record<ShareContentType, string> = {
   [SHARE_CONTENT_TYPES.SERVICE]: 'share.type.service',
   [SHARE_CONTENT_TYPES.PROVIDER]: 'share.type.provider',
   [SHARE_CONTENT_TYPES.AFFILIATE]: 'share.type.affiliateProduct',
+  [SHARE_CONTENT_TYPES.SUBSCRIPTION]: 'share.type.subscription',
 };
 
 export function shareContentTypePhrase(contentType: ShareContentType): string {
