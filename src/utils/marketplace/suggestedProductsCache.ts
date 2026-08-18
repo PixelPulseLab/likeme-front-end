@@ -30,7 +30,7 @@ export function suggestedProductsCacheKey(query: SuggestedProductsCacheQuery): s
     query.categoryId ?? '',
     query.type ?? '',
     query.excludeProductId ?? '',
-    query.fillWithOtherCategories === true ? '1' : query.fillWithOtherCategories === false ? '0' : '',
+    query.fillWithOtherCategories == null ? '' : String(query.fillWithOtherCategories),
   ].join('::');
 }
 
