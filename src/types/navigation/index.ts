@@ -110,7 +110,11 @@ type RootStackParamListCore = {
   DeleteAccount: undefined;
   SubscriptionList: undefined;
   ProtocolDetail: { protocol: ProtocolDetailProtocol } | { productId: string };
-  ManageProtocolSubscription: { subscriptionId: string; programName: string };
+  ManageProtocolSubscription: {
+    subscriptionId: string;
+    programName: string;
+    focusUpdatePayment?: boolean;
+  };
   CancelProtocolSubscription: {
     subscriptionId: string;
     programName: string;

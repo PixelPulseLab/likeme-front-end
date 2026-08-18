@@ -15,14 +15,14 @@ interface PaymentFormProps {
   cpf: string;
   paymentFieldErrors?: Record<string, string>;
   billingAddressData: AddressData;
-  deliverySameAsBilling: boolean;
+  deliverySameAsBilling?: boolean;
   onCardholderNameChange: (text: string) => void;
   onCardNumberChange: (text: string) => void;
   onExpiryDateChange: (text: string) => void;
   onCvvChange: (text: string) => void;
   onCpfChange: (text: string) => void;
   onSaveBillingAddress: (address: AddressData) => void | Promise<void>;
-  onDeliverySameAsBillingChange: (value: boolean) => void;
+  onDeliverySameAsBillingChange?: (value: boolean) => void;
 }
 
 const PaymentForm: React.FC<PaymentFormProps> = ({
@@ -117,7 +117,7 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
         titleKey='checkout.billingAddress'
         deliverySameAsBilling={deliverySameAsBilling}
         onDeliverySameAsBillingChange={onDeliverySameAsBillingChange}
-        startWithEditOpen={!deliverySameAsBilling}
+        startWithEditOpen={deliverySameAsBilling === undefined ? true : !deliverySameAsBilling}
       />
     </>
   );

@@ -43,4 +43,11 @@ describe('subscriptionManageDisplay', () => {
       badgeColor: 'orange',
     });
   });
+
+  it('trata status PAST_DUE como pagamento pendente', () => {
+    expect(subscriptionManageStatusLabel('PAST_DUE', false)).toEqual({
+      label: 'Pagamento pendente',
+      badgeColor: 'orange',
+    });
+  });
 });

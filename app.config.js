@@ -186,7 +186,15 @@ function shareUniversalLinkHost() {
 
 const SHARE_UNIVERSAL_LINK_HOST = shareUniversalLinkHost();
 
-const SHARE_ANDROID_PATH_PREFIXES = ['/post', '/community', '/product', '/protocol', '/affiliate', '/provider'];
+const SHARE_ANDROID_PATH_PREFIXES = [
+  '/post',
+  '/community',
+  '/product',
+  '/protocol',
+  '/affiliate',
+  '/provider',
+  '/subscription',
+];
 
 const REVOPUSH_SERVER_URL = 'https://api.revopush.org';
 
