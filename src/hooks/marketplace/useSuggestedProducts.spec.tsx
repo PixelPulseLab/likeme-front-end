@@ -1,6 +1,7 @@
 import { renderHook, waitFor } from '@testing-library/react-native';
 import { useSuggestedProducts } from './useSuggestedProducts';
 import { productService } from '@/services';
+import { invalidateSuggestedProductsCache } from '@/utils/marketplace/suggestedProductsCache';
 
 jest.mock('@/services', () => ({
   productService: {
@@ -59,6 +60,7 @@ const rankedProducts = [
 describe('useSuggestedProducts', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    invalidateSuggestedProductsCache();
   });
 
   it('preserva a ordem ranqueada da API sem embaralhar (APP-352)', async () => {
@@ -116,6 +118,31 @@ describe('useSuggestedProducts', () => {
           status: 'active',
         }),
       );
+    });
+  });
+
+  it('hidrata do cache e pula rede no remount recente', async () => {
+    (productService.listProducts as jest.Mock).mockResolvedValue({
+      success: true,
+      data: { products: rankedProducts },
+    });
+
+    const { unmount } = renderHook(() => useSuggestedProducts({ limit: 2 }));
+
+    await waitFor(() => {
+      expect(productService.listProducts).toHaveBeenCalledTimes(1);
+    });
+
+    unmount();
+    (productService.listProducts as jest.Mock).mockClear();
+
+    const { result } = renderHook(() => useSuggestedProducts({ limit: 2 }));
+
+    expect(result.current.products.map((product) => product.id)).toEqual(['p-sleep', 'p-other']);
+    expect(result.current.loading).toBe(false);
+
+    await waitFor(() => {
+      expect(productService.listProducts).not.toHaveBeenCalled();
     });
   });
 });

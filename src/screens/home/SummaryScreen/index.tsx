@@ -6,6 +6,7 @@ import { GradientBackground, ScreenWithHeader } from '@/components/ui/layout';
 import { SearchBar } from '@/components/ui/inputs';
 import { StickyFilterCarouselRow } from '@/components/ui/menu';
 import {
+  useAdvertisers,
   useCommunities,
   useSuggestedProducts,
   SUGGESTED_PRODUCTS_HOME_ACTIVITIES_DEFAULTS,
@@ -22,7 +23,7 @@ import { FilterCategoryModal, type FilterCategoryResult } from '@/components/ui/
 import { useFloatingMenuActions } from '@/contexts/FloatingMenuContext';
 import { useTranslation } from '@/hooks/i18n';
 import { logger } from '@/utils/logger';
-import { communityService, storageService, advertiserService } from '@/services';
+import { communityService, storageService } from '@/services';
 import { PopularProvidersSection, type Provider } from '@/components/sections/community';
 import { type JoinCardItem } from '@/components/ui/cards';
 import { JoinCardList } from '@/components/ui/lists/JoinCardList';
@@ -31,6 +32,7 @@ import ProfileFloatingMenu from '@/components/sections/profile/ProfileFloatingMe
 // TODO: Temporariamente desabilitados
 // import { AnamnesisPromptCard } from '@/components/sections/anamnesis';
 // import { AvatarSection } from '@/components/sections/avatar';
+import { ADVERTISER_STATUS } from '@/constants';
 import { PRODUCT_CATALOG_TYPE } from '@/types/product';
 import { useAnalyticsScreen } from '@/analytics';
 import { getCommunityStackNavigator } from '@/navigation/rootStackScreenLoaders';
@@ -184,41 +186,25 @@ const SummaryScreen: React.FC<Props> = ({ navigation }) => {
       navigation: rootNavigation as StackNavigationProp<RootStackParamList>,
     });
 
-  const [popularProviders, setPopularProviders] = useState<Provider[]>([]);
+  // Carrossel horizontal — 10 cobre mais que a 1ª tela na maioria dos devices.
+  const { advertisers: popularAdvertisers } = useAdvertisers({
+    enabled: hasSessionToken,
+    listOptions: {
+      page: 1,
+      limit: 10,
+      status: ADVERTISER_STATUS.ACTIVE,
+    },
+  });
 
-  useEffect(() => {
-    if (!hasSessionToken) {
-      setPopularProviders([]);
-      return;
-    }
-
-    // PopularProvidersSection e um carrossel horizontal — 10 e suficiente
-    // pra preencher mais que a primeira tela na maioria dos devices, sem
-    // pagar latencia/dados para itens que nunca serao vistos.
-    const loadProviders = async () => {
-      try {
-        const response = await advertiserService.getAdvertisers({
-          page: 1,
-          limit: 10,
-          status: 'active',
-        });
-        if (!response.success || !response.data?.advertisers) {
-          setPopularProviders([]);
-          return;
-        }
-        const providers: Provider[] = response.data.advertisers.map((a) => ({
-          id: a.id,
-          name: a.name,
-          avatar: a.logo,
-        }));
-        setPopularProviders(providers);
-      } catch (error) {
-        logger.error('[SummaryScreen] Erro ao carregar provedores', error);
-        setPopularProviders([]);
-      }
-    };
-    loadProviders();
-  }, [hasSessionToken]);
+  const popularProviders = useMemo(
+    (): Provider[] =>
+      popularAdvertisers.map((advertiser) => ({
+        id: advertiser.id,
+        name: advertiser.name,
+        avatar: advertiser.logo,
+      })),
+    [popularAdvertisers],
+  );
 
   const { products: suggestedPrograms } = useSuggestedProducts({
     ...SUGGESTED_PRODUCTS_HOME_ACTIVITIES_DEFAULTS,
