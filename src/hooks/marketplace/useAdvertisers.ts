@@ -5,7 +5,7 @@ import { advertisersListCacheKey } from '@/utils/marketplace/advertisersCacheKey
 import { logger } from '@/utils/logger';
 import { prefetchImageUris } from '@/utils/image/prefetchImageUris';
 import type { Advertiser } from '@/types/ad';
-import { ADVERTISER_STATUS } from '@/constants';
+import { ADVERTISER_STATUS, type AdvertiserType } from '@/constants';
 
 const ADVERTISERS_PREFETCH_FIRST_N = 8;
 
@@ -15,6 +15,7 @@ export interface UseAdvertisersListOptions {
   page?: number;
   limit?: number;
   status?: AdvertiserStatus;
+  type?: AdvertiserType;
   search?: string;
   categoryId?: string;
 }
@@ -45,6 +46,7 @@ export const useAdvertisers = (params: UseAdvertisersParams = {}): UseAdvertiser
           page: listOptions?.page,
           limit: listOptions?.limit,
           status: listOptions?.status,
+          type: listOptions?.type,
           search: listOptions?.search,
           categoryId: listOptions?.categoryId,
         })
@@ -68,6 +70,7 @@ export const useAdvertisers = (params: UseAdvertisersParams = {}): UseAdvertiser
   const page = listOptions?.page ?? 1;
   const limit = listOptions?.limit ?? 50;
   const status = listOptions?.status ?? ADVERTISER_STATUS.ACTIVE;
+  const type = listOptions?.type;
   const search = listOptions?.search?.trim() ?? '';
   const categoryId = listOptions?.categoryId?.trim() ?? '';
 
@@ -151,6 +154,7 @@ export const useAdvertisers = (params: UseAdvertisersParams = {}): UseAdvertiser
         limit,
         status,
         communityId,
+        ...(type ? { type } : {}),
         ...(search ? { search } : {}),
         ...(categoryId ? { categoryId } : {}),
       };
@@ -224,6 +228,7 @@ export const useAdvertisers = (params: UseAdvertisersParams = {}): UseAdvertiser
       page,
       limit,
       status,
+      type,
       communityId,
       search,
       categoryId,
@@ -288,6 +293,7 @@ export const useAdvertisers = (params: UseAdvertisersParams = {}): UseAdvertiser
     page,
     limit,
     status,
+    type,
     search,
     categoryId,
     fetchAllPages,

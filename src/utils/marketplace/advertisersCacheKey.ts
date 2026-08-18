@@ -13,6 +13,7 @@ export function advertisersListCacheKey(
     String(options.page ?? 1),
     String(options.limit ?? 50),
     options.status ?? '',
+    options.type ?? '',
     options.search?.trim() ?? '',
     options.categoryId?.trim() ?? '',
   ].join('::');

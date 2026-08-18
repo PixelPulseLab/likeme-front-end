@@ -46,6 +46,7 @@ import {
 import { marketplaceSolutionOptions, SOLUTION_TAB_ALL, type MarketplaceSolutionTab } from '@/types/solution';
 import { navigateToProductDetailsScreen } from '@/utils/navigation/productNavigation';
 import type { RootStackParamList } from '@/types/navigation';
+import { ADVERTISER_TYPE } from '@/constants';
 import { styles } from './styles';
 
 type Props = {
@@ -201,6 +202,7 @@ const SummaryScreen: React.FC<Props> = ({ navigation }) => {
           page: 1,
           limit: 10,
           status: 'active',
+          type: ADVERTISER_TYPE.PERSON,
         });
         if (!response.success || !response.data?.advertisers) {
           setPopularProviders([]);
