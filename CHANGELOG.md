@@ -270,3 +270,8 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 
 ### Alterado
 - Itens de pedido cancelados mostram a tag Cancelado no lugar das ações
+
+## [1.14.0] - 2026-08-18
+
+### Corrigido
+- Na Home, as seções de profissionais e produtos recomendados não recarregam a cada abertura da tela: o conteúdo já aparece de imediato ao voltar

@@ -1,18 +1,15 @@
 {
-  "version": "1.13.0",
-  "releasedAt": "2026-08-11",
+  "version": "1.14.0",
+  "releasedAt": "2026-08-18",
   "android": {
-    "versionCode": 254
+    "versionCode": 255
   },
   "ios": {
-    "buildNumber": 30
+    "buildNumber": 31
   },
   "changelog": {
-    "added": [
-      "Em Meus Pedidos, protocolos abrem a área do assinante e serviços permitem criar atividade com opção de marcar na agenda do celular"
-    ],
-    "changed": [
-      "Itens de pedido cancelados mostram a tag Cancelado no lugar das ações"
+    "fixed": [
+      "Na Home, as seções de profissionais e produtos recomendados não recarregam a cada abertura da tela: o conteúdo já aparece de imediato ao voltar"
     ]
   }
 }
