@@ -275,3 +275,16 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 
 ### Corrigido
 - No accordion do protocolo, o highlight amarelo aparece somente na sessão expandida e some ao fechar
+
+## [1.14.0] - 2026-08-20
+
+### Adicionado
+- Com a assinatura em atraso, dá para atualizar o cartão no app — inclusive pelo link da notificação ou do e-mail (APP-386)
+
+### Alterado
+- Vitrines de profissionais listam só pessoas, sem misturar organizações
+- Cards de comunidade e produto enquadram a imagem um pouco acima do centro, para o assunto ficar visível
+
+### Corrigido
+- Rodapé dos cards no Android deixa de mostrar faixa cinza no blur
+- Compartilhar assinatura gera o link e a mensagem corretos
