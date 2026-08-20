@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View, type ViewStyle } from 'react-native';
 import { COLORS } from '@/constants';
-import { PlatformBlurView } from '@/components/ui/PlatformBlurView';
+import { BlurView } from 'expo-blur';
 import IconButton from '../IconButton';
 import { styles } from './styles';
 
@@ -72,7 +72,7 @@ const PillButtonWithIcon: React.FC<PillButtonWithIconProps> = ({
 
   return (
     <View style={[styles.blurRoot, wrapperStyle]}>
-      <PlatformBlurView intensity={blurIntensity} tint='light' style={styles.blur} />
+      <BlurView intensity={blurIntensity} tint='light' style={styles.blur} />
       <View style={styles.blurOverlay} />
       {pill}
     </View>

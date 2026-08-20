@@ -381,9 +381,13 @@ export function resolveCommunityHeroImageUri(
   if (!community) {
     return fallbackUri;
   }
-  const fromBackend = community.avatarUrl?.trim();
-  if (fromBackend) {
-    return fromBackend;
+  const bannerImageUrl = community.bannerImageUrl?.trim() || community.heroImageUrl?.trim();
+  if (bannerImageUrl) {
+    return bannerImageUrl;
+  }
+  const avatarUrl = community.avatarUrl?.trim();
+  if (avatarUrl) {
+    return avatarUrl;
   }
   const fileId = community.avatarFileId?.trim();
   if (fileId && HTTP_URL_PREFIX.test(fileId)) {

@@ -6,7 +6,7 @@ import { navigateRootStack } from '@/utils/navigation/rootStackNavigation';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { ColoredTwoDotsIcon } from '@/assets/ui';
 import { CachedImage } from '@/components/ui/media/CachedImage';
-import { PlatformBlurView } from '@/components/ui/PlatformBlurView';
+import { BlurView } from 'expo-blur';
 import { E2E_TEST_IDS, floatingMenuTestId } from '@/constants/e2eTestIds';
 import { styles } from './styles';
 
@@ -38,7 +38,7 @@ const FloatingMenu: React.FC<Props> = ({ items, selectedId }) => {
 
   return (
     <View style={[styles.container, { paddingBottom: Math.max(insets.bottom, MINIMUM_BOTTOM_PADDING) }]}>
-      <PlatformBlurView intensity={BLUR_INTENSITY} tint='light' style={styles.blur} />
+      <BlurView intensity={BLUR_INTENSITY} tint='light' style={styles.blur} />
       <View style={styles.overlay} />
 
       <View style={styles.row}>
