@@ -1,11 +1,12 @@
 import React from 'react';
-import { View, Text } from 'react-native';
+import { View } from 'react-native';
 import TextInput from '@/components/ui/inputs/TextInput';
 import { useFormattedInput } from '@/hooks';
 import { useTranslation } from '@/hooks/i18n';
 import { styles } from '../styles';
 import AddressForm from '../address/AddressForm';
 import type { AddressData } from '../address/AddressForm';
+import { E2E_TEST_IDS } from '@/constants/e2eTestIds';
 
 interface PaymentFormProps {
   cardholderName: string;
@@ -54,7 +55,7 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
   });
 
   return (
-    <>
+    <View testID={E2E_TEST_IDS.CHECKOUT_PAYMENT_FORM}>
       {/* Cartão de crédito (único método implementado) */}
       <View style={styles.cardForm}>
         <TextInput
@@ -64,6 +65,7 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
           onChangeText={onCardholderNameChange}
           errorText={paymentFieldErrors.cardholderName}
           required
+          testID={E2E_TEST_IDS.CHECKOUT_CARDHOLDER}
         />
         <TextInput
           label={t('checkout.cardNumber')}
@@ -73,6 +75,7 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
           keyboardType='numeric'
           errorText={paymentFieldErrors.cardNumber}
           required
+          testID={E2E_TEST_IDS.CHECKOUT_CARD_NUMBER}
         />
         <View style={styles.cardRow}>
           <View style={styles.cardFieldHalf}>
@@ -84,6 +87,7 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
               keyboardType='numeric'
               errorText={paymentFieldErrors.expiryDate}
               required
+              testID={E2E_TEST_IDS.CHECKOUT_EXPIRY}
             />
           </View>
           <View style={styles.cardFieldHalf}>
@@ -96,6 +100,7 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
               secureTextEntry
               errorText={paymentFieldErrors.cvv}
               required
+              testID={E2E_TEST_IDS.CHECKOUT_CVV}
             />
           </View>
         </View>
@@ -107,6 +112,7 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
           keyboardType='numeric'
           errorText={paymentFieldErrors.cpf}
           required
+          testID={E2E_TEST_IDS.CHECKOUT_CPF}
         />
       </View>
 
@@ -119,7 +125,7 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
         onDeliverySameAsBillingChange={onDeliverySameAsBillingChange}
         startWithEditOpen={deliverySameAsBilling === undefined ? true : !deliverySameAsBilling}
       />
-    </>
+    </View>
   );
 };
 

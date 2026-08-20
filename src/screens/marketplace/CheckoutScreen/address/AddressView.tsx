@@ -5,6 +5,7 @@ import { useTranslation } from '@/hooks/i18n';
 import { Checkbox } from '@/components/ui/inputs';
 import { AddressData } from './AddressForm';
 import { styles } from '../styles';
+import { E2E_TEST_IDS } from '@/constants/e2eTestIds';
 
 interface AddressViewProps {
   address: AddressData;
@@ -40,7 +41,7 @@ const AddressView: React.FC<AddressViewProps> = ({
   };
 
   return (
-    <View style={styles.addressCard}>
+    <View style={styles.addressCard} testID={E2E_TEST_IDS.CHECKOUT_ADDRESS_VIEW}>
       <View style={styles.addressCardHeader}>
         <Text style={styles.addressCardTitle}>{t(titleKey)}</Text>
         <TouchableOpacity onPress={onEditPress} activeOpacity={0.7}>

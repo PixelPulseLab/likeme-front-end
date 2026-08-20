@@ -22,6 +22,7 @@ type Props<T extends string | number = string> = {
   onSharePress?: () => void;
   menuOptions?: InfoSectionMenuOption[];
   style?: StyleProp<ViewStyle>;
+  optionTestIdPrefix?: string;
 };
 
 function InfoSectionTabsRow<T extends string | number = string>({
@@ -31,6 +32,7 @@ function InfoSectionTabsRow<T extends string | number = string>({
   onSharePress,
   menuOptions,
   style,
+  optionTestIdPrefix,
 }: Props<T>) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [menuAnchor, setMenuAnchor] = useState<MenuAnchor>({ top: 0, right: 16 });
@@ -80,6 +82,7 @@ function InfoSectionTabsRow<T extends string | number = string>({
           selectedId={selectedId}
           onSelect={onSelect}
           contentContainerStyle={styles.carouselContent}
+          optionTestIdPrefix={optionTestIdPrefix}
         />
       </View>
       {showShare ? (

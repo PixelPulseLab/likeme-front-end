@@ -10,6 +10,7 @@ interface CheckboxProps {
   disabled?: boolean;
   containerStyle?: StyleProp<ViewStyle>;
   labelStyle?: StyleProp<TextStyle>;
+  testID?: string;
 }
 
 const Checkbox: React.FC<CheckboxProps> = ({
@@ -19,6 +20,7 @@ const Checkbox: React.FC<CheckboxProps> = ({
   disabled = false,
   containerStyle,
   labelStyle,
+  testID,
 }) => {
   return (
     <TouchableOpacity
@@ -26,6 +28,7 @@ const Checkbox: React.FC<CheckboxProps> = ({
       onPress={onPress}
       activeOpacity={0.7}
       disabled={disabled}
+      testID={testID}
     >
       <View style={[styles.checkbox, checked && styles.checkboxChecked]}>
         {checked && <Icon name='check' size={12} color='#0154f8' />}

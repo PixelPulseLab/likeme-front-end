@@ -14,6 +14,7 @@ type Props<T = string> = {
   onSelect: (optionId: T) => void;
   style?: ViewStyle;
   contentContainerStyle?: StyleProp<ViewStyle>;
+  optionTestIdPrefix?: string;
 };
 
 const ButtonCarousel = <T extends string | number = string>({
@@ -22,6 +23,7 @@ const ButtonCarousel = <T extends string | number = string>({
   onSelect,
   style,
   contentContainerStyle,
+  optionTestIdPrefix,
 }: Props<T>) => {
   if (!options || options.length === 0) {
     return null;
@@ -44,6 +46,7 @@ const ButtonCarousel = <T extends string | number = string>({
             variant='light'
             style={isSelected ? styles.buttonSelected : styles.buttonUnselected}
             labelStyle={isSelected ? styles.buttonSelectedText : undefined}
+            testID={optionTestIdPrefix ? `${optionTestIdPrefix}${option.id}` : undefined}
           />
         );
       })}

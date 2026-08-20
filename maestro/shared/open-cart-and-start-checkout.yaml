@@ -1,0 +1,22 @@
+appId: app.likeme.com
+---
+- tapOn:
+    id: "e2e.header.cart"
+- extendedWaitUntil:
+    visible:
+      id: "e2e.cart.root"
+    timeout: 30000
+- scrollUntilVisible:
+    element:
+      id: "e2e.cart.checkout"
+    direction: DOWN
+    timeout: 20000
+- tapOn:
+    id: "e2e.cart.checkout"
+- extendedWaitUntil:
+    visible:
+      id: "e2e.checkout.addressForm"
+    timeout: 30000
+- runFlow: fill-checkout-address.yaml
+- tapOn:
+    id: "button-continue"

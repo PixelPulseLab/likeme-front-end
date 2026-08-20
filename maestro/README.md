@@ -35,6 +35,7 @@ npm run ios:staging
 | Pasta | Uso |
 |-------|-----|
 | `flows/` | Asserts (gate) |
+| `flows/checkout/` | Pedido real (fora do gate) |
 | `shared/` | Subflows de bootstrap |
 | `export/` | Screenshots |
 | `archive/` | Legados |
@@ -49,6 +50,7 @@ npm run test:e2e:critical     # smoke + hub críticos
 npm run test:e2e:hub
 npm run test:e2e:onboarding
 npm run test:e2e:welcome
+npm run test:e2e:checkout     # pedido real (Pagarme sandbox); fora do gate
 ```
 
 Seeds opcionais:
@@ -69,6 +71,15 @@ E2E_PRODUCT_ID=uuid E2E_COMMUNITY_ID=uuid npm run test:e2e:staging
 |-----|-----|
 | `EXPO_PUBLIC_E2E_STAGING_TOKEN` | JWT descartável (APIs) |
 | `E2E_PRODUCT_ID` / `E2E_COMMUNITY_ID` / `E2E_PROTOCOL_PRODUCT_ID` | Deep links |
+| `E2E_CHECKOUT_PRODUCT_ID` | Produto físico de staging para checkout pago/recusado |
+| `E2E_CHECKOUT_PROTOCOL_PRODUCT_ID` | Protocolo de staging para assinatura no checkout |
+| `E2E_CARD_CVV` | `123` aprova; `651` recusa no simulador PSP |
+
+Checkout real (`maestro/flows/checkout/`) não entra em `test:e2e:staging`: cobra Pagarme sandbox e dispara e-mail transacional. Requer `EXPO_PUBLIC_E2E_STAGING_TOKEN` válido.
+
+```bash
+npm run test:e2e:checkout
+```
 
 ## Android
 

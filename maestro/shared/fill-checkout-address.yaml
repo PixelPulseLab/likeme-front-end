@@ -1,0 +1,63 @@
+appId: app.likeme.com
+---
+- runFlow:
+    when:
+      visible:
+        id: "e2e.checkout.zip"
+    commands:
+      - tapOn:
+          id: "e2e.checkout.zip"
+      - eraseText
+      - inputText: "01310100"
+      - hideKeyboard
+      - tapOn:
+          id: "e2e.checkout.fullName"
+      - eraseText
+      - inputText: "Duda E2E"
+      - hideKeyboard
+      - tapOn:
+          id: "e2e.checkout.street"
+      - eraseText
+      - inputText: "Avenida Paulista"
+      - hideKeyboard
+      - tapOn:
+          id: "e2e.checkout.streetNumber"
+      - eraseText
+      - inputText: "1000"
+      - hideKeyboard
+      - scrollUntilVisible:
+          element:
+            id: "e2e.checkout.neighborhood"
+          direction: DOWN
+          timeout: 15000
+      - tapOn:
+          id: "e2e.checkout.neighborhood"
+      - eraseText
+      - inputText: "Bela Vista"
+      - hideKeyboard
+      - tapOn:
+          id: "e2e.checkout.city"
+      - eraseText
+      - inputText: "Sao Paulo"
+      - hideKeyboard
+      - tapOn:
+          id: "e2e.checkout.state"
+      - eraseText
+      - inputText: "SP"
+      - hideKeyboard
+      - tapOn:
+          id: "e2e.checkout.phone"
+      - eraseText
+      - inputText: "11999999999"
+      - hideKeyboard
+      - scrollUntilVisible:
+          element:
+            id: "e2e.checkout.addressSave"
+          direction: DOWN
+          timeout: 15000
+      - tapOn:
+          id: "e2e.checkout.addressSave"
+      - extendedWaitUntil:
+          visible:
+            id: "e2e.checkout.addressView"
+          timeout: 30000
