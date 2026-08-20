@@ -12,7 +12,7 @@ tags:
     timeout: 60000
 - tapOn:
     id: "product-details-add-to-cart"
-- runFlow: ../../shared/open-cart-and-start-checkout.yaml
+- runFlow: ../../shared/start-checkout-from-cart.yaml
 - runFlow: ../../shared/fill-checkout-payment.yaml
 - tapOn:
     id: "button-continue"

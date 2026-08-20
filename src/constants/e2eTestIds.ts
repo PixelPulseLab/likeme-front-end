@@ -26,7 +26,7 @@ export const E2E_TEST_IDS = {
   CHECKOUT_ADDRESS_SAVE: 'e2e.checkout.addressSave',
   CHECKOUT_ZIP: 'e2e.checkout.zip',
   CHECKOUT_FULL_NAME: 'e2e.checkout.fullName',
-  CHECKOUT_STREET: 'e2e.checkout.street',
+  CHECKOUT_ADDRESS_LINE1: 'e2e.checkout.addressLine1',
   CHECKOUT_STREET_NUMBER: 'e2e.checkout.streetNumber',
   CHECKOUT_NEIGHBORHOOD: 'e2e.checkout.neighborhood',
   CHECKOUT_CITY: 'e2e.checkout.city',

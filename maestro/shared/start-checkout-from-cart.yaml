@@ -1,7 +1,7 @@
+# Shared: do carrinho até o formulário de pagamento
+# Adicionar ao carrinho já navega para Cart (useProductDetails.handleAddToCart)
 appId: app.likeme.com
 ---
-- tapOn:
-    id: "e2e.header.cart"
 - extendedWaitUntil:
     visible:
       id: "e2e.cart.root"

@@ -158,7 +158,7 @@ const AddressEdit: React.FC<AddressEditProps> = ({
               }}
               errorText={fieldErrors.addressLine1}
               required
-              testID={E2E_TEST_IDS.CHECKOUT_STREET}
+              testID={E2E_TEST_IDS.CHECKOUT_ADDRESS_LINE1}
             />
           </View>
           <View style={styles.addressFieldNumber}>
