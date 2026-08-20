@@ -30,6 +30,11 @@ function findOriginalEnvFile() {
 
 // Função para copiar o .env para o diretório atual (onde o build está executando)
 function ensureEnvFileInCurrentDir() {
+  // ENV_FILE_PATH (ex.: .env.staging) tem prioridade sobre o .env do cwd
+  if (process.env.ENV_FILE_PATH && fs.existsSync(process.env.ENV_FILE_PATH)) {
+    return path.resolve(process.env.ENV_FILE_PATH);
+  }
+
   const currentDirEnv = path.resolve(process.cwd(), '.env');
 
   // Se já existe no diretório atual, usa ele
