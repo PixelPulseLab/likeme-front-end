@@ -20,10 +20,9 @@ import GradientSplash8Png from '../../assets/auth/GradientSplash8.png';
 import GradientSplash9Png from '../../assets/auth/GradientSplash9.png';
 
 // Telas de apresentação / onboarding
-import Presentation1Svg from '../../assets/onboarding/FirstStep.svg';
-import Presentation2Png from '../../assets/onboarding/f964373bda0df68c716c1f22cdf92231ffac6980.png';
-import Presentation3Png from '../../assets/onboarding/48b7ed383896162722c5bfdaa122634379aa6048.png';
-import Presentation4Png from '../../assets/onboarding/290e3173934f96302658e6be4e15057da130dc19.png';
+import Presentation2Jpg from '../../assets/onboarding/presentation-2.jpg';
+import Presentation3Jpg from '../../assets/onboarding/presentation-3.jpg';
+import Presentation4Jpg from '../../assets/onboarding/presentation-4.jpg';
 import FirstStepBackgroundPng from '../../assets/onboarding/FirstStepBackground.png';
 
 // Logo usada em telas de auth
@@ -44,10 +43,9 @@ export const GradientSplash7 = GradientSplash7Png;
 export const GradientSplash8 = GradientSplash8Png;
 export const GradientSplash9 = GradientSplash9Png;
 
-export const Presentation1 = Presentation1Svg;
-export const Presentation2 = Presentation2Png;
-export const Presentation3 = Presentation3Png;
-export const Presentation4 = Presentation4Png;
+export const Presentation2 = Presentation2Jpg;
+export const Presentation3 = Presentation3Jpg;
+export const Presentation4 = Presentation4Jpg;
 export const FirstStepBackground = FirstStepBackgroundPng;
 
 export const LogoFull = LogoFullPng;
