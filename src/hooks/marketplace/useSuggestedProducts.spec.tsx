@@ -6,6 +6,7 @@ import {
   clearSuggestedProductsCache,
   getCachedSuggestedProducts,
   setCachedSuggestedProducts,
+  suggestedProductsCacheKey,
 } from '@/services/product/suggestedProductsCache';
 
 jest.mock('@/services', () => ({
@@ -186,5 +187,33 @@ describe('useSuggestedProducts', () => {
     setCachedSuggestedProducts('products', rankedProducts as never, 0);
     expect(getCachedSuggestedProducts('products', SUGGESTED_PRODUCTS_CACHE_STALE_MS - 1)).toHaveLength(3);
     expect(getCachedSuggestedProducts('products', SUGGESTED_PRODUCTS_CACHE_STALE_MS)).toBeUndefined();
+  });
+
+  it('não repovoa cache quando request inflight resolve após limpeza de sessão', async () => {
+    let resolveFetch: (value: unknown) => void = () => undefined;
+    const pendingResponse = new Promise((resolve) => {
+      resolveFetch = resolve;
+    });
+    (productService.listProducts as jest.Mock).mockReturnValueOnce(pendingResponse);
+
+    const { unmount } = renderHook(() => useSuggestedProducts({ limit: 2 }));
+
+    await waitFor(() => {
+      expect(productService.listProducts).toHaveBeenCalledTimes(1);
+    });
+
+    unmount();
+    clearSuggestedProductsCache();
+
+    await act(async () => {
+      resolveFetch({
+        success: true,
+        data: { products: rankedProducts },
+      });
+      await pendingResponse;
+    });
+
+    const key = suggestedProductsCacheKey({ limit: 2, status: 'active' });
+    expect(getCachedSuggestedProducts(key)).toBeUndefined();
   });
 });

@@ -584,11 +584,14 @@ describe('useUserFeed (scroll infinito / paginação)', () => {
       result.current.write(COMMUNITY_FEED_CACHE_KEY, cachedEntry);
     });
     expect(result.current.read(COMMUNITY_FEED_CACHE_KEY)).toBe(cachedEntry);
+    const staleGeneration = result.current.generation();
 
     act(() => {
       clearFeedCache();
     });
 
+    expect(result.current.read(COMMUNITY_FEED_CACHE_KEY)).toBeUndefined();
+    expect(result.current.writeIfFresh(COMMUNITY_FEED_CACHE_KEY, cachedEntry, staleGeneration)).toBe(false);
     expect(result.current.read(COMMUNITY_FEED_CACHE_KEY)).toBeUndefined();
   });
 

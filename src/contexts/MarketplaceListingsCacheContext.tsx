@@ -10,7 +10,9 @@ export interface MarketplaceListingsCacheEntry {
 interface MarketplaceListingsCacheContextValue {
   read: (key: string) => MarketplaceListingsCacheEntry | undefined;
   write: (key: string, entry: MarketplaceListingsCacheEntry) => void;
+  writeIfFresh: (key: string, entry: MarketplaceListingsCacheEntry, generation: number) => boolean;
   invalidate: (key?: string) => void;
+  generation: () => number;
 }
 
 /** Mesma janela do feed: reutiliza listagem em memória ao voltar à tela. */
@@ -19,7 +21,9 @@ export const MARKETPLACE_LISTINGS_CACHE_STALE_MS = 5 * 60 * 1000;
 const fallback: MarketplaceListingsCacheContextValue = {
   read: () => undefined,
   write: () => undefined,
+  writeIfFresh: () => false,
   invalidate: () => undefined,
+  generation: () => 0,
 };
 
 const MarketplaceListingsCacheContext = createContext<MarketplaceListingsCacheContextValue>(fallback);
@@ -31,6 +35,7 @@ export function clearMarketplaceListingsCache(): void {
 
 export const MarketplaceListingsCacheProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const cacheRef = useRef<Map<string, MarketplaceListingsCacheEntry>>(new Map());
+  const generationRef = useRef(0);
 
   const read = useCallback((key: string) => cacheRef.current.get(key), []);
 
@@ -38,12 +43,24 @@ export const MarketplaceListingsCacheProvider: React.FC<{ children: React.ReactN
     cacheRef.current.set(key, entry);
   }, []);
 
+  const generation = useCallback(() => generationRef.current, []);
+
+  const writeIfFresh = useCallback((key: string, entry: MarketplaceListingsCacheEntry, expectedGeneration: number) => {
+    if (expectedGeneration !== generationRef.current) {
+      return false;
+    }
+    cacheRef.current.set(key, entry);
+    return true;
+  }, []);
+
   const clearProviderCache = useCallback(() => {
+    generationRef.current += 1;
     cacheRef.current.clear();
   }, []);
 
   const invalidate = useCallback((key?: string) => {
     if (key == null) {
+      generationRef.current += 1;
       cacheRef.current.clear();
       return;
     }
@@ -57,7 +74,10 @@ export const MarketplaceListingsCacheProvider: React.FC<{ children: React.ReactN
     };
   }, [clearProviderCache]);
 
-  const value = useMemo(() => ({ read, write, invalidate }), [read, write, invalidate]);
+  const value = useMemo(
+    () => ({ read, write, writeIfFresh, invalidate, generation }),
+    [read, write, writeIfFresh, invalidate, generation],
+  );
 
   return <MarketplaceListingsCacheContext.Provider value={value}>{children}</MarketplaceListingsCacheContext.Provider>;
 };

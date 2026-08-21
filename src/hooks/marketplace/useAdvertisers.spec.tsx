@@ -8,6 +8,7 @@ import {
   getCachedAdvertisersList,
   setCachedAdvertisersList,
 } from '@/services/advertiser/advertisersListCache';
+import { advertisersListCacheKey } from '@/utils/marketplace/advertisersCacheKey';
 
 jest.mock('@/services', () => ({
   advertiserService: {
@@ -125,5 +126,45 @@ describe('useAdvertisers', () => {
     setCachedAdvertisersList('advertisers', rankedAdvertisers as never, 0);
     expect(getCachedAdvertisersList('advertisers', ADVERTISERS_LIST_CACHE_STALE_MS - 1)).toHaveLength(3);
     expect(getCachedAdvertisersList('advertisers', ADVERTISERS_LIST_CACHE_STALE_MS)).toBeUndefined();
+  });
+
+  it('não repovoa cache quando request inflight resolve após limpeza de sessão', async () => {
+    let resolveFetch: (value: unknown) => void = () => undefined;
+    const pendingResponse = new Promise((resolve) => {
+      resolveFetch = resolve;
+    });
+    (advertiserService.getAdvertisers as jest.Mock).mockReturnValueOnce(pendingResponse);
+
+    const { unmount } = renderHook(() =>
+      useAdvertisers({
+        listOptions: { page: 1, limit: 50, status: ADVERTISER_STATUS.ACTIVE, type: ADVERTISER_TYPE.PERSON },
+      }),
+    );
+
+    await waitFor(() => {
+      expect(advertiserService.getAdvertisers).toHaveBeenCalledTimes(1);
+    });
+
+    unmount();
+    clearAdvertisersListCache();
+
+    await act(async () => {
+      resolveFetch({
+        success: true,
+        data: { advertisers: rankedAdvertisers, pagination: { page: 1, limit: 50, total: 3, totalPages: 1 } },
+      });
+      await pendingResponse;
+    });
+
+    const key = advertisersListCacheKey({
+      fetchAllPages: false,
+      page: 1,
+      limit: 50,
+      status: ADVERTISER_STATUS.ACTIVE,
+      type: ADVERTISER_TYPE.PERSON,
+      search: '',
+      categoryId: '',
+    });
+    expect(getCachedAdvertisersList(key)).toBeUndefined();
   });
 });

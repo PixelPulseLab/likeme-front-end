@@ -9,6 +9,11 @@ type AdvertisersListCacheEntry = {
 
 const cache = new Map<string, AdvertisersListCacheEntry>();
 const inflight = new Map<string, Promise<Advertiser[]>>();
+let cacheGeneration = 0;
+
+export function getAdvertisersListCacheGeneration(): number {
+  return cacheGeneration;
+}
 
 export function getCachedAdvertisersList(key: string, now: number = Date.now()): Advertiser[] | undefined {
   const entry = cache.get(key);
@@ -22,8 +27,17 @@ export function getCachedAdvertisersList(key: string, now: number = Date.now()):
   return entry.advertisers;
 }
 
-export function setCachedAdvertisersList(key: string, advertisers: Advertiser[], now: number = Date.now()): void {
+export function setCachedAdvertisersList(
+  key: string,
+  advertisers: Advertiser[],
+  now: number = Date.now(),
+  generation: number = cacheGeneration,
+): boolean {
+  if (generation !== cacheGeneration) {
+    return false;
+  }
   cache.set(key, { advertisers, fetchedAt: now });
+  return true;
 }
 
 export function getInflightAdvertisersList(key: string): Promise<Advertiser[]> | undefined {
@@ -39,6 +53,7 @@ export function deleteInflightAdvertisersList(key: string): void {
 }
 
 export function clearAdvertisersListCache(): void {
+  cacheGeneration += 1;
   cache.clear();
   inflight.clear();
 }

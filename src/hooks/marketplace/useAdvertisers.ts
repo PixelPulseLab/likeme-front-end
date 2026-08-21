@@ -3,6 +3,7 @@ import { advertiserService } from '@/services';
 import { advertisersListCacheKey } from '@/utils/marketplace/advertisersCacheKey';
 import {
   deleteInflightAdvertisersList,
+  getAdvertisersListCacheGeneration,
   getCachedAdvertisersList,
   getInflightAdvertisersList,
   setCachedAdvertisersList,
@@ -85,6 +86,7 @@ async function fetchAdvertisersList(
     }
   }
 
+  const generation = getAdvertisersListCacheGeneration();
   const request = (async () => {
     if (!query.fetchAllPages) {
       return requestAdvertisersPage(query, query.page);
@@ -135,7 +137,7 @@ async function fetchAdvertisersList(
   setInflightAdvertisersList(key, request);
   try {
     const advertisers = await request;
-    setCachedAdvertisersList(key, advertisers);
+    setCachedAdvertisersList(key, advertisers, Date.now(), generation);
     return advertisers;
   } finally {
     deleteInflightAdvertisersList(key);

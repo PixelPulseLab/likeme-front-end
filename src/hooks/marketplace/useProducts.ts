@@ -120,12 +120,16 @@ export const useProducts = ({
   }, [cacheKey, enabled, listingsCache]);
 
   const persistCache = useCallback(
-    (nextAds: Ad[], nextHasMore: boolean) => {
-      listingsCache.write(cacheKey, {
-        ads: nextAds,
-        hasMore: nextHasMore,
-        fetchedAt: Date.now(),
-      });
+    (nextAds: Ad[], nextHasMore: boolean, cacheGeneration: number) => {
+      listingsCache.writeIfFresh(
+        cacheKey,
+        {
+          ads: nextAds,
+          hasMore: nextHasMore,
+          fetchedAt: Date.now(),
+        },
+        cacheGeneration,
+      );
     },
     [listingsCache, cacheKey],
   );
@@ -150,6 +154,8 @@ export const useProducts = ({
       }
     }
 
+    const cacheGeneration = listingsCache.generation();
+
     try {
       if (page === 1 && adsRef.current.length > 0) {
         setLoading(false);
@@ -170,7 +176,7 @@ export const useProducts = ({
       if (!response.success || !response.data) {
         if (page === 1) {
           setAds([]);
-          persistCache([], false);
+          persistCache([], false, cacheGeneration);
         }
         setHasMore(false);
         return;
@@ -191,7 +197,7 @@ export const useProducts = ({
         nextHasMore = rows.length >= LIST_LIMIT;
       }
       setHasMore(nextHasMore);
-      persistCache(nextAds, nextHasMore);
+      persistCache(nextAds, nextHasMore, cacheGeneration);
     } catch (error) {
       logger.error('useProducts: falha ao listar programas', {
         error,
@@ -201,7 +207,7 @@ export const useProducts = ({
       });
       if (page === 1) {
         setAds([]);
-        persistCache([], false);
+        persistCache([], false, cacheGeneration);
       }
       setHasMore(false);
     } finally {
