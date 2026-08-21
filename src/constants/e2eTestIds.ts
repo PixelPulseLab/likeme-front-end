@@ -44,6 +44,14 @@ export const E2E_TEST_IDS = {
   CHECKOUT_ORDER_SUCCESS: 'e2e.checkout.orderSuccess',
   CHECKOUT_ORDER_PENDING: 'e2e.checkout.orderPending',
   CHECKOUT_ORDER_ERROR: 'e2e.checkout.orderError',
+  PROTOCOL_MORE_MENU: 'e2e.protocol.moreMenu',
+  PROTOCOL_MANAGE: 'e2e.protocol.manage',
+  SUBSCRIPTION_CARD_PREFIX: 'e2e.subscription.card.',
+  SUBSCRIPTION_CANCEL: 'e2e.subscription.cancel',
+  SUBSCRIPTION_CANCEL_CONFIRM: 'e2e.subscription.cancelConfirm',
+  SUBSCRIPTION_CANCEL_DONE: 'e2e.subscription.cancelDone',
+  SUBSCRIPTION_REACTIVATE: 'e2e.subscription.reactivate',
+  SUBSCRIPTION_MANAGE_ROOT: 'e2e.subscription.manageRoot',
 } as const;
 
 export function floatingMenuTestId(itemId: string): string {
@@ -52,4 +60,8 @@ export function floatingMenuTestId(itemId: string): string {
 
 export function profileMenuTestId(itemKey: string): string {
   return `${E2E_TEST_IDS.PROFILE_MENU_PREFIX}${itemKey}`;
+}
+
+export function subscriptionCardTestId(productId: string): string {
+  return `${E2E_TEST_IDS.SUBSCRIPTION_CARD_PREFIX}${productId}`;
 }

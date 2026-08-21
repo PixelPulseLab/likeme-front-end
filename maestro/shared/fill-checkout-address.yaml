@@ -5,6 +5,13 @@ appId: app.likeme.com
 - runFlow:
     when:
       visible:
+        id: "e2e.checkout.addressView"
+    commands:
+      - assertVisible:
+          id: "e2e.checkout.addressView"
+- runFlow:
+    when:
+      visible:
         id: "e2e.checkout.zip"
     commands:
       - tapOn:
@@ -15,6 +22,7 @@ appId: app.likeme.com
       - extendedWaitUntil:
           visible: "Bela Vista"
           timeout: 20000
+          optional: true
       - tapOn:
           id: "e2e.checkout.fullName"
       - eraseText

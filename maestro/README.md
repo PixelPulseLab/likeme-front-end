@@ -92,11 +92,28 @@ Conta de staging dos testes de login/checkout: `duda@pixelpulselab.dev` (user `5
 | `E2E_CHECKOUT_PROTOCOL_PRODUCT_ID` | Protocolo de staging para assinatura no checkout |
 | `E2E_CARD_CVV` | `123` aprova; `651` recusa no simulador PSP |
 
-Checkout real (`maestro/flows/checkout/`) não entra em `test:e2e:staging`: cobra Pagarme sandbox e dispara e-mail transacional. Requer `EXPO_PUBLIC_E2E_STAGING_TOKEN` válido.
+Checkout real (`maestro/flows/checkout/`) não entra em `test:e2e:staging`: cobra Pagarme sandbox e dispara e-mail transacional para `duda@pixelpulselab.dev`. Requer `EXPO_PUBLIC_E2E_STAGING_TOKEN` válido.
 
 ```bash
 npm run test:e2e:checkout
 ```
+
+| Flow | E-mails disparados | Jira |
+|------|--------------------|------|
+| `marketplace-paid` | `created`, `payment_approved` | pedido pago |
+| `marketplace-refused` | `created`, `payment_failed` | [APP-378](https://likeme-app.atlassian.net/browse/APP-378) |
+| `protocol-paid` | `created`, `payment_approved`, `cancel_requested`, `cancel_annulled` | [APP-389](https://likeme-app.atlassian.net/browse/APP-389), [APP-388](https://likeme-app.atlassian.net/browse/APP-388) |
+| `protocol-refused` | `created`, `payment_failed` | [APP-378](https://likeme-app.atlassian.net/browse/APP-378) (pedido de adesão recusado) |
+
+Fora do Maestro (cron/webhook, sem jornada de UI) — cobertura no backend `transactionalEmailFlows.integration.test.ts`:
+
+| Issue | E-mail | Gatilho no teste |
+|-------|--------|------------------|
+| [APP-374](https://likeme-app.atlassian.net/browse/APP-374) | `subscription_renewal_reminder` | cron D-3 (`notifyDueSubscriptionRenewalReminderEmails`) |
+| [APP-376](https://likeme-app.atlassian.net/browse/APP-376) | `subscription_renewed` | webhook `charge.paid` de renovação |
+| [APP-377](https://likeme-app.atlassian.net/browse/APP-377) / [APP-386](https://likeme-app.atlassian.net/browse/APP-386) | `past_due_notification` | 3ª falha RENEWAL no webhook |
+| [APP-390](https://likeme-app.atlassian.net/browse/APP-390) | `cancel_finalized` | `finalizeDueScheduledCancellations` |
+| [APP-375](https://likeme-app.atlassian.net/browse/APP-375) | `account_closure` | `deleteUserUseCase` (conta de teste, não a de staging) |
 
 ## Android
 

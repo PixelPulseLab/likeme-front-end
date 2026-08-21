@@ -12,6 +12,7 @@ import type { Product as ApiProduct } from '@/types/product';
 import { catalogTypeTranslatedBadgeLabels } from '@/types/product';
 import { useTranslation } from '@/hooks/i18n';
 import { logger } from '@/utils/logger';
+import { subscriptionCardTestId } from '@/constants/e2eTestIds';
 import {
   subscriptionIsCancelingPresentation,
   subscriptionIsCanceledPresentation,
@@ -133,6 +134,7 @@ export function useSubscriptionList(appliedSearchQuery = '') {
         id: sub.id,
         kind: 'protocol' as const,
         productId: sub.productId,
+        testID: subscriptionCardTestId(sub.productId),
         title: fullProduct?.name ?? sub.product.name,
         image: fullProduct?.image || sub.product.image?.trim() || DEFAULT_IMAGE,
         badges,

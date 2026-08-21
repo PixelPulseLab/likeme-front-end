@@ -4,6 +4,7 @@ export interface SubscriptionListItem {
   id: string;
   kind: SubscriptionKind;
   productId: string;
+  testID?: string;
   title: string;
   image: string;
   badges: string[];

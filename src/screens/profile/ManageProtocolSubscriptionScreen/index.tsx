@@ -12,6 +12,7 @@ import { DEFAULT_SUBSCRIPTION_BENEFIT_KEYS } from '@/constants/subscription/subs
 import { subscriptionService, type SubscriptionManageResult } from '@/services/payment/subscriptionService';
 import type { RootStackParamList } from '@/types/navigation';
 import { BOTTOM_DOCK_BAR_HEIGHT, COLORS, SPACING } from '@/constants';
+import { E2E_TEST_IDS } from '@/constants/e2eTestIds';
 import { formatBillingAddress } from '@/utils/formatters/addressFormatter';
 import { logger } from '@/utils/logger';
 import { navigateToProductDetailsScreen } from '@/utils/navigation/productNavigation';
@@ -278,6 +279,7 @@ const ManageProtocolSubscriptionScreen: React.FC<Props> = ({ navigation, route }
       }}
       contentBackgroundColor={COLORS.BACKGROUND}
       contentContainerStyle={styles.container}
+      testID={E2E_TEST_IDS.SUBSCRIPTION_MANAGE_ROOT}
     >
       {loading ? (
         <View style={styles.loadingBox}>
@@ -477,6 +479,7 @@ const ManageProtocolSubscriptionScreen: React.FC<Props> = ({ navigation, route }
                   onPress={handleCancelPress}
                   size='large'
                   style={styles.cancelButton}
+                  testID={E2E_TEST_IDS.SUBSCRIPTION_CANCEL}
                 />
               </View>
             ) : null}
@@ -491,6 +494,7 @@ const ManageProtocolSubscriptionScreen: React.FC<Props> = ({ navigation, route }
                   size='large'
                   loading={reactivating}
                   disabled={reactivating}
+                  testID={E2E_TEST_IDS.SUBSCRIPTION_REACTIVATE}
                 />
                 {manage.canReactivate ? (
                   <Text style={styles.reactivateHint}>

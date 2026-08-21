@@ -10,6 +10,7 @@ import { useTranslation } from '@/hooks/i18n';
 import { useAnalyticsScreen } from '@/analytics';
 import type { RootStackParamList } from '@/types/navigation';
 import { BOTTOM_DOCK_BAR_HEIGHT, COLORS, SPACING } from '@/constants';
+import { E2E_TEST_IDS } from '@/constants/e2eTestIds';
 import { formatSubscriptionManageDate } from '@/utils/subscription/subscriptionManageDisplay';
 import { styles } from './styles';
 
@@ -140,6 +141,7 @@ const CancelProtocolSubscriptionConfirmScreen: React.FC<Props> = ({ navigation, 
           })}
           onPress={handleBackToList}
           size='large'
+          testID={E2E_TEST_IDS.SUBSCRIPTION_CANCEL_DONE}
         />
       </ScrollView>
     </ScreenWithHeader>

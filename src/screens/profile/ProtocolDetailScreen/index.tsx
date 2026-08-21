@@ -22,6 +22,7 @@ import type { ModuleItem } from '@/components/sections/program/ModuleAccordion';
 import productService from '@/services/product/productService';
 import { subscriptionService } from '@/services/payment/subscriptionService';
 import { COLORS } from '@/constants';
+import { E2E_TEST_IDS } from '@/constants/e2eTestIds';
 import { isProtocolStepAutoCompleted } from '@/utils/course/protocolStepAutoCompleted';
 import { protocolDetailFromProduct } from '@/utils/profile/protocolDetailFromProduct';
 import { goBackOrShareHome, navigateToShareHome } from '@/utils/navigation/shareHomeNavigation';
@@ -300,6 +301,7 @@ const ProtocolDetailScreen: React.FC<Props> = ({ navigation, route }) => {
       options.push({
         label: t('profile.protocolDetail.manageProtocol', { defaultValue: 'Gerenciar protocolo' }),
         onPress: handleManageProtocol,
+        testID: E2E_TEST_IDS.PROTOCOL_MANAGE,
       });
     }
 
