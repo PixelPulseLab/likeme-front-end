@@ -288,3 +288,11 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 ### Corrigido
 - Rodapé dos cards no Android deixa de mostrar faixa cinza no blur
 - Compartilhar assinatura gera o link e a mensagem corretos
+
+## [1.14.1] - 2026-08-21
+
+### Adicionado
+- Comunidade mostra a imagem de destaque no topo da tela e nos cards
+
+### Alterado
+- Telas de apresentação do app ficam mais leves, com imagens menores

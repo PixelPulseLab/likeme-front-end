@@ -1,23 +1,18 @@
 {
-  "version": "1.14.0",
-  "releasedAt": "2026-08-20",
+  "version": "1.14.1",
+  "releasedAt": "2026-08-21",
   "android": {
-    "versionCode": 255
+    "versionCode": 256
   },
   "ios": {
-    "buildNumber": 31
+    "buildNumber": 32
   },
   "changelog": {
     "added": [
-      "Com a assinatura em atraso, dá para atualizar o cartão no app — inclusive pelo link da notificação ou do e-mail (APP-386)"
+      "Comunidade mostra a imagem de destaque no topo da tela e nos cards"
     ],
     "changed": [
-      "Vitrines de profissionais listam só pessoas, sem misturar organizações",
-      "Cards de comunidade e produto enquadram a imagem um pouco acima do centro, para o assunto ficar visível"
-    ],
-    "fixed": [
-      "Rodapé dos cards no Android deixa de mostrar faixa cinza no blur",
-      "Compartilhar assinatura gera o link e a mensagem corretos"
+      "Telas de apresentação do app ficam mais leves, com imagens menores"
     ]
   }
 }
