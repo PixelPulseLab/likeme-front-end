@@ -1,4 +1,4 @@
-import React, { createContext, useCallback, useContext, useMemo, useRef } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef } from 'react';
 import type { Community, CommunityCategory, CommunityFile, CommunityUserRelation } from '@/types/community';
 
 export interface CommunitiesCacheEntry {
@@ -29,6 +29,11 @@ const fallback: CommunitiesCacheContextValue = {
 };
 
 const CommunitiesCacheContext = createContext<CommunitiesCacheContextValue>(fallback);
+const registeredCommunitiesCacheInvalidators = new Set<() => void>();
+
+export function clearCommunitiesCache(): void {
+  registeredCommunitiesCacheInvalidators.forEach((invalidate) => invalidate());
+}
 
 export const CommunitiesCacheProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const cacheRef = useRef<Map<string, CommunitiesCacheEntry>>(new Map());
@@ -39,6 +44,10 @@ export const CommunitiesCacheProvider: React.FC<{ children: React.ReactNode }> =
     cacheRef.current.set(key, entry);
   }, []);
 
+  const clearProviderCache = useCallback(() => {
+    cacheRef.current.clear();
+  }, []);
+
   const invalidate = useCallback((key?: string) => {
     if (key == null) {
       cacheRef.current.clear();
@@ -46,6 +55,13 @@ export const CommunitiesCacheProvider: React.FC<{ children: React.ReactNode }> =
     }
     cacheRef.current.delete(key);
   }, []);
+
+  useEffect(() => {
+    registeredCommunitiesCacheInvalidators.add(clearProviderCache);
+    return () => {
+      registeredCommunitiesCacheInvalidators.delete(clearProviderCache);
+    };
+  }, [clearProviderCache]);
 
   const value = useMemo(() => ({ read, write, invalidate }), [read, write, invalidate]);
 

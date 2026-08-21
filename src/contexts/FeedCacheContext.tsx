@@ -1,4 +1,4 @@
-import React, { createContext, useCallback, useContext, useMemo, useRef } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef } from 'react';
 import type { Post } from '@/types';
 
 interface FeedCacheEntry {
@@ -29,6 +29,11 @@ const feedCacheContextFallback: FeedCacheContextValue = {
 };
 
 const FeedCacheContext = createContext<FeedCacheContextValue>(feedCacheContextFallback);
+const registeredFeedCacheInvalidators = new Set<() => void>();
+
+export function clearFeedCache(): void {
+  registeredFeedCacheInvalidators.forEach((invalidate) => invalidate());
+}
 
 export const FeedCacheProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const cacheRef = useRef<Map<string, FeedCacheEntry>>(new Map());
@@ -39,6 +44,10 @@ export const FeedCacheProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     cacheRef.current.set(key, entry);
   }, []);
 
+  const clearProviderCache = useCallback(() => {
+    cacheRef.current.clear();
+  }, []);
+
   const invalidate = useCallback((key?: string) => {
     if (key == null) {
       cacheRef.current.clear();
@@ -46,6 +55,13 @@ export const FeedCacheProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }
     cacheRef.current.delete(key);
   }, []);
+
+  useEffect(() => {
+    registeredFeedCacheInvalidators.add(clearProviderCache);
+    return () => {
+      registeredFeedCacheInvalidators.delete(clearProviderCache);
+    };
+  }, [clearProviderCache]);
 
   const value = useMemo(() => ({ read, write, invalidate }), [read, write, invalidate]);
 

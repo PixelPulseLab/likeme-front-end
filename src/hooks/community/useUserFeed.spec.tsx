@@ -2,7 +2,7 @@ import React, { useRef } from 'react';
 import { renderHook, waitFor, act } from '@testing-library/react-native';
 import { useUserFeed } from './useUserFeed';
 import { communityService } from '@/services';
-import { FeedCacheProvider, useFeedCache, type FeedCacheEntry } from '@/contexts/FeedCacheContext';
+import { clearFeedCache, FeedCacheProvider, useFeedCache, type FeedCacheEntry } from '@/contexts/FeedCacheContext';
 
 jest.mock('@/services', () => ({
   communityService: {
@@ -80,6 +80,7 @@ function createFeedCacheWrapper(cacheKey: string, entry: FeedCacheEntry) {
 describe('useUserFeed (scroll infinito / paginação)', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    clearFeedCache();
   });
 
   it('na primeira página não envia token e define hasMore quando há paging.next', async () => {
@@ -558,6 +559,37 @@ describe('useUserFeed (scroll infinito / paginação)', () => {
     await waitFor(() => expect(result.current.loadingMore).toBe(false));
     expect(getCommunityPostsMock).toHaveBeenCalledTimes(2);
     expect(result.current.posts.map((p) => p.id)).toContain('fresh-page2');
+  });
+
+  it('clearFeedCache limpa entradas frescas registradas pelo provider', async () => {
+    const wrapper = ({ children }: { children: React.ReactNode }) => <FeedCacheProvider>{children}</FeedCacheProvider>;
+    const cachedEntry: FeedCacheEntry = {
+      posts: [
+        {
+          id: 'private-post-user-a',
+          content: '',
+          comments: [],
+          createdAt: new Date('2026-01-01T00:00:00.000Z'),
+        },
+      ],
+      nextCursor: undefined,
+      hasMore: false,
+      currentPage: 1,
+      fetchedAt: Date.now(),
+    };
+
+    const { result } = renderHook(() => useFeedCache(), { wrapper });
+
+    act(() => {
+      result.current.write(COMMUNITY_FEED_CACHE_KEY, cachedEntry);
+    });
+    expect(result.current.read(COMMUNITY_FEED_CACHE_KEY)).toBe(cachedEntry);
+
+    act(() => {
+      clearFeedCache();
+    });
+
+    expect(result.current.read(COMMUNITY_FEED_CACHE_KEY)).toBeUndefined();
   });
 
   it('loadMore bloqueado enquanto page 1 carrega e dispara depois que hasMore fica true', async () => {

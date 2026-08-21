@@ -1,4 +1,4 @@
-import React, { createContext, useCallback, useContext, useMemo, useRef } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef } from 'react';
 import type { Ad } from '@/types/ad';
 
 export interface MarketplaceListingsCacheEntry {
@@ -23,6 +23,11 @@ const fallback: MarketplaceListingsCacheContextValue = {
 };
 
 const MarketplaceListingsCacheContext = createContext<MarketplaceListingsCacheContextValue>(fallback);
+const registeredMarketplaceListingsCacheInvalidators = new Set<() => void>();
+
+export function clearMarketplaceListingsCache(): void {
+  registeredMarketplaceListingsCacheInvalidators.forEach((invalidate) => invalidate());
+}
 
 export const MarketplaceListingsCacheProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const cacheRef = useRef<Map<string, MarketplaceListingsCacheEntry>>(new Map());
@@ -33,6 +38,10 @@ export const MarketplaceListingsCacheProvider: React.FC<{ children: React.ReactN
     cacheRef.current.set(key, entry);
   }, []);
 
+  const clearProviderCache = useCallback(() => {
+    cacheRef.current.clear();
+  }, []);
+
   const invalidate = useCallback((key?: string) => {
     if (key == null) {
       cacheRef.current.clear();
@@ -40,6 +49,13 @@ export const MarketplaceListingsCacheProvider: React.FC<{ children: React.ReactN
     }
     cacheRef.current.delete(key);
   }, []);
+
+  useEffect(() => {
+    registeredMarketplaceListingsCacheInvalidators.add(clearProviderCache);
+    return () => {
+      registeredMarketplaceListingsCacheInvalidators.delete(clearProviderCache);
+    };
+  }, [clearProviderCache]);
 
   const value = useMemo(() => ({ read, write, invalidate }), [read, write, invalidate]);
 
