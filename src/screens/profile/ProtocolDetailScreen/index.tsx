@@ -6,7 +6,7 @@ import { ScreenWithHeader, HeroImage } from '@/components/ui/layout';
 import { EmptyState, ShareContentUnavailable } from '@/components/ui/feedback';
 import { SecondaryButton } from '@/components/ui/buttons';
 import { type ButtonCarouselOption } from '@/components/ui/carousel';
-import InfoSectionTabsRow from '@/components/ui/carousel/InfoSectionTabsRow';
+import InfoSectionTabsRow, { type InfoSectionMenuOption } from '@/components/ui/carousel/InfoSectionTabsRow';
 import { ModuleAccordion } from '@/components/sections/program';
 import { EventBanner } from '@/components/sections/community';
 import { EventWebViewSession } from '@/components/infrastructure/webview/EventWebViewSession';
@@ -295,7 +295,7 @@ const ProtocolDetailScreen: React.FC<Props> = ({ navigation, route }) => {
       canceledAt: protocol.canceledAt,
     };
     const isCanceledSubscription = subscriptionIsCanceledPresentation(subscriptionFields);
-    const options: Array<{ label: string; onPress: () => void }> = [];
+    const options: InfoSectionMenuOption[] = [];
 
     if (protocol.subscriptionId?.trim()) {
       options.push({
