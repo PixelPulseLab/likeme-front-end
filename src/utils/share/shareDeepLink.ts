@@ -24,7 +24,12 @@ import {
   setPendingDeepLinkNavigation,
   type PendingDeepLinkNavigationTarget,
 } from '@/utils/navigation/pendingDeepLinkNavigation';
-import { shareEntityIdFromPath, sharePathFromUrl, shareQueryParamFromUrl } from '@/utils/share/sharePath';
+import {
+  decodeSharePathSegment,
+  shareEntityIdFromPath,
+  sharePathFromUrl,
+  shareQueryParamFromUrl,
+} from '@/utils/share/sharePath';
 import { isE2eBootstrapDeepLinkPath } from '@/utils/e2e/isE2eBootstrapDeepLinkPath';
 import { logger } from '@/utils/logger';
 
@@ -141,8 +146,13 @@ function subscriptionManageFromPath(path: string): {
     return null;
   }
 
+  const subscriptionId = decodeSharePathSegment(rawId);
+  if (!subscriptionId) {
+    return null;
+  }
+
   return {
-    subscriptionId: decodeURIComponent(rawId),
+    subscriptionId,
     focusUpdatePayment: maybeAction === SUBSCRIPTION_PAYMENT_PATH_SEGMENT,
   };
 }

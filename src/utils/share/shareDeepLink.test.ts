@@ -136,6 +136,10 @@ describe('shareEntityIdFromPath', () => {
     expect(shareEntityIdFromPath('/post/post%2Fwith%2Fslash', '/post')).toBe('post/with/slash');
   });
 
+  it('ignora id com percent-encoding inválido', () => {
+    expect(shareEntityIdFromPath('/post/%E0%A4%A', '/post')).toBeNull();
+  });
+
   it('ignora paths desconhecidos', () => {
     expect(shareEntityIdFromPath('/legacy/abc', '/post')).toBeNull();
     expect(shareEntityIdFromPath('/post/', '/post')).toBeNull();
@@ -172,6 +176,11 @@ describe('shareDeepLinkTargetFromUrl', () => {
   it('retorna null para paths desconhecidos', () => {
     expect(shareDeepLinkTargetFromUrl(`${SHARE_BASE_URL}/legacy/abc`)).toBeNull();
     expect(shareDeepLinkTargetFromUrl(`${SHARE_BASE_URL}/subscription/sub-abc/unknown`)).toBeNull();
+  });
+
+  it('retorna null para paths com percent-encoding inválido', () => {
+    expect(shareDeepLinkTargetFromUrl(`${SHARE_BASE_URL}/product/%E0%A4%A`)).toBeNull();
+    expect(shareDeepLinkTargetFromUrl(`${SHARE_BASE_URL}/subscription/%E0%A4%A/payment`)).toBeNull();
   });
 });
 

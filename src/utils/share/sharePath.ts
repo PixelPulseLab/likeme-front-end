@@ -45,6 +45,15 @@ export function shareQueryParamFromUrl(url: string, key: string): string | null 
   }
 }
 
+export function decodeSharePathSegment(segment: string): string | null {
+  try {
+    const decoded = decodeURIComponent(segment).trim();
+    return decoded || null;
+  } catch {
+    return null;
+  }
+}
+
 export function shareEntityIdFromPath(path: string, pathPrefix: string): string | null {
   const normalizedPrefix = `${pathPrefix.replace(/^\/+/, '')}/`;
   const pathWithoutQuery = path.split('?')[0]?.split('#')[0] ?? path;
@@ -54,5 +63,5 @@ export function shareEntityIdFromPath(path: string, pathPrefix: string): string 
   }
 
   const entityId = normalized.slice(normalizedPrefix.length).split('/')[0]?.trim();
-  return entityId ? decodeURIComponent(entityId) : null;
+  return entityId ? decodeSharePathSegment(entityId) : null;
 }
