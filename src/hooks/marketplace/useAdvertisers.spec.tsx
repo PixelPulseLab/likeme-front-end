@@ -121,6 +121,51 @@ describe('useAdvertisers', () => {
     });
   });
 
+  it('limpa profissionais antigos quando muda a comunidade da listagem', async () => {
+    let rejectSecond: (reason?: unknown) => void = () => undefined;
+    const secondResponse = new Promise((_resolve, reject) => {
+      rejectSecond = reject;
+    });
+    (advertiserService.getAdvertisers as jest.Mock)
+      .mockResolvedValueOnce({
+        success: true,
+        data: {
+          advertisers: [{ ...rankedAdvertisers[0], id: 'adv-community-a', communityId: 'community-a' }],
+          pagination: { page: 1, limit: 20, total: 1, totalPages: 1 },
+        },
+      })
+      .mockReturnValueOnce(secondResponse);
+
+    const { result, rerender } = renderHook(
+      ({ communityId }: { communityId: string }) =>
+        useAdvertisers({
+          communityId,
+          listOptions: { page: 1, limit: 20, status: ADVERTISER_STATUS.ACTIVE },
+        }),
+      { initialProps: { communityId: 'community-a' } },
+    );
+
+    await waitFor(() => {
+      expect(result.current.advertisers.map((advertiser) => advertiser.id)).toEqual(['adv-community-a']);
+    });
+
+    rerender({ communityId: 'community-b' });
+
+    await waitFor(() => {
+      expect(result.current.advertisers).toEqual([]);
+    });
+    expect(result.current.loading).toBe(true);
+
+    await act(async () => {
+      rejectSecond(new Error('network failed'));
+    });
+
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false);
+    });
+    expect(result.current.advertisers).toEqual([]);
+  });
+
   it('descarta o cache após 5 minutos', () => {
     setCachedAdvertisersList('advertisers', rankedAdvertisers as never, 0);
     expect(getCachedAdvertisersList('advertisers', ADVERTISERS_LIST_CACHE_STALE_MS - 1)).toHaveLength(3);
