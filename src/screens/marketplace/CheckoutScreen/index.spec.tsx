@@ -64,7 +64,7 @@ jest.mock('@react-navigation/native', () => {
 
 jest.mock('./address/AddressForm', () => {
   const React = require('react');
-  const { View, Text } = require('react-native');
+  const { View, Text, TouchableOpacity } = require('react-native');
 
   const mockAddressData = {
     fullName: '',
@@ -77,25 +77,51 @@ jest.mock('./address/AddressForm', () => {
     zipCode: '',
     phone: '',
   };
+  const initialAddressData = {
+    ...mockAddressData,
+    fullName: 'Nome Teste',
+    addressLine1: 'Rua Teste',
+    streetNumber: '123',
+    neighborhood: 'Centro',
+    city: 'São Paulo',
+    state: 'SP',
+    zipCode: '05332-000',
+    phone: '11999999999',
+  };
+  const revisedAddressData = {
+    ...mockAddressData,
+    fullName: 'Nome Revisado',
+    addressLine1: 'Rua Revisada',
+    streetNumber: '456',
+    neighborhood: 'Pinheiros',
+    city: 'São Paulo',
+    state: 'SP',
+    zipCode: '05444-000',
+    phone: '11888888888',
+  };
 
   function AddressForm(props: any) {
     React.useLayoutEffect(() => {
       if (props.onSaveAddress && props.addressData?.zipCode?.replace?.(/\D/g, '')?.length < 8) {
-        props.onSaveAddress({
-          ...mockAddressData,
-          fullName: 'Nome Teste',
-          addressLine1: 'Rua Teste',
-          streetNumber: '123',
-          neighborhood: 'Centro',
-          city: 'São Paulo',
-          state: 'SP',
-          zipCode: '05332-000',
-          phone: '11999999999',
-        });
+        props.onSaveAddress(initialAddressData);
       }
     });
 
-    return React.createElement(View, { testID: 'address-form' }, React.createElement(Text, null, 'Address Form'));
+    return React.createElement(
+      View,
+      { testID: 'address-form' },
+      React.createElement(Text, null, 'Address Form'),
+      React.createElement(
+        TouchableOpacity,
+        { testID: 'save-initial-address', onPress: () => props.onSaveAddress?.(initialAddressData) },
+        React.createElement(Text, null, 'Save initial address'),
+      ),
+      React.createElement(
+        TouchableOpacity,
+        { testID: 'save-revised-address', onPress: () => props.onSaveAddress?.(revisedAddressData) },
+        React.createElement(Text, null, 'Save revised address'),
+      ),
+    );
   }
 
   return {
@@ -492,6 +518,65 @@ describe('CheckoutScreen', () => {
       expect(mockOrderService.createOrder).toHaveBeenCalled();
       expect(getByTestId('order-screen-status').props.children).toBe('pending');
     });
+  });
+
+  it('uses the updated delivery address as billing and shipping when same-address stays enabled', async () => {
+    const { getByTestId, getByLabelText } = render(
+      <CheckoutScreen navigation={mockNavigation as any} route={mockRoute as any} />,
+    );
+
+    await waitFor(() => {
+      expect(getByTestId('address-form')).toBeTruthy();
+    });
+
+    fireEvent.press(getByTestId('button-continue'));
+
+    await waitFor(() => {
+      expect(getByTestId('payment-form')).toBeTruthy();
+    });
+
+    fireEvent.press(getByLabelText('checkout.address, voltar'));
+
+    await waitFor(() => {
+      expect(getByTestId('address-form')).toBeTruthy();
+    });
+
+    fireEvent.press(getByTestId('save-revised-address'));
+
+    await waitFor(() => {
+      expect(mockUserService.saveShippingAddress).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          addressLine1: 'Rua Revisada',
+          zipCode: '05444-000',
+        }),
+      );
+    });
+
+    fireEvent.press(getByTestId('button-continue'));
+
+    await waitFor(() => {
+      expect(getByTestId('payment-form')).toBeTruthy();
+    });
+
+    fireEvent.press(getByTestId('button-continue'));
+
+    await waitFor(() => {
+      expect(mockOrderService.createOrder).toHaveBeenCalled();
+    });
+
+    const { formatAddress, formatBillingAddress } = require('@/utils');
+    const revisedAddress = expect.objectContaining({
+      addressLine1: 'Rua Revisada',
+      zipCode: '05444-000',
+      phone: '11888888888',
+    });
+
+    expect(formatAddress).toHaveBeenLastCalledWith(revisedAddress);
+    expect(formatBillingAddress).toHaveBeenLastCalledWith(revisedAddress);
+
+    const orderData = mockOrderService.createOrder.mock.calls[0][0];
+    expect(orderData.billingAddress.zipcode).toBe('05444-000');
+    expect(orderData.phone).toBe('11888888888');
   });
 
   it('saves address when AddressForm calls onSaveAddress', async () => {

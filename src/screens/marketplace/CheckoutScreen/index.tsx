@@ -76,10 +76,8 @@ const CheckoutScreen: React.FC<Props> = ({ navigation, route }) => {
   const productIds = useMemo(() => cartItems.map((item) => item.id).filter(Boolean), [cartItems]);
   const cartHasProgram = useMemo(() => cartItems.some((item) => isProtocolCartItem(item)), [cartItems]);
 
-  const effectiveDeliveryAddress = deliverySameAsBilling ? billingAddressData : addressData;
-  const deliveryZipCode = (effectiveDeliveryAddress.zipCode || '').replace(/\D/g, '');
-  const fallbackZipCode = (addressData.zipCode || '').replace(/\D/g, '');
-  const zipCodeForShipping = deliveryZipCode.length === 8 ? deliveryZipCode : fallbackZipCode;
+  const effectiveBillingAddress = deliverySameAsBilling ? addressData : billingAddressData;
+  const zipCodeForShipping = (addressData.zipCode || '').replace(/\D/g, '');
 
   useEffect(() => {
     loadCartItems();
@@ -193,12 +191,6 @@ const CheckoutScreen: React.FC<Props> = ({ navigation, route }) => {
     if (currentStep !== 'payment') payment.setPaymentError(null);
   }, [currentStep]);
 
-  useEffect(() => {
-    if (currentStep === 'payment' && !isAddressFilled(billingAddressData) && addressData.addressLine1?.trim()) {
-      setBillingAddressData(addressData);
-    }
-  }, [currentStep]);
-
   const isAddressValid = isAddressFilled(addressData);
 
   const canProceedFromAddress = isAddressValid && (deliverySameAsBilling || isAddressFilled(billingAddressData));
@@ -303,10 +295,10 @@ const CheckoutScreen: React.FC<Props> = ({ navigation, route }) => {
         })),
       });
 
-      const billingAddressObj = formatBillingAddress(billingAddressData);
+      const billingAddressObj = formatBillingAddress(effectiveBillingAddress);
 
-      const shippingAddressData = deliverySameAsBilling ? billingAddressData : addressData;
-      if (!isAddressFilled(billingAddressData)) {
+      const shippingAddressData = addressData;
+      if (!isAddressFilled(effectiveBillingAddress)) {
         Alert.alert(t('errors.error'), t('checkout.orderError'));
         releaseCheckoutSubmitLock();
         return;
@@ -331,7 +323,7 @@ const CheckoutScreen: React.FC<Props> = ({ navigation, route }) => {
           releaseCheckoutSubmitLock();
           return;
         }
-        const checkoutPhoneDigits = billingAddressData.phone.replace(/\D/g, '');
+        const checkoutPhoneDigits = effectiveBillingAddress.phone.replace(/\D/g, '');
         const checkoutPhone = checkoutPhoneDigits.length >= 10 ? checkoutPhoneDigits : undefined;
         if (checkoutPhone) {
           orderData.phone = checkoutPhone;
@@ -449,6 +441,9 @@ const CheckoutScreen: React.FC<Props> = ({ navigation, route }) => {
       setAddressSaveError(null);
       await userService.saveShippingAddress(address);
       setAddressData(address);
+      if (deliverySameAsBilling) {
+        setBillingAddressData(address);
+      }
     } catch (error: any) {
       const message = (error?.message && String(error.message).trim()) || t('checkout.addressSaveError');
       setAddressSaveError(message);
@@ -608,7 +603,7 @@ const CheckoutScreen: React.FC<Props> = ({ navigation, route }) => {
                 cvv={payment.cvv}
                 cpf={payment.cpf}
                 paymentFieldErrors={payment.paymentFieldErrors}
-                billingAddressData={billingAddressData}
+                billingAddressData={effectiveBillingAddress}
                 deliverySameAsBilling={deliverySameAsBilling}
                 onCardholderNameChange={payment.onCardholderNameChange}
                 onCardNumberChange={payment.onCardNumberChange}
