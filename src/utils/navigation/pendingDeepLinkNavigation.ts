@@ -21,6 +21,10 @@ export function consumePendingDeepLinkNavigation(): PendingDeepLinkNavigationTar
   return target;
 }
 
+export function clearPendingDeepLinkNavigation(): void {
+  pendingTarget = null;
+}
+
 export function canNavigateFromDeepLink(activeRouteName: string | undefined): boolean {
   if (!activeRouteName) {
     return false;
