@@ -54,6 +54,7 @@ const ManageProtocolSubscriptionScreen: React.FC<Props> = ({ navigation, route }
   const [showUpdatePayment, setShowUpdatePayment] = useState(Boolean(focusUpdatePayment));
   const [billingAddressData, setBillingAddressData] = useState<AddressData>(EMPTY_ADDRESS);
   const [updatingPayment, setUpdatingPayment] = useState(false);
+  const updatePaymentInFlightRef = useRef(false);
 
   const loadManage = useCallback(async () => {
     setLoading(true);
@@ -168,9 +169,18 @@ const ManageProtocolSubscriptionScreen: React.FC<Props> = ({ navigation, route }
   }, []);
 
   const handleSubmitUpdatePayment = useCallback(async () => {
+    if (updatePaymentInFlightRef.current) {
+      return;
+    }
+    updatePaymentInFlightRef.current = true;
+    const releaseUpdatePaymentLock = () => {
+      updatePaymentInFlightRef.current = false;
+    };
+
     const fieldErrors = payment.validatePaymentFields((key) => t(key));
     if (fieldErrors) {
       payment.setPaymentFieldErrors(fieldErrors);
+      releaseUpdatePaymentLock();
       return;
     }
     if (!isAddressFilled(billingAddressData)) {
@@ -180,6 +190,7 @@ const ManageProtocolSubscriptionScreen: React.FC<Props> = ({ navigation, route }
           defaultValue: 'Preencha o endereço de cobrança para continuar.',
         }),
       );
+      releaseUpdatePaymentLock();
       return;
     }
 
@@ -191,6 +202,7 @@ const ManageProtocolSubscriptionScreen: React.FC<Props> = ({ navigation, route }
           defaultValue: 'Verifique os dados do cartão e tente novamente.',
         }),
       );
+      releaseUpdatePaymentLock();
       return;
     }
 
@@ -235,6 +247,7 @@ const ManageProtocolSubscriptionScreen: React.FC<Props> = ({ navigation, route }
             });
       Alert.alert(t('common.error', { defaultValue: 'Erro' }), message);
     } finally {
+      releaseUpdatePaymentLock();
       setUpdatingPayment(false);
     }
   }, [billingAddressData, loadManage, payment, subscriptionId, t]);
