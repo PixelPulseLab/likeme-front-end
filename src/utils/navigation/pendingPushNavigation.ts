@@ -17,6 +17,10 @@ export function consumePendingPushNavigation(): PendingPushNavigationTarget | nu
   return target;
 }
 
+export function clearPendingPushNavigation(): void {
+  pendingTarget = null;
+}
+
 export function canNavigateFromPush(activeRouteName: string | undefined): boolean {
   if (!activeRouteName) {
     return false;

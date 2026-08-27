@@ -7,6 +7,8 @@ import { clearAdvertisersListCache } from '@/services/advertiser/advertisersList
 import { clearSuggestedProductsCache } from '@/services/product/suggestedProductsCache';
 import { clearPublicUserCache } from '@/services/user/publicUserCache';
 import { fetchWithTimeout } from '@/utils/network/fetchWithTimeout';
+import { clearPendingDeepLinkNavigation } from '@/utils/navigation/pendingDeepLinkNavigation';
+import { clearPendingPushNavigation } from '@/utils/navigation/pendingPushNavigation';
 import { setOnboardingStep } from './setOnboardingStep';
 import storageService from './storageService';
 import { logger } from '@/utils/logger';
@@ -517,6 +519,8 @@ class AuthService {
       clearPublicUserCache();
       clearSuggestedProductsCache();
       clearAdvertisersListCache();
+      clearPendingDeepLinkNavigation();
+      clearPendingPushNavigation();
     } catch (error) {
       logger.error('Logout error:', error);
       await storageService.clearAll();
@@ -524,6 +528,8 @@ class AuthService {
       clearPublicUserCache();
       clearSuggestedProductsCache();
       clearAdvertisersListCache();
+      clearPendingDeepLinkNavigation();
+      clearPendingPushNavigation();
     }
   }
 
