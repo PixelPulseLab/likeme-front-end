@@ -9,13 +9,27 @@ export type RouteFallbackProduct = {
   description?: string;
 };
 
+function parseRouteFallbackPrice(priceLabel: string): number | null {
+  const numericLabel = priceLabel.trim().replace(/[^\d,.-]/g, '');
+  if (!/\d/.test(numericLabel)) {
+    return null;
+  }
+
+  const lastComma = numericLabel.lastIndexOf(',');
+  const lastDot = numericLabel.lastIndexOf('.');
+  const normalized =
+    lastComma > lastDot ? numericLabel.replace(/\./g, '').replace(',', '.') : numericLabel.replace(/,/g, '');
+  const parsed = Number.parseFloat(normalized);
+
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
 export function buildApiProductFromRouteFallback(fallback: RouteFallbackProduct, timestampsIso: string): ApiProduct {
-  const parsedPrice = Number.parseFloat(fallback.price.replace('$', '').replace(',', ''));
   return {
     id: fallback.id,
     name: fallback.title,
     description: fallback.description,
-    price: Number.isFinite(parsedPrice) ? parsedPrice : 0,
+    price: parseRouteFallbackPrice(fallback.price),
     image: fallback.image,
     type: fallback.type,
     quantity: 0,

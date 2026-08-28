@@ -30,17 +30,31 @@ describe('buildApiProductFromRouteFallback', () => {
     });
   });
 
-  it('usa preço 0 quando o parse não é finito', () => {
+  it('mapeia preço em string BRL com vírgula decimal', () => {
     const result = buildApiProductFromRouteFallback(
       {
         id: 'p-2',
-        title: 'Bad price',
-        price: 'not-a-number',
+        title: 'Item BRL',
+        price: 'R$1.234,56',
         image: '',
       },
       fixedIso,
     );
 
-    expect(result.price).toBe(0);
+    expect(result.price).toBe(1234.56);
+  });
+
+  it('preserva preço nulo quando o fallback não tem valor numérico', () => {
+    const result = buildApiProductFromRouteFallback(
+      {
+        id: 'p-3',
+        title: 'Serviço sob demanda',
+        price: 'Sob Demanda',
+        image: '',
+      },
+      fixedIso,
+    );
+
+    expect(result.price).toBeNull();
   });
 });
