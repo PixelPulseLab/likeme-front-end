@@ -227,7 +227,7 @@ const CommunityScreen: React.FC<Props> = ({ navigation }) => {
 
   const { advertisers: communityAdvertisers, loading: communityAdvertisersLoading } = useAdvertisers({
     communityId: selectedCommunityId,
-    listOptions: { page: 1, limit: 20, status: ADVERTISER_STATUS.ACTIVE },
+    listOptions: { page: 1, limit: 20, status: ADVERTISER_STATUS.ACTIVE, type: ADVERTISER_TYPE.PERSON },
     fetchAllPages: false,
     enabled: communityAdvertiserFetchEnabled,
   });
