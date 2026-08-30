@@ -9,6 +9,19 @@ function readPublicEnvFlag(key: string): string {
   return (getEnvVarFromConstants(key) ?? '').trim();
 }
 
+function readProcessEnvValue(...keys: string[]): string {
+  if (typeof process === 'undefined' || !process.env) {
+    return '';
+  }
+  for (const key of keys) {
+    const value = process.env[key];
+    if (value) {
+      return String(value).trim();
+    }
+  }
+  return '';
+}
+
 export function backendHostFromBaseUrl(baseUrl: string): string | null {
   const trimmed = baseUrl.trim();
   if (!trimmed) {
@@ -81,13 +94,13 @@ export function isE2eAuthBypassEnabled(): boolean {
 }
 
 export function e2eStagingTokenFromEnv(): string {
-  return readPublicEnvFlag('EXPO_PUBLIC_E2E_STAGING_TOKEN');
+  return readProcessEnvValue('E2E_STAGING_TOKEN');
 }
 
 export function e2eStagingEmailFromEnv(): string {
-  return readPublicEnvFlag('EXPO_PUBLIC_E2E_STAGING_EMAIL');
+  return readProcessEnvValue('E2E_LOGIN_EMAIL');
 }
 
 export function e2eStagingNameFromEnv(): string {
-  return readPublicEnvFlag('EXPO_PUBLIC_E2E_STAGING_NAME');
+  return readProcessEnvValue('E2E_LOGIN_NAME');
 }

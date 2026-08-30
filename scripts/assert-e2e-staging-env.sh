@@ -25,6 +25,12 @@ while IFS= read -r line || [[ -n "$line" ]]; do
   fi
 done < "$ENV_FILE"
 
+if [[ -n "${EXPO_PUBLIC_E2E_STAGING_TOKEN:-}" || -n "${EXPO_PUBLIC_E2E_STAGING_EMAIL:-}" || -n "${EXPO_PUBLIC_E2E_STAGING_NAME:-}" ]]; then
+  echo "❌ Credenciais E2E não devem usar prefixo EXPO_PUBLIC_ em $ENV_FILE" >&2
+  echo "   Use E2E_STAGING_TOKEN, E2E_LOGIN_EMAIL e E2E_LOGIN_NAME para evitar exposição no bundle." >&2
+  exit 1
+fi
+
 BACKEND_URL="${EXPO_PUBLIC_BACKEND_URL:-}"
 if [[ -z "$BACKEND_URL" ]]; then
   echo "❌ EXPO_PUBLIC_BACKEND_URL vazia em $ENV_FILE" >&2

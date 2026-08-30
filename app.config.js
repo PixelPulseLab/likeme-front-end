@@ -410,7 +410,6 @@ module.exports = {
         EXPO_PUBLIC_SHARE_BASE_URL: getEnvVar('EXPO_PUBLIC_SHARE_BASE_URL', shareBaseUrl()),
         EXPO_PUBLIC_LOGGER_ON_DEVICE: getEnvVar('EXPO_PUBLIC_LOGGER_ON_DEVICE', ''),
         EXPO_PUBLIC_E2E_AUTH_BYPASS: getEnvVar('EXPO_PUBLIC_E2E_AUTH_BYPASS', ''),
-        EXPO_PUBLIC_E2E_STAGING_TOKEN: getEnvVar('EXPO_PUBLIC_E2E_STAGING_TOKEN', ''),
       },
     },
   },
