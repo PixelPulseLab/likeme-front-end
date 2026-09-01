@@ -125,16 +125,21 @@ export const useCommunities = (options: UseCommunitiesOptions = {}): UseCommunit
       filesList: CommunityFile[],
       pagingData: { next: string | null; previous: string | null } | null,
       nextHasMore: boolean,
+      cacheGeneration: number,
     ) => {
-      communitiesCache.write(cacheKey, {
-        communities: communitiesList,
-        categories: categoriesList,
-        communityUsers: communityUsersList,
-        communityFiles: filesList,
-        paging: pagingData,
-        hasMore: nextHasMore,
-        fetchedAt: Date.now(),
-      });
+      communitiesCache.writeIfFresh(
+        cacheKey,
+        {
+          communities: communitiesList,
+          categories: categoriesList,
+          communityUsers: communityUsersList,
+          communityFiles: filesList,
+          paging: pagingData,
+          hasMore: nextHasMore,
+          fetchedAt: Date.now(),
+        },
+        cacheGeneration,
+      );
     },
     [communitiesCache, cacheKey],
   );
@@ -157,6 +162,7 @@ export const useCommunities = (options: UseCommunitiesOptions = {}): UseCommunit
           setLoadingMore(true);
         }
         setError(null);
+        const cacheGeneration = communitiesCache.generation();
 
         const response = await communityService.listCommunities({
           page,
@@ -243,6 +249,7 @@ export const useCommunities = (options: UseCommunitiesOptions = {}): UseCommunit
                 }
               : null,
             resolvedHasMore,
+            cacheGeneration,
           );
         }
       } catch (err) {

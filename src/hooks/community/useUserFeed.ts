@@ -154,6 +154,7 @@ export const useUserFeed = (options: UseUserFeedOptions = {}): UseUserFeedReturn
           ...(feedCursor != null && feedCursor.length > 0 ? { token: feedCursor } : {}),
           ...feedFilterParams,
         };
+        const cacheGeneration = feedCache.generation();
 
         const userFeedResponse = scopedCommunityId
           ? await communityService.getCommunityPosts(scopedCommunityId, requestParams)
@@ -220,13 +221,17 @@ export const useUserFeed = (options: UseUserFeedOptions = {}): UseUserFeedReturn
         setHasMore(hasMorePages);
         hasMoreRef.current = hasMorePages;
 
-        feedCache.write(cacheKey, {
-          posts: nextPosts,
-          nextCursor: nextFromFeed,
-          hasMore: hasMorePages,
-          currentPage: page,
-          fetchedAt: Date.now(),
-        });
+        feedCache.writeIfFresh(
+          cacheKey,
+          {
+            posts: nextPosts,
+            nextCursor: nextFromFeed,
+            hasMore: hasMorePages,
+            currentPage: page,
+            fetchedAt: Date.now(),
+          },
+          cacheGeneration,
+        );
       } catch (err) {
         hasErrorRef.current = true;
         const errorMessage = err instanceof Error ? err.message : 'Erro ao carregar posts';

@@ -18,6 +18,11 @@ type SuggestedProductsCacheEntry = {
 
 const cache = new Map<string, SuggestedProductsCacheEntry>();
 const inflight = new Map<string, Promise<Product[]>>();
+let cacheGeneration = 0;
+
+export function getSuggestedProductsCacheGeneration(): number {
+  return cacheGeneration;
+}
 
 export function suggestedProductsCacheKey(query: SuggestedProductsCacheQuery): string {
   const fill = query.fillWithOtherCategories === true ? '1' : query.fillWithOtherCategories === false ? '0' : '';
@@ -43,8 +48,17 @@ export function getCachedSuggestedProducts(key: string, now: number = Date.now()
   return entry.products;
 }
 
-export function setCachedSuggestedProducts(key: string, products: Product[], now: number = Date.now()): void {
+export function setCachedSuggestedProducts(
+  key: string,
+  products: Product[],
+  now: number = Date.now(),
+  generation: number = cacheGeneration,
+): boolean {
+  if (generation !== cacheGeneration) {
+    return false;
+  }
   cache.set(key, { products, fetchedAt: now });
+  return true;
 }
 
 export function getInflightSuggestedProducts(key: string): Promise<Product[]> | undefined {
@@ -60,6 +74,7 @@ export function deleteInflightSuggestedProducts(key: string): void {
 }
 
 export function clearSuggestedProductsCache(): void {
+  cacheGeneration += 1;
   cache.clear();
   inflight.clear();
 }

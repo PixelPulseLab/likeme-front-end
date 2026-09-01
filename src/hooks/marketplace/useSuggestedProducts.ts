@@ -9,6 +9,7 @@ import { prefetchImageUris } from '@/utils/image/prefetchImageUris';
 import {
   deleteInflightSuggestedProducts,
   getCachedSuggestedProducts,
+  getSuggestedProductsCacheGeneration,
   getInflightSuggestedProducts,
   setCachedSuggestedProducts,
   setInflightSuggestedProducts,
@@ -76,6 +77,7 @@ async function fetchSuggestedProductList(
     }
   }
 
+  const generation = getSuggestedProductsCacheGeneration();
   const request = (async () => {
     const productsResponse = await productService.listProducts({
       limit: query.limit,
@@ -97,7 +99,7 @@ async function fetchSuggestedProductList(
   setInflightSuggestedProducts(key, request);
   try {
     const products = await request;
-    setCachedSuggestedProducts(key, products);
+    setCachedSuggestedProducts(key, products, Date.now(), generation);
     return products;
   } finally {
     deleteInflightSuggestedProducts(key);

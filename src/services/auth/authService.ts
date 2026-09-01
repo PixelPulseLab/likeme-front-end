@@ -1,6 +1,9 @@
 import * as AuthSession from 'expo-auth-session';
 import { AUTH0_CONFIG, AUTH_CONFIG, getApiUrl } from '@/config';
 import { AUTH_BOOTSTRAP_HTTP_TIMEOUT_MS, AUTH_LOGOUT_AND_POLICY_HTTP_TIMEOUT_MS } from '@/constants';
+import { clearCommunitiesCache } from '@/contexts/CommunitiesCacheContext';
+import { clearFeedCache } from '@/contexts/FeedCacheContext';
+import { clearMarketplaceListingsCache } from '@/contexts/MarketplaceListingsCacheContext';
 import { invalidateApiClientAuthTokenMemoryCache } from '@/services/infrastructure/apiClient';
 import notificationService from '@/services/notification/notificationService';
 import { clearAdvertisersListCache } from '@/services/advertiser/advertisersListCache';
@@ -40,6 +43,16 @@ async function withTimeout<T>(promise: Promise<T>, timeoutMs: number, label: str
 }
 
 class AuthService {
+  private clearSessionScopedMemoryCaches(): void {
+    invalidateApiClientAuthTokenMemoryCache();
+    clearPublicUserCache();
+    clearSuggestedProductsCache();
+    clearAdvertisersListCache();
+    clearFeedCache();
+    clearCommunitiesCache();
+    clearMarketplaceListingsCache();
+  }
+
   private getTokenUrl(): string {
     return `https://${AUTH0_CONFIG.domain}/oauth/token`;
   }
@@ -248,7 +261,7 @@ class AuthService {
 
       try {
         await storageService.clearAll();
-        invalidateApiClientAuthTokenMemoryCache();
+        this.clearSessionScopedMemoryCaches();
       } catch (clearError) {
         logger.warn('Falha ao limpar sessão local após erro de login', { cause: clearError });
       }
@@ -409,6 +422,7 @@ class AuthService {
       }
 
       await storageService.clearLocalUserDataIfOwnerChanged(authResult.user.email);
+      this.clearSessionScopedMemoryCaches();
 
       await storageService.setUser({
         ...authResult.user,
@@ -418,8 +432,6 @@ class AuthService {
       });
 
       await setOnboardingStep(backendResponse);
-
-      invalidateApiClientAuthTokenMemoryCache();
 
       return backendResponse;
     } catch (error) {
@@ -513,17 +525,11 @@ class AuthService {
       }
 
       await storageService.clearAll();
-      invalidateApiClientAuthTokenMemoryCache();
-      clearPublicUserCache();
-      clearSuggestedProductsCache();
-      clearAdvertisersListCache();
+      this.clearSessionScopedMemoryCaches();
     } catch (error) {
       logger.error('Logout error:', error);
       await storageService.clearAll();
-      invalidateApiClientAuthTokenMemoryCache();
-      clearPublicUserCache();
-      clearSuggestedProductsCache();
-      clearAdvertisersListCache();
+      this.clearSessionScopedMemoryCaches();
     }
   }
 
