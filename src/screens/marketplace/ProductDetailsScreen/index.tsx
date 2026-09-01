@@ -84,7 +84,7 @@ const ProductDetailsScreen: React.FC<ProductDetailsScreenProps> = ({ navigation,
     navigation,
   });
 
-  const { partnerData } = useProductPartner({
+  const { partnerData, partnerContacts } = useProductPartner({
     product,
     ad,
     advertiserId,
@@ -140,12 +140,19 @@ const ProductDetailsScreen: React.FC<ProductDetailsScreenProps> = ({ navigation,
 
   const isProgramProduct = isProgramCatalogType(product?.type);
   const isOnConsultation = displayData?.price == null;
+  const displayContacts = useMemo(() => {
+    const productContacts = product?.contacts?.filter((contact) => String(contact.value ?? '').trim());
+    if (productContacts?.length) {
+      return productContacts;
+    }
+    return partnerContacts;
+  }, [partnerContacts, product?.contacts]);
   const primaryContact = useMemo(
     () =>
-      primaryContactLink(product?.contacts, {
+      primaryContactLink(displayContacts, {
         waMePrefillText: advertiserId ? resolveWaMePrefillFromI18n(advertiserId) : undefined,
       }),
-    [product?.contacts, advertiserId],
+    [displayContacts, advertiserId],
   );
 
   const productTabOptions: ButtonCarouselOption<'about' | 'agreements'>[] = useMemo(() => {
@@ -455,7 +462,7 @@ const ProductDetailsScreen: React.FC<ProductDetailsScreenProps> = ({ navigation,
             )}
             <View style={styles.content}>
               <ContactButtonsRow
-                contacts={product.contacts}
+                contacts={displayContacts}
                 providerId={advertiserId}
                 testID='product-details-contacts'
                 containerStyle={styles.contactButtonsRow}
