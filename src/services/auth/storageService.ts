@@ -23,6 +23,7 @@ const COMMUNITY_WELCOME_DISMISSED_KEY = '@likeme:community_welcome_dismissed';
 const COMMUNITY_SHOPPING_TIP_DISMISSED_KEY = '@likeme:community_shopping_tip_dismissed';
 const COMMUNITY_FAVORITE_IDS_KEY = '@likeme:community_favorite_ids';
 const PROGRAM_MODULE_COMPLETED_IDS_KEY = '@likeme:program_module_completed_ids';
+const PROGRAM_MODULE_UNCOMPLETED_IDS_KEY = '@likeme:program_module_uncompleted_ids';
 
 const ONBOARDING_STORAGE_KEYS = [
   REGISTER_COMPLETED_AT_KEY,
@@ -445,9 +446,9 @@ class StorageService {
     }
   }
 
-  private async readProgramModuleCompletedMap(): Promise<Record<string, string[]>> {
+  private async readProgramModuleIdsMap(storageKey: string): Promise<Record<string, string[]>> {
     try {
-      const raw = await AsyncStorage.getItem(PROGRAM_MODULE_COMPLETED_IDS_KEY);
+      const raw = await AsyncStorage.getItem(storageKey);
       if (!raw) {
         return {};
       }
@@ -464,16 +465,32 @@ class StorageService {
       }
       return map;
     } catch (error) {
-      logger.error('Error reading program module completed map:', error);
+      logger.error('Error reading program module ids map:', { storageKey, error });
       return {};
     }
+  }
+
+  private async writeProgramModuleIdsMap(storageKey: string, map: Record<string, string[]>): Promise<void> {
+    if (Object.keys(map).length === 0) {
+      await AsyncStorage.removeItem(storageKey);
+      return;
+    }
+    await AsyncStorage.setItem(storageKey, JSON.stringify(map));
   }
 
   async getProgramModuleCompletedIds(programScopeId: string): Promise<string[]> {
     if (!programScopeId) {
       return [];
     }
-    const map = await this.readProgramModuleCompletedMap();
+    const map = await this.readProgramModuleIdsMap(PROGRAM_MODULE_COMPLETED_IDS_KEY);
+    return map[programScopeId] ?? [];
+  }
+
+  async getProgramModuleUncompletedIds(programScopeId: string): Promise<string[]> {
+    if (!programScopeId) {
+      return [];
+    }
+    const map = await this.readProgramModuleIdsMap(PROGRAM_MODULE_UNCOMPLETED_IDS_KEY);
     return map[programScopeId] ?? [];
   }
 
@@ -483,24 +500,31 @@ class StorageService {
       return;
     }
     try {
-      const map = await this.readProgramModuleCompletedMap();
-      const current = new Set(map[programScopeId] ?? []);
+      const completedMap = await this.readProgramModuleIdsMap(PROGRAM_MODULE_COMPLETED_IDS_KEY);
+      const uncompletedMap = await this.readProgramModuleIdsMap(PROGRAM_MODULE_UNCOMPLETED_IDS_KEY);
+      const completedIds = new Set(completedMap[programScopeId] ?? []);
+      const uncompletedIds = new Set(uncompletedMap[programScopeId] ?? []);
       if (completed) {
-        current.add(moduleId);
+        completedIds.add(moduleId);
+        uncompletedIds.delete(moduleId);
       } else {
-        current.delete(moduleId);
+        completedIds.delete(moduleId);
+        uncompletedIds.add(moduleId);
       }
-      const nextIds = [...current];
-      if (nextIds.length === 0) {
-        delete map[programScopeId];
+      const nextCompletedIds = [...completedIds];
+      if (nextCompletedIds.length === 0) {
+        delete completedMap[programScopeId];
       } else {
-        map[programScopeId] = nextIds;
+        completedMap[programScopeId] = nextCompletedIds;
       }
-      if (Object.keys(map).length === 0) {
-        await AsyncStorage.removeItem(PROGRAM_MODULE_COMPLETED_IDS_KEY);
+      const nextUncompletedIds = [...uncompletedIds];
+      if (nextUncompletedIds.length === 0) {
+        delete uncompletedMap[programScopeId];
       } else {
-        await AsyncStorage.setItem(PROGRAM_MODULE_COMPLETED_IDS_KEY, JSON.stringify(map));
+        uncompletedMap[programScopeId] = nextUncompletedIds;
       }
+      await this.writeProgramModuleIdsMap(PROGRAM_MODULE_COMPLETED_IDS_KEY, completedMap);
+      await this.writeProgramModuleIdsMap(PROGRAM_MODULE_UNCOMPLETED_IDS_KEY, uncompletedMap);
     } catch (error) {
       logger.error('Error saving program module completed state:', { programScopeId, moduleId, completed, error });
       throw error;
@@ -518,6 +542,7 @@ class StorageService {
         COMMUNITY_SHOPPING_TIP_DISMISSED_KEY,
         COMMUNITY_FAVORITE_IDS_KEY,
         PROGRAM_MODULE_COMPLETED_IDS_KEY,
+        PROGRAM_MODULE_UNCOMPLETED_IDS_KEY,
       ]);
       await this.clearCart();
     } catch (error) {

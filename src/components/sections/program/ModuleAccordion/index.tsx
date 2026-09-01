@@ -29,6 +29,26 @@ type Props = {
   onExpandedModuleChange?: (moduleId: string | null) => void;
 };
 
+export function resolveCompletedModuleIds(
+  modules: Pick<ModuleItem, 'id' | 'completed'>[],
+  storedCompletedIds: Iterable<string> = [],
+  storedUncompletedIds: Iterable<string> = [],
+): Set<string> {
+  const completedIds = new Set<string>();
+  for (const module of modules) {
+    if (module.completed) {
+      completedIds.add(module.id);
+    }
+  }
+  for (const moduleId of storedCompletedIds) {
+    completedIds.add(moduleId);
+  }
+  for (const moduleId of storedUncompletedIds) {
+    completedIds.delete(moduleId);
+  }
+  return completedIds;
+}
+
 const ModuleAccordion: React.FC<Props> = ({
   modules,
   storageScopeId,
@@ -37,15 +57,7 @@ const ModuleAccordion: React.FC<Props> = ({
   onExpandedModuleChange,
 }) => {
   const [internalExpandedId, setInternalExpandedId] = useState<string | null>(null);
-  const [completedModuleIds, setCompletedModuleIds] = useState<Set<string>>(() => {
-    const initial = new Set<string>();
-    for (const module of modules) {
-      if (module.completed) {
-        initial.add(module.id);
-      }
-    }
-    return initial;
-  });
+  const [completedModuleIds, setCompletedModuleIds] = useState<Set<string>>(() => resolveCompletedModuleIds(modules));
 
   const isControlled = onExpandedModuleChange != null;
   const expandedId = isControlled ? expandedModuleIdProp ?? null : internalExpandedId;
@@ -55,12 +67,7 @@ const ModuleAccordion: React.FC<Props> = ({
     let cancelled = false;
 
     void (async () => {
-      const initialCompleted = new Set<string>();
-      for (const module of modules) {
-        if (module.completed) {
-          initialCompleted.add(module.id);
-        }
-      }
+      const initialCompleted = resolveCompletedModuleIds(modules);
 
       if (!storageScopeId) {
         if (!cancelled) {
@@ -70,12 +77,13 @@ const ModuleAccordion: React.FC<Props> = ({
       }
 
       try {
-        const storedCompleted = await storageService.getProgramModuleCompletedIds(storageScopeId);
-        for (const moduleId of storedCompleted) {
-          initialCompleted.add(moduleId);
-        }
+        const [storedCompleted, storedUncompleted] = await Promise.all([
+          storageService.getProgramModuleCompletedIds(storageScopeId),
+          storageService.getProgramModuleUncompletedIds(storageScopeId),
+        ]);
+        const nextCompleted = resolveCompletedModuleIds(modules, storedCompleted, storedUncompleted);
         if (!cancelled) {
-          setCompletedModuleIds(initialCompleted);
+          setCompletedModuleIds(nextCompleted);
         }
       } catch (error) {
         logger.error('Falha ao carregar módulos concluídos do programa', {
