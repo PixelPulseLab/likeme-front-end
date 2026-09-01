@@ -184,6 +184,52 @@ describe('PersonalDataEditScreen', () => {
     });
   });
 
+  it('não envia telefone vazio ao salvar outro campo', async () => {
+    const { getByText, getByTestId } = render(
+      <PersonalDataEditScreen navigation={navigation as any} route={{} as any} />,
+    );
+
+    await waitFor(() => {
+      expect(getByText('Nome completo')).toBeTruthy();
+    });
+
+    fireEvent.changeText(getByTestId('Nome completo'), 'Roberto Botelho Silva');
+    fireEvent.press(getByText('Salvar'));
+
+    await waitFor(() => {
+      expect(getServices().personsService.createOrUpdatePerson).toHaveBeenCalled();
+    });
+
+    const [personData] = getServices().personsService.createOrUpdatePerson.mock.calls[0];
+    expect(personData).not.toHaveProperty('phone');
+  });
+
+  it('envia telefone normalizado quando preenchido', async () => {
+    mockLoadPersonalData.mockResolvedValue({
+      ...loadedFormData,
+      phone: '(11) 99999-8888',
+    });
+
+    const { getByText, getByTestId } = render(
+      <PersonalDataEditScreen navigation={navigation as any} route={{} as any} />,
+    );
+
+    await waitFor(() => {
+      expect(getByText('Nome completo')).toBeTruthy();
+    });
+
+    fireEvent.changeText(getByTestId('Nome completo'), 'Roberto Botelho Silva');
+    fireEvent.press(getByText('Salvar'));
+
+    await waitFor(() => {
+      expect(getServices().personsService.createOrUpdatePerson).toHaveBeenCalledWith(
+        expect.objectContaining({
+          phone: '11999998888',
+        }),
+      );
+    });
+  });
+
   it('desabilita Salvar ao reverter para o valor original', async () => {
     const { getByText, getByTestId } = render(
       <PersonalDataEditScreen navigation={navigation as any} route={{} as any} />,
