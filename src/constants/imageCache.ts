@@ -22,3 +22,12 @@ export const IMAGE_NEUTRAL_PLACEHOLDER_COLOR = '#E1DFCF';
  * primeiros cards visíveis). Demais imagens podem usar `normal`/`low`.
  */
 export const IMAGE_PRIORITY_HIGH: NonNullable<ImageProps['priority']> = 'high';
+
+/**
+ * Enquadramento de arte de comunidade/produto: `cover` centralizado corta o assunto
+ * (rosto, logo) no topo, e ancorar em `top` sobra headroom demais — 25% fica entre os dois.
+ */
+export const IMAGE_CONTENT_POSITION_ABOVE_CENTER: NonNullable<ImageProps['contentPosition']> = {
+  top: '35%',
+  left: '50%',
+};

@@ -100,6 +100,9 @@ export function subscriptionManageStatusLabel(
   if (normalized === 'ACTIVE' || normalized === 'PENDING') {
     return { label: 'Ativo', badgeColor: 'lime' };
   }
+  if (normalized === 'PAST_DUE') {
+    return { label: 'Pagamento pendente', badgeColor: 'orange' };
+  }
   if (normalized === 'CANCELED' || normalized === 'CANCELLED') {
     return { label: 'Cancelado', badgeColor: 'orange' };
   }

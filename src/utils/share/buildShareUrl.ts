@@ -8,6 +8,7 @@ import {
   PROVIDER_SHARE_PATH_PREFIX,
   SHARE_CONTENT_TYPES,
   SHARE_QUERY_PARAMS,
+  SUBSCRIPTION_SHARE_PATH_PREFIX,
   type ShareContentType,
 } from '@/constants/share';
 
@@ -72,6 +73,8 @@ export function sharePathPrefixForContentType(contentType: ShareContentType): st
       return AFFILIATE_SHARE_PATH_PREFIX;
     case SHARE_CONTENT_TYPES.PROVIDER:
       return PROVIDER_SHARE_PATH_PREFIX;
+    case SHARE_CONTENT_TYPES.SUBSCRIPTION:
+      return SUBSCRIPTION_SHARE_PATH_PREFIX;
     default: {
       const exhaustiveCheck: never = contentType;
       throw new Error(`sharePathPrefixForContentType: contentType não suportado: ${exhaustiveCheck}`);

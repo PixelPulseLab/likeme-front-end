@@ -26,6 +26,7 @@ import OrderScreen, { type OrderScreenStatus } from './order/OrderScreen';
 import type { CreateOrderData } from '@/types/order';
 import { useAnalyticsScreen } from '@/analytics';
 import { useCart } from '@/hooks';
+import { E2E_TEST_IDS } from '@/constants/e2eTestIds';
 
 const noop = (): void => undefined;
 
@@ -617,6 +618,11 @@ const CheckoutScreen: React.FC<Props> = ({ navigation, route }) => {
                 onSaveBillingAddress={handleSaveBillingAddress}
                 onDeliverySameAsBillingChange={handleDeliverySameAsBillingChange}
               />
+              {payment.paymentError ? (
+                <Text style={styles.fieldError} testID={E2E_TEST_IDS.CHECKOUT_PAYMENT_ERROR}>
+                  {payment.paymentError}
+                </Text>
+              ) : null}
 
               <CheckoutVoucherSection
                 couponCode={checkoutVoucher.couponCode}
@@ -642,7 +648,7 @@ const CheckoutScreen: React.FC<Props> = ({ navigation, route }) => {
       {currentStep !== 'order' && (
         <View style={styles.buttonContainer}>
           <SecondaryButton
-            testID='button-continue'
+            testID={E2E_TEST_IDS.CHECKOUT_CONTINUE}
             label={t('common.continue')}
             onPress={handleContinue}
             size='large'

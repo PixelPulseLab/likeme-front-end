@@ -12,7 +12,7 @@ import type { CategoryName } from '@/types/category';
 import { PAGINATION } from '@/constants';
 import { logger } from '@/utils/logger';
 import { prefetchImageUris } from '@/utils/image/prefetchImageUris';
-import { resolveCommunityHeroImageUri } from '@/utils/community/mappers';
+import { resolveCommunityBannerImageUri } from '@/utils/community/mappers';
 import { isCommunitiesCacheEntryFresh, useCommunitiesCache } from '@/contexts/CommunitiesCacheContext';
 import { communitiesListCacheKey } from '@/utils/community/communitiesCacheKey';
 
@@ -206,10 +206,10 @@ export const useCommunities = (options: UseCommunitiesOptions = {}): UseCommunit
           setCategories(categoriesList);
         }
 
-        const heroUris = communitiesList
+        const bannerUris = communitiesList
           .slice(0, COMMUNITIES_PREFETCH_FIRST_N)
-          .map((community) => resolveCommunityHeroImageUri(community, filesList, JOIN_CARD_IMAGE_FALLBACK));
-        void prefetchImageUris(heroUris);
+          .map((community) => resolveCommunityBannerImageUri(community, filesList, JOIN_CARD_IMAGE_FALLBACK));
+        void prefetchImageUris(bannerUris);
         setCommunityUsers(communityUsersList);
 
         setCurrentPage(page);
@@ -325,7 +325,7 @@ export const useCommunities = (options: UseCommunitiesOptions = {}): UseCommunit
       id: community.communityId,
       title: community.displayName,
       badges,
-      image: resolveCommunityHeroImageUri(community, communityFiles, JOIN_CARD_IMAGE_FALLBACK),
+      image: resolveCommunityBannerImageUri(community, communityFiles, JOIN_CARD_IMAGE_FALLBACK),
     }));
 
     if (list.length > 0 && (firstCardImageUrl != null || (getCategoryName != null && selectedCategoryName != null))) {

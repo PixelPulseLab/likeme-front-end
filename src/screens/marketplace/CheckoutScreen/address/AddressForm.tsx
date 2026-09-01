@@ -3,6 +3,7 @@ import { View, Text } from 'react-native';
 import AddressView from './AddressView';
 import AddressEdit from './AddressEdit';
 import { styles } from '../styles';
+import { E2E_TEST_IDS } from '@/constants/e2eTestIds';
 
 export interface AddressData {
   fullName: string;
@@ -100,7 +101,7 @@ const AddressForm: React.FC<AddressFormProps> = ({
   };
 
   return (
-    <View>
+    <View testID={E2E_TEST_IDS.CHECKOUT_ADDRESS_FORM}>
       {addressLoadError ? (
         <View style={styles.addressErrorContainer}>
           <Text style={styles.fieldError}>{addressLoadError}</Text>

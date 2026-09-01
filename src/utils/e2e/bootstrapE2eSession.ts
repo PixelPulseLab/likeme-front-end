@@ -2,7 +2,12 @@ import { CommonActions, type NavigationContainerRefWithCurrent } from '@react-na
 import storageService from '@/services/auth/storageService';
 import { invalidateApiClientAuthTokenMemoryCache } from '@/services/infrastructure/apiClient';
 import type { RootStackParamList } from '@/types/navigation';
-import { e2eStagingTokenFromEnv, isE2eAuthBypassEnabled } from '@/utils/e2e/e2eAuthBypass';
+import {
+  e2eStagingEmailFromEnv,
+  e2eStagingNameFromEnv,
+  e2eStagingTokenFromEnv,
+  isE2eAuthBypassEnabled,
+} from '@/utils/e2e/e2eAuthBypass';
 import { isE2eBootstrapDeepLinkPath } from '@/utils/e2e/isE2eBootstrapDeepLinkPath';
 import { logger } from '@/utils/logger';
 
@@ -44,8 +49,8 @@ export async function seedE2eSession(options: BootstrapE2eSessionOptions = {}): 
 
   const tokenFromEnv = e2eStagingTokenFromEnv();
   const token = (options.token ?? (tokenFromEnv || E2E_PLACEHOLDER_TOKEN)).trim();
-  const email = (options.email ?? 'e2e-staging@likeme.local').trim();
-  const name = (options.name ?? 'E2E Staging').trim();
+  const email = (options.email ?? (e2eStagingEmailFromEnv() || 'duda@pixelpulselab.dev')).trim();
+  const name = (options.name ?? (e2eStagingNameFromEnv() || 'Duda Weber')).trim();
   const now = new Date().toISOString();
 
   await storageService.setToken(token);

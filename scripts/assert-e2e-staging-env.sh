@@ -12,7 +12,7 @@ fi
 
 while IFS= read -r line || [[ -n "$line" ]]; do
   [[ -z "$line" || "$line" =~ ^[[:space:]]*# ]] && continue
-  if [[ "$line" =~ ^(EXPO_PUBLIC_[A-Z0-9_]+)=(.*)$ ]]; then
+  if [[ "$line" =~ ^(EXPO_PUBLIC_[A-Z0-9_]+|E2E_STAGING_TOKEN|E2E_LOGIN_EMAIL|E2E_LOGIN_NAME)=(.*)$ ]]; then
     key="${BASH_REMATCH[1]}"
     # Prefer vars já exportadas (permite override em CI/testes)
     if [[ -n "${!key:-}" ]]; then
@@ -47,12 +47,14 @@ HOST="$(
 }
 
 PROD_HOST="likeme-back-end-one.vercel.app"
+STAGING_HOST="likeme-back-end-staging.vercel.app"
 if [[ "$HOST" == "$PROD_HOST" ]]; then
   echo "❌ E2E staging bloqueado: backend é PRODUÇÃO ($HOST)" >&2
   exit 1
 fi
 
 ALLOWED=0
+if [[ "$HOST" == "$STAGING_HOST" ]]; then ALLOWED=1; fi
 if [[ "$HOST" == *pixel-pulse-labs.vercel.app ]]; then ALLOWED=1; fi
 if [[ "$HOST" == "localhost" || "$HOST" == "127.0.0.1" ]]; then ALLOWED=1; fi
 if [[ "$HOST" =~ ^192\.168\.[0-9]+\.[0-9]+$ ]]; then ALLOWED=1; fi

@@ -21,7 +21,7 @@ import { type ButtonCarouselOption } from '@/components/ui/carousel';
 import InfoSectionTabsRow from '@/components/ui/carousel/InfoSectionTabsRow';
 import { HeroImage, ScreenWithHeader } from '@/components/ui/layout';
 import type { FeedEvent } from '@/types/event';
-import { SPACING, COMMUNITY_FEED_POSTS_PAGE_SIZE, ADVERTISER_STATUS } from '@/constants';
+import { SPACING, COMMUNITY_FEED_POSTS_PAGE_SIZE, ADVERTISER_STATUS, ADVERTISER_TYPE } from '@/constants';
 import { styles } from './styles';
 import type { CommunityStackParamList, RootStackParamList } from '@/types/navigation';
 import {
@@ -262,7 +262,7 @@ const CommunityScreen: React.FC<Props> = ({ navigation }) => {
   const shopTabsPrefetchForProviderRef = useRef<string | null>(null);
 
   const { advertisers: shopProfessionals, loading: shopProfessionalsLoading } = useAdvertisers({
-    listOptions: { page: 1, limit: 50, status: ADVERTISER_STATUS.ACTIVE },
+    listOptions: { page: 1, limit: 50, status: ADVERTISER_STATUS.ACTIVE, type: ADVERTISER_TYPE.PERSON },
     fetchAllPages: true,
     enabled: communityShopSolutionsActive,
   });

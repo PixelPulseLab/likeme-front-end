@@ -1,0 +1,27 @@
+# Meus programas → card do protocolo de checkout → Gerenciar protocolo
+appId: app.likeme.com
+---
+- tapOn:
+    id: "e2e.header.profileMenu"
+- tapOn:
+    id: "e2e.profileMenu.my-protocols"
+- scrollUntilVisible:
+    element:
+      id: "e2e.subscription.card.${E2E_CHECKOUT_PROTOCOL_PRODUCT_ID}"
+    direction: DOWN
+    timeout: 30000
+- tapOn:
+    id: "e2e.subscription.card.${E2E_CHECKOUT_PROTOCOL_PRODUCT_ID}"
+- scrollUntilVisible:
+    element:
+      id: "e2e.protocol.moreMenu"
+    direction: DOWN
+    timeout: 30000
+- tapOn:
+    id: "e2e.protocol.moreMenu"
+- tapOn:
+    id: "e2e.protocol.manage"
+- extendedWaitUntil:
+    visible:
+      id: "e2e.subscription.manageRoot"
+    timeout: 30000

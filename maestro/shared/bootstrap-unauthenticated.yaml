@@ -1,12 +1,8 @@
-# Shared: cold start até CTA E2E (sem seed de onboarding)
+# Shared: cold start até a tela de login (sem seed de sessão)
 appId: app.likeme.com
 ---
-- launchApp:
-    clearState: true
-    clearKeychain: true
-    permissions:
-      all: allow
+- runFlow: launch-app.yaml
 - extendedWaitUntil:
     visible:
-      id: "e2e.unauth.e2eContinue"
-    timeout: 90000
+      id: "e2e.unauth.login"
+    timeout: 120000

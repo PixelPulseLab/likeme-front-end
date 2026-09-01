@@ -150,4 +150,21 @@ export const styles = StyleSheet.create({
     textAlign: 'center',
     width: '100%',
   },
+  updatePaymentCard: {
+    width: '100%',
+    backgroundColor: COLORS.WHITE,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 28,
+    borderBottomLeftRadius: 12,
+    borderBottomRightRadius: 32,
+    padding: SPACING.MD,
+    gap: SPACING.MD,
+  },
+  updatePaymentHint: {
+    fontFamily: FONT_FAMILY.DM_SANS_REGULAR,
+    fontSize: 14,
+    lineHeight: 20,
+    letterSpacing: 0.2,
+    color: COLORS.TEXT_LIGHT,
+  },
 });

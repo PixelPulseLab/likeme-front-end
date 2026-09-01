@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, ScrollView, Text, View } from 'react-native';
 import type { StackScreenProps } from '@react-navigation/stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -6,11 +6,14 @@ import { ScreenWithHeader } from '@/components/ui/layout';
 import { PrimaryButton, SecondaryButton } from '@/components/ui/buttons';
 import Badge from '@/components/ui/badge';
 import { useTranslation } from '@/hooks/i18n';
+import { usePayment } from '@/hooks/marketplace/usePayment';
 import { useAnalyticsScreen } from '@/analytics';
 import { DEFAULT_SUBSCRIPTION_BENEFIT_KEYS } from '@/constants/subscription/subscriptionCancelReason';
 import { subscriptionService, type SubscriptionManageResult } from '@/services/payment/subscriptionService';
 import type { RootStackParamList } from '@/types/navigation';
 import { BOTTOM_DOCK_BAR_HEIGHT, COLORS, SPACING } from '@/constants';
+import { E2E_TEST_IDS } from '@/constants/e2eTestIds';
+import { formatBillingAddress } from '@/utils/formatters/addressFormatter';
 import { logger } from '@/utils/logger';
 import { navigateToProductDetailsScreen } from '@/utils/navigation/productNavigation';
 import {
@@ -21,6 +24,12 @@ import {
   subscriptionIsCanceledPresentation,
   subscriptionManageStatusLabel,
 } from '@/utils/subscription/subscriptionManageDisplay';
+import PaymentForm from '@/screens/marketplace/CheckoutScreen/payment/PaymentForm';
+import {
+  EMPTY_ADDRESS,
+  isAddressFilled,
+  type AddressData,
+} from '@/screens/marketplace/CheckoutScreen/address/AddressForm';
 import { styles } from './styles';
 
 type Props = StackScreenProps<RootStackParamList, 'ManageProtocolSubscription'>;
@@ -32,12 +41,19 @@ const ManageProtocolSubscriptionScreen: React.FC<Props> = ({ navigation, route }
   });
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
-  const { subscriptionId, programName } = route.params;
+  const { subscriptionId, programName, focusUpdatePayment } = route.params;
+  const payment = usePayment();
+  const scrollRef = useRef<ScrollView>(null);
+  const sectionOffsetY = useRef(0);
+  const updatePaymentSectionY = useRef(0);
 
   const [manage, setManage] = useState<SubscriptionManageResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
   const [reactivating, setReactivating] = useState(false);
+  const [showUpdatePayment, setShowUpdatePayment] = useState(Boolean(focusUpdatePayment));
+  const [billingAddressData, setBillingAddressData] = useState<AddressData>(EMPTY_ADDRESS);
+  const [updatingPayment, setUpdatingPayment] = useState(false);
 
   const loadManage = useCallback(async () => {
     setLoading(true);
@@ -65,6 +81,22 @@ const ManageProtocolSubscriptionScreen: React.FC<Props> = ({ navigation, route }
   useEffect(() => {
     void loadManage();
   }, [loadManage]);
+
+  useEffect(() => {
+    if (focusUpdatePayment && manage?.canUpdatePaymentMethod) {
+      setShowUpdatePayment(true);
+    }
+  }, [focusUpdatePayment, manage?.canUpdatePaymentMethod]);
+
+  useEffect(() => {
+    if (!showUpdatePayment || loading || !manage?.canUpdatePaymentMethod) {
+      return;
+    }
+    const timeoutId = setTimeout(() => {
+      scrollRef.current?.scrollTo({ y: Math.max(updatePaymentSectionY.current - SPACING.MD, 0), animated: true });
+    }, 250);
+    return () => clearTimeout(timeoutId);
+  }, [showUpdatePayment, loading, manage?.canUpdatePaymentMethod]);
 
   const handleCancelPress = useCallback(() => {
     if (!manage?.canCancel) {
@@ -131,6 +163,82 @@ const ManageProtocolSubscriptionScreen: React.FC<Props> = ({ navigation, route }
     }
   }, [loadManage, manage, navigation, subscriptionId, t]);
 
+  const handleUpdatePaymentPress = useCallback(() => {
+    setShowUpdatePayment(true);
+  }, []);
+
+  const handleSubmitUpdatePayment = useCallback(async () => {
+    const fieldErrors = payment.validatePaymentFields((key) => t(key));
+    if (fieldErrors) {
+      payment.setPaymentFieldErrors(fieldErrors);
+      return;
+    }
+    if (!isAddressFilled(billingAddressData)) {
+      Alert.alert(
+        t('common.error', { defaultValue: 'Erro' }),
+        t('profile.subscriptionManage.updatePaymentAddressRequired', {
+          defaultValue: 'Preencha o endereço de cobrança para continuar.',
+        }),
+      );
+      return;
+    }
+
+    const cardDataObj = payment.getCardData();
+    if (!cardDataObj) {
+      Alert.alert(
+        t('common.error', { defaultValue: 'Erro' }),
+        t('profile.subscriptionManage.updatePaymentCardInvalid', {
+          defaultValue: 'Verifique os dados do cartão e tente novamente.',
+        }),
+      );
+      return;
+    }
+
+    const phoneDigits = billingAddressData.phone.replace(/\D/g, '');
+    const phone = phoneDigits.length >= 10 ? phoneDigits : undefined;
+
+    setUpdatingPayment(true);
+    try {
+      const response = await subscriptionService.updateSubscriptionPaymentMethod(subscriptionId, {
+        cardData: {
+          ...cardDataObj,
+          ...(phone ? { phone } : {}),
+        },
+        billingAddress: formatBillingAddress(billingAddressData),
+      });
+      if (!response.success) {
+        throw new Error(
+          t('profile.subscriptionManage.updatePaymentError', {
+            defaultValue: 'Não foi possível atualizar a forma de pagamento. Tente novamente.',
+          }),
+        );
+      }
+      Alert.alert(
+        t('profile.subscriptionManage.updatePaymentSuccessTitle', { defaultValue: 'Cartão atualizado' }),
+        t('profile.subscriptionManage.updatePaymentSuccessMessage', {
+          defaultValue: 'Sua forma de pagamento foi atualizada. Vamos tentar a cobrança novamente.',
+        }),
+      );
+      setShowUpdatePayment(false);
+      setBillingAddressData(EMPTY_ADDRESS);
+      await loadManage();
+    } catch (error) {
+      logger.error('[ManageProtocolSubscription] Falha ao atualizar forma de pagamento', {
+        subscriptionId,
+        cause: error,
+      });
+      const message =
+        error instanceof Error
+          ? error.message
+          : t('profile.subscriptionManage.updatePaymentError', {
+              defaultValue: 'Não foi possível atualizar a forma de pagamento. Tente novamente.',
+            });
+      Alert.alert(t('common.error', { defaultValue: 'Erro' }), message);
+    } finally {
+      setUpdatingPayment(false);
+    }
+  }, [billingAddressData, loadManage, payment, subscriptionId, t]);
+
   const statusPresentation = manage ? subscriptionManageStatusLabel(manage.status, manage.cancelAtPeriodEnd) : null;
 
   const isCancelingPresentation = manage
@@ -149,6 +257,7 @@ const ManageProtocolSubscriptionScreen: React.FC<Props> = ({ navigation, route }
 
   const showReducedSubscriptionFields = isCancelingPresentation || isCanceledPresentation;
   const showRepurchaseReactivate = isCanceledPresentation;
+  const canShowUpdatePayment = Boolean(manage?.canUpdatePaymentMethod);
 
   const benefits =
     manage?.benefits && manage.benefits.length > 0
@@ -170,6 +279,7 @@ const ManageProtocolSubscriptionScreen: React.FC<Props> = ({ navigation, route }
       }}
       contentBackgroundColor={COLORS.BACKGROUND}
       contentContainerStyle={styles.container}
+      testID={E2E_TEST_IDS.SUBSCRIPTION_MANAGE_ROOT}
     >
       {loading ? (
         <View style={styles.loadingBox}>
@@ -191,13 +301,20 @@ const ManageProtocolSubscriptionScreen: React.FC<Props> = ({ navigation, route }
         </View>
       ) : (
         <ScrollView
+          ref={scrollRef}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={[styles.scrollContent, { paddingBottom: scrollBottomPadding }]}
+          keyboardShouldPersistTaps='handled'
         >
           <Text style={styles.title}>
             {t('profile.subscriptionManage.title', { defaultValue: 'Sobre o programa' })}
           </Text>
-          <View style={styles.section}>
+          <View
+            style={styles.section}
+            onLayout={(event) => {
+              sectionOffsetY.current = event.nativeEvent.layout.y;
+            }}
+          >
             <View style={styles.card}>
               <Text style={styles.cardTitle}>
                 {t('profile.subscriptionManage.mySubscription', { defaultValue: 'Minha assinatura' })}
@@ -297,6 +414,62 @@ const ManageProtocolSubscriptionScreen: React.FC<Props> = ({ navigation, route }
               </View>
             ) : null}
 
+            {canShowUpdatePayment ? (
+              <View
+                style={styles.actions}
+                onLayout={(event) => {
+                  updatePaymentSectionY.current = sectionOffsetY.current + event.nativeEvent.layout.y;
+                }}
+              >
+                {!showUpdatePayment ? (
+                  <PrimaryButton
+                    label={t('profile.subscriptionManage.updatePaymentButton', {
+                      defaultValue: 'Atualizar forma de pagamento',
+                    })}
+                    onPress={handleUpdatePaymentPress}
+                    size='large'
+                  />
+                ) : (
+                  <View style={styles.updatePaymentCard}>
+                    <Text style={styles.cardTitle}>
+                      {t('profile.subscriptionManage.updatePaymentTitle', {
+                        defaultValue: 'Atualizar forma de pagamento',
+                      })}
+                    </Text>
+                    <Text style={styles.updatePaymentHint}>
+                      {t('profile.subscriptionManage.updatePaymentHint', {
+                        defaultValue: 'Informe um novo cartão e o endereço de cobrança para restabelecer a assinatura.',
+                      })}
+                    </Text>
+                    <PaymentForm
+                      cardholderName={payment.cardholderName}
+                      cardNumber={payment.cardNumber}
+                      expiryDate={payment.expiryDate}
+                      cvv={payment.cvv}
+                      cpf={payment.cpf}
+                      paymentFieldErrors={payment.paymentFieldErrors}
+                      billingAddressData={billingAddressData}
+                      onCardholderNameChange={payment.onCardholderNameChange}
+                      onCardNumberChange={payment.onCardNumberChange}
+                      onExpiryDateChange={payment.onExpiryDateChange}
+                      onCvvChange={payment.onCvvChange}
+                      onCpfChange={payment.onCpfChange}
+                      onSaveBillingAddress={setBillingAddressData}
+                    />
+                    <PrimaryButton
+                      label={t('profile.subscriptionManage.updatePaymentSubmit', {
+                        defaultValue: 'Salvar novo cartão',
+                      })}
+                      onPress={() => void handleSubmitUpdatePayment()}
+                      size='large'
+                      loading={updatingPayment}
+                      disabled={updatingPayment}
+                    />
+                  </View>
+                )}
+              </View>
+            ) : null}
+
             {manage.canCancel ? (
               <View style={styles.actions}>
                 <SecondaryButton
@@ -306,6 +479,7 @@ const ManageProtocolSubscriptionScreen: React.FC<Props> = ({ navigation, route }
                   onPress={handleCancelPress}
                   size='large'
                   style={styles.cancelButton}
+                  testID={E2E_TEST_IDS.SUBSCRIPTION_CANCEL}
                 />
               </View>
             ) : null}
@@ -320,6 +494,7 @@ const ManageProtocolSubscriptionScreen: React.FC<Props> = ({ navigation, route }
                   size='large'
                   loading={reactivating}
                   disabled={reactivating}
+                  testID={E2E_TEST_IDS.SUBSCRIPTION_REACTIVATE}
                 />
                 {manage.canReactivate ? (
                   <Text style={styles.reactivateHint}>

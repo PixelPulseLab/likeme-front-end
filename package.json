@@ -1,6 +1,6 @@
 {
   "name": "likeme-front-end",
-  "version": "1.13.0",
+  "version": "1.14.1",
   "description": "React Native app for health and wellness",
   "main": "index.js",
   "scripts": {
@@ -71,7 +71,9 @@
     "test:e2e:staging": "bash scripts/run-maestro-staging.sh maestro/flows",
     "test:e2e:smoke": "bash scripts/run-maestro-staging.sh maestro/flows --include-tags smoke",
     "test:e2e:critical": "bash scripts/run-maestro-staging.sh maestro/flows --include-tags critical",
-    "test:e2e:hub": "bash scripts/run-maestro-staging.sh maestro/flows --include-tags hub"
+    "test:e2e:hub": "bash scripts/run-maestro-staging.sh maestro/flows --include-tags hub",
+    "test:e2e:login": "bash scripts/run-maestro-staging.sh maestro/flows/login.yaml",
+    "test:e2e:checkout": "bash scripts/run-maestro-staging.sh maestro/flows/checkout"
   },
   "engines": {
     "node": ">=20.19.4"

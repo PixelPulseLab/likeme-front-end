@@ -107,6 +107,18 @@ export interface SubscriptionManageResult {
   benefits: string[];
   canCancel: boolean;
   canReactivate: boolean;
+  canUpdatePaymentMethod?: boolean;
+}
+
+export interface UpdateSubscriptionPaymentMethodRequest {
+  cardData: CreateProtocolSubscriptionRequest['cardData'];
+  billingAddress: CreateProtocolSubscriptionRequest['billingAddress'];
+}
+
+export interface UpdateSubscriptionPaymentMethodResult {
+  subscriptionId: string;
+  status: string;
+  chargeRetried: boolean;
 }
 
 export interface ScheduleSubscriptionCancelResult {
@@ -168,6 +180,17 @@ class SubscriptionService {
     return apiClient.post<ApiResponse<{ subscriptionId: string }>>(
       `/api/payment/subscriptions/${encodeURIComponent(subscriptionId)}/reactivate`,
       {},
+      true,
+    );
+  }
+
+  async updateSubscriptionPaymentMethod(
+    subscriptionId: string,
+    data: UpdateSubscriptionPaymentMethodRequest,
+  ): Promise<ApiResponse<UpdateSubscriptionPaymentMethodResult>> {
+    return apiClient.post<ApiResponse<UpdateSubscriptionPaymentMethodResult>>(
+      `/api/payment/subscriptions/${encodeURIComponent(subscriptionId)}/update-payment-method`,
+      data,
       true,
     );
   }

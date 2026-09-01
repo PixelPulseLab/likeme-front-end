@@ -6,7 +6,7 @@ import { ScreenWithHeader, HeroImage } from '@/components/ui/layout';
 import { EmptyState, ShareContentUnavailable } from '@/components/ui/feedback';
 import { SecondaryButton } from '@/components/ui/buttons';
 import { type ButtonCarouselOption } from '@/components/ui/carousel';
-import InfoSectionTabsRow from '@/components/ui/carousel/InfoSectionTabsRow';
+import InfoSectionTabsRow, { type InfoSectionMenuOption } from '@/components/ui/carousel/InfoSectionTabsRow';
 import { ModuleAccordion } from '@/components/sections/program';
 import { EventBanner } from '@/components/sections/community';
 import { EventWebViewSession } from '@/components/infrastructure/webview/EventWebViewSession';
@@ -22,6 +22,7 @@ import type { ModuleItem } from '@/components/sections/program/ModuleAccordion';
 import productService from '@/services/product/productService';
 import { subscriptionService } from '@/services/payment/subscriptionService';
 import { COLORS } from '@/constants';
+import { E2E_TEST_IDS } from '@/constants/e2eTestIds';
 import { isProtocolStepAutoCompleted } from '@/utils/course/protocolStepAutoCompleted';
 import { protocolDetailFromProduct } from '@/utils/profile/protocolDetailFromProduct';
 import { goBackOrShareHome, navigateToShareHome } from '@/utils/navigation/shareHomeNavigation';
@@ -294,12 +295,13 @@ const ProtocolDetailScreen: React.FC<Props> = ({ navigation, route }) => {
       canceledAt: protocol.canceledAt,
     };
     const isCanceledSubscription = subscriptionIsCanceledPresentation(subscriptionFields);
-    const options: Array<{ label: string; onPress: () => void }> = [];
+    const options: InfoSectionMenuOption[] = [];
 
     if (protocol.subscriptionId?.trim()) {
       options.push({
         label: t('profile.protocolDetail.manageProtocol', { defaultValue: 'Gerenciar protocolo' }),
         onPress: handleManageProtocol,
+        testID: E2E_TEST_IDS.PROTOCOL_MANAGE,
       });
     }
 

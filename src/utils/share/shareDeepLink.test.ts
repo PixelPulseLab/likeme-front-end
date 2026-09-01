@@ -79,6 +79,23 @@ const PROVIDER_TARGET = {
   params: { providerId: 'prov-1' },
 } as const;
 
+const SUBSCRIPTION_PAYMENT_TARGET = {
+  screen: 'ManageProtocolSubscription',
+  params: {
+    subscriptionId: 'sub-abc',
+    programName: 'Programa',
+    focusUpdatePayment: true,
+  },
+} as const;
+
+const SUBSCRIPTION_MANAGE_TARGET = {
+  screen: 'ManageProtocolSubscription',
+  params: {
+    subscriptionId: 'sub-abc',
+    programName: 'Programa',
+  },
+} as const;
+
 const HOME_TARGET = { screen: 'Summary' } as const;
 
 const SHARE_BASE_URL = 'https://app.likeme.global';
@@ -133,6 +150,10 @@ describe('shareDeepLinkTargetFromUrl', () => {
     expect(shareDeepLinkTargetFromUrl(`${SHARE_BASE_URL}/protocol/prog-1`)).toEqual(PROTOCOL_TARGET);
     expect(shareDeepLinkTargetFromUrl(`${SHARE_BASE_URL}/affiliate/aff-1?adId=ad-9`)).toEqual(AFFILIATE_TARGET);
     expect(shareDeepLinkTargetFromUrl(`${SHARE_BASE_URL}/provider/prov-1`)).toEqual(PROVIDER_TARGET);
+    expect(shareDeepLinkTargetFromUrl(`${SHARE_BASE_URL}/subscription/sub-abc/payment`)).toEqual(
+      SUBSCRIPTION_PAYMENT_TARGET,
+    );
+    expect(shareDeepLinkTargetFromUrl(`${SHARE_BASE_URL}/subscription/sub-abc`)).toEqual(SUBSCRIPTION_MANAGE_TARGET);
   });
 
   it('resolve rotas via custom scheme likeme://', () => {
@@ -144,10 +165,13 @@ describe('shareDeepLinkTargetFromUrl', () => {
       },
     });
     expect(shareDeepLinkTargetFromUrl('likeme://affiliate/aff-1?adId=ad-9')).toEqual(AFFILIATE_TARGET);
+    expect(shareDeepLinkTargetFromUrl('likeme://subscription/sub-abc/payment')).toEqual(SUBSCRIPTION_PAYMENT_TARGET);
+    expect(shareDeepLinkTargetFromUrl('likeme:///subscription/sub-abc/payment')).toEqual(SUBSCRIPTION_PAYMENT_TARGET);
   });
 
   it('retorna null para paths desconhecidos', () => {
     expect(shareDeepLinkTargetFromUrl(`${SHARE_BASE_URL}/legacy/abc`)).toBeNull();
+    expect(shareDeepLinkTargetFromUrl(`${SHARE_BASE_URL}/subscription/sub-abc/unknown`)).toBeNull();
   });
 });
 
@@ -227,6 +251,24 @@ describe('openDeepLinkTarget', () => {
     await openDeepLinkTarget(navigationRef, `${SHARE_BASE_URL}/provider/prov-1`, 'Main');
     expect(navigationRef.dispatch).toHaveBeenLastCalledWith(
       shareContentResetAction('ProviderProfile', PROVIDER_TARGET.params),
+    );
+  });
+
+  it('navega para gestão de assinatura com foco em pagamento', async () => {
+    const navigationRef = createNavigationRef();
+
+    await openDeepLinkTarget(navigationRef, `${SHARE_BASE_URL}/subscription/sub-abc/payment`, 'Main');
+
+    expect(logEvent).toHaveBeenCalledWith(GA4_EVENTS.SELECT_CONTENT, {
+      [ANALYTICS_PARAMS.CONTENT_TYPE]: SHARE_CONTENT_TYPES.SUBSCRIPTION,
+      [ANALYTICS_PARAMS.ITEM_ID]: 'sub-abc',
+      [ANALYTICS_PARAMS.ACTION_NAME]: 'deep_link_open',
+    });
+    expect(navigationRef.dispatch).toHaveBeenCalledWith(
+      CommonActions.navigate({
+        name: 'ManageProtocolSubscription',
+        params: SUBSCRIPTION_PAYMENT_TARGET.params,
+      }),
     );
   });
 

@@ -14,6 +14,7 @@ import {
   useSessionTokenReady,
   useCategories,
   useCommunityEventBanner,
+  useAdvertisers,
 } from '@/hooks';
 import { EventBanner } from '@/components/sections/community';
 import { EventWebViewSession } from '@/components/infrastructure/webview/EventWebViewSession';
@@ -22,7 +23,7 @@ import { FilterCategoryModal, type FilterCategoryResult } from '@/components/ui/
 import { useFloatingMenuActions } from '@/contexts/FloatingMenuContext';
 import { useTranslation } from '@/hooks/i18n';
 import { logger } from '@/utils/logger';
-import { communityService, storageService, advertiserService } from '@/services';
+import { communityService, storageService } from '@/services';
 import { PopularProvidersSection, type Provider } from '@/components/sections/community';
 import { type JoinCardItem } from '@/components/ui/cards';
 import { JoinCardList } from '@/components/ui/lists/JoinCardList';
@@ -46,13 +47,13 @@ import {
 import { marketplaceSolutionOptions, SOLUTION_TAB_ALL, type MarketplaceSolutionTab } from '@/types/solution';
 import { navigateToProductDetailsScreen } from '@/utils/navigation/productNavigation';
 import type { RootStackParamList } from '@/types/navigation';
+import { ADVERTISER_STATUS, ADVERTISER_TYPE } from '@/constants';
 import { styles } from './styles';
 
 type Props = {
   navigation: any;
   route: any;
 };
-
 const SummaryScreen: React.FC<Props> = ({ navigation }) => {
   useAnalyticsScreen({ screenName: 'Summary', screenClass: 'SummaryScreen' });
   const { t } = useTranslation();
@@ -184,41 +185,24 @@ const SummaryScreen: React.FC<Props> = ({ navigation }) => {
       navigation: rootNavigation as StackNavigationProp<RootStackParamList>,
     });
 
-  const [popularProviders, setPopularProviders] = useState<Provider[]>([]);
-
-  useEffect(() => {
-    if (!hasSessionToken) {
-      setPopularProviders([]);
-      return;
-    }
-
-    // PopularProvidersSection e um carrossel horizontal — 10 e suficiente
-    // pra preencher mais que a primeira tela na maioria dos devices, sem
-    // pagar latencia/dados para itens que nunca serao vistos.
-    const loadProviders = async () => {
-      try {
-        const response = await advertiserService.getAdvertisers({
-          page: 1,
-          limit: 10,
-          status: 'active',
-        });
-        if (!response.success || !response.data?.advertisers) {
-          setPopularProviders([]);
-          return;
-        }
-        const providers: Provider[] = response.data.advertisers.map((a) => ({
-          id: a.id,
-          name: a.name,
-          avatar: a.logo,
-        }));
-        setPopularProviders(providers);
-      } catch (error) {
-        logger.error('[SummaryScreen] Erro ao carregar provedores', error);
-        setPopularProviders([]);
-      }
-    };
-    loadProviders();
-  }, [hasSessionToken]);
+  const { advertisers: popularAdvertisers } = useAdvertisers({
+    listOptions: {
+      page: 1,
+      limit: 10,
+      status: ADVERTISER_STATUS.ACTIVE,
+      type: ADVERTISER_TYPE.PERSON,
+    },
+    enabled: hasSessionToken,
+  });
+  const popularProviders = useMemo<Provider[]>(
+    () =>
+      popularAdvertisers.map((advertiser) => ({
+        id: advertiser.id,
+        name: advertiser.name,
+        avatar: advertiser.logo,
+      })),
+    [popularAdvertisers],
+  );
 
   const { products: suggestedPrograms } = useSuggestedProducts({
     ...SUGGESTED_PRODUCTS_HOME_ACTIVITIES_DEFAULTS,

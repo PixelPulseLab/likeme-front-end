@@ -3,7 +3,7 @@ import { View, Text, Dimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { CachedImage } from '@/components/ui/media/CachedImage';
 import { DesaturatedImage } from '@/components/ui/media/DesaturatedImage';
-import { PlatformBlurView } from '@/components/ui/PlatformBlurView';
+import { BlurView } from 'expo-blur';
 import { IMAGE_PRIORITY_HIGH } from '@/constants';
 import { styles } from './styles';
 
@@ -65,7 +65,7 @@ const HeroImage = ({
           <View style={styles.bottomBlock}>
             {shouldRenderOverlay && (
               <View style={styles.effectsContainer}>
-                <PlatformBlurView intensity={10} tint='dark' style={styles.blur} />
+                <BlurView intensity={10} tint='dark' style={styles.blur} />
                 <LinearGradient
                   colors={['rgba(48, 48, 48, 0)', 'rgba(41, 41, 41, 1)']}
                   locations={[0.64, 1]}
