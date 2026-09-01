@@ -1,0 +1,52 @@
+appId: app.likeme.com
+name: Checkout — protocolo pago (e-mails created, payment_approved, cancel_requested, cancel_annulled)
+tags:
+  - checkout
+---
+- runFlow: ../../shared/bootstrap-authenticated.yaml
+- runFlow: ../../shared/start-protocol-checkout.yaml
+- runFlow: ../../shared/fill-checkout-payment.yaml
+- tapOn:
+    id: "button-continue"
+- runFlow:
+    when:
+      visible: "OK"
+    commands:
+      - tapOn: "OK"
+- extendedWaitUntil:
+    visible:
+      id: "e2e.checkout.orderSuccess"
+    timeout: 120000
+- runFlow: ../../shared/open-protocol-manage.yaml
+- scrollUntilVisible:
+    element:
+      id: "e2e.subscription.cancel"
+    direction: DOWN
+    timeout: 20000
+- tapOn:
+    id: "e2e.subscription.cancel"
+- scrollUntilVisible:
+    element:
+      id: "e2e.subscription.cancelConfirm"
+    direction: DOWN
+    timeout: 20000
+- tapOn:
+    id: "e2e.subscription.cancelConfirm"
+- extendedWaitUntil:
+    visible:
+      id: "e2e.subscription.cancelDone"
+    timeout: 60000
+- tapOn:
+    id: "e2e.subscription.cancelDone"
+- runFlow: ../../shared/open-protocol-manage.yaml
+- scrollUntilVisible:
+    element:
+      id: "e2e.subscription.reactivate"
+    direction: DOWN
+    timeout: 20000
+- tapOn:
+    id: "e2e.subscription.reactivate"
+- extendedWaitUntil:
+    visible:
+      id: "e2e.subscription.cancel"
+    timeout: 60000

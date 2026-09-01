@@ -378,12 +378,33 @@ export function resolveCommunityHeroImageUri(
   files: CommunityFile[] | undefined,
   fallbackUri: string,
 ): string {
+  return communityImageUri(community, files, fallbackUri, [community?.heroImageUrl, community?.bannerImageUrl]);
+}
+
+export function resolveCommunityBannerImageUri(
+  community: Community | undefined,
+  files: CommunityFile[] | undefined,
+  fallbackUri: string,
+): string {
+  return communityImageUri(community, files, fallbackUri, [community?.bannerImageUrl, community?.heroImageUrl]);
+}
+
+function communityImageUri(
+  community: Community | undefined,
+  files: CommunityFile[] | undefined,
+  fallbackUri: string,
+  prioritizedImageUrls: Array<string | null | undefined>,
+): string {
   if (!community) {
     return fallbackUri;
   }
-  const fromBackend = community.avatarUrl?.trim();
-  if (fromBackend) {
-    return fromBackend;
+  const imageUrl = prioritizedImageUrls.map((url) => url?.trim()).find(Boolean);
+  if (imageUrl) {
+    return imageUrl;
+  }
+  const avatarUrl = community.avatarUrl?.trim();
+  if (avatarUrl) {
+    return avatarUrl;
   }
   const fileId = community.avatarFileId?.trim();
   if (fileId && HTTP_URL_PREFIX.test(fileId)) {

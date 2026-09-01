@@ -98,6 +98,8 @@ export interface Community {
   avatarFileId?: string;
   /** URL resolvida no backend (`fileUrl` cruzado com `avatarFileId`). */
   avatarUrl?: string;
+  bannerImageUrl?: string | null;
+  heroImageUrl?: string | null;
   isPublic: boolean;
   membersCount: number;
   postsCount: number;

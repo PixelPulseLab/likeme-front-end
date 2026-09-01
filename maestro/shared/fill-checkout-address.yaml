@@ -1,0 +1,56 @@
+# Maestro trata id como regex: e2e.checkout.street casava com streetNumber.
+# CEP 01310100 preenche rua/bairro/cidade/UF via ViaCEP — só digitamos o que a API não traz.
+appId: app.likeme.com
+---
+- runFlow:
+    when:
+      visible:
+        id: "e2e.checkout.addressView"
+    commands:
+      - assertVisible:
+          id: "e2e.checkout.addressView"
+- runFlow:
+    when:
+      visible:
+        id: "e2e.checkout.zip"
+    commands:
+      - tapOn:
+          id: "e2e.checkout.zip"
+      - eraseText
+      - inputText: "01310100"
+      - hideKeyboard
+      - extendedWaitUntil:
+          visible: "Bela Vista"
+          timeout: 20000
+          optional: true
+      - tapOn:
+          id: "e2e.checkout.fullName"
+      - eraseText
+      - inputText: "Duda E2E"
+      - hideKeyboard
+      - tapOn:
+          id: "e2e.checkout.streetNumber"
+      - eraseText
+      - inputText: "1000"
+      - hideKeyboard
+      - scrollUntilVisible:
+          element:
+            id: "e2e.checkout.phone"
+          direction: DOWN
+          timeout: 15000
+      - tapOn:
+          id: "e2e.checkout.phone"
+      - eraseText
+      - inputText: "11999999999"
+      - hideKeyboard
+      - scrollUntilVisible:
+          element:
+            id: "e2e.checkout.addressSave"
+          direction: DOWN
+          timeout: 15000
+      - tapOn:
+          id: "e2e.checkout.addressSave"
+      - extendedWaitUntil:
+          visible:
+            id: "e2e.checkout.addressView"
+          timeout: 30000

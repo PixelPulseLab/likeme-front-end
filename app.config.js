@@ -30,6 +30,11 @@ function findOriginalEnvFile() {
 
 // Função para copiar o .env para o diretório atual (onde o build está executando)
 function ensureEnvFileInCurrentDir() {
+  // ENV_FILE_PATH (ex.: .env.staging) tem prioridade sobre o .env do cwd
+  if (process.env.ENV_FILE_PATH && fs.existsSync(process.env.ENV_FILE_PATH)) {
+    return path.resolve(process.env.ENV_FILE_PATH);
+  }
+
   const currentDirEnv = path.resolve(process.cwd(), '.env');
 
   // Se já existe no diretório atual, usa ele
@@ -186,7 +191,15 @@ function shareUniversalLinkHost() {
 
 const SHARE_UNIVERSAL_LINK_HOST = shareUniversalLinkHost();
 
-const SHARE_ANDROID_PATH_PREFIXES = ['/post', '/community', '/product', '/protocol', '/affiliate', '/provider'];
+const SHARE_ANDROID_PATH_PREFIXES = [
+  '/post',
+  '/community',
+  '/product',
+  '/protocol',
+  '/affiliate',
+  '/provider',
+  '/subscription',
+];
 
 const REVOPUSH_SERVER_URL = 'https://api.revopush.org';
 

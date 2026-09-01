@@ -83,3 +83,11 @@ export function isE2eAuthBypassEnabled(): boolean {
 export function e2eStagingTokenFromEnv(): string {
   return readPublicEnvFlag('EXPO_PUBLIC_E2E_STAGING_TOKEN');
 }
+
+export function e2eStagingEmailFromEnv(): string {
+  return readPublicEnvFlag('EXPO_PUBLIC_E2E_STAGING_EMAIL');
+}
+
+export function e2eStagingNameFromEnv(): string {
+  return readPublicEnvFlag('EXPO_PUBLIC_E2E_STAGING_NAME');
+}

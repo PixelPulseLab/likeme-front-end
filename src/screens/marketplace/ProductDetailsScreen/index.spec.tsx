@@ -50,10 +50,10 @@ jest.mock('@/assets', () => ({
   LogoMini: () => null,
 }));
 
-jest.mock('@/components/ui/PlatformBlurView', () => {
+jest.mock('expo-blur', () => {
   const { View } = require('react-native');
   return {
-    PlatformBlurView: ({ children, ...props }: any) => <View {...props}>{children}</View>,
+    BlurView: ({ children, ...props }: any) => <View {...props}>{children}</View>,
   };
 });
 

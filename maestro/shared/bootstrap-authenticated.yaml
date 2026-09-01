@@ -1,17 +1,10 @@
-# Shared: sessão autenticada E2E (onboarding completo) → Summary
+# Shared: sessão autenticada E2E na conta de staging → Summary
 # Uso: runFlow a partir de flows/ com tags smoke|hub|…
 appId: app.likeme.com
 ---
-- launchApp:
-    clearState: true
-    clearKeychain: true
-    permissions:
-      all: allow
+- runFlow: launch-app.yaml
+- openLink: likeme://e2e/bootstrap?completeOnboarding=1&token=${E2E_STAGING_TOKEN}&email=${E2E_LOGIN_EMAIL}
 - extendedWaitUntil:
     visible:
-      id: "e2e.unauth.e2eContinue"
-    timeout: 90000
-- tapOn:
-    id: "e2e.unauth.e2eContinue"
-- assertVisible:
-    id: "e2e.summary.root"
+      id: "e2e.summary.root"
+    timeout: 120000

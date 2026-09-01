@@ -11,6 +11,8 @@ import {
   SHARE_CONTENT_TYPES,
   SHARE_DEEP_LINK_HOME_SCREEN,
   SHARE_QUERY_PARAMS,
+  SUBSCRIPTION_PAYMENT_PATH_SEGMENT,
+  SUBSCRIPTION_SHARE_PATH_PREFIX,
   type ShareContentType,
 } from '@/constants/share';
 import storageService from '@/services/auth/storageService';
@@ -117,6 +119,48 @@ function providerProfileTarget(providerId: string): PendingDeepLinkNavigationTar
   };
 }
 
+const SUBSCRIPTION_MANAGE_PROGRAM_NAME_FALLBACK = 'Programa';
+
+function subscriptionManageFromPath(path: string): {
+  subscriptionId: string;
+  focusUpdatePayment: boolean;
+} | null {
+  const pathWithoutQuery = path.split('?')[0]?.split('#')[0] ?? path;
+  const normalized = pathWithoutQuery.replace(/^\/+/, '').replace(/\/+$/, '');
+  const prefix = SUBSCRIPTION_SHARE_PATH_PREFIX.replace(/^\/+/, '');
+  if (!normalized.startsWith(`${prefix}/`)) {
+    return null;
+  }
+
+  const remainder = normalized.slice(prefix.length + 1);
+  const [rawId, maybeAction, ...extra] = remainder.split('/');
+  if (!rawId?.trim() || extra.length > 0) {
+    return null;
+  }
+  if (maybeAction && maybeAction !== SUBSCRIPTION_PAYMENT_PATH_SEGMENT) {
+    return null;
+  }
+
+  return {
+    subscriptionId: decodeURIComponent(rawId),
+    focusUpdatePayment: maybeAction === SUBSCRIPTION_PAYMENT_PATH_SEGMENT,
+  };
+}
+
+function subscriptionManageTarget(
+  subscriptionId: string,
+  focusUpdatePayment: boolean,
+): PendingDeepLinkNavigationTarget {
+  return {
+    screen: 'ManageProtocolSubscription',
+    params: {
+      subscriptionId,
+      programName: SUBSCRIPTION_MANAGE_PROGRAM_NAME_FALLBACK,
+      ...(focusUpdatePayment ? { focusUpdatePayment: true } : {}),
+    },
+  };
+}
+
 function shareDeepLinkMatchFromUrl(url: string): ShareDeepLinkMatch | null {
   const path = sharePathFromUrl(url);
   if (!path) {
@@ -175,6 +219,15 @@ function shareDeepLinkMatchFromUrl(url: string): ShareDeepLinkMatch | null {
       contentType: SHARE_CONTENT_TYPES.PROVIDER,
       itemId: providerId,
       target: providerProfileTarget(providerId),
+    };
+  }
+
+  const subscriptionMatch = subscriptionManageFromPath(path);
+  if (subscriptionMatch) {
+    return {
+      contentType: SHARE_CONTENT_TYPES.SUBSCRIPTION,
+      itemId: subscriptionMatch.subscriptionId,
+      target: subscriptionManageTarget(subscriptionMatch.subscriptionId, subscriptionMatch.focusUpdatePayment),
     };
   }
 

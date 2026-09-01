@@ -28,8 +28,7 @@ export const styles = StyleSheet.create({
     marginRight: 0,
   },
   badgesWrap: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    alignItems: 'flex-start',
     gap: 6,
   },
   badge: {

@@ -7,6 +7,7 @@ import { useFormattedInput } from '@/hooks';
 import { fetchAddressByZipCode, formatZipCodeDisplay } from '@/services/address/cepService';
 import { AddressData } from './AddressForm';
 import { styles } from '../styles';
+import { E2E_TEST_IDS } from '@/constants/e2eTestIds';
 
 interface AddressEditProps {
   initialData: AddressData;
@@ -123,6 +124,7 @@ const AddressEdit: React.FC<AddressEditProps> = ({
               keyboardType='numeric'
               errorText={fieldErrors.zipCode}
               required
+              testID={E2E_TEST_IDS.CHECKOUT_ZIP}
             />
           </View>
         </View>
@@ -142,6 +144,7 @@ const AddressEdit: React.FC<AddressEditProps> = ({
           }}
           errorText={fieldErrors.fullName}
           required
+          testID={E2E_TEST_IDS.CHECKOUT_FULL_NAME}
         />
         <View style={styles.addressRow}>
           <View style={styles.addressFieldHalf}>
@@ -155,6 +158,7 @@ const AddressEdit: React.FC<AddressEditProps> = ({
               }}
               errorText={fieldErrors.addressLine1}
               required
+              testID={E2E_TEST_IDS.CHECKOUT_ADDRESS_LINE1}
             />
           </View>
           <View style={styles.addressFieldNumber}>
@@ -164,6 +168,7 @@ const AddressEdit: React.FC<AddressEditProps> = ({
               value={editData.streetNumber}
               onChangeText={(text) => setEditData({ ...editData, streetNumber: text })}
               keyboardType='numeric'
+              testID={E2E_TEST_IDS.CHECKOUT_STREET_NUMBER}
             />
           </View>
         </View>
@@ -183,6 +188,7 @@ const AddressEdit: React.FC<AddressEditProps> = ({
           }}
           errorText={fieldErrors.neighborhood}
           required
+          testID={E2E_TEST_IDS.CHECKOUT_NEIGHBORHOOD}
         />
         <View style={styles.addressRow}>
           <View style={styles.addressFieldHalf}>
@@ -196,6 +202,7 @@ const AddressEdit: React.FC<AddressEditProps> = ({
               }}
               errorText={fieldErrors.city}
               required
+              testID={E2E_TEST_IDS.CHECKOUT_CITY}
             />
           </View>
           <View style={styles.addressFieldHalf}>
@@ -209,6 +216,7 @@ const AddressEdit: React.FC<AddressEditProps> = ({
               }}
               errorText={fieldErrors.state}
               required
+              testID={E2E_TEST_IDS.CHECKOUT_STATE}
             />
           </View>
         </View>
@@ -223,6 +231,7 @@ const AddressEdit: React.FC<AddressEditProps> = ({
           keyboardType='phone-pad'
           errorText={fieldErrors.phone}
           required
+          testID={E2E_TEST_IDS.CHECKOUT_PHONE}
         />
         <View style={styles.editAddressActions}>
           {onCancel && (
@@ -230,7 +239,13 @@ const AddressEdit: React.FC<AddressEditProps> = ({
               <Text style={styles.cancelButtonText}>{t('common.cancel')}</Text>
             </TouchableOpacity>
           )}
-          <SecondaryButton label={t('common.save')} onPress={handleSave} disabled={saving} loading={saving} />
+          <SecondaryButton
+            label={t('common.save')}
+            onPress={handleSave}
+            disabled={saving}
+            loading={saving}
+            testID={E2E_TEST_IDS.CHECKOUT_ADDRESS_SAVE}
+          />
         </View>
       </View>
     </View>

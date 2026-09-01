@@ -15,6 +15,7 @@ import {
 import { subscriptionService } from '@/services/payment/subscriptionService';
 import type { RootStackParamList } from '@/types/navigation';
 import { BOTTOM_DOCK_BAR_HEIGHT, COLORS, SPACING } from '@/constants';
+import { E2E_TEST_IDS } from '@/constants/e2eTestIds';
 import { logger } from '@/utils/logger';
 import {
   formatSubscriptionManageDate,
@@ -239,6 +240,7 @@ const CancelProtocolSubscriptionScreen: React.FC<Props> = ({ navigation, route }
             style={styles.actionSecondary}
             disabled={submitting}
             loading={submitting}
+            testID={E2E_TEST_IDS.SUBSCRIPTION_CANCEL_CONFIRM}
           />
         </View>
       </ScrollView>

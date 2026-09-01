@@ -2,12 +2,13 @@ import React, { useCallback, useRef, useState } from 'react';
 import { LayoutChangeEvent, StyleProp, TouchableOpacity, View, ViewStyle } from 'react-native';
 import { CachedImage } from '@/components/ui/media/CachedImage';
 import { DesaturatedImage } from '@/components/ui/media/DesaturatedImage';
-import { PlatformBlurView } from '@/components/ui/PlatformBlurView';
+import { IMAGE_CONTENT_POSITION_ABOVE_CENTER } from '@/constants';
 import {
   styles,
-  BLUR_INTENSITY,
+  FOOTER_BLUR_RADIUS,
   extractBottomRadii,
   getBlurStyle,
+  getFooterBlurImageStyle,
   getFooterSectionStyle,
   FOOTER_HEIGHT_THRESHOLD,
 } from './styles';
@@ -21,6 +22,21 @@ export type BlurCardProps = {
   desaturated?: boolean;
 };
 
+const useMeasuredHeight = () => {
+  const [height, setHeight] = useState(0);
+  const lastHeight = useRef(0);
+
+  const onLayout = useCallback((event: LayoutChangeEvent) => {
+    const nextHeight = event.nativeEvent.layout.height;
+    if (Math.abs(nextHeight - lastHeight.current) > FOOTER_HEIGHT_THRESHOLD) {
+      lastHeight.current = nextHeight;
+      setHeight(nextHeight);
+    }
+  }, []);
+
+  return { height, onLayout };
+};
+
 const BlurCard: React.FC<BlurCardProps> = ({
   backgroundImage,
   topSection,
@@ -29,36 +45,41 @@ const BlurCard: React.FC<BlurCardProps> = ({
   style,
   desaturated = false,
 }) => {
-  const [footerHeight, setFooterHeight] = useState(0);
-  const lastFooterHeight = useRef(0);
+  const card = useMeasuredHeight();
+  const footer = useMeasuredHeight();
 
   const radii = extractBottomRadii(style);
-
-  const handleFooterLayout = useCallback((e: LayoutChangeEvent) => {
-    const newHeight = e.nativeEvent.layout.height;
-    if (Math.abs(newHeight - lastFooterHeight.current) > FOOTER_HEIGHT_THRESHOLD) {
-      lastFooterHeight.current = newHeight;
-      setFooterHeight(newHeight);
-    }
-  }, []);
 
   const Wrapper = onPress ? TouchableOpacity : View;
   const wrapperProps = onPress ? { activeOpacity: 0.9, onPress } : {};
 
   return (
-    <Wrapper {...wrapperProps} style={[styles.container, style]}>
+    <Wrapper {...wrapperProps} style={[styles.container, style]} onLayout={card.onLayout}>
       {desaturated ? (
         <DesaturatedImage uri={backgroundImage} style={styles.desaturatedImageWrap} />
       ) : (
-        <CachedImage source={{ uri: backgroundImage }} style={styles.backgroundImage} />
+        <CachedImage
+          source={{ uri: backgroundImage }}
+          style={styles.backgroundImage}
+          contentPosition={IMAGE_CONTENT_POSITION_ABOVE_CENTER}
+        />
       )}
 
       <View style={styles.content}>
         {topSection && <View style={styles.topSection}>{topSection}</View>}
 
         <View style={[styles.footerSection, getFooterSectionStyle(radii)]}>
-          <PlatformBlurView intensity={BLUR_INTENSITY} style={getBlurStyle(footerHeight, radii)} />
-          <View style={styles.footerContent} onLayout={handleFooterLayout}>
+          {!desaturated && card.height > 0 && (
+            <View style={getBlurStyle(footer.height, radii)}>
+              <CachedImage
+                source={{ uri: backgroundImage }}
+                style={getFooterBlurImageStyle(card.height)}
+                contentPosition={IMAGE_CONTENT_POSITION_ABOVE_CENTER}
+                blurRadius={FOOTER_BLUR_RADIUS}
+              />
+            </View>
+          )}
+          <View style={styles.footerContent} onLayout={footer.onLayout}>
             {footerSection}
           </View>
         </View>

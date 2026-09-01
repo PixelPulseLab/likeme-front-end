@@ -13,6 +13,7 @@ class AdvertiserService {
     page?: number;
     limit?: number;
     status?: string;
+    type?: string;
     communityId?: string;
     search?: string;
     categoryId?: string;
@@ -22,6 +23,7 @@ class AdvertiserService {
       if (params?.page != null) queryParams.page = String(params.page);
       if (params?.limit != null) queryParams.limit = String(params.limit);
       if (params?.status) queryParams.status = params.status;
+      if (params?.type) queryParams.type = params.type;
       if (params?.communityId) queryParams.communityId = params.communityId;
       const trimmedSearch = params?.search?.trim();
       if (trimmedSearch) queryParams.search = trimmedSearch;

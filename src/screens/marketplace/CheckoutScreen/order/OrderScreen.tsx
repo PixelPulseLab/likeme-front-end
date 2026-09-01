@@ -5,6 +5,7 @@ import { PrimaryButton } from '@/components/ui/buttons';
 import { CheckoutConfirmationIcon, CheckoutErrorIcon } from '@/assets/marketplace';
 import { useTranslation } from '@/hooks/i18n';
 import { styles } from './styles';
+import { E2E_TEST_IDS } from '@/constants/e2eTestIds';
 
 export type OrderScreenStatus = 'success' | 'pending' | 'error';
 
@@ -48,9 +49,20 @@ const OrderScreen: React.FC<OrderScreenProps> = ({ status = 'success', onViewOrd
   const content = ORDER_SCREEN_CONTENT[status];
 
   return (
-    <View style={styles.container} testID='order-completion'>
+    <View style={styles.container} testID={E2E_TEST_IDS.CHECKOUT_ORDER_COMPLETION}>
       <CachedImage source={content.icon} style={styles.icon} contentFit='contain' />
-      <Text style={styles.title}>{t(content.titleKey, { defaultValue: content.titleDefault })}</Text>
+      <Text
+        style={styles.title}
+        testID={
+          status === 'success'
+            ? E2E_TEST_IDS.CHECKOUT_ORDER_SUCCESS
+            : status === 'pending'
+            ? E2E_TEST_IDS.CHECKOUT_ORDER_PENDING
+            : E2E_TEST_IDS.CHECKOUT_ORDER_ERROR
+        }
+      >
+        {t(content.titleKey, { defaultValue: content.titleDefault })}
+      </Text>
       <Text style={styles.subtitle}>{t(content.subtitleKey, { defaultValue: content.subtitleDefault })}</Text>
       <PrimaryButton
         label={t(content.buttonKey, { defaultValue: content.buttonDefault })}

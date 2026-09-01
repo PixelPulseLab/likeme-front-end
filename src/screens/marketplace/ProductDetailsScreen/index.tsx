@@ -29,6 +29,7 @@ import { resolveWaMePrefillFromI18n } from '@/utils/marketplace/resolveWaMePrefi
 import { logger } from '@/utils/logger';
 import { useAnalyticsScreen, logButtonClick, logTabSelect, logAddToCart, logError } from '@/analytics';
 import { MARKETPLACE_PRODUCT_PLACEHOLDER_IMAGE_URI } from '@/constants';
+import { E2E_TEST_IDS } from '@/constants/e2eTestIds';
 import type { RootStackParamList } from '@/types/navigation';
 import { PRODUCT_CATALOG_TYPE, catalogTypeTranslatedBadgeLabels, isProgramCatalogType } from '@/types/product';
 import { navigateToProductRecommenders, navigateToProviderProfile } from '@/utils/navigation/marketplaceNavigation';
@@ -481,6 +482,7 @@ const ProductDetailsScreen: React.FC<ProductDetailsScreenProps> = ({ navigation,
                             setActiveProductTab(tabId);
                           }}
                           onSharePress={handleSharePress}
+                          optionTestIdPrefix={E2E_TEST_IDS.PRODUCT_TAB_PREFIX}
                         />
                       </View>
                     )}
@@ -608,6 +610,7 @@ const ProductDetailsScreen: React.FC<ProductDetailsScreenProps> = ({ navigation,
               label={t('marketplace.programParticipationTermsCheckbox')}
               checked={programParticipationTermsAccepted}
               onPress={() => setProgramParticipationTermsAccepted((current) => !current)}
+              testID={E2E_TEST_IDS.PRODUCT_PROGRAM_TERMS}
             />
           </View>
         </View>
