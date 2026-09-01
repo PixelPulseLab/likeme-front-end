@@ -18,6 +18,7 @@ import { isValidZipCodeFormat, formatZipCodeDisplay } from '@/services/address/c
 import { getShippingQuote } from '@/services/shipping/shippingService';
 import { styles } from './styles';
 import type { CartItem } from '@/types/cart';
+import { E2E_TEST_IDS } from '@/constants/e2eTestIds';
 
 type CartScreenProps = {
   navigation: StackNavigationProp<RootStackParamList, 'Cart'>;
@@ -236,7 +237,13 @@ const CartScreen: React.FC<CartScreenProps> = ({ navigation }) => {
       {shippingRequired !== false && renderShippingSection()}
       {renderOrderSummary()}
       <View style={styles.buyButtonContainer}>
-        <SecondaryButton label={t('cart.finalizePurchase')} onPress={handleBuy} style={styles.buyButton} size='large' />
+        <SecondaryButton
+          label={t('cart.finalizePurchase')}
+          onPress={handleBuy}
+          style={styles.buyButton}
+          size='large'
+          testID={E2E_TEST_IDS.CART_CHECKOUT}
+        />
       </View>
     </>
   ) : null;
@@ -268,6 +275,7 @@ const CartScreen: React.FC<CartScreenProps> = ({ navigation }) => {
     >
       {renderBackground()}
       <FlatList
+        testID={E2E_TEST_IDS.CART_SCREEN}
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}

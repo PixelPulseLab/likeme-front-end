@@ -1,0 +1,26 @@
+appId: app.likeme.com
+name: Checkout — protocolo recusado (e-mail payment_failed)
+tags:
+  - checkout
+---
+- runFlow: ../../shared/bootstrap-authenticated.yaml
+- runFlow: ../../shared/start-protocol-checkout.yaml
+- runFlow:
+    file: ../../shared/fill-checkout-payment.yaml
+    env:
+      E2E_CARD_CVV: "651"
+- tapOn:
+    id: "button-continue"
+- runFlow:
+    when:
+      visible: "OK"
+    commands:
+      - tapOn: "OK"
+- extendedWaitUntil:
+    visible:
+      id: "e2e.checkout.paymentError"
+    timeout: 120000
+- assertVisible:
+    id: "e2e.checkout.paymentForm"
+- assertNotVisible:
+    id: "order-completion"

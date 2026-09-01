@@ -5,6 +5,7 @@ export type JoinCardItem = {
   image: string;
   price?: number | null;
   desaturated?: boolean;
+  testID?: string;
 };
 
 export type JoinCardProps = {

@@ -38,7 +38,7 @@ export function JoinCardList<T extends JoinCardItem>({
         onPress={handlePress}
         square={square}
         fullWidth={layout === 'list'}
-        testID={`join-card-${item.id}`}
+        testID={item.testID ?? `join-card-${item.id}`}
       />
     );
   };

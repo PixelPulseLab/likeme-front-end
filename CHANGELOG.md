@@ -266,7 +266,33 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 ## [1.13.0] - 2026-08-11
 
 ### Adicionado
-- Em Meus Pedidos, protocolos abrem a área do assinante e serviços permitem criar atividade com opção de marcar na agenda do celular
+- Em Meus Pedidos, protocolos abrem a área do assinante (Ver protocolo) e serviços permitem criar atividade pré-preenchida, com opção de marcar na agenda do celular
+- Serviços sob consulta no marketplace exibem tag dedicada e botão Entrar em contato, abrindo o canal principal do provider (WhatsApp, telefone, e-mail etc.)
+- Na curadoria do provider, a seção passa a incluir outros providers vinculados — cada card abre o perfil público correspondente
 
 ### Alterado
-- Itens de pedido cancelados mostram a tag Cancelado no lugar das ações
+- Itens de pedido cancelados (pedido, pagamento ou assinatura) mostram a tag Cancelado no lugar das ações de protocolo ou atividade
+
+### Corrigido
+- No accordion do protocolo, o highlight amarelo aparece somente na sessão expandida e some ao fechar
+
+## [1.14.0] - 2026-08-20
+
+### Adicionado
+- Com a assinatura em atraso, dá para atualizar o cartão no app — inclusive pelo link da notificação ou do e-mail (APP-386)
+
+### Alterado
+- Vitrines de profissionais listam só pessoas, sem misturar organizações
+- Cards de comunidade e produto enquadram a imagem um pouco acima do centro, para o assunto ficar visível
+
+### Corrigido
+- Rodapé dos cards no Android deixa de mostrar faixa cinza no blur
+- Compartilhar assinatura gera o link e a mensagem corretos
+
+## [1.14.1] - 2026-08-21
+
+### Adicionado
+- Comunidade mostra a imagem de destaque no topo da tela e nos cards
+
+### Alterado
+- Telas de apresentação do app ficam mais leves, com imagens menores

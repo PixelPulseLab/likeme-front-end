@@ -1,0 +1,27 @@
+appId: app.likeme.com
+name: Checkout — marketplace pago (Pagarme sandbox + e-mail)
+tags:
+  - checkout
+---
+- runFlow: ../../shared/bootstrap-authenticated.yaml
+- openLink: likeme://product/${E2E_CHECKOUT_PRODUCT_ID}
+- scrollUntilVisible:
+    element:
+      id: "product-details-add-to-cart"
+    direction: DOWN
+    timeout: 60000
+- tapOn:
+    id: "product-details-add-to-cart"
+- runFlow: ../../shared/start-checkout-from-cart.yaml
+- runFlow: ../../shared/fill-checkout-payment.yaml
+- tapOn:
+    id: "button-continue"
+- runFlow:
+    when:
+      visible: "OK"
+    commands:
+      - tapOn: "OK"
+- extendedWaitUntil:
+    visible:
+      id: "e2e.checkout.orderSuccess"
+    timeout: 120000

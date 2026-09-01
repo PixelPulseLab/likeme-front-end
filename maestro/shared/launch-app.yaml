@@ -1,0 +1,24 @@
+# Shared: abre o app e dispensa overlays de dev client / permissões
+# clearState fica de fora: em dev client ele descarta o dev server e o app trava no launcher do Expo.
+appId: app.likeme.com
+---
+- launchApp:
+    clearKeychain: true
+    permissions:
+      all: allow
+- extendedWaitUntil:
+    visible: "This is the developer menu"
+    timeout: 15000
+    optional: true
+- tapOn:
+    text: "Continue"
+    optional: true
+- runFlow:
+    when:
+      visible: "Toggle performance monitor"
+    commands:
+      - tapOn:
+          point: "50%,8%"
+- tapOn:
+    text: "Permitir"
+    optional: true

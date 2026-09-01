@@ -36,7 +36,7 @@ import { useSetFloatingMenu } from '@/contexts/FloatingMenuContext';
 import { logger } from '@/utils/logger';
 import { ContactButtonsRow } from '@/components/sections/advertiser/ContactButtonsRow';
 import { formatAdvertiserDocumentsLine } from '@/utils/advertiser/documents';
-import { resolveCommunityHeroImageUri } from '@/utils/community/mappers';
+import { resolveCommunityBannerImageUri } from '@/utils/community/mappers';
 import { navigateToCommunity } from '@/utils/navigation/communityNavigation';
 import { navigateRootStack, rootStackNavigationFrom } from '@/utils/navigation/rootStackNavigation';
 import { navigateToProviderProfile } from '@/utils/navigation/marketplaceNavigation';
@@ -301,7 +301,7 @@ const ProviderProfileScreen: React.FC<ProviderProfileScreenProps> = ({ navigatio
       id: community.communityId,
       title: community.displayName,
       badges,
-      image: resolveCommunityHeroImageUri(community, communityFiles, JOIN_CARD_COMMUNITY_IMAGE_FALLBACK),
+      image: resolveCommunityBannerImageUri(community, communityFiles, JOIN_CARD_COMMUNITY_IMAGE_FALLBACK),
     }));
   }, [rawCommunities, categories, advertiser, communityFiles]);
 

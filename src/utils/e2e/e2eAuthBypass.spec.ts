@@ -6,7 +6,7 @@ import {
 } from '@/utils/e2e/e2eAuthBypass';
 
 jest.mock('@/config/environment', () => ({
-  BACKEND_CONFIG: { baseUrl: 'https://likeme-back-end-git-release-161-pixel-pulse-labs.vercel.app/' },
+  BACKEND_CONFIG: { baseUrl: 'https://likeme-back-end-staging.vercel.app/' },
   getEnvVarFromConstants: jest.fn(() => undefined),
 }));
 
@@ -25,7 +25,7 @@ describe('e2eAuthBypass', () => {
   beforeEach(() => {
     process.env = { ...originalEnv };
     delete process.env.EXPO_PUBLIC_E2E_AUTH_BYPASS;
-    BACKEND_CONFIG.baseUrl = 'https://likeme-back-end-git-release-161-pixel-pulse-labs.vercel.app/';
+    BACKEND_CONFIG.baseUrl = 'https://likeme-back-end-staging.vercel.app/';
   });
 
   afterAll(() => {

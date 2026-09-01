@@ -1,9 +1,14 @@
-import { StyleSheet, ViewStyle, StyleProp } from 'react-native';
+import { StyleSheet, ViewStyle, StyleProp, ImageStyle } from 'react-native';
 import { SPACING } from '@/constants';
 
 export const DEFAULT_BORDER_RADIUS = 22;
-export const BLUR_INTENSITY = 10;
-export const BLUR_FALLBACK_COLOR = 'rgba(0, 0, 0, 0.45)';
+
+/**
+ * O blur do footer vem do `blurRadius` nativo do `expo-image` sobre uma cópia da própria arte,
+ * e não de `expo-blur`: no Android o BlurView cai para um overlay cinza opaco quando não resolve
+ * o alvo do blur, o que pintava faixa acinzentada com emenda reta na base do card.
+ */
+export const FOOTER_BLUR_RADIUS = 16;
 
 const FOOTER_HEIGHT_THRESHOLD = 2;
 
@@ -76,6 +81,18 @@ export const getBlurStyle = (footerHeight: number, radii: BottomRadii): ViewStyl
   borderBottomLeftRadius: radii.bottomLeft,
   borderBottomRightRadius: radii.bottomRight,
   overflow: 'hidden',
+});
+
+/**
+ * A cópia desfocada precisa das dimensões do card inteiro, ancorada na base, para que o recorte
+ * `cover` caia exatamente sobre o mesmo trecho da arte que aparece atrás da faixa.
+ */
+export const getFooterBlurImageStyle = (cardHeight: number): ImageStyle => ({
+  position: 'absolute',
+  bottom: 0,
+  left: 0,
+  right: 0,
+  height: cardHeight,
 });
 
 export const getFooterSectionStyle = (radii: BottomRadii): ViewStyle => ({

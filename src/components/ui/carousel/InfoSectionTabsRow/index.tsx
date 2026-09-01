@@ -3,11 +3,13 @@ import { Dimensions, Modal, Pressable, Text, View, type StyleProp, type ViewStyl
 import { IconButton } from '@/components/ui/buttons';
 import ButtonCarousel, { type ButtonCarouselOption } from '@/components/ui/carousel/ButtonCarousel';
 import { COLORS } from '@/constants';
+import { E2E_TEST_IDS } from '@/constants/e2eTestIds';
 import { styles } from './styles';
 
 export type InfoSectionMenuOption = {
   label: string;
   onPress: () => void;
+  testID?: string;
 };
 
 type MenuAnchor = {
@@ -21,7 +23,9 @@ type Props<T extends string | number = string> = {
   onSelect: (optionId: T) => void;
   onSharePress?: () => void;
   menuOptions?: InfoSectionMenuOption[];
+  menuButtonTestId?: string;
   style?: StyleProp<ViewStyle>;
+  optionTestIdPrefix?: string;
 };
 
 function InfoSectionTabsRow<T extends string | number = string>({
@@ -30,7 +34,9 @@ function InfoSectionTabsRow<T extends string | number = string>({
   onSelect,
   onSharePress,
   menuOptions,
+  menuButtonTestId,
   style,
+  optionTestIdPrefix,
 }: Props<T>) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [menuAnchor, setMenuAnchor] = useState<MenuAnchor>({ top: 0, right: 16 });
@@ -80,6 +86,7 @@ function InfoSectionTabsRow<T extends string | number = string>({
           selectedId={selectedId}
           onSelect={onSelect}
           contentContainerStyle={styles.carouselContent}
+          optionTestIdPrefix={optionTestIdPrefix}
         />
       </View>
       {showShare ? (
@@ -91,7 +98,12 @@ function InfoSectionTabsRow<T extends string | number = string>({
         />
       ) : null}
       {showMenu ? (
-        <View ref={menuButtonRef} collapsable={false} style={styles.trailingAction}>
+        <View
+          ref={menuButtonRef}
+          collapsable={false}
+          style={styles.trailingAction}
+          testID={menuButtonTestId ?? E2E_TEST_IDS.PROTOCOL_MORE_MENU}
+        >
           <IconButton
             icon='more-vert'
             onPress={openMenu}
@@ -114,6 +126,7 @@ function InfoSectionTabsRow<T extends string | number = string>({
                 onPress={() => handleMenuOptionPress(option)}
                 accessibilityRole='button'
                 accessibilityLabel={option.label}
+                testID={option.testID}
               >
                 <Text style={styles.menuOptionLabel}>{option.label}</Text>
               </Pressable>

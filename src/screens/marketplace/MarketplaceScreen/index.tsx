@@ -46,7 +46,7 @@ import { navigateToProviderProfile } from '@/utils/navigation/marketplaceNavigat
 import { navigateRootStack, rootStackNavigationFrom } from '@/utils/navigation/rootStackNavigation';
 import type { Ad, Advertiser } from '@/types/ad';
 import type { RootStackParamList } from '@/types/navigation';
-import { BOTTOM_DOCK_BAR_HEIGHT, SPACING } from '@/constants';
+import { BOTTOM_DOCK_BAR_HEIGHT, SPACING, ADVERTISER_TYPE } from '@/constants';
 import { styles } from './styles';
 import { useAnalyticsScreen } from '@/analytics';
 import { CategoryName } from '@/types';
@@ -102,6 +102,7 @@ const MarketplaceScreen: React.FC<MarketplaceScreenProps> = ({ navigation, route
   const { advertisers: professionals } = useAdvertisers({
     listOptions: {
       status: 'active',
+      type: ADVERTISER_TYPE.PERSON,
       limit: 50,
       ...(appliedSearchQuery.trim() ? { search: appliedSearchQuery.trim() } : {}),
       ...(selectedCategoryId ? { categoryId: selectedCategoryId } : {}),

@@ -1,0 +1,36 @@
+appId: app.likeme.com
+---
+- extendedWaitUntil:
+    visible:
+      id: "e2e.checkout.paymentForm"
+    timeout: 60000
+- tapOn:
+    id: "e2e.checkout.cardholder"
+- eraseText
+- inputText: "TEST USER"
+- hideKeyboard
+- tapOn:
+    id: "e2e.checkout.cardNumber"
+- eraseText
+- inputText: "4000000000000010"
+- hideKeyboard
+- tapOn:
+    id: "e2e.checkout.expiry"
+- eraseText
+- inputText: "1230"
+- hideKeyboard
+- tapOn:
+    id: "e2e.checkout.cvv"
+- eraseText
+- inputText: "${E2E_CARD_CVV}"
+- hideKeyboard
+- tapOn:
+    id: "e2e.checkout.cpf"
+- eraseText
+- inputText: "52998224725"
+- hideKeyboard
+- scrollUntilVisible:
+    element:
+      id: "button-continue"
+    direction: DOWN
+    timeout: 20000

@@ -1,0 +1,16 @@
+appId: app.likeme.com
+name: Login — sessão duda@pixelpulselab.dev no staging
+tags:
+  - login
+  - smoke
+---
+- runFlow: ../shared/bootstrap-authenticated.yaml
+- assertVisible:
+    id: "e2e.summary.root"
+- tapOn:
+    id: "e2e.header.profileMenu"
+- extendedWaitUntil:
+    visible: "${E2E_LOGIN_EMAIL}"
+    timeout: 20000
+- assertVisible:
+    id: "e2e.profileMenu.logout"

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { productService } from '@/services';
 import type { Product as CarouselProduct } from '@/components/sections/product';
 import type { Product as ApiProduct } from '@/types/product';
@@ -6,8 +6,16 @@ import { useCategories } from '@/hooks/category/useCategories';
 import { logger } from '@/utils/logger';
 import { buildMarketplaceCategoryBadgeLabels } from '@/utils/marketplace/buildMarketplaceCategoryBadgeLabels';
 import { prefetchImageUris } from '@/utils/image/prefetchImageUris';
+import {
+  deleteInflightSuggestedProducts,
+  getCachedSuggestedProducts,
+  getInflightSuggestedProducts,
+  setCachedSuggestedProducts,
+  setInflightSuggestedProducts,
+  suggestedProductsCacheKey,
+  type SuggestedProductsCacheQuery,
+} from '@/services/product/suggestedProductsCache';
 
-/** Lista padrão de produtos sugeridos (Home Summary, Activities, Comunidade sem filtro extra). */
 export const SUGGESTED_PRODUCTS_HOME_ACTIVITIES_DEFAULTS = {
   limit: 4,
   status: 'active' as const,
@@ -34,8 +42,7 @@ interface UseSuggestedProductsOptions {
   limit?: number;
   status?: 'active' | 'inactive';
   enabled?: boolean;
-  categoryId?: string | null; // domain category filter (Estresse, Sono, etc.)
-  /** Filtro por `Product.type` (catálogo ou ex.: `service`). */
+  categoryId?: string | null;
   type?: string;
   excludeProductId?: string;
   fillWithOtherCategories?: boolean;
@@ -46,6 +53,55 @@ interface UseSuggestedProductsReturn {
   loading: boolean;
   error: Error | null;
   refresh: () => Promise<void>;
+}
+
+type SuggestedProductsQuery = SuggestedProductsCacheQuery & {
+  status: 'active' | 'inactive';
+};
+
+async function fetchSuggestedProductList(
+  query: SuggestedProductsQuery,
+  options: { bypassCache?: boolean } = {},
+): Promise<ApiProduct[]> {
+  const key = suggestedProductsCacheKey(query);
+
+  if (!options.bypassCache) {
+    const cached = getCachedSuggestedProducts(key);
+    if (cached) {
+      return cached;
+    }
+    const pending = getInflightSuggestedProducts(key);
+    if (pending) {
+      return pending;
+    }
+  }
+
+  const request = (async () => {
+    const productsResponse = await productService.listProducts({
+      limit: query.limit,
+      status: query.status,
+      ...(query.categoryId != null && query.categoryId !== '' ? { categoryId: query.categoryId } : {}),
+      ...(query.type != null && query.type !== '' ? { type: query.type } : {}),
+      ...(query.excludeProductId ? { excludeProductId: query.excludeProductId } : {}),
+      ...(query.fillWithOtherCategories !== undefined
+        ? { fillWithOtherCategories: query.fillWithOtherCategories }
+        : {}),
+    });
+
+    if (productsResponse.success && productsResponse.data) {
+      return productsResponse.data.products.slice(0, query.limit);
+    }
+    return [];
+  })();
+
+  setInflightSuggestedProducts(key, request);
+  try {
+    const products = await request;
+    setCachedSuggestedProducts(key, products);
+    return products;
+  } finally {
+    deleteInflightSuggestedProducts(key);
+  }
 }
 
 export const useSuggestedProducts = (options: UseSuggestedProductsOptions = {}): UseSuggestedProductsReturn => {
@@ -59,48 +115,24 @@ export const useSuggestedProducts = (options: UseSuggestedProductsOptions = {}):
     fillWithOtherCategories,
   } = options;
   const { categories } = useCategories({ enabled });
-  /** Ordem da API (ranking personalizado no backend) — sem shuffle no client. */
-  const [apiProducts, setApiProducts] = useState<ApiProduct[]>([]);
-  const [loading, setLoading] = useState(false);
+  const query = useMemo<SuggestedProductsQuery>(
+    () => ({
+      limit,
+      status,
+      categoryId,
+      type,
+      excludeProductId,
+      fillWithOtherCategories,
+    }),
+    [limit, status, categoryId, type, excludeProductId, fillWithOtherCategories],
+  );
+  const cacheKey = suggestedProductsCacheKey(query);
+  const [apiProducts, setApiProducts] = useState<ApiProduct[]>(() => getCachedSuggestedProducts(cacheKey) ?? []);
+  const [loading, setLoading] = useState(() => enabled && getCachedSuggestedProducts(cacheKey) == null);
   const [error, setError] = useState<Error | null>(null);
+  const visibleCountRef = useRef(0);
+  visibleCountRef.current = apiProducts.length;
 
-  const loadProducts = useCallback(async () => {
-    if (!enabled) {
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      const productsResponse = await productService.listProducts({
-        limit,
-        status,
-        ...(categoryId != null && categoryId !== '' ? { categoryId } : {}),
-        ...(type != null && type !== '' ? { type } : {}),
-        ...(excludeProductId ? { excludeProductId } : {}),
-        ...(fillWithOtherCategories !== undefined ? { fillWithOtherCategories } : {}),
-      });
-
-      if (productsResponse.success && productsResponse.data) {
-        setApiProducts(productsResponse.data.products.slice(0, limit));
-      } else {
-        setApiProducts([]);
-      }
-    } catch (err) {
-      logger.error('[useSuggestedProducts] Erro ao carregar produtos sugeridos', err);
-      setError(err instanceof Error ? err : new Error('Failed to load suggested products'));
-      setApiProducts([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [enabled, limit, status, categoryId, type, excludeProductId, fillWithOtherCategories]);
-
-  /**
-   * Tags vêm de `categoryNames` na resposta da API (join no banco).
-   * Mantemos o mapping em `useMemo` para que a chegada tardia de `categories` não
-   * dispare um segundo fetch — antes ela estava nas deps de `loadProducts`.
-   */
   const products = useMemo<CarouselProduct[]>(
     () =>
       apiProducts.map((p) => {
@@ -111,17 +143,81 @@ export const useSuggestedProducts = (options: UseSuggestedProductsOptions = {}):
   );
 
   useEffect(() => {
-    loadProducts();
-  }, [loadProducts]);
+    if (!enabled) {
+      return;
+    }
+
+    const cached = getCachedSuggestedProducts(cacheKey);
+    if (cached) {
+      setApiProducts(cached);
+      setLoading(false);
+      setError(null);
+      return;
+    }
+
+    let cancelled = false;
+    if (visibleCountRef.current === 0) {
+      setLoading(true);
+    }
+    setError(null);
+
+    void fetchSuggestedProductList(query)
+      .then((nextProducts) => {
+        if (!cancelled) {
+          setApiProducts(nextProducts);
+        }
+      })
+      .catch((err) => {
+        if (cancelled) {
+          return;
+        }
+        logger.error('[useSuggestedProducts] Erro ao carregar produtos sugeridos', err);
+        setError(err instanceof Error ? err : new Error('Failed to load suggested products'));
+        if (visibleCountRef.current === 0) {
+          setApiProducts([]);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [enabled, cacheKey, query]);
 
   useEffect(() => {
     void prefetchImageUris(products.map((p) => p.image));
   }, [products]);
 
+  const refresh = useCallback(async () => {
+    if (!enabled) {
+      return;
+    }
+    if (visibleCountRef.current === 0) {
+      setLoading(true);
+    }
+    setError(null);
+    try {
+      const nextProducts = await fetchSuggestedProductList(query, { bypassCache: true });
+      setApiProducts(nextProducts);
+    } catch (err) {
+      logger.error('[useSuggestedProducts] Erro ao carregar produtos sugeridos', err);
+      setError(err instanceof Error ? err : new Error('Failed to load suggested products'));
+      if (visibleCountRef.current === 0) {
+        setApiProducts([]);
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [enabled, query]);
+
   return {
     products,
     loading,
     error,
-    refresh: loadProducts,
+    refresh,
   };
 };

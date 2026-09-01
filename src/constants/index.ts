@@ -125,7 +125,8 @@ export const KEYBOARD_AWARE_SCROLL = {
 } as const;
 
 export { BOTTOM_DOCK_BAR_HEIGHT, BOTTOM_DOCK_SUPPORT_GAP, POST_DETAIL_ROUTE } from './bottomDockBar';
-export { ADVERTISER_STATUS } from './advertiser';
+export { ADVERTISER_STATUS, ADVERTISER_TYPE } from './advertiser';
+export type { AdvertiserType } from './advertiser';
 export { AUTH_ONBOARDING_SCREENS_ORDER } from './authOnboarding';
 export type { AuthOnboardingScreenName } from './authOnboarding';
 export { FEATURE_FLAGS, FEATURE_FLAG_DEFAULTS } from './featureFlags';
@@ -149,4 +150,5 @@ export {
   IMAGE_TRANSITION_MS,
   IMAGE_NEUTRAL_PLACEHOLDER_COLOR,
   IMAGE_PRIORITY_HIGH,
+  IMAGE_CONTENT_POSITION_ABOVE_CENTER,
 } from './imageCache';

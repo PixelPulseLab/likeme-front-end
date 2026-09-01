@@ -1,6 +1,12 @@
-import { renderHook, waitFor } from '@testing-library/react-native';
+import { act, renderHook, waitFor } from '@testing-library/react-native';
 import { useSuggestedProducts } from './useSuggestedProducts';
 import { productService } from '@/services';
+import {
+  SUGGESTED_PRODUCTS_CACHE_STALE_MS,
+  clearSuggestedProductsCache,
+  getCachedSuggestedProducts,
+  setCachedSuggestedProducts,
+} from '@/services/product/suggestedProductsCache';
 
 jest.mock('@/services', () => ({
   productService: {
@@ -59,6 +65,7 @@ const rankedProducts = [
 describe('useSuggestedProducts', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    clearSuggestedProductsCache();
   });
 
   it('preserva a ordem ranqueada da API sem embaralhar (APP-352)', async () => {
@@ -117,5 +124,67 @@ describe('useSuggestedProducts', () => {
         }),
       );
     });
+  });
+
+  it('reusa o cache na remontagem sem novo fetch', async () => {
+    (productService.listProducts as jest.Mock).mockResolvedValue({
+      success: true,
+      data: { products: rankedProducts },
+    });
+
+    const first = renderHook(() => useSuggestedProducts({ limit: 2 }));
+    await waitFor(() => {
+      expect(first.result.current.products).toHaveLength(2);
+    });
+    first.unmount();
+
+    const second = renderHook(() => useSuggestedProducts({ limit: 2 }));
+    expect(second.result.current.products.map((product) => product.id)).toEqual(['p-sleep', 'p-other']);
+    expect(second.result.current.loading).toBe(false);
+    expect(productService.listProducts).toHaveBeenCalledTimes(1);
+  });
+
+  it('mantém a lista anterior visível enquanto busca outra chave', async () => {
+    let resolveSecond: (value: unknown) => void = () => undefined;
+    const secondResponse = new Promise((resolve) => {
+      resolveSecond = resolve;
+    });
+    (productService.listProducts as jest.Mock)
+      .mockResolvedValueOnce({
+        success: true,
+        data: { products: rankedProducts },
+      })
+      .mockReturnValueOnce(secondResponse);
+
+    const { result, rerender } = renderHook(
+      ({ excludeProductId }: { excludeProductId?: string }) => useSuggestedProducts({ limit: 2, excludeProductId }),
+      { initialProps: { excludeProductId: undefined as string | undefined } },
+    );
+
+    await waitFor(() => {
+      expect(result.current.products.map((product) => product.id)).toEqual(['p-sleep', 'p-other']);
+    });
+
+    rerender({ excludeProductId: 'p-sleep' });
+
+    expect(result.current.products.map((product) => product.id)).toEqual(['p-sleep', 'p-other']);
+    expect(result.current.loading).toBe(false);
+
+    await act(async () => {
+      resolveSecond({
+        success: true,
+        data: { products: [rankedProducts[1], rankedProducts[2]] },
+      });
+    });
+
+    await waitFor(() => {
+      expect(result.current.products.map((product) => product.id)).toEqual(['p-other', 'p-third']);
+    });
+  });
+
+  it('descarta o cache após 5 minutos', () => {
+    setCachedSuggestedProducts('products', rankedProducts as never, 0);
+    expect(getCachedSuggestedProducts('products', SUGGESTED_PRODUCTS_CACHE_STALE_MS - 1)).toHaveLength(3);
+    expect(getCachedSuggestedProducts('products', SUGGESTED_PRODUCTS_CACHE_STALE_MS)).toBeUndefined();
   });
 });

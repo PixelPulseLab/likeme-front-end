@@ -1,18 +1,18 @@
 {
-  "version": "1.13.0",
-  "releasedAt": "2026-08-11",
+  "version": "1.14.1",
+  "releasedAt": "2026-08-21",
   "android": {
-    "versionCode": 254
+    "versionCode": 256
   },
   "ios": {
-    "buildNumber": 30
+    "buildNumber": 32
   },
   "changelog": {
     "added": [
-      "Em Meus Pedidos, protocolos abrem a área do assinante e serviços permitem criar atividade com opção de marcar na agenda do celular"
+      "Comunidade mostra a imagem de destaque no topo da tela e nos cards"
     ],
     "changed": [
-      "Itens de pedido cancelados mostram a tag Cancelado no lugar das ações"
+      "Telas de apresentação do app ficam mais leves, com imagens menores"
     ]
   }
 }

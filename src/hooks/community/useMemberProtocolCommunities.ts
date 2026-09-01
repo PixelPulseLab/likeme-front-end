@@ -3,7 +3,7 @@ import { communityService } from '@/services';
 import type { Community, CommunityCategory, CommunityFile } from '@/types/community';
 import { MEMBER_PROTOCOL_COMMUNITY_IMAGE_FALLBACK } from '@/constants/community/communityProtocol';
 import { communityProtocolCardBadges } from '@/utils/community/communityProtocolCardBadges';
-import { resolveCommunityHeroImageUri } from '@/utils/community/mappers';
+import { resolveCommunityBannerImageUri } from '@/utils/community/mappers';
 import { logger } from '@/utils/logger';
 
 const MEMBER_PROTOCOLS_FETCH_LIMIT = 50;
@@ -91,7 +91,7 @@ export function useMemberProtocolCommunities(appliedSearchQuery = '') {
       communityId: community.communityId,
       title: community.displayName,
       badges: communityProtocolCardBadges(community, categories),
-      image: resolveCommunityHeroImageUri(community, communityFiles, MEMBER_PROTOCOL_COMMUNITY_IMAGE_FALLBACK),
+      image: resolveCommunityBannerImageUri(community, communityFiles, MEMBER_PROTOCOL_COMMUNITY_IMAGE_FALLBACK),
       description: community.description ?? community.socialDescription ?? null,
       agreement: community.agreement ?? null,
     }));
