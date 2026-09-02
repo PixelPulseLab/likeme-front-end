@@ -150,3 +150,10 @@ Object.defineProperty(ReactNative, 'TouchableOpacity', {
   writable: true,
   value: TestFriendlyTouchableOpacity,
 });
+
+jest.mock('@google/react-native-make-payment', () => ({
+  PaymentRequest: jest.fn().mockImplementation(() => ({
+    canMakePayment: jest.fn(() => Promise.resolve(false)),
+    show: jest.fn(() => Promise.reject(new Error('Google Pay mock'))),
+  })),
+}));

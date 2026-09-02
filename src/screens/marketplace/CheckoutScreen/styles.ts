@@ -131,6 +131,7 @@ export const styles = StyleSheet.create({
   },
   paymentMethodOptions: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: SPACING.XL,
     marginTop: SPACING.SM,
   },

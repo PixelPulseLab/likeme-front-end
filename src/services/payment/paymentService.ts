@@ -1,6 +1,7 @@
 import apiClient from '../infrastructure/apiClient';
 import { logger } from '@/utils/logger';
 import type { ApiResponse } from '@/types/infrastructure';
+import type { ListPaymentMethodsResponse } from '@/types/payment/paymentInstrument';
 
 export interface ProcessPaymentRequest {
   orderId: string;
@@ -47,9 +48,27 @@ export interface RefundPaymentRequest {
 }
 
 class PaymentService {
-  /**
-   * Process payment for an order
-   */
+  async listPaymentMethods(): Promise<ApiResponse<ListPaymentMethodsResponse>> {
+    try {
+      const response = await apiClient.get<ApiResponse<ListPaymentMethodsResponse>>(
+        '/api/payment/methods',
+        undefined,
+        true,
+        false,
+      );
+
+      logger.debug('Payment methods listed:', {
+        success: response.success,
+        methodCount: response.data?.paymentMethods?.length,
+      });
+
+      return response;
+    } catch (error) {
+      logger.error('Error listing payment methods:', error);
+      throw error;
+    }
+  }
+
   async processPayment(data: ProcessPaymentRequest): Promise<ApiResponse<ProcessPaymentResponse>> {
     try {
       const response = await apiClient.post<ApiResponse<ProcessPaymentResponse>>('/api/payment/process', data, true);

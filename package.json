@@ -83,6 +83,7 @@
     "@expo-google-fonts/bricolage-grotesque": "^0.4.1",
     "@expo-google-fonts/dm-sans": "^0.4.2",
     "@expo/metro-runtime": "~6.1.2",
+    "@google/react-native-make-payment": "^0.3.1",
     "@react-native-async-storage/async-storage": "2.2.0",
     "@react-native-community/datetimepicker": "8.4.4",
     "@react-native-community/slider": "5.0.1",

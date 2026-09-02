@@ -307,6 +307,8 @@ module.exports = {
       './plugins/withPodfileModularHeaders.js',
       './plugins/withIosIphoneOnlyDestinations.js',
       './plugins/withIosShareAssociatedDomains.js',
+      './plugins/withGooglePayEnvironment.js',
+      './plugins/withApplePayMerchant.js',
       '@react-native-firebase/app',
       '@react-native-firebase/messaging',
       ...(revopushPlugin ? [revopushPlugin] : []),
@@ -380,6 +382,9 @@ module.exports = {
         'aps-environment': 'production',
         'com.apple.developer.applesignin': ['Default'],
         'com.apple.developer.associated-domains': [`applinks:${SHARE_UNIVERSAL_LINK_HOST}`],
+        'com.apple.developer.in-app-payments': [
+          getEnvVar('EXPO_PUBLIC_APPLE_PAY_MERCHANT_IDENTIFIER', 'merchant.app.likeme.com'),
+        ],
       },
     },
     owner: 'pixelpulselab',

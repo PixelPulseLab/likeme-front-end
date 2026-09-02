@@ -1,4 +1,5 @@
 import type { ApiResponse } from '@/types/infrastructure';
+import type { WalletPaymentInstrument } from '@/types/payment/paymentInstrument';
 import type { Product } from '@/types/product';
 
 export interface OrderVoucherSummary {
@@ -101,14 +102,13 @@ export interface CreateOrderData {
   shippingCost?: number;
   tax?: number;
   shippingAddress?: string;
-  billingAddress: BillingAddress; // Backend sempre exige como objeto estruturado
-  cardData?: CardData; // Obrigatório quando paymentMethod é 'credit_card'
+  billingAddress: BillingAddress;
+  cardData?: CardData;
+  paymentInstrument?: WalletPaymentInstrument;
   phone?: string;
   notes?: string;
   paymentMethod?: string;
-  /** Código do voucher; desconto calculado no servidor. */
   voucherCode?: string;
-  /** Periodicidade da assinatura quando o carrinho contém protocolos. */
   billingPeriod?: SubscriptionBillingPeriod;
   trackingNumber?: string;
 }

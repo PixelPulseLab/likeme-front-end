@@ -8,6 +8,24 @@ describe('PaymentService', () => {
     jest.clearAllMocks();
   });
 
+  describe('listPaymentMethods', () => {
+    it('should call apiClient.get with methods endpoint', async () => {
+      const mockResponse = {
+        success: true,
+        data: {
+          paymentMethods: [{ type: 'credit_card', oneOff: true, subscription: true }],
+        },
+      };
+
+      (apiClient.get as jest.Mock).mockResolvedValue(mockResponse);
+
+      const result = await paymentService.listPaymentMethods();
+
+      expect(apiClient.get).toHaveBeenCalledWith('/api/payment/methods', undefined, true, false);
+      expect(result).toEqual(mockResponse);
+    });
+  });
+
   describe('processPayment', () => {
     it('should call apiClient.post with correct endpoint and data', async () => {
       const mockResponse = {

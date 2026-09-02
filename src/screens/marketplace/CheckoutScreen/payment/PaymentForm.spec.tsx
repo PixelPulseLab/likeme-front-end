@@ -87,6 +87,60 @@ describe('PaymentForm', () => {
     expect(getByText('checkout.cvv')).toBeTruthy();
   });
 
+  it('shows Google Pay as a payment method when available', () => {
+    const onPaymentMethodChange = jest.fn();
+    const { getByTestId } = render(
+      <PaymentForm
+        {...mockProps}
+        googlePayAvailable
+        selectedPaymentMethod='credit_card'
+        onPaymentMethodChange={onPaymentMethodChange}
+      />,
+    );
+
+    fireEvent.press(getByTestId('e2e.checkout.paymentMethod.googlePay'));
+    expect(onPaymentMethodChange).toHaveBeenCalledWith('google_pay');
+  });
+
+  it('hides card fields when Google Pay is selected', () => {
+    const { queryByText, getByText } = render(
+      <PaymentForm {...mockProps} googlePayAvailable selectedPaymentMethod='google_pay' />,
+    );
+
+    expect(queryByText('checkout.cardholderName')).toBeNull();
+    expect(getByText('checkout.cpf')).toBeTruthy();
+  });
+
+  it('shows Apple Pay as a payment method when available', () => {
+    const onPaymentMethodChange = jest.fn();
+    const { getByTestId } = render(
+      <PaymentForm
+        {...mockProps}
+        applePayAvailable
+        selectedPaymentMethod='credit_card'
+        onPaymentMethodChange={onPaymentMethodChange}
+      />,
+    );
+
+    fireEvent.press(getByTestId('e2e.checkout.paymentMethod.applePay'));
+    expect(onPaymentMethodChange).toHaveBeenCalledWith('apple_pay');
+  });
+
+  it('hides card fields when Apple Pay is selected', () => {
+    const { queryByText, getByText } = render(
+      <PaymentForm {...mockProps} applePayAvailable selectedPaymentMethod='apple_pay' />,
+    );
+
+    expect(queryByText('checkout.cardholderName')).toBeNull();
+    expect(getByText('checkout.cpf')).toBeTruthy();
+  });
+
+  it('does not show Google Pay radios when unavailable', () => {
+    const { queryByTestId } = render(<PaymentForm {...mockProps} />);
+
+    expect(queryByTestId('e2e.checkout.paymentMethod.googlePay')).toBeNull();
+  });
+
   it('should call onCardholderNameChange when cardholder name is changed', () => {
     const { getByPlaceholderText } = render(<PaymentForm {...mockProps} />);
 

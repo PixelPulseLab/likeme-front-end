@@ -274,6 +274,12 @@ jest.mock('@/hooks', () => {
       };
     },
     useCartShippingPolicy: () => ({ shippingRequired: true, isResolving: false }),
+    useCheckoutPaymentMethods: () => ({
+      googlePayAvailable: false,
+      applePayAvailable: false,
+      googlePayConfig: null,
+      applePayConfig: null,
+    }),
     useMenuItems: () => [],
   };
 });

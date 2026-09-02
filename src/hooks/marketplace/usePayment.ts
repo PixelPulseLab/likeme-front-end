@@ -68,31 +68,36 @@ export function usePayment() {
   );
 
   const isPaymentStepValid = useCallback(
-    (billingAddressFilled: boolean) =>
-      cardholderName.trim() !== '' &&
-      cardNumber.replace(/\s/g, '').trim() !== '' &&
-      expiryDate.replace(/\D/g, '').length === 4 &&
-      cvv.trim() !== '' &&
+    (billingAddressFilled: boolean, requireCard = true) =>
       cpf.replace(/\D/g, '').length === 11 &&
-      billingAddressFilled,
+      billingAddressFilled &&
+      (!requireCard ||
+        (cardholderName.trim() !== '' &&
+          cardNumber.replace(/\s/g, '').trim() !== '' &&
+          expiryDate.replace(/\D/g, '').length === 4 &&
+          cvv.trim() !== '')),
     [cardholderName, cardNumber, expiryDate, cvv, cpf],
   );
 
   const validatePaymentFields = useCallback(
-    (t: TFunction): Record<string, string> | null => {
+    (t: TFunction, requireCard = true): Record<string, string> | null => {
       const errors: Record<string, string> = {};
-      if (!cardholderName.trim()) errors.cardholderName = t('common.requiredField');
-      if (!cardNumber.replace(/\s/g, '').trim()) errors.cardNumber = t('common.requiredField');
-      const expDigits = expiryDate.replace(/\D/g, '');
-      if (expDigits.length === 0) errors.expiryDate = t('common.requiredField');
-      else if (expDigits.length !== 4) errors.expiryDate = t('checkout.invalidExpiryError');
-      if (!cvv.trim()) errors.cvv = t('common.requiredField');
+      if (requireCard) {
+        if (!cardholderName.trim()) errors.cardholderName = t('common.requiredField');
+        if (!cardNumber.replace(/\s/g, '').trim()) errors.cardNumber = t('common.requiredField');
+        const expDigits = expiryDate.replace(/\D/g, '');
+        if (expDigits.length === 0) errors.expiryDate = t('common.requiredField');
+        else if (expDigits.length !== 4) errors.expiryDate = t('checkout.invalidExpiryError');
+        if (!cvv.trim()) errors.cvv = t('common.requiredField');
+      }
       const cpfDigits = cpf.replace(/\D/g, '');
       if (cpfDigits.length !== 11) errors.cpf = t('common.requiredField');
       return Object.keys(errors).length > 0 ? errors : null;
     },
     [cardholderName, cardNumber, expiryDate, cvv, cpf],
   );
+
+  const getCpfDigits = useCallback(() => cpf.replace(/\D/g, ''), [cpf]);
 
   const getCardData = useCallback((): CardData | undefined => {
     const formattedExpiry = expiryDate.replace(/\D/g, '');
@@ -127,5 +132,6 @@ export function usePayment() {
     isPaymentStepValid,
     validatePaymentFields,
     getCardData,
+    getCpfDigits,
   };
 }

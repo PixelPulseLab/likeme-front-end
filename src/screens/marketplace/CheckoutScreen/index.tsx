@@ -10,7 +10,14 @@ import { formatZipCodeDisplay } from '@/services/address/cepService';
 import { formatPrice, formatAddress, formatBillingAddress } from '@/utils';
 import { catalogTypeTranslatedBadgeLabels, PRODUCT_CATALOG_TYPE } from '@/types/product';
 import { isProtocolCartItem, cartProtocolProductIdsWithActiveAccess } from '@/utils/profile/protocolProduct';
-import { useTranslation, usePayment, useCheckoutVoucher, useCartShippingPolicy, useMenuItems } from '@/hooks';
+import {
+  useTranslation,
+  usePayment,
+  useCheckoutPaymentMethods,
+  useCheckoutVoucher,
+  useCartShippingPolicy,
+  useMenuItems,
+} from '@/hooks';
 import { useFloatingMenuActions } from '@/contexts/FloatingMenuContext';
 import { checkoutDisplayAmounts } from '@/utils/marketplace/checkoutDisplayAmounts';
 import { logger } from '@/utils/logger';
@@ -24,16 +31,16 @@ import { ProductRowCard } from '@/components/ui/cards';
 import OrderSummary from './order/OrderSummary';
 import OrderScreen, { type OrderScreenStatus } from './order/OrderScreen';
 import type { CreateOrderData } from '@/types/order';
+import { PAYMENT_METHOD, type PaymentMethod } from '@/constants/payment/paymentMethod';
+import { GooglePayCancelledError, requestGooglePayPaymentData } from '@/services/payment/googlePayService';
+import { ApplePayCancelledError, requestApplePayPaymentData } from '@/services/payment/applePayService';
 import { useAnalyticsScreen } from '@/analytics';
 import { useCart } from '@/hooks';
 import { E2E_TEST_IDS } from '@/constants/e2eTestIds';
 
 const noop = (): void => undefined;
 
-type PaymentMethod = 'credit_card' | 'pix';
 type CheckoutStep = 'address' | 'payment' | 'order';
-
-const PAYMENT_METHOD: PaymentMethod = 'credit_card';
 
 type Props = {
   navigation: any;
@@ -57,6 +64,7 @@ const CheckoutScreen: React.FC<Props> = ({ navigation, route }) => {
   const [addressLoadError, setAddressLoadError] = useState<string | null>(null);
   const [addressSaveError, setAddressSaveError] = useState<string | null>(null);
   const payment = usePayment();
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<PaymentMethod>(PAYMENT_METHOD.CREDIT_CARD);
   const checkoutSubmitInFlightRef = useRef(false);
   const checkoutSubmitCompletedRef = useRef(false);
   const checkoutSubmitBlockedRef = useRef(false);
@@ -75,6 +83,17 @@ const CheckoutScreen: React.FC<Props> = ({ navigation, route }) => {
   const effectiveShipping = isShippingDisabled ? 0 : shipping;
   const productIds = useMemo(() => cartItems.map((item) => item.id).filter(Boolean), [cartItems]);
   const cartHasProgram = useMemo(() => cartItems.some((item) => isProtocolCartItem(item)), [cartItems]);
+  const { googlePayAvailable, applePayAvailable, googlePayConfig, applePayConfig } =
+    useCheckoutPaymentMethods(cartHasProgram);
+
+  useEffect(() => {
+    const selectedWalletStillAvailable =
+      (selectedPaymentMethod === PAYMENT_METHOD.GOOGLE_PAY && googlePayAvailable) ||
+      (selectedPaymentMethod === PAYMENT_METHOD.APPLE_PAY && applePayAvailable);
+    if (!selectedWalletStillAvailable && selectedPaymentMethod !== PAYMENT_METHOD.CREDIT_CARD) {
+      setSelectedPaymentMethod(PAYMENT_METHOD.CREDIT_CARD);
+    }
+  }, [googlePayAvailable, applePayAvailable, selectedPaymentMethod]);
 
   const effectiveDeliveryAddress = deliverySameAsBilling ? billingAddressData : addressData;
   const deliveryZipCode = (effectiveDeliveryAddress.zipCode || '').replace(/\D/g, '');
@@ -211,6 +230,17 @@ const CheckoutScreen: React.FC<Props> = ({ navigation, route }) => {
       (isShippingBlocking || payment.isProcessing || isPaymentSubmitBlocked || ownedProtocolCheckoutBlocked));
   const isContinueLoading = currentStep === 'payment' && payment.isProcessing;
 
+  const summaryAmounts = useMemo(
+    () =>
+      checkoutDisplayAmounts({
+        subtotal,
+        shipping: effectiveShipping,
+        showShipping: !isShippingDisabled,
+        appliedVoucher: checkoutVoucher.appliedPreview,
+      }),
+    [subtotal, effectiveShipping, isShippingDisabled, checkoutVoucher.appliedPreview],
+  );
+
   const handleContinue = async () => {
     if (currentStep === 'address' && !canProceedFromAddress) {
       return;
@@ -276,8 +306,16 @@ const CheckoutScreen: React.FC<Props> = ({ navigation, route }) => {
         return;
       }
 
-      if (PAYMENT_METHOD === 'credit_card') {
+      if (selectedPaymentMethod === PAYMENT_METHOD.CREDIT_CARD) {
         const errors = payment.validatePaymentFields(t);
+        if (errors) {
+          payment.setPaymentFieldErrors(errors);
+          payment.setPaymentError(null);
+          releaseCheckoutSubmitLock();
+          return;
+        }
+      } else {
+        const errors = payment.validatePaymentFields(t, false);
         if (errors) {
           payment.setPaymentFieldErrors(errors);
           payment.setPaymentError(null);
@@ -322,22 +360,63 @@ const CheckoutScreen: React.FC<Props> = ({ navigation, route }) => {
         tax: 0,
         shippingAddress: shippingAddressFormatted,
         billingAddress: billingAddressObj,
-        paymentMethod: PAYMENT_METHOD,
+        paymentMethod: selectedPaymentMethod,
       };
 
-      if (PAYMENT_METHOD === 'credit_card') {
+      const checkoutPhoneDigits = billingAddressData.phone.replace(/\D/g, '');
+      const checkoutPhone = checkoutPhoneDigits.length >= 10 ? checkoutPhoneDigits : undefined;
+      if (checkoutPhone) {
+        orderData.phone = checkoutPhone;
+      }
+
+      if (selectedPaymentMethod === PAYMENT_METHOD.CREDIT_CARD) {
         if (!cardDataObj) {
           Alert.alert(t('errors.error'), t('checkout.orderError'));
           releaseCheckoutSubmitLock();
           return;
         }
-        const checkoutPhoneDigits = billingAddressData.phone.replace(/\D/g, '');
-        const checkoutPhone = checkoutPhoneDigits.length >= 10 ? checkoutPhoneDigits : undefined;
-        if (checkoutPhone) {
-          orderData.phone = checkoutPhone;
-        }
         orderData.cardData = {
           ...cardDataObj,
+          ...(checkoutPhone ? { phone: checkoutPhone } : {}),
+        };
+      } else if (selectedPaymentMethod === PAYMENT_METHOD.GOOGLE_PAY) {
+        if (!googlePayConfig) {
+          Alert.alert(
+            t('errors.error'),
+            t('checkout.googlePayUnavailable', {
+              defaultValue: 'Google Pay não está disponível neste dispositivo.',
+            }),
+          );
+          releaseCheckoutSubmitLock();
+          return;
+        }
+
+        const googlePayPayload = await requestGooglePayPaymentData(googlePayConfig, summaryAmounts.total);
+        const cpfDigits = payment.getCpfDigits();
+        orderData.paymentInstrument = {
+          type: PAYMENT_METHOD.GOOGLE_PAY,
+          payload: googlePayPayload,
+          ...(cpfDigits.length === 11 ? { cpf: cpfDigits } : {}),
+          ...(checkoutPhone ? { phone: checkoutPhone } : {}),
+        };
+      } else if (selectedPaymentMethod === PAYMENT_METHOD.APPLE_PAY) {
+        if (!applePayConfig) {
+          Alert.alert(
+            t('errors.error'),
+            t('checkout.applePayUnavailable', {
+              defaultValue: 'Apple Pay não está disponível neste dispositivo.',
+            }),
+          );
+          releaseCheckoutSubmitLock();
+          return;
+        }
+
+        const applePayPayload = await requestApplePayPaymentData(applePayConfig, summaryAmounts.total);
+        const cpfDigits = payment.getCpfDigits();
+        orderData.paymentInstrument = {
+          type: PAYMENT_METHOD.APPLE_PAY,
+          payload: applePayPayload,
+          ...(cpfDigits.length === 11 ? { cpf: cpfDigits } : {}),
           ...(checkoutPhone ? { phone: checkoutPhone } : {}),
         };
       }
@@ -385,6 +464,22 @@ const CheckoutScreen: React.FC<Props> = ({ navigation, route }) => {
       checkoutVoucher.removeCoupon();
       setCurrentStep('order');
     } catch (error: unknown) {
+      if (error instanceof GooglePayCancelledError) {
+        payment.setPaymentError(
+          t('checkout.googlePayCancelled', { defaultValue: 'Pagamento com Google Pay cancelado.' }),
+        );
+        releaseCheckoutSubmitLock();
+        return;
+      }
+
+      if (error instanceof ApplePayCancelledError) {
+        payment.setPaymentError(
+          t('checkout.applePayCancelled', { defaultValue: 'Pagamento com Apple Pay cancelado.' }),
+        );
+        releaseCheckoutSubmitLock();
+        return;
+      }
+
       if (isHttpRequestTimeoutError(error)) {
         logger.warn('[CheckoutScreen] Criação do pedido excedeu API_HTTP_REQUEST_TIMEOUT_MS');
         const timeoutMessage = t('checkout.orderTimeout', {
@@ -410,6 +505,7 @@ const CheckoutScreen: React.FC<Props> = ({ navigation, route }) => {
           serverMessage.includes('recusado') ||
           serverMessage.includes('cartão') ||
           serverMessage.includes('CPF') ||
+          serverMessage.includes('Google Pay') ||
           serverMessage.includes('Pagarme'));
 
       const userMessage = isPaymentError ? serverMessage : t('checkout.orderError');
@@ -476,17 +572,6 @@ const CheckoutScreen: React.FC<Props> = ({ navigation, route }) => {
       t('checkout.invalidCoupon', { defaultValue: 'Cupom inválido' }),
     );
   };
-
-  const summaryAmounts = useMemo(
-    () =>
-      checkoutDisplayAmounts({
-        subtotal,
-        shipping: effectiveShipping,
-        showShipping: !isShippingDisabled,
-        appliedVoucher: checkoutVoucher.appliedPreview,
-      }),
-    [subtotal, effectiveShipping, isShippingDisabled, checkoutVoucher.appliedPreview],
-  );
 
   const stepperSteps = useMemo(
     () => [
@@ -610,6 +695,10 @@ const CheckoutScreen: React.FC<Props> = ({ navigation, route }) => {
                 paymentFieldErrors={payment.paymentFieldErrors}
                 billingAddressData={billingAddressData}
                 deliverySameAsBilling={deliverySameAsBilling}
+                selectedPaymentMethod={selectedPaymentMethod}
+                googlePayAvailable={googlePayAvailable}
+                applePayAvailable={applePayAvailable}
+                onPaymentMethodChange={setSelectedPaymentMethod}
                 onCardholderNameChange={payment.onCardholderNameChange}
                 onCardNumberChange={payment.onCardNumberChange}
                 onExpiryDateChange={payment.onExpiryDateChange}
