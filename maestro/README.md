@@ -76,7 +76,7 @@ E2E_PRODUCT_ID=uuid E2E_COMMUNITY_ID=uuid npm run test:e2e:staging
 - `likeme://e2e/bootstrap` → Welcome
 - Botão **Continuar E2E** (`e2e.unauth.e2eContinue`) ainda existe na build staging, mas o bootstrap autenticado usa o deep link
 
-Conta de staging dos testes de login/checkout: `duda@pixelpulselab.dev` (user `5521d990-1b22-4ee6-af47-20cabb7aa0d8`). JWT e e-mail ficam em `.env.staging` (`EXPO_PUBLIC_E2E_STAGING_TOKEN`, `EXPO_PUBLIC_E2E_STAGING_EMAIL`). O Auth0 Management API não aceita `client_credentials` neste client — não dá para criar senha Auth0 por aqui; a sessão E2E é o JWT do backend.
+Conta de staging dos testes de login/checkout: `duda@pixelpulselab.dev` (user `5521d990-1b22-4ee6-af47-20cabb7aa0d8`). JWT e e-mail ficam em `.env.staging` (`E2E_STAGING_TOKEN`, `E2E_LOGIN_EMAIL`) e são passados pelo deep link do Maestro. O Auth0 Management API não aceita `client_credentials` neste client — não dá para criar senha Auth0 por aqui; a sessão E2E é o JWT do backend.
 
 `npm run test:e2e:login` prova a sessão: entra pelo deep link, abre o menu de perfil e confere `${E2E_LOGIN_EMAIL}` na conta logada.
 
@@ -84,15 +84,15 @@ Conta de staging dos testes de login/checkout: `duda@pixelpulselab.dev` (user `5
 
 | Var | Uso |
 |-----|-----|
-| `EXPO_PUBLIC_E2E_STAGING_TOKEN` / `E2E_STAGING_TOKEN` | JWT da conta Duda (APIs autenticadas) |
-| `EXPO_PUBLIC_E2E_STAGING_EMAIL` / `E2E_LOGIN_EMAIL` | `duda@pixelpulselab.dev` |
-| `EXPO_PUBLIC_E2E_STAGING_NAME` / `E2E_LOGIN_NAME` | `Duda Weber` |
+| `E2E_STAGING_TOKEN` | JWT da conta Duda (APIs autenticadas) |
+| `E2E_LOGIN_EMAIL` | `duda@pixelpulselab.dev` |
+| `E2E_LOGIN_NAME` | `Duda Weber` |
 | `E2E_PRODUCT_ID` / `E2E_COMMUNITY_ID` / `E2E_PROTOCOL_PRODUCT_ID` | Deep links |
 | `E2E_CHECKOUT_PRODUCT_ID` | Produto físico de staging para checkout pago/recusado |
 | `E2E_CHECKOUT_PROTOCOL_PRODUCT_ID` | Protocolo de staging para assinatura no checkout |
 | `E2E_CARD_CVV` | `123` aprova; `651` recusa no simulador PSP |
 
-Checkout real (`maestro/flows/checkout/`) não entra em `test:e2e:staging`: cobra Pagarme sandbox e dispara e-mail transacional para `duda@pixelpulselab.dev`. Requer `EXPO_PUBLIC_E2E_STAGING_TOKEN` válido.
+Checkout real (`maestro/flows/checkout/`) não entra em `test:e2e:staging`: cobra Pagarme sandbox e dispara e-mail transacional para `duda@pixelpulselab.dev`. Requer `E2E_STAGING_TOKEN` válido.
 
 ```bash
 npm run test:e2e:checkout
