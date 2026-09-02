@@ -135,7 +135,7 @@ const CommunityScreen: React.FC<Props> = ({ navigation }) => {
     communityFiles,
   } = useCommunities({
     enabled: true,
-    pageSize: 10,
+    pageSize: 20,
     params: {
       sortBy: 'createdAt',
       includeDeleted: false,

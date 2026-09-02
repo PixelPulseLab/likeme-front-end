@@ -239,7 +239,10 @@ const SummaryScreen: React.FC<Props> = ({ navigation }) => {
 
   const handleJoinCommunity = useCallback(
     (community: JoinCardItem) => {
-      navigateToCommunity(rootNavigation, { openFeedFromMenu: true });
+      navigateToCommunity(rootNavigation, {
+        openFeedFromMenu: true,
+        focusCommunityId: community.id,
+      });
       void communityService.joinCommunity(community.id).catch((error) => {
         logger.error('[SummaryScreen] Falha ao entrar na comunidade em background', {
           communityId: community.id,
@@ -307,7 +310,11 @@ const SummaryScreen: React.FC<Props> = ({ navigation }) => {
             <View style={styles.sectionDivider}>
               <Text style={styles.sectionTitle}>{t('home.recommendedCommunitySectionTitle')}</Text>
               <View style={styles.sectionContainer}>
-                <JoinCardList items={filteredJoinCommunities} onItemPress={handleJoinCommunity} />
+                <JoinCardList
+                  items={filteredJoinCommunities}
+                  onItemPress={handleJoinCommunity}
+                  layout={filteredJoinCommunities.length > 1 ? 'list' : 'carousel'}
+                />
               </View>
             </View>
           )}
