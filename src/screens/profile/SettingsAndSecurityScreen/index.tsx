@@ -55,6 +55,10 @@ const SettingsAndSecurityScreen: React.FC<Props> = ({ navigation }) => {
     }
   }, [t]);
 
+  const handleDesignSystemPress = useCallback(() => {
+    navigation.navigate('DesignSystem');
+  }, [navigation]);
+
   const menuItems: SettingsMenuItem[] = [
     {
       key: 'privacy-policy',
@@ -78,6 +82,16 @@ const SettingsAndSecurityScreen: React.FC<Props> = ({ navigation }) => {
       onPress: handleDeleteAccountPress,
     },
   ];
+
+  if (__DEV__) {
+    menuItems.push({
+      key: 'design-system',
+      labelKey: 'profile.settingsAndSecurity.designSystem',
+      labelDefault: 'Design system',
+      IconComponent: PROFILE_HOME_MENU_ICONS.settingsAndSecurity,
+      onPress: handleDesignSystemPress,
+    });
+  }
 
   return (
     <ScreenWithHeader

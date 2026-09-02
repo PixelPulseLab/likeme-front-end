@@ -80,6 +80,8 @@ export const getPersonalDataEditScreen = (): RootStackScreen =>
   asScreen(require('../screens/profile/PersonalDataEditScreen') as { default: RootStackScreen });
 export const getSettingsAndSecurityScreen = (): RootStackScreen =>
   asScreen(require('../screens/profile/SettingsAndSecurityScreen') as { default: RootStackScreen });
+export const getDesignSystemScreen = (): RootStackScreen =>
+  asScreen(require('../screens/dev/DesignSystemScreen') as { default: RootStackScreen });
 export const getDeleteAccountScreen = (): RootStackScreen =>
   asScreen(require('../screens/profile/DeleteAccountScreen') as { default: RootStackScreen });
 export const getProtocolDetailScreen = (): RootStackScreen =>

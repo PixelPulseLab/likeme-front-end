@@ -46,6 +46,7 @@ import {
   getInterestCategoriesEditScreen,
   getPersonalDataEditScreen,
   getSettingsAndSecurityScreen,
+  getDesignSystemScreen,
   getDeleteAccountScreen,
   getProtocolDetailScreen,
   getSubscriptionListScreen,
@@ -245,6 +246,13 @@ const RootNavigator: React.FC = () => {
                       }),
                     }}
                   />
+                  {__DEV__ ? (
+                    <Stack.Screen
+                      name='DesignSystem'
+                      getComponent={getDesignSystemScreen}
+                      options={{ title: 'Design system' }}
+                    />
+                  ) : null}
                   <Stack.Screen
                     name='DeleteAccount'
                     getComponent={getDeleteAccountScreen}

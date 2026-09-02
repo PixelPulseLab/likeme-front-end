@@ -107,6 +107,7 @@ type RootStackParamListCore = {
   PersonalDataEdit: undefined;
   InterestCategoriesEdit: undefined;
   SettingsAndSecurity: undefined;
+  DesignSystem: undefined;
   DeleteAccount: undefined;
   SubscriptionList: undefined;
   ProtocolDetail: { protocol: ProtocolDetailProtocol } | { productId: string };
