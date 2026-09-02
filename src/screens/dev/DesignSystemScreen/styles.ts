@@ -1,4 +1,4 @@
-import { StyleSheet } from 'react-native';
+import { Platform, StyleSheet } from 'react-native';
 import { BORDER_RADIUS, COLORS, SPACING, TYPOGRAPHY } from '@/constants';
 
 export const styles = StyleSheet.create({
@@ -6,6 +6,17 @@ export const styles = StyleSheet.create({
     flex: 1,
     paddingBottom: 0,
   },
+  catalogRoot: Platform.select({
+    web: {
+      flex: 1,
+      width: '100%',
+      maxWidth: 720,
+      alignSelf: 'center',
+    },
+    default: {
+      flex: 1,
+    },
+  }),
   scrollContent: {
     flexGrow: 1,
     paddingTop: SPACING.LG,

@@ -252,6 +252,11 @@ module.exports = {
     orientation: 'portrait',
     userInterfaceStyle: 'light',
     platforms: ['ios', 'android', 'web'],
+    web: {
+      bundler: 'metro',
+      output: 'single',
+      favicon: './assets/app/icon.png',
+    },
     jsEngine: 'hermes',
     sdkVersion: '54.0.0',
     plugins: [

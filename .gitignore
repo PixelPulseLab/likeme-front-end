@@ -176,3 +176,4 @@ android/app/*.jks
 # Credenciais de serviço (NUNCA commitar!)
 google-service-account.json
 AuthKey_*.p8
+.vercel

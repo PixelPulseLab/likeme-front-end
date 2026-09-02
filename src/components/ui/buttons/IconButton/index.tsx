@@ -1,7 +1,8 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, ImageSourcePropType, ImageStyle, ViewStyle } from 'react-native';
 import { COLORS } from '@/constants';
-import { Icon, IconSilhouette } from '@/components/ui/layout';
+import Icon from '@/components/ui/layout/Icon';
+import IconSilhouette from '@/components/ui/layout/IconSilhouette';
 import type { IconSilhouetteSize } from '@/components/ui/layout/IconSilhouette';
 import { styles } from './styles';
 

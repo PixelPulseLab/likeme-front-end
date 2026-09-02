@@ -13,6 +13,7 @@ app.config.js
 app.plugin.js
 .eslintrc.js
 index.js
+index.native.js
 **/*.spec.ts
 **/*.spec.tsx
 **/*.test.ts

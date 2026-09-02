@@ -2,7 +2,7 @@ import React from 'react';
 import { View, TouchableOpacity, TextInput as RNTextInput, StyleSheet, type ViewStyle } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { BackgroundIconButton } from '@/assets/ui';
-import { IconButton } from '@/components/ui/buttons';
+import IconButton from '@/components/ui/buttons/IconButton';
 import { CachedImage } from '@/components/ui/media/CachedImage';
 import { styles } from './styles';
 

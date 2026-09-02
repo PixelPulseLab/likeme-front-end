@@ -1,7 +1,8 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, ViewStyle, TextStyle } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
-import { PrimaryButton, SecondaryButton } from '@/components/ui/buttons';
+import PrimaryButton from '@/components/ui/buttons/Primary';
+import SecondaryButton from '@/components/ui/buttons/Secondary';
 import { COLORS } from '@/constants';
 import { styles } from './styles';
 

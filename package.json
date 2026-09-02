@@ -13,6 +13,7 @@
     "start:ios": "open -a Simulator && npm run start",
     "start:clear": "bash scripts/clear-expo-metro-cache.sh && npm run start",
     "web": "expo start --web",
+    "web:export": "expo export -p web",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
