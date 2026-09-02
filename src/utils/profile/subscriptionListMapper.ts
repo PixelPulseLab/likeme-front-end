@@ -6,6 +6,8 @@ import {
   subscriptionIsCancelingPresentation,
   subscriptionIsCanceledPresentation,
   subscriptionIsDesaturatedPresentation,
+  subscriptionIsPastDuePresentation,
+  subscriptionIsUnpaidPresentation,
 } from '@/utils/subscription/subscriptionManageDisplay';
 
 const DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=400';
@@ -18,6 +20,12 @@ function subscriptionStatusBadge(row: UserSubscriptionListItem, t: TranslateFn):
   }
   if (subscriptionIsCancelingPresentation(row)) {
     return t('profile.acquisitionList.statusCanceling', { defaultValue: 'Em cancelamento' });
+  }
+  if (subscriptionIsUnpaidPresentation(row.status)) {
+    return t('profile.acquisitionList.statusUnpaid', { defaultValue: 'Inadimplente' });
+  }
+  if (subscriptionIsPastDuePresentation(row.status)) {
+    return t('profile.acquisitionList.statusPastDue', { defaultValue: 'Em atraso' });
   }
   return null;
 }

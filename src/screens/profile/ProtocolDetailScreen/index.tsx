@@ -32,9 +32,13 @@ import { shareContent } from '@/utils/share/shareContent';
 import {
   formatSubscriptionManageDate,
   subscriptionCanceledOnDate,
+  subscriptionHasProtocolContentAccess,
   subscriptionIsCancelingPresentation,
   subscriptionIsCanceledPresentation,
   subscriptionIsDesaturatedPresentation,
+  subscriptionIsPastDuePresentation,
+  subscriptionIsUnpaidPresentation,
+  subscriptionAllowsPaymentMethodUpdate,
 } from '@/utils/subscription/subscriptionManageDisplay';
 import { styles } from './styles';
 
@@ -129,7 +133,8 @@ const ProtocolDetailScreen: React.FC<Props> = ({ navigation, route }) => {
     cancelAtPeriodEnd: protocol?.cancelAtPeriodEnd,
     canceledAt: protocol?.canceledAt,
   };
-  const hasActiveProtocolAccess = Boolean(protocol) && !subscriptionIsCanceledPresentation(subscriptionLifecycleFields);
+  const hasActiveProtocolAccess =
+    Boolean(protocol) && subscriptionHasProtocolContentAccess(subscriptionLifecycleFields);
 
   const [activeTab, setActiveTab] = useState<ProtocolTabId>('content');
   const [agreementsText, setAgreementsText] = useState(protocol?.agreements?.trim() ?? '');
@@ -281,8 +286,9 @@ const ProtocolDetailScreen: React.FC<Props> = ({ navigation, route }) => {
       subscriptionId,
       programName:
         protocol?.name?.trim() || t('profile.subscriptionManage.programFallback', { defaultValue: 'Programa' }),
+      focusUpdatePayment: subscriptionAllowsPaymentMethodUpdate(protocol?.subscriptionStatus),
     });
-  }, [navigation, protocol?.name, protocol?.subscriptionId, t]);
+  }, [navigation, protocol?.name, protocol?.subscriptionId, protocol?.subscriptionStatus, t]);
 
   const protocolMenuOptions = useMemo(() => {
     if (!protocol) {
@@ -363,16 +369,24 @@ const ProtocolDetailScreen: React.FC<Props> = ({ navigation, route }) => {
   };
   const isCanceledSubscription = subscriptionIsCanceledPresentation(subscriptionFields);
   const isCancelingSubscription = subscriptionIsCancelingPresentation(subscriptionFields);
+  const isPastDueSubscription = subscriptionIsPastDuePresentation(subscriptionFields.status);
+  const isUnpaidSubscription = subscriptionIsUnpaidPresentation(subscriptionFields.status);
   const canceledBadgeLabel = t('profile.acquisitionList.statusCanceled', { defaultValue: 'Cancelado' });
   const cancelingBadgeLabel = t('profile.acquisitionList.statusCanceling', {
     defaultValue: 'Em cancelamento',
   });
+  const pastDueBadgeLabel = t('profile.acquisitionList.statusPastDue', { defaultValue: 'Em atraso' });
+  const unpaidBadgeLabel = t('profile.acquisitionList.statusUnpaid', { defaultValue: 'Inadimplente' });
   const heroBadges = (() => {
     const base = (protocol.badges ?? []).filter(Boolean);
     const statusBadge = isCanceledSubscription
       ? canceledBadgeLabel
       : isCancelingSubscription
       ? cancelingBadgeLabel
+      : isUnpaidSubscription
+      ? unpaidBadgeLabel
+      : isPastDueSubscription
+      ? pastDueBadgeLabel
       : null;
     if (!statusBadge) {
       return base;
@@ -430,9 +444,34 @@ const ProtocolDetailScreen: React.FC<Props> = ({ navigation, route }) => {
     </View>
   );
 
+  const renderUnpaidContentTab = () => (
+    <View style={styles.tabContent}>
+      <View style={styles.canceledNoticeCard}>
+        <Text style={styles.canceledNoticeText}>
+          {t('profile.protocolDetail.unpaidNotice', {
+            defaultValue: 'Sua assinatura está inadimplente. Atualize a forma de pagamento para recuperar o acesso.',
+          })}
+        </Text>
+      </View>
+      {protocol.subscriptionId?.trim() ? (
+        <SecondaryButton
+          label={t('profile.protocolDetail.pastDueUpdatePayment', {
+            defaultValue: 'Atualizar forma de pagamento',
+          })}
+          onPress={handleManageProtocol}
+          size='large'
+        />
+      ) : null}
+    </View>
+  );
+
   const renderContentTab = () => {
     if (isCanceledSubscription) {
       return renderCanceledContentTab();
+    }
+
+    if (isUnpaidSubscription) {
+      return renderUnpaidContentTab();
     }
 
     if (!hasCommunity) {

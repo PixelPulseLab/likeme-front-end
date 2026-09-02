@@ -17,6 +17,8 @@ import {
   subscriptionIsCancelingPresentation,
   subscriptionIsCanceledPresentation,
   subscriptionIsDesaturatedPresentation,
+  subscriptionIsPastDuePresentation,
+  subscriptionIsUnpaidPresentation,
 } from '@/utils/subscription/subscriptionManageDisplay';
 
 const DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=400';
@@ -123,10 +125,16 @@ export function useSubscriptionList(appliedSearchQuery = '') {
       const typeBadges = catalogTypeTranslatedBadgeLabels(fullProduct?.type ?? sub.product.type, tRef.current);
       const isCanceled = subscriptionIsCanceledPresentation(sub);
       const isCanceling = subscriptionIsCancelingPresentation(sub);
+      const isPastDue = subscriptionIsPastDuePresentation(sub.status);
+      const isUnpaid = subscriptionIsUnpaidPresentation(sub.status);
       const statusBadge = isCanceled
         ? tRef.current('profile.acquisitionList.statusCanceled', { defaultValue: 'Cancelado' })
         : isCanceling
         ? tRef.current('profile.acquisitionList.statusCanceling', { defaultValue: 'Em cancelamento' })
+        : isUnpaid
+        ? tRef.current('profile.acquisitionList.statusUnpaid', { defaultValue: 'Inadimplente' })
+        : isPastDue
+        ? tRef.current('profile.acquisitionList.statusPastDue', { defaultValue: 'Em atraso' })
         : null;
       const badges = [...categoryBadges, ...typeBadges, ...(statusBadge ? [statusBadge] : [])].filter(Boolean);
 

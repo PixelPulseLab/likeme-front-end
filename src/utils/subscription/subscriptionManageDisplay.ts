@@ -1,4 +1,10 @@
 import { numberUtils } from '@/utils';
+import {
+  SUBSCRIPTION_STATUS,
+  SUBSCRIPTION_STATUSES_ALLOWING_PAYMENT_METHOD_UPDATE,
+  SUBSCRIPTION_STATUSES_WITH_PROTOCOL_ACCESS,
+  type SubscriptionStatusKey,
+} from '@/constants/subscription/subscriptionStatus';
 
 const BILLING_PERIOD_SUFFIX: Record<string, string> = {
   WEEKLY: '/ semana',
@@ -60,22 +66,45 @@ function normalizedSubscriptionStatus(status?: string | null): string {
   return status?.trim().toUpperCase() ?? '';
 }
 
-/** Cancelamento agendado: ainda ACTIVE com acesso até o fim do ciclo. */
+function isCanceledStatus(normalized: string): boolean {
+  return normalized === SUBSCRIPTION_STATUS.CANCELED || normalized === 'CANCELLED';
+}
+
 export function subscriptionIsCancelingPresentation(subscription: SubscriptionCanceledFields): boolean {
   const normalized = normalizedSubscriptionStatus(subscription.status);
-  if (normalized === 'CANCELED' || normalized === 'CANCELLED') {
+  if (isCanceledStatus(normalized)) {
     return false;
   }
   return Boolean(subscription.cancelAtPeriodEnd);
 }
 
-/** Cancelamento efetivado: sem acesso ao conteúdo do protocolo. */
 export function subscriptionIsCanceledPresentation(subscription: SubscriptionCanceledFields): boolean {
   if (subscription.canceledAt) {
     return true;
   }
+  return isCanceledStatus(normalizedSubscriptionStatus(subscription.status));
+}
+
+export function subscriptionIsPastDuePresentation(status?: string | null): boolean {
+  return normalizedSubscriptionStatus(status) === SUBSCRIPTION_STATUS.PAST_DUE;
+}
+
+export function subscriptionIsUnpaidPresentation(status?: string | null): boolean {
+  return normalizedSubscriptionStatus(status) === SUBSCRIPTION_STATUS.UNPAID;
+}
+
+export function subscriptionAllowsPaymentMethodUpdate(status?: string | null): boolean {
+  return SUBSCRIPTION_STATUSES_ALLOWING_PAYMENT_METHOD_UPDATE.includes(
+    normalizedSubscriptionStatus(status) as SubscriptionStatusKey,
+  );
+}
+
+export function subscriptionHasProtocolContentAccess(subscription: SubscriptionCanceledFields): boolean {
+  if (subscriptionIsCanceledPresentation(subscription)) {
+    return false;
+  }
   const normalized = normalizedSubscriptionStatus(subscription.status);
-  return normalized === 'CANCELED' || normalized === 'CANCELLED';
+  return normalized === '' || SUBSCRIPTION_STATUSES_WITH_PROTOCOL_ACCESS.includes(normalized as SubscriptionStatusKey);
 }
 
 /** Card/hero em PB: em cancelamento ou cancelado (APP-318 / APP-325). */
@@ -97,13 +126,16 @@ export function subscriptionManageStatusLabel(
     return { label: 'Em cancelamento', badgeColor: 'orange' };
   }
   const normalized = status.trim().toUpperCase();
-  if (normalized === 'ACTIVE' || normalized === 'PENDING') {
+  if (normalized === SUBSCRIPTION_STATUS.ACTIVE || normalized === SUBSCRIPTION_STATUS.PENDING) {
     return { label: 'Ativo', badgeColor: 'lime' };
   }
-  if (normalized === 'PAST_DUE') {
+  if (normalized === SUBSCRIPTION_STATUS.PAST_DUE) {
     return { label: 'Pagamento pendente', badgeColor: 'orange' };
   }
-  if (normalized === 'CANCELED' || normalized === 'CANCELLED') {
+  if (normalized === SUBSCRIPTION_STATUS.UNPAID) {
+    return { label: 'Inadimplente', badgeColor: 'orange' };
+  }
+  if (isCanceledStatus(normalized)) {
     return { label: 'Cancelado', badgeColor: 'orange' };
   }
   return { label: status || '—', badgeColor: 'beige' };

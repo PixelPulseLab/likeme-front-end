@@ -1,9 +1,12 @@
 import {
   formatSubscriptionManageDate,
   subscriptionAccessUntilIso,
+  subscriptionHasProtocolContentAccess,
   subscriptionIsCancelingPresentation,
   subscriptionIsCanceledPresentation,
   subscriptionIsDesaturatedPresentation,
+  subscriptionIsPastDuePresentation,
+  subscriptionIsUnpaidPresentation,
   subscriptionManageStatusLabel,
 } from '@/utils/subscription/subscriptionManageDisplay';
 
@@ -49,5 +52,26 @@ describe('subscriptionManageDisplay', () => {
       label: 'Pagamento pendente',
       badgeColor: 'orange',
     });
+  });
+
+  it('trata status UNPAID como inadimplente sem acesso', () => {
+    expect(subscriptionIsUnpaidPresentation('UNPAID')).toBe(true);
+    expect(subscriptionManageStatusLabel('UNPAID', false)).toEqual({
+      label: 'Inadimplente',
+      badgeColor: 'orange',
+    });
+    expect(subscriptionHasProtocolContentAccess({ status: 'UNPAID' })).toBe(false);
+  });
+
+  it('libera acesso ao conteúdo do protocolo em PAST_DUE (retentativa) e bloqueia em CANCELED', () => {
+    expect(subscriptionIsPastDuePresentation('PAST_DUE')).toBe(true);
+    expect(subscriptionHasProtocolContentAccess({ status: 'ACTIVE' })).toBe(true);
+    expect(subscriptionHasProtocolContentAccess({ status: 'PAST_DUE' })).toBe(true);
+    expect(
+      subscriptionHasProtocolContentAccess({
+        status: 'CANCELED',
+        canceledAt: '2026-07-01T00:00:00.000Z',
+      }),
+    ).toBe(false);
   });
 });
