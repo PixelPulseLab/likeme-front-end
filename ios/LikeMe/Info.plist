@@ -74,9 +74,9 @@
 	</dict>
 	<key>NSBluetoothPeripheralUsageDescription</key>
 	<string>Usamos Bluetooth para áudio em chamadas de vídeo quando você usa fones compatíveis.</string>
-	<key>NSCalendarsUsageDescription</key>
-	<string>Precisamos acessar sua agenda para marcar atividades compradas no Like:Me.</string>
 	<key>NSCalendarsFullAccessUsageDescription</key>
+	<string>Precisamos acessar sua agenda para marcar atividades compradas no Like:Me.</string>
+	<key>NSCalendarsUsageDescription</key>
 	<string>Precisamos acessar sua agenda para marcar atividades compradas no Like:Me.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Precisamos da câmera para você tirar uma foto de perfil.</string>
@@ -84,9 +84,9 @@
 	<string>Precisamos do microfone para você participar das lives e reuniões com áudio.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Precisamos acessar suas fotos para você escolher uma imagem de perfil.</string>
-	<key>NSRemindersUsageDescription</key>
-	<string>Precisamos acessar seus lembretes para sincronizar atividades do Like:Me.</string>
 	<key>NSRemindersFullAccessUsageDescription</key>
+	<string>Precisamos acessar seus lembretes para sincronizar atividades do Like:Me.</string>
+	<key>NSRemindersUsageDescription</key>
 	<string>Precisamos acessar seus lembretes para sincronizar atividades do Like:Me.</string>
 	<key>RCTNewArchEnabled</key>
 	<false/>
