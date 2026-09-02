@@ -7,6 +7,7 @@ const mockGetToken = jest.fn();
 const mockSetToken = jest.fn();
 const mockRemoveToken = jest.fn();
 const mockEnsureI18nHydrated = jest.fn();
+const mockHydrateI18nFromCache = jest.fn();
 const mockStartI18nHydration = jest.fn();
 
 jest.mock('@/utils/network/fetchWithTimeout', () => ({
@@ -15,6 +16,7 @@ jest.mock('@/utils/network/fetchWithTimeout', () => ({
 
 jest.mock('@/i18n/hydration', () => ({
   ensureI18nHydrated: (...args: unknown[]) => mockEnsureI18nHydrated(...args),
+  hydrateI18nFromCache: (...args: unknown[]) => mockHydrateI18nFromCache(...args),
   startI18nHydration: (...args: unknown[]) => mockStartI18nHydration(...args),
 }));
 
@@ -25,6 +27,7 @@ jest.mock('@/assets/auth', () => {
   return {
     PartialLogo: LogoPlaceholder,
     PartialLogo3: LogoPlaceholder,
+    LogoFullSvg: LogoPlaceholder,
     GradientSplash7: 1,
     GradientSplash8: 2,
     GradientSplash9: 3,
@@ -34,6 +37,18 @@ jest.mock('@/assets/auth', () => {
 jest.mock('@/analytics', () => ({
   useAnalyticsScreen: jest.fn(),
 }));
+
+jest.mock('@/components/ui/feedback/AppOpenLogoAnimation', () => {
+  const React = require('react');
+  return {
+    AppOpenLogoAnimation: React.forwardRef((_props: unknown, ref: React.Ref<unknown>) => {
+      React.useImperativeHandle(ref, () => ({
+        dismiss: () => Promise.resolve(),
+      }));
+      return null;
+    }),
+  };
+});
 
 jest.mock('@/services', () => {
   const invalidateApiClientAuthTokenMemoryCache = jest.fn();
@@ -98,6 +113,7 @@ describe('LoadingScreen', () => {
     jest.clearAllMocks();
     mockGetToken.mockResolvedValue(null);
     mockEnsureI18nHydrated.mockResolvedValue(undefined);
+    mockHydrateI18nFromCache.mockResolvedValue(true);
     mockStartI18nHydration.mockResolvedValue(undefined);
     mockSetToken.mockResolvedValue(undefined);
     mockRemoveToken.mockResolvedValue(undefined);
@@ -138,6 +154,8 @@ describe('LoadingScreen', () => {
       { timeout: 12_000 },
     );
     expect(mockRemoveToken).not.toHaveBeenCalled();
+    expect(mockHydrateI18nFromCache).not.toHaveBeenCalled();
+    expect(mockEnsureI18nHydrated).toHaveBeenCalled();
   });
 
   it('navega para Authenticated quando o token é validado com sucesso', async () => {
@@ -170,6 +188,39 @@ describe('LoadingScreen', () => {
     );
     expect(mockSetToken).toHaveBeenCalledWith('refreshed');
     expect(mockRemoveToken).not.toHaveBeenCalled();
+    expect(mockHydrateI18nFromCache).toHaveBeenCalled();
+    expect(mockEnsureI18nHydrated).not.toHaveBeenCalled();
+  });
+
+  it('não espera o splash de onboarding quando já há token em cache', async () => {
+    mockGetToken.mockResolvedValue('valid-token');
+    mockFetchWithTimeout.mockResolvedValue({
+      ok: true,
+      json: async () => ({ accessToken: 'refreshed' }),
+    });
+
+    const replace = jest.fn();
+    render(<LoadingScreen navigation={{ replace, navigate: jest.fn() }} />);
+
+    await act(async () => {
+      await jest.advanceTimersByTimeAsync(20);
+    });
+
+    await waitFor(() => {
+      expect(replace).toHaveBeenCalledWith('Authenticated');
+    });
+  });
+
+  it('primeiro launch permanece no splash de onboarding nos primeiros instantes', async () => {
+    const replace = jest.fn();
+    const view = render(<LoadingScreen navigation={{ replace, navigate: jest.fn() }} />);
+
+    await act(async () => {
+      await jest.advanceTimersByTimeAsync(20);
+    });
+
+    expect(replace).not.toHaveBeenCalled();
+    view.unmount();
   });
 
   it('em timeout da validação (AbortError), remove token e navega para Unauthenticated', async () => {

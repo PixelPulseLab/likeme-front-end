@@ -59,7 +59,7 @@ const readCachedPayload = async (lang: string): Promise<I18nCachePayload | null>
   }
 };
 
-const applyCachedTranslations = async (lang: string): Promise<boolean> => {
+export const hydrateI18nFromCache = async (lang: string = DEFAULT_LANGUAGE): Promise<boolean> => {
   const cached = await readCachedPayload(lang);
   if (!cached) {
     return false;
@@ -124,7 +124,7 @@ export const startI18nHydration = (lang: string = DEFAULT_LANGUAGE, options?: { 
       logger.warn('[i18n] Falha ao buscar traducoes no backend:', error);
     }
 
-    await applyCachedTranslations(lang);
+    await hydrateI18nFromCache(lang);
   })()
     .then(() => {
       hydrationPromise = null;

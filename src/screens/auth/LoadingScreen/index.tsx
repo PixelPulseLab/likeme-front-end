@@ -3,6 +3,7 @@ import { Alert, Animated, Image as RNImage, ImageStyle, Platform, Text, View } f
 import { Image as ExpoImage } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { PartialLogo3, GradientSplash7, GradientSplash8, GradientSplash9 } from '@/assets/auth';
+import { AppOpenLogoAnimation, type AppOpenLogoAnimationHandle } from '@/components/ui/feedback/AppOpenLogoAnimation';
 import { styles, GRADIENT_STRIP_HEIGHT, GRADIENT_STRIP_WIDTH } from './styles';
 import { AuthService, invalidateApiClientAuthTokenMemoryCache, storageService } from '@/services';
 import { fetchAppReleasePolicy } from '@/services/app/appReleasePolicyService';
@@ -11,7 +12,7 @@ import { useAnalyticsScreen } from '@/analytics';
 import { STORE_URL_CONFIG } from '@/config';
 import type { AppReleasePolicy } from '@/types/app/appReleasePolicy';
 import { getInstalledAppVersion, resolveStoreUrlForPlatform } from '@/utils/app/appVersionPolicy';
-import { ensureI18nHydrated, startI18nHydration } from '@/i18n/hydration';
+import { ensureI18nHydrated, hydrateI18nFromCache, startI18nHydration } from '@/i18n/hydration';
 import { logger } from '@/utils/logger';
 import { openStoreListingWithFallback } from '@/utils/url/storeListingUrl';
 import { isE2eAuthBypassEnabled } from '@/utils/e2e/e2eAuthBypass';
@@ -30,7 +31,9 @@ const LoadingScreen: React.FC<Props> = ({ navigation }) => {
   const fadeAnim = useRef(new Animated.Value(1)).current;
   const taglineOpacity = useRef(new Animated.Value(1)).current;
   const [step, setStep] = useState(0);
+  const [hasLocalSessionCache, setHasLocalSessionCache] = useState<boolean | null>(null);
   const hasNavigatedRef = useRef(false);
+  const logoAnimationRef = useRef<AppOpenLogoAnimationHandle>(null);
   const bootstrapWatchdogTimersRef = useRef<Array<ReturnType<typeof setTimeout>>>([]);
   const navigationRef = useRef(navigation);
   navigationRef.current = navigation;
@@ -90,6 +93,14 @@ const LoadingScreen: React.FC<Props> = ({ navigation }) => {
       nav.replace(routeName, params);
     };
 
+    const dismissLogo = async () => {
+      try {
+        await logoAnimationRef.current?.dismiss();
+      } catch (error) {
+        logger.error('[LoadingScreen] Falha ao encerrar animação da logo', error);
+      }
+    };
+
     const run = async () => {
       let shouldAuthenticate = false;
       let hadStoredToken = false;
@@ -101,22 +112,36 @@ const LoadingScreen: React.FC<Props> = ({ navigation }) => {
         Platform.OS === 'ios' || Platform.OS === 'android'
           ? fetchAppReleasePolicy(installedVersionForPolicy)
           : Promise.resolve({ policy: null, serverMustUpdate: null, serverRecommendUpdate: null });
-      void startI18nHydration('pt-BR');
 
-      // Token refresh tambem entra no bootstrap paralelo: ate aqui a gente so
-      // disparava apos a release policy responder (sequencial). Disparamos em
-      // paralelo e so consumimos o resultado depois da policy autorizar.
-      // Atencao: hadStoredToken precisa refletir o "havia token salvo antes
-      // do refresh", mesmo se o refresh em si falhar — e isso que dispara o
-      // cleanup de token no fluxo de bootstrap.
+      let isReturningUser = false;
+      let storedToken: string | null = null;
+      try {
+        storedToken = await storageService.getToken();
+        isReturningUser = Boolean(storedToken);
+      } catch (error) {
+        logger.error('[LoadingScreen] Falha ao ler sessão local para o loading inicial', error);
+      }
+      if (isScreenActive) {
+        setHasLocalSessionCache(isReturningUser);
+      }
+      if (isReturningUser) {
+        await new Promise<void>((resolve) => {
+          setTimeout(resolve, 0);
+        });
+      }
+
+      if (isReturningUser) {
+        await hydrateI18nFromCache('pt-BR');
+        void startI18nHydration('pt-BR');
+      } else {
+        void startI18nHydration('pt-BR');
+      }
+
       const tokenRefreshPromise: Promise<{ hadStoredToken: boolean; shouldAuthenticate: boolean }> = (async () => {
-        let hadStoredTokenLocal = false;
+        if (!storedToken) {
+          return { hadStoredToken: false, shouldAuthenticate: false };
+        }
         try {
-          const token = await storageService.getToken();
-          hadStoredTokenLocal = Boolean(token);
-          if (!token) {
-            return { hadStoredToken: false, shouldAuthenticate: false };
-          }
           if (isE2eAuthBypassEnabled()) {
             return { hadStoredToken: true, shouldAuthenticate: true };
           }
@@ -124,7 +149,7 @@ const LoadingScreen: React.FC<Props> = ({ navigation }) => {
           return { hadStoredToken: true, shouldAuthenticate: ok };
         } catch (error) {
           logger.error('[LoadingScreen] Erro ao renovar token', error);
-          return { hadStoredToken: hadStoredTokenLocal, shouldAuthenticate: false };
+          return { hadStoredToken: true, shouldAuthenticate: false };
         }
       })();
       const safeSetStep = (next: number) => {
@@ -154,19 +179,39 @@ const LoadingScreen: React.FC<Props> = ({ navigation }) => {
         });
 
       try {
-        await timing(fadeAnim, 1, 300);
-        await delay(300);
+        if (!isReturningUser) {
+          await timing(fadeAnim, 1, 300);
+          if (!isScreenActive) {
+            return;
+          }
+          await delay(300);
+          if (!isScreenActive) {
+            return;
+          }
 
-        const firstOffset = cumulativeOffsets[0] ?? -GRADIENT_STRIP_HEIGHT;
+          const firstOffset = cumulativeOffsets[0] ?? -GRADIENT_STRIP_HEIGHT;
 
-        await Promise.all([timing(scrollAnim, firstOffset, 1200), fadeTagToStep(1, 160, 1040)]);
-        await delay(240);
+          await Promise.all([timing(scrollAnim, firstOffset, 1200), fadeTagToStep(1, 160, 1040)]);
+          if (!isScreenActive) {
+            return;
+          }
+          await delay(240);
+          if (!isScreenActive) {
+            return;
+          }
 
-        const secondOffset = cumulativeOffsets[1] ?? cumulativeOffsets[0] ?? -GRADIENT_STRIP_HEIGHT;
+          const secondOffset = cumulativeOffsets[1] ?? cumulativeOffsets[0] ?? -GRADIENT_STRIP_HEIGHT;
 
-        await Promise.all([timing(scrollAnim, secondOffset, 1200), fadeTagToStep(2, 160, 1040)]);
+          await Promise.all([timing(scrollAnim, secondOffset, 1200), fadeTagToStep(2, 160, 1040)]);
+          if (!isScreenActive) {
+            return;
+          }
 
-        await delay(360);
+          await delay(360);
+          if (!isScreenActive) {
+            return;
+          }
+        }
 
         const policyFetch = await releasePolicyPromise;
         releasePolicy = policyFetch.policy;
@@ -190,6 +235,7 @@ const LoadingScreen: React.FC<Props> = ({ navigation }) => {
             minAndroid: releasePolicy.minVersionAndroid,
           });
           const storeUrl = resolveStoreUrlForPlatform(releasePolicy, STORE_URL_CONFIG);
+          await dismissLogo();
           replaceOnce('ForcedUpdate', {
             storeUrl,
             message: releasePolicy.message ?? undefined,
@@ -204,10 +250,12 @@ const LoadingScreen: React.FC<Props> = ({ navigation }) => {
         logger.error('[LoadingScreen] Falha no fluxo inicial (animacao ou bootstrap)', error);
       }
 
-      try {
-        await ensureI18nHydrated({ lang: 'pt-BR', timeoutMs: 8000 });
-      } catch (hydrationError) {
-        logger.error('[LoadingScreen] Falha ao aguardar i18n', hydrationError);
+      if (!isReturningUser) {
+        try {
+          await ensureI18nHydrated({ lang: 'pt-BR', timeoutMs: 8000 });
+        } catch (hydrationError) {
+          logger.error('[LoadingScreen] Falha ao aguardar i18n', hydrationError);
+        }
       }
 
       if (releasePolicy && serverRecommendUpdate === true) {
@@ -239,6 +287,7 @@ const LoadingScreen: React.FC<Props> = ({ navigation }) => {
       }
 
       if (shouldAuthenticate) {
+        await dismissLogo();
         replaceOnce('Authenticated');
         return;
       }
@@ -252,6 +301,7 @@ const LoadingScreen: React.FC<Props> = ({ navigation }) => {
         }
       }
 
+      await dismissLogo();
       replaceOnce('Unauthenticated');
     };
 
@@ -282,13 +332,24 @@ const LoadingScreen: React.FC<Props> = ({ navigation }) => {
 
     scheduleBootstrapWatchdog(0);
 
-    const timer = setTimeout(run, 300);
+    void run();
     return () => {
       isScreenActive = false;
-      clearTimeout(timer);
       clearBootstrapWatchdogTimers();
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps -- bootstrap só na montagem; `navigation` via ref (deps instáveis cancelavam o timer antes de `run()`)
+
+  if (hasLocalSessionCache) {
+    return (
+      <View style={styles.container}>
+        <AppOpenLogoAnimation ref={logoAnimationRef} />
+      </View>
+    );
+  }
+
+  if (hasLocalSessionCache === null) {
+    return <View style={styles.container} />;
+  }
 
   return (
     <SafeAreaView style={styles.container}>
