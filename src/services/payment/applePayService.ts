@@ -20,7 +20,7 @@ export function applePayPaymentDataFromTokenJson(tokenJson: string, merchantIden
   try {
     parsed = JSON.parse(tokenJson);
   } catch (cause) {
-    throw new Error('Token do Apple Pay inválido', { cause });
+    throw new Error('Token do Apple Pay inválido');
   }
 
   if (!parsed || typeof parsed !== 'object') {
@@ -113,6 +113,6 @@ export async function requestApplePayPaymentData(
     if (/cancel/i.test(message) || /abort/i.test(message)) {
       throw new ApplePayCancelledError();
     }
-    throw cause instanceof Error ? cause : new Error('Falha ao solicitar Apple Pay', { cause });
+    throw cause instanceof Error ? cause : new Error('Falha ao solicitar Apple Pay');
   }
 }

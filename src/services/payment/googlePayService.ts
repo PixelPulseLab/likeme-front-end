@@ -67,7 +67,7 @@ export function googlePayPaymentDataFromTokenJson(tokenJson: string, merchantIde
   try {
     parsed = JSON.parse(tokenJson);
   } catch (cause) {
-    throw new Error('Token do Google Pay inválido', { cause });
+    throw new Error('Token do Google Pay inválido');
   }
 
   if (!parsed || typeof parsed !== 'object') {
@@ -229,6 +229,6 @@ export async function requestGooglePayPaymentData(
     if (/cancel/i.test(message) || /abort/i.test(message)) {
       throw new GooglePayCancelledError();
     }
-    throw cause instanceof Error ? cause : new Error('Falha ao solicitar Google Pay', { cause });
+    throw cause instanceof Error ? cause : new Error('Falha ao solicitar Google Pay');
   }
 }
