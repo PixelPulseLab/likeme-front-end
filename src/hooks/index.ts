@@ -8,12 +8,7 @@ export { useSessionTokenReady } from './auth/useSessionTokenReady';
 export { useUserFeed } from './community/useUserFeed';
 export { useCommunities } from './community/useCommunities';
 export { useCommunity } from './community/useCommunity';
-export type {
-  UseCommunityOptions,
-  UseCommunityReturn,
-  UseCommunityByIdOptions,
-  UseCommunityByIdReturn,
-} from './community/useCommunity';
+export type { UseCommunityOptions, UseCommunityReturn } from './community/useCommunity';
 export { useCommunityFeaturedPost } from './community/useCommunityFeaturedPost';
 export type {
   UseCommunityFeaturedPostOptions,

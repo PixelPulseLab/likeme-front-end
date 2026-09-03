@@ -100,15 +100,6 @@ const CommunityScreen: React.FC<Props> = ({ navigation }) => {
 
   const focusCommunityId = route.params?.focusCommunityId?.trim() || undefined;
 
-  const {
-    community: focusedCommunity,
-    loading: focusedCommunityLoading,
-    error: focusedCommunityError,
-  } = useCommunity.byId({
-    communityId: focusCommunityId,
-    enabled: Boolean(focusCommunityId),
-  });
-
   useEffect(() => {
     if (!focusCommunityId) return;
     setSelectedMode(COMMUNITY_VIEW.FEED);
@@ -156,12 +147,22 @@ const CommunityScreen: React.FC<Props> = ({ navigation }) => {
     },
   });
 
+  const {
+    community: communityFromApi,
+    loading: communityLoading,
+    error: communityError,
+    termsAccepted: communityTermsAccepted,
+    toggleTermsAccepted: toggleCommunityTermsAccepted,
+  } = useCommunity({
+    communityId: focusCommunityId ?? (activeInfoTab === 'agreements' ? rawCommunities[0]?.communityId : undefined),
+  });
+
   const selectedCommunity = useMemo(() => {
     if (focusCommunityId) {
-      return focusedCommunity;
+      return communityFromApi;
     }
     return rawCommunities[0] ?? null;
-  }, [rawCommunities, focusCommunityId, focusedCommunity]);
+  }, [rawCommunities, focusCommunityId, communityFromApi]);
 
   const selectedCommunityId = selectedCommunity?.communityId;
 
@@ -172,10 +173,6 @@ const CommunityScreen: React.FC<Props> = ({ navigation }) => {
     }
     await shareContent({ contentType: SHARE_CONTENT_TYPES.COMMUNITY, communityId }, { screenName: 'community_list' });
   }, [selectedCommunityId]);
-
-  const { termsAccepted: communityTermsAccepted, toggleTermsAccepted: toggleCommunityTermsAccepted } = useCommunity({
-    communityId: activeInfoTab === 'agreements' ? selectedCommunityId : undefined,
-  });
 
   useEffect(() => {
     if (!selectedCommunityId) {
@@ -767,7 +764,7 @@ const CommunityScreen: React.FC<Props> = ({ navigation }) => {
     return <EmptyState title={t('community.noPostsFound')} description={t('community.noPostsFoundDescription')} />;
   }, [error, t]);
 
-  if (focusCommunityId && focusedCommunityLoading) {
+  if (focusCommunityId && communityLoading) {
     return (
       <View style={styles.screenRoot} testID='e2e.community.root'>
         <ScreenWithHeader
@@ -790,7 +787,7 @@ const CommunityScreen: React.FC<Props> = ({ navigation }) => {
     );
   }
 
-  if (focusCommunityId && (focusedCommunityError || !focusedCommunity)) {
+  if (focusCommunityId && (communityError || !communityFromApi)) {
     return (
       <View style={styles.screenRoot} testID='e2e.community.root'>
         <ScreenWithHeader

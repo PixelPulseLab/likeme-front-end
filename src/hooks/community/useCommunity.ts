@@ -8,88 +8,24 @@ export type UseCommunityOptions = {
 };
 
 export type UseCommunityReturn = {
+  community: Community | null;
+  loading: boolean;
+  error: string | null;
   termsAccepted: boolean | null;
   toggleTermsAccepted: () => void;
 };
 
-export type UseCommunityByIdOptions = {
-  communityId: string | undefined;
-  enabled?: boolean;
-};
-
-export type UseCommunityByIdReturn = {
-  community: Community | null;
-  loading: boolean;
-  error: string | null;
-};
-
-function useCommunityHook({ communityId }: UseCommunityOptions): UseCommunityReturn {
-  const [termsAccepted, setTermsAccepted] = useState<boolean | null>(null);
-  const latestCommunityIdRef = useRef(communityId);
-  latestCommunityIdRef.current = communityId;
-
-  useEffect(() => {
-    if (!communityId) {
-      setTermsAccepted(null);
-      return;
-    }
-    setTermsAccepted(null);
-    let cancelled = false;
-    void (async () => {
-      try {
-        const accepted = await communityService.getMyCommunityTermsAccepted(communityId);
-        if (cancelled) return;
-        setTermsAccepted(accepted);
-      } catch (error) {
-        logger.error('Falha ao carregar aceite dos termos da comunidade', { communityId, cause: error });
-        if (!cancelled) {
-          setTermsAccepted(false);
-        }
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [communityId]);
-
-  const toggleTermsAccepted = useCallback(() => {
-    if (!communityId) return;
-    const targetCommunityId = communityId;
-    setTermsAccepted((prev) => {
-      if (prev === null) return prev;
-      const next = !prev;
-      void communityService
-        .updateMyCommunityTermsAccepted(targetCommunityId, next)
-        .then((acceptedFromServer) => {
-          if (latestCommunityIdRef.current !== targetCommunityId) return;
-          setTermsAccepted(acceptedFromServer);
-        })
-        .catch((error) => {
-          setTermsAccepted(prev);
-          logger.error('Falha ao persistir aceite dos termos da comunidade', {
-            communityId: targetCommunityId,
-            attemptedValue: next,
-            cause: error,
-          });
-        });
-      return next;
-    });
-  }, [communityId]);
-
-  return { termsAccepted, toggleTermsAccepted };
-}
-
-function useCommunityById({ communityId, enabled = true }: UseCommunityByIdOptions): UseCommunityByIdReturn {
+export function useCommunity({ communityId }: UseCommunityOptions): UseCommunityReturn {
   const trimmedCommunityId = communityId?.trim() || undefined;
-  const shouldFetch = enabled && Boolean(trimmedCommunityId);
   const [community, setCommunity] = useState<Community | null>(null);
-  const [loading, setLoading] = useState(shouldFetch);
+  const [loading, setLoading] = useState(Boolean(trimmedCommunityId));
   const [error, setError] = useState<string | null>(null);
+  const [termsAccepted, setTermsAccepted] = useState<boolean | null>(null);
   const latestCommunityIdRef = useRef(trimmedCommunityId);
   latestCommunityIdRef.current = trimmedCommunityId;
 
   useEffect(() => {
-    if (!shouldFetch || !trimmedCommunityId) {
+    if (!trimmedCommunityId) {
       setCommunity(null);
       setLoading(false);
       setError(null);
@@ -111,7 +47,7 @@ function useCommunityById({ communityId, enabled = true }: UseCommunityByIdOptio
         if (cancelled || latestCommunityIdRef.current !== trimmedCommunityId) {
           return;
         }
-        logger.warn('[useCommunity.byId] falha ao carregar comunidade', {
+        logger.warn('[useCommunity] falha ao carregar comunidade', {
           communityId: trimmedCommunityId,
           cause,
         });
@@ -127,15 +63,58 @@ function useCommunityById({ communityId, enabled = true }: UseCommunityByIdOptio
     return () => {
       cancelled = true;
     };
-  }, [shouldFetch, trimmedCommunityId]);
+  }, [trimmedCommunityId]);
 
-  return { community, loading, error };
+  useEffect(() => {
+    if (!trimmedCommunityId) {
+      setTermsAccepted(null);
+      return;
+    }
+    setTermsAccepted(null);
+    let cancelled = false;
+    void (async () => {
+      try {
+        const accepted = await communityService.getMyCommunityTermsAccepted(trimmedCommunityId);
+        if (cancelled) return;
+        setTermsAccepted(accepted);
+      } catch (error) {
+        logger.error('Falha ao carregar aceite dos termos da comunidade', {
+          communityId: trimmedCommunityId,
+          cause: error,
+        });
+        if (!cancelled) {
+          setTermsAccepted(false);
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [trimmedCommunityId]);
+
+  const toggleTermsAccepted = useCallback(() => {
+    if (!trimmedCommunityId) return;
+    const targetCommunityId = trimmedCommunityId;
+    setTermsAccepted((prev) => {
+      if (prev === null) return prev;
+      const next = !prev;
+      void communityService
+        .updateMyCommunityTermsAccepted(targetCommunityId, next)
+        .then((acceptedFromServer) => {
+          if (latestCommunityIdRef.current !== targetCommunityId) return;
+          setTermsAccepted(acceptedFromServer);
+        })
+        .catch((error) => {
+          setTermsAccepted(prev);
+          logger.error('Falha ao persistir aceite dos termos da comunidade', {
+            communityId: targetCommunityId,
+            attemptedValue: next,
+            cause: error,
+          });
+        });
+      return next;
+    });
+  }, [trimmedCommunityId]);
+
+  return { community, loading, error, termsAccepted, toggleTermsAccepted };
 }
-
-type UseCommunityFn = typeof useCommunityHook & {
-  byId: typeof useCommunityById;
-};
-
-export const useCommunity: UseCommunityFn = Object.assign(useCommunityHook, {
-  byId: useCommunityById,
-});
