@@ -2,11 +2,13 @@ import { act, renderHook, waitFor } from '@testing-library/react-native';
 import { useCommunity } from '@/hooks/community/useCommunity';
 import { communityService } from '@/services';
 import { logger } from '@/utils/logger';
+import type { Community } from '@/types/community';
 
 jest.mock('@/services', () => ({
   communityService: {
     getMyCommunityTermsAccepted: jest.fn(),
     updateMyCommunityTermsAccepted: jest.fn(),
+    getCommunity: jest.fn(),
   },
 }));
 
@@ -91,5 +93,55 @@ describe('useCommunity', () => {
       );
       expect(result.current.termsAccepted).toBe(true);
     });
+  });
+});
+
+describe('useCommunity.byId', () => {
+  const community: Community = {
+    communityId: 'channel-1',
+    displayName: 'O.Culto',
+    isPublic: false,
+    membersCount: 0,
+    postsCount: 0,
+    createdAt: '2024-01-01T00:00:00.000Z',
+  };
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('não chama a API sem communityId', async () => {
+    const { result } = renderHook(() => useCommunity.byId({ communityId: undefined }));
+
+    expect(result.current.loading).toBe(false);
+    expect(result.current.community).toBeNull();
+    expect(communityService.getCommunity).not.toHaveBeenCalled();
+  });
+
+  it('carrega GET /api/communities/:id', async () => {
+    (communityService.getCommunity as jest.Mock).mockResolvedValue(community);
+
+    const { result } = renderHook(() => useCommunity.byId({ communityId: 'channel-1' }));
+
+    expect(result.current.loading).toBe(true);
+
+    await waitFor(() => {
+      expect(result.current.community).toEqual(community);
+    });
+    expect(communityService.getCommunity).toHaveBeenCalledWith('channel-1');
+    expect(result.current.loading).toBe(false);
+    expect(result.current.error).toBeNull();
+  });
+
+  it('expõe erro quando a comunidade não existe ou não há acesso', async () => {
+    (communityService.getCommunity as jest.Mock).mockRejectedValue(new Error('Comunidade não encontrada'));
+
+    const { result } = renderHook(() => useCommunity.byId({ communityId: 'missing' }));
+
+    await waitFor(() => {
+      expect(result.current.error).toBe('Comunidade não encontrada');
+    });
+    expect(result.current.community).toBeNull();
+    expect(logger.warn).toHaveBeenCalled();
   });
 });

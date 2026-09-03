@@ -1,6 +1,10 @@
 import type { Product } from '@/types/product';
 import type { ProtocolDetailProtocol } from '@/types/navigation';
 
+export function programCommunityIdFromProduct(product: Pick<Product, 'programCommunity'>): string | undefined {
+  return product.programCommunity?.socialPlusCommunityId?.trim() || undefined;
+}
+
 export function protocolDetailFromProduct(product: Product): ProtocolDetailProtocol {
   const productId = product.id.trim();
 
@@ -11,7 +15,8 @@ export function protocolDetailFromProduct(product: Product): ProtocolDetailProto
     image: product.image,
     description: product.description,
     agreements: product.technicalSpecifications,
-    communityId: product.programCommunity?.socialPlusCommunityId?.trim() || undefined,
+    communityId: programCommunityIdFromProduct(product),
+    programType: product.programType ?? null,
     badges: product.categoryNames?.filter(Boolean) ?? [],
   };
 }

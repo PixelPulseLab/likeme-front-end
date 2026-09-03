@@ -79,6 +79,7 @@ const SubscriptionListScreen: React.FC<Props> = ({ navigation }) => {
             image: item.image,
             badges: item.badges,
             communityId: item.communityId,
+            programType: item.programType,
             productId: item.productId,
             subscriptionId: item.subscriptionId,
             subscriptionStatus: item.status,

@@ -27,6 +27,8 @@ import { isProtocolStepAutoCompleted } from '@/utils/course/protocolStepAutoComp
 import { protocolDetailFromProduct } from '@/utils/profile/protocolDetailFromProduct';
 import { goBackOrShareHome, navigateToShareHome } from '@/utils/navigation/shareHomeNavigation';
 import { navigateToShareDiscover } from '@/utils/navigation/shareDiscoverNavigation';
+import { navigateToCommunity } from '@/utils/navigation/communityNavigation';
+import { PROGRAM_TYPE } from '@/types/product/programType';
 import { logger } from '@/utils/logger';
 import { shareContent } from '@/utils/share/shareContent';
 import {
@@ -127,6 +129,7 @@ const ProtocolDetailScreen: React.FC<Props> = ({ navigation, route }) => {
 
   const communityId = protocol?.communityId?.trim() ?? '';
   const hasCommunity = Boolean(communityId);
+  const opensCommunityFeed = protocol?.programType === PROGRAM_TYPE.COMMUNITY && hasCommunity;
   const productId = protocol?.productId?.trim() ?? '';
   const subscriptionLifecycleFields = {
     status: protocol?.subscriptionStatus,
@@ -142,10 +145,13 @@ const ProtocolDetailScreen: React.FC<Props> = ({ navigation, route }) => {
 
   const heroImageUri = protocol?.image?.trim() || (hasCommunity ? MEMBER_PROTOCOL_COMMUNITY_IMAGE_FALLBACK : '');
 
-  const { course, loading: courseLoading } = useProgramCourse(communityId, hasCommunity && hasActiveProtocolAccess);
+  const { course, loading: courseLoading } = useProgramCourse(
+    communityId,
+    hasCommunity && hasActiveProtocolAccess && !opensCommunityFeed,
+  );
   const { eventBanner, eventJoinUrl, closeEventSession, handleEventBannerPress, handleEventBannerCtaPress } =
     useCommunityEventBanner({
-      enabled: hasCommunity && hasActiveProtocolAccess,
+      enabled: hasCommunity && hasActiveProtocolAccess && !opensCommunityFeed,
       communityId,
       communityAvatarUrl: heroImageUri,
       communityProviderName: protocol?.name ?? '',
@@ -176,6 +182,10 @@ const ProtocolDetailScreen: React.FC<Props> = ({ navigation, route }) => {
   const aboutText = protocol?.description?.trim() || protocol?.shortDescription?.trim() || null;
 
   useEffect(() => {
+    if (opensCommunityFeed) {
+      return;
+    }
+
     const fromRoute = protocol?.agreements?.trim();
     if (fromRoute) {
       setAgreementsText(fromRoute);
@@ -207,7 +217,7 @@ const ProtocolDetailScreen: React.FC<Props> = ({ navigation, route }) => {
     return () => {
       cancelled = true;
     };
-  }, [productId, protocol?.agreements]);
+  }, [opensCommunityFeed, productId, protocol?.agreements]);
 
   const contentLoading = hasCommunity && courseLoading;
   const moduleStorageScopeId = communityId || protocol?.id || productId;
@@ -215,6 +225,9 @@ const ProtocolDetailScreen: React.FC<Props> = ({ navigation, route }) => {
   useFocusEffect(
     useCallback(() => {
       setMenu(menuItems, 'profile');
+      if (opensCommunityFeed) {
+        return;
+      }
       setProtocolAccessedAt(Date.now());
 
       const subscriptionId = resolvedProtocol?.subscriptionId?.trim();
@@ -254,7 +267,7 @@ const ProtocolDetailScreen: React.FC<Props> = ({ navigation, route }) => {
       return () => {
         cancelled = true;
       };
-    }, [menuItems, resolvedProtocol?.subscriptionId, setMenu]),
+    }, [menuItems, opensCommunityFeed, resolvedProtocol?.subscriptionId, setMenu]),
   );
 
   const handleBack = () => {
@@ -328,7 +341,14 @@ const ProtocolDetailScreen: React.FC<Props> = ({ navigation, route }) => {
     setActiveTab(tabId);
   };
 
-  if (protocolLoadState === 'loading') {
+  useEffect(() => {
+    if (!opensCommunityFeed) {
+      return;
+    }
+    navigateToCommunity(navigation, { focusCommunityId: communityId }, { replace: true });
+  }, [opensCommunityFeed, communityId, navigation]);
+
+  if (opensCommunityFeed || protocolLoadState === 'loading') {
     return (
       <ScreenWithHeader
         navigation={navigation}

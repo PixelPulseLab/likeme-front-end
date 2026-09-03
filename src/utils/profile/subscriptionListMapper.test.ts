@@ -29,6 +29,32 @@ describe('subscriptionListMapper', () => {
     expect(item.kind).toBe('protocol');
     expect(item.title).toBe('Protocolo X');
     expect(item.desaturated).toBe(false);
+    expect(item.programType).toBe('course');
+  });
+
+  it('mapeia programa de comunidade com programType e communityId', () => {
+    const row: UserSubscriptionListItem = {
+      id: 'sub-community',
+      productId: 'prod-oculto',
+      status: 'ACTIVE',
+      nextBillingAt: null,
+      createdAt: '2026-01-01T00:00:00.000Z',
+      programType: 'community',
+      product: {
+        id: 'prod-oculto',
+        name: 'O.Culto',
+        image: 'https://example.com/oculto.jpg',
+        type: 'program',
+        programType: 'community',
+      },
+      programCommunity: {
+        communityId: 'community-feed-id',
+      },
+    };
+
+    const item = mapSubscriptionToListItem(row, t);
+    expect(item.programType).toBe('community');
+    expect(item.communityId).toBe('community-feed-id');
   });
 
   it('marca protocolo em cancelamento com badge e card dessaturado', () => {

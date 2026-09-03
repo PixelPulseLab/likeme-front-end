@@ -24,6 +24,7 @@ export type ProtocolDetailProtocol = {
   image?: string;
   badges?: string[];
   communityId?: string;
+  programType?: import('@/types/product/programType').ProgramType | null;
   rating?: number;
   shortDescription?: string;
   description?: string;

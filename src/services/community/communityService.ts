@@ -2,12 +2,14 @@ import apiClient from '../infrastructure/apiClient';
 import { logger } from '@/utils/logger';
 import type { ApiResponse } from '@/types/infrastructure';
 import type {
+  Community,
   CommunityFeedData,
   CommunityFeaturedPostApiResponse,
   UserFeedApiResponse,
   UserFeedParams,
   ListCommunitiesParams,
   ListCommunitiesApiResponse,
+  GetCommunityApiResponse,
 } from '@/types/community';
 import type { ApiError } from '@/types/infrastructure';
 class CommunityService {
@@ -427,6 +429,28 @@ class CommunityService {
       logger.error('Error fetching communities list:', error);
       throw error;
     }
+  }
+
+  async getCommunity(communityId: string): Promise<Community> {
+    const trimmedCommunityId = communityId?.trim();
+    if (!trimmedCommunityId) {
+      throw new Error('communityId is required');
+    }
+
+    const response = await apiClient.get<GetCommunityApiResponse>(
+      `${this.communitiesEndpoint}/${encodeURIComponent(trimmedCommunityId)}`,
+      undefined,
+      true,
+      false,
+    );
+
+    const isSuccess = response.success === true || response.status === 'success';
+    const community = response.data?.community;
+    if (!isSuccess || !community?.communityId?.trim()) {
+      throw new Error(response.message || 'Comunidade não encontrada');
+    }
+
+    return community;
   }
 
   async getMyCommunityTermsAccepted(communityId: string): Promise<boolean> {

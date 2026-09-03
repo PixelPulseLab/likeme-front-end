@@ -201,6 +201,15 @@ export interface ListCommunitiesParams {
   includeDeleted?: boolean;
 }
 
+export interface GetCommunityApiResponse {
+  success?: boolean;
+  status?: string;
+  message?: string;
+  data?: {
+    community?: Community;
+  };
+}
+
 export interface ListCommunitiesApiResponse {
   success?: boolean;
   status?: string;

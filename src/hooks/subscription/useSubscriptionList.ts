@@ -13,13 +13,8 @@ import { catalogTypeTranslatedBadgeLabels } from '@/types/product';
 import { useTranslation } from '@/hooks/i18n';
 import { logger } from '@/utils/logger';
 import { subscriptionCardTestId } from '@/constants/e2eTestIds';
-import {
-  subscriptionIsCancelingPresentation,
-  subscriptionIsCanceledPresentation,
-  subscriptionIsDesaturatedPresentation,
-  subscriptionIsPastDuePresentation,
-  subscriptionIsUnpaidPresentation,
-} from '@/utils/subscription/subscriptionManageDisplay';
+import { mapSubscriptionToListItem } from '@/utils/profile/subscriptionListMapper';
+import { programCommunityIdFromProduct } from '@/utils/profile/protocolDetailFromProduct';
 
 const DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=400';
 
@@ -120,43 +115,21 @@ export function useSubscriptionList(appliedSearchQuery = '') {
 
   const protocols = useMemo((): SubscriptionListItem[] => {
     return subscriptions.map((sub) => {
+      const item = mapSubscriptionToListItem(sub, tRef.current);
       const fullProduct = productMap.get(sub.productId);
       const categoryBadges = fullProduct ? buildMarketplaceCategoryBadgeLabels(fullProduct, categoriesRef.current) : [];
-      const typeBadges = catalogTypeTranslatedBadgeLabels(fullProduct?.type ?? sub.product.type, tRef.current);
-      const isCanceled = subscriptionIsCanceledPresentation(sub);
-      const isCanceling = subscriptionIsCancelingPresentation(sub);
-      const isPastDue = subscriptionIsPastDuePresentation(sub.status);
-      const isUnpaid = subscriptionIsUnpaidPresentation(sub.status);
-      const statusBadge = isCanceled
-        ? tRef.current('profile.acquisitionList.statusCanceled', { defaultValue: 'Cancelado' })
-        : isCanceling
-        ? tRef.current('profile.acquisitionList.statusCanceling', { defaultValue: 'Em cancelamento' })
-        : isUnpaid
-        ? tRef.current('profile.acquisitionList.statusUnpaid', { defaultValue: 'Inadimplente' })
-        : isPastDue
-        ? tRef.current('profile.acquisitionList.statusPastDue', { defaultValue: 'Em atraso' })
-        : null;
-      const badges = [...categoryBadges, ...typeBadges, ...(statusBadge ? [statusBadge] : [])].filter(Boolean);
+      const badges = [...categoryBadges, ...item.badges].filter(Boolean);
 
       return {
-        id: sub.id,
-        kind: 'protocol' as const,
-        productId: sub.productId,
+        ...item,
         testID: subscriptionCardTestId(sub.productId),
-        title: fullProduct?.name ?? sub.product.name,
-        image: fullProduct?.image || sub.product.image?.trim() || DEFAULT_IMAGE,
+        title: fullProduct?.name ?? item.title,
+        image: fullProduct?.image || item.image,
         badges,
-        acquiredAt: sub.createdAt,
-        subscriptionId: sub.id,
-        communityId: sub.programCommunity?.communityId,
-        description: sub.programCommunity?.description ?? fullProduct?.description ?? sub.product.description ?? null,
+        description: item.description ?? fullProduct?.description ?? null,
         agreements: fullProduct?.technicalSpecifications?.trim() || null,
-        status: sub.status,
-        cancelAtPeriodEnd: Boolean(sub.cancelAtPeriodEnd),
-        canceledAt: sub.canceledAt ?? null,
-        cancelRequestedAt: sub.cancelRequestedAt ?? null,
-        accessValidUntil: sub.accessValidUntil ?? null,
-        desaturated: subscriptionIsDesaturatedPresentation(sub),
+        programType: fullProduct?.programType ?? item.programType,
+        communityId: item.communityId || (fullProduct ? programCommunityIdFromProduct(fullProduct) : undefined),
       };
     });
   }, [subscriptions, productMap, categories]);

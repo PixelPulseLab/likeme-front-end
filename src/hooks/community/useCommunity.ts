@@ -1,19 +1,29 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { communityService } from '@/services';
+import type { Community } from '@/types/community';
 import { logger } from '@/utils/logger';
 
 export type UseCommunityOptions = {
-  /** Id da comunidade em foco (ex.: primeira da lista). Sem id, termos permanecem `null`. */
   communityId: string | undefined;
 };
 
 export type UseCommunityReturn = {
-  /** `null` até o GET; em seguida espelha `hasTermsAccepted` do backend */
   termsAccepted: boolean | null;
   toggleTermsAccepted: () => void;
 };
 
-export const useCommunity = ({ communityId }: UseCommunityOptions): UseCommunityReturn => {
+export type UseCommunityByIdOptions = {
+  communityId: string | undefined;
+  enabled?: boolean;
+};
+
+export type UseCommunityByIdReturn = {
+  community: Community | null;
+  loading: boolean;
+  error: string | null;
+};
+
+function useCommunityHook({ communityId }: UseCommunityOptions): UseCommunityReturn {
   const [termsAccepted, setTermsAccepted] = useState<boolean | null>(null);
   const latestCommunityIdRef = useRef(communityId);
   latestCommunityIdRef.current = communityId;
@@ -67,4 +77,65 @@ export const useCommunity = ({ communityId }: UseCommunityOptions): UseCommunity
   }, [communityId]);
 
   return { termsAccepted, toggleTermsAccepted };
+}
+
+function useCommunityById({ communityId, enabled = true }: UseCommunityByIdOptions): UseCommunityByIdReturn {
+  const trimmedCommunityId = communityId?.trim() || undefined;
+  const shouldFetch = enabled && Boolean(trimmedCommunityId);
+  const [community, setCommunity] = useState<Community | null>(null);
+  const [loading, setLoading] = useState(shouldFetch);
+  const [error, setError] = useState<string | null>(null);
+  const latestCommunityIdRef = useRef(trimmedCommunityId);
+  latestCommunityIdRef.current = trimmedCommunityId;
+
+  useEffect(() => {
+    if (!shouldFetch || !trimmedCommunityId) {
+      setCommunity(null);
+      setLoading(false);
+      setError(null);
+      return;
+    }
+
+    let cancelled = false;
+    setLoading(true);
+    setError(null);
+
+    void (async () => {
+      try {
+        const fetchedCommunity = await communityService.getCommunity(trimmedCommunityId);
+        if (cancelled || latestCommunityIdRef.current !== trimmedCommunityId) {
+          return;
+        }
+        setCommunity(fetchedCommunity);
+      } catch (cause) {
+        if (cancelled || latestCommunityIdRef.current !== trimmedCommunityId) {
+          return;
+        }
+        logger.warn('[useCommunity.byId] falha ao carregar comunidade', {
+          communityId: trimmedCommunityId,
+          cause,
+        });
+        setCommunity(null);
+        setError(cause instanceof Error ? cause.message : 'Comunidade não encontrada');
+      } finally {
+        if (!cancelled && latestCommunityIdRef.current === trimmedCommunityId) {
+          setLoading(false);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [shouldFetch, trimmedCommunityId]);
+
+  return { community, loading, error };
+}
+
+type UseCommunityFn = typeof useCommunityHook & {
+  byId: typeof useCommunityById;
 };
+
+export const useCommunity: UseCommunityFn = Object.assign(useCommunityHook, {
+  byId: useCommunityById,
+});

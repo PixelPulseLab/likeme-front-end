@@ -20,6 +20,7 @@ export type AppLoadingTargetName = (typeof APP_LOADING_TARGET_NAMES)[number];
 
 type Navigation = {
   navigate: (screen: string, params?: unknown) => void;
+  replace?: (screen: string, params?: unknown) => void;
 };
 
 const TARGET_PRELOADERS: Record<AppLoadingTargetName, () => void> = {
@@ -47,11 +48,16 @@ export function preloadAppLoadingTarget(name: AppLoadingTargetName): void {
 export function navigateWithAppLoading(
   navigation: Navigation,
   target: AppLoadingNavigateTarget,
-  options?: { loadingMessage?: string },
+  options?: { loadingMessage?: string; replace?: boolean },
 ): void {
   preloadAppLoadingTarget(target.name);
-  navigateRootStack(navigation, 'AppLoading', {
+  const params = {
     target,
     loadingMessage: options?.loadingMessage,
-  });
+  };
+  if (options?.replace && typeof navigation.replace === 'function') {
+    navigation.replace('AppLoading', params);
+    return;
+  }
+  navigateRootStack(navigation, 'AppLoading', params);
 }

@@ -64,7 +64,6 @@ type CommunityViewId = (typeof COMMUNITY_VIEW)[keyof typeof COMMUNITY_VIEW];
 type NavigationProp = StackNavigationProp<CommunityStackParamList, 'CommunityList'>;
 type Props = { navigation: NavigationProp };
 
-/** Imagem padrão do hero quando a comunidade não tem avatar. */
 const DEFAULT_COMMUNITY_IMAGE = 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=400';
 
 const CommunityScreen: React.FC<Props> = ({ navigation }) => {
@@ -75,6 +74,12 @@ const CommunityScreen: React.FC<Props> = ({ navigation }) => {
   const rootNavigation = rootStackNavigationFrom(navigation) ?? navigation;
   const handleCartPress = () => {
     navigateRootStack(rootNavigation, 'Cart');
+  };
+  const handleGoHome = () => {
+    navigateToShareHome(rootNavigation);
+  };
+  const handleDiscover = () => {
+    navigateToShareDiscover(rootNavigation);
   };
   const [selectedMode, setSelectedMode] = useState<CommunityViewId>(COMMUNITY_VIEW.FEED);
   const [activeInfoTab, setActiveInfoTab] = useState<CommunityInfoTabId>('posts');
@@ -94,6 +99,15 @@ const CommunityScreen: React.FC<Props> = ({ navigation }) => {
   }, [navigation, route.params?.openFeedFromMenu]);
 
   const focusCommunityId = route.params?.focusCommunityId?.trim() || undefined;
+
+  const {
+    community: focusedCommunity,
+    loading: focusedCommunityLoading,
+    error: focusedCommunityError,
+  } = useCommunity.byId({
+    communityId: focusCommunityId,
+    enabled: Boolean(focusCommunityId),
+  });
 
   useEffect(() => {
     if (!focusCommunityId) return;
@@ -125,7 +139,7 @@ const CommunityScreen: React.FC<Props> = ({ navigation }) => {
   const {
     communities: rawCommunities,
     categories,
-    loading: communitiesLoading,
+    loading: _communitiesLoading,
     loadingMore: _communitiesLoadingMore,
     error: _communitiesError,
     hasMore: _communitiesHasMore,
@@ -134,7 +148,7 @@ const CommunityScreen: React.FC<Props> = ({ navigation }) => {
     feedEvents,
     communityFiles,
   } = useCommunities({
-    enabled: true,
+    enabled: !focusCommunityId,
     pageSize: 20,
     params: {
       sortBy: 'createdAt',
@@ -144,26 +158,12 @@ const CommunityScreen: React.FC<Props> = ({ navigation }) => {
 
   const selectedCommunity = useMemo(() => {
     if (focusCommunityId) {
-      return rawCommunities.find((community) => community.communityId === focusCommunityId) ?? null;
+      return focusedCommunity;
     }
     return rawCommunities[0] ?? null;
-  }, [rawCommunities, focusCommunityId]);
+  }, [rawCommunities, focusCommunityId, focusedCommunity]);
 
-  const selectedCommunityId = focusCommunityId ?? selectedCommunity?.communityId;
-
-  const focusCommunityUnavailable = Boolean(
-    focusCommunityId &&
-      !communitiesLoading &&
-      !rawCommunities.some((community) => community.communityId === focusCommunityId),
-  );
-
-  const handleGoHome = useCallback(() => {
-    navigateToShareHome(rootNavigation ?? navigation);
-  }, [navigation, rootNavigation]);
-
-  const handleDiscover = useCallback(() => {
-    navigateToShareDiscover(rootNavigation ?? navigation);
-  }, [navigation, rootNavigation]);
+  const selectedCommunityId = selectedCommunity?.communityId;
 
   const handleSharePress = useCallback(async () => {
     const communityId = selectedCommunityId?.trim();
@@ -767,15 +767,40 @@ const CommunityScreen: React.FC<Props> = ({ navigation }) => {
     return <EmptyState title={t('community.noPostsFound')} description={t('community.noPostsFoundDescription')} />;
   }, [error, t]);
 
-  if (focusCommunityUnavailable) {
+  if (focusCommunityId && focusedCommunityLoading) {
     return (
-      <View style={styles.screenRoot}>
+      <View style={styles.screenRoot} testID='e2e.community.root'>
         <ScreenWithHeader
           navigation={rootNavigation}
           headerProps={{
             showBackButton: true,
             showMenuWithAvatar: false,
             onBackPress: () => goBackOrShareHome(navigation),
+            showCartButton: true,
+            onCartPress: handleCartPress,
+          }}
+          contentContainerStyle={styles.container}
+        >
+          <View style={styles.feedLoadingContainer}>
+            <ActivityIndicator size='large' color='#2196F3' />
+            <Text style={styles.feedLoadingText}>{t('common.loading')}</Text>
+          </View>
+        </ScreenWithHeader>
+      </View>
+    );
+  }
+
+  if (focusCommunityId && (focusedCommunityError || !focusedCommunity)) {
+    return (
+      <View style={styles.screenRoot} testID='e2e.community.root'>
+        <ScreenWithHeader
+          navigation={rootNavigation}
+          headerProps={{
+            showBackButton: true,
+            showMenuWithAvatar: false,
+            onBackPress: () => goBackOrShareHome(navigation),
+            showCartButton: true,
+            onCartPress: handleCartPress,
           }}
           contentContainerStyle={styles.container}
         >
