@@ -67,12 +67,14 @@ export interface UserSubscriptionListItem {
     image: string | null;
     type: string | null;
     description?: string | null;
+    programType?: import('@/types/product/programType').ProgramType | null;
   };
   programCommunity?: {
     communityId: string;
     description?: string | null;
     agreement?: string | null;
   } | null;
+  programType?: import('@/types/product/programType').ProgramType | null;
 }
 
 export interface UserAcquiredServiceItem {

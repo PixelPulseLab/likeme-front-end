@@ -19,6 +19,7 @@ import { useAnalyticsScreen } from '@/analytics';
 import type { SubscriptionListItem } from '@/types/subscription/subscription';
 import type { RootStackParamList } from '@/types/navigation';
 import { COLORS } from '@/constants';
+import { navigateToSubscribedProgram } from '@/utils/navigation/productNavigation';
 import { styles } from './styles';
 
 const SEARCH_DEBOUNCE_MS = 450;
@@ -68,22 +69,26 @@ const SubscriptionListScreen: React.FC<Props> = ({ navigation }) => {
 
   const openSubscriptionItem = useCallback(
     (item: SubscriptionListItem) => {
-      navigation.navigate('ProtocolDetail', {
-        protocol: {
-          id: item.productId,
-          name: item.title,
-          image: item.image,
-          badges: item.badges,
-          communityId: item.communityId,
-          productId: item.productId,
-          subscriptionId: item.subscriptionId,
-          subscriptionStatus: item.status,
-          cancelAtPeriodEnd: item.cancelAtPeriodEnd,
-          canceledAt: item.canceledAt,
-          cancelRequestedAt: item.cancelRequestedAt,
-          accessValidUntil: item.accessValidUntil,
-          description: item.description ?? undefined,
-          agreements: item.agreements ?? undefined,
+      navigateToSubscribedProgram(navigation, {
+        programType: item.programType,
+        communityId: item.communityId,
+        protocolDetailParams: {
+          protocol: {
+            id: item.productId,
+            name: item.title,
+            image: item.image,
+            badges: item.badges,
+            communityId: item.communityId,
+            productId: item.productId,
+            subscriptionId: item.subscriptionId,
+            subscriptionStatus: item.status,
+            cancelAtPeriodEnd: item.cancelAtPeriodEnd,
+            canceledAt: item.canceledAt,
+            cancelRequestedAt: item.cancelRequestedAt,
+            accessValidUntil: item.accessValidUntil,
+            description: item.description ?? undefined,
+            agreements: item.agreements ?? undefined,
+          },
         },
       });
     },

@@ -11,6 +11,7 @@ export interface SubscriptionListItem {
   acquiredAt: string;
   subscriptionId?: string;
   communityId?: string;
+  programType?: import('@/types/product/programType').ProgramType | null;
   description?: string | null;
   agreements?: string | null;
   status?: string;

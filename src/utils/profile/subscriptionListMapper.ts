@@ -2,6 +2,7 @@ import type { SubscriptionListItem } from '@/types/subscription/subscription';
 import type { UserSubscriptionListItem } from '@/services/payment/subscriptionService';
 import type { Order } from '@/types/order';
 import { PRODUCT_CATALOG_TYPE, catalogTypeTranslatedBadgeLabels } from '@/types/product';
+import { PROGRAM_TYPE } from '@/types/product/programType';
 import {
   subscriptionIsCancelingPresentation,
   subscriptionIsCanceledPresentation,
@@ -45,6 +46,7 @@ export function mapSubscriptionToListItem(row: UserSubscriptionListItem, t: Tran
     acquiredAt: row.createdAt,
     subscriptionId: row.id,
     communityId: row.programCommunity?.communityId,
+    programType: row.programType ?? row.product.programType ?? PROGRAM_TYPE.COURSE,
     description: row.programCommunity?.description ?? row.product.description ?? null,
     status: row.status,
     cancelAtPeriodEnd: Boolean(row.cancelAtPeriodEnd),

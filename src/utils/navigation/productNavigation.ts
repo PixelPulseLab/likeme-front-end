@@ -1,9 +1,11 @@
 import type { Ad } from '@/types/ad';
 import { PRODUCT_CATALOG_TYPE } from '@/types/product';
 import type { RootStackParamList } from '@/types/navigation';
+import { PROGRAM_TYPE, type ProgramType } from '@/types/product/programType';
 import { formatPriceLabel } from '@/utils/formatters/priceFormatter';
 import { advertiserToRouteProductProvider } from '@/utils/marketplace/routeProductProvider';
 import { navigateWithAppLoading } from '@/utils/navigation/appLoadingNavigation';
+import { navigateToCommunity } from '@/utils/navigation/communityNavigation';
 
 const priceForNav = (raw: number | null | undefined) => formatPriceLabel(raw);
 
@@ -109,6 +111,26 @@ export function navigateToProductDetailsScreen(
   params: RootStackParamList['ProductDetails'],
 ): void {
   navigateWithAppLoading(navigation, { name: 'ProductDetails', params });
+}
+
+export function navigateToSubscribedProgram(
+  navigation: Navigation,
+  params: {
+    programType?: ProgramType | null;
+    communityId?: string | null;
+    protocolDetailParams: RootStackParamList['ProtocolDetail'];
+  },
+): void {
+  const communityId = params.communityId?.trim();
+  if (params.programType === PROGRAM_TYPE.COMMUNITY && communityId) {
+    navigateToCommunity(navigation, { focusCommunityId: communityId });
+    return;
+  }
+
+  navigateWithAppLoading(navigation, {
+    name: 'ProtocolDetail',
+    params: params.protocolDetailParams,
+  });
 }
 
 export const handleAdNavigation = (ad: Ad, navigation: Navigation): void => {

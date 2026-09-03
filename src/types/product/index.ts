@@ -1,5 +1,6 @@
 import type { ApiResponse } from '@/types/infrastructure';
 import type { ProductCatalogType } from './productCatalogType';
+import type { ProgramType } from './programType';
 import type { Contact } from '@/types/contact';
 
 export {
@@ -15,6 +16,7 @@ export {
   type ProductCatalogType,
   type ProductCatalogTypeOption,
 } from './productCatalogType';
+export { PROGRAM_TYPE, PROGRAM_TYPE_VALUES, type ProgramType } from './programType';
 
 export interface Advertiser {
   id: string;
@@ -88,6 +90,7 @@ export interface Product {
     name?: string | null;
     socialPlusCommunityId?: string | null;
   } | null;
+  programType?: ProgramType | null;
 }
 
 export interface ListProductsParams {
