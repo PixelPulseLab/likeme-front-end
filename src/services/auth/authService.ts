@@ -495,6 +495,7 @@ class AuthService {
         AUTH_BOOTSTRAP_HTTP_TIMEOUT_MS,
       );
       if (!response.ok) {
+        logger.warn('[AuthService] endpoint de auth não-sucesso', { path, status: response.status });
         return empty;
       }
       const data = (await response.json()) as Record<string, unknown>;
