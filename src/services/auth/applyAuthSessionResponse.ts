@@ -11,6 +11,7 @@ import {
 } from '@/constants/home/summaryHomeData';
 import {
   buildCommunitiesCacheEntryFromListResponse,
+  clearCommunitiesListCache,
   communitiesListCacheKeyFromParams,
   writeCommunitiesListCache,
 } from '@/utils/community/communitiesListCache';
@@ -108,6 +109,7 @@ function seedHomeSummaryCaches(payload: Record<string, unknown>): void {
   const communitiesData = summary.communities;
   if (communitiesData != null && typeof communitiesData === 'object' && !Array.isArray(communitiesData)) {
     try {
+      clearCommunitiesListCache();
       const key = communitiesListCacheKeyFromParams(
         { ...HOME_SUMMARY_COMMUNITIES_LIST_PARAMS },
         HOME_SUMMARY_COMMUNITIES_PAGE_SIZE,

@@ -166,11 +166,24 @@ const SummaryScreen: React.FC<Props> = ({ navigation }) => {
   //   checkAnamnesisStatus();
   // }, []);
 
-  const { filteredJoinCommunities, loading: _communitiesLoading } = useCommunities({
+  const {
+    filteredJoinCommunities,
+    loading: _communitiesLoading,
+    refresh: refreshCommunities,
+  } = useCommunities({
     enabled: hasSessionToken,
     pageSize: HOME_SUMMARY_COMMUNITIES_PAGE_SIZE,
     params: HOME_SUMMARY_COMMUNITIES_LIST_PARAMS,
   });
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!hasSessionToken) {
+        return;
+      }
+      refreshCommunities();
+    }, [hasSessionToken, refreshCommunities]),
+  );
 
   const homeBannerCommunity = filteredJoinCommunities[0];
   const homeBannerCommunityId = homeBannerCommunity?.id?.trim() ?? '';
