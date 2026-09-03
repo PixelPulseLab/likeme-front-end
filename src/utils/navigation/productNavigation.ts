@@ -127,10 +127,7 @@ export function navigateToSubscribedProgram(
     return;
   }
 
-  navigateWithAppLoading(navigation, {
-    name: 'ProtocolDetail',
-    params: params.protocolDetailParams,
-  });
+  navigation.navigate('ProtocolDetail', params.protocolDetailParams);
 }
 
 export const handleAdNavigation = (ad: Ad, navigation: Navigation): void => {
