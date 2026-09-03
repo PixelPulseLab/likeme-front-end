@@ -13,8 +13,15 @@ import { PAGINATION } from '@/constants';
 import { logger } from '@/utils/logger';
 import { prefetchImageUris } from '@/utils/image/prefetchImageUris';
 import { resolveCommunityBannerImageUri } from '@/utils/community/mappers';
-import { isCommunitiesCacheEntryFresh, useCommunitiesCache } from '@/contexts/CommunitiesCacheContext';
-import { communitiesListCacheKey } from '@/utils/community/communitiesCacheKey';
+import {
+  isCommunitiesListCacheEntryFresh,
+  shouldSkipCommunitiesListBackgroundRefresh,
+  writeCommunitiesListCache,
+  buildCommunitiesCacheEntryFromListResponse,
+  readCommunitiesListCache,
+  communitiesListCacheKeyFromParams,
+} from '@/utils/community/communitiesListCache';
+import type { CommunitiesCacheEntry } from '@/utils/community/communitiesListCache';
 
 import type { JoinCardItem } from '@/components/ui/cards/JoinCard';
 
@@ -83,10 +90,9 @@ export const useCommunities = (options: UseCommunitiesOptions = {}): UseCommunit
 
   const paramsKey = JSON.stringify(params ?? {});
   const memoizedParams = useMemo(() => params ?? {}, [paramsKey]);
-  const communitiesCache = useCommunitiesCache();
-  const cacheKey = communitiesListCacheKey(paramsKey, pageSize);
-  const initialCacheEntry = communitiesCache.read(cacheKey);
-  const initialCacheIsFresh = initialCacheEntry != null && isCommunitiesCacheEntryFresh(initialCacheEntry);
+  const cacheKey = communitiesListCacheKeyFromParams(memoizedParams, pageSize);
+  const initialCacheEntry = readCommunitiesListCache(cacheKey);
+  const initialCacheIsFresh = initialCacheEntry != null && isCommunitiesListCacheEntryFresh(initialCacheEntry);
 
   const [communities, setCommunities] = useState<Community[]>(() =>
     initialCacheIsFresh ? initialCacheEntry.communities : [],
@@ -118,25 +124,10 @@ export const useCommunities = (options: UseCommunitiesOptions = {}): UseCommunit
   const backgroundRefreshStartedRef = useRef(false);
 
   const persistFirstPageCache = useCallback(
-    (
-      communitiesList: Community[],
-      categoriesList: CommunityCategory[],
-      communityUsersList: CommunityUserRelation[],
-      filesList: CommunityFile[],
-      pagingData: { next: string | null; previous: string | null } | null,
-      nextHasMore: boolean,
-    ) => {
-      communitiesCache.write(cacheKey, {
-        communities: communitiesList,
-        categories: categoriesList,
-        communityUsers: communityUsersList,
-        communityFiles: filesList,
-        paging: pagingData,
-        hasMore: nextHasMore,
-        fetchedAt: Date.now(),
-      });
+    (entry: CommunitiesCacheEntry) => {
+      writeCommunitiesListCache(cacheKey, entry);
     },
-    [communitiesCache, cacheKey],
+    [cacheKey],
   );
 
   const loadCommunities = useCallback(
@@ -231,19 +222,7 @@ export const useCommunities = (options: UseCommunitiesOptions = {}): UseCommunit
         setHasMore(resolvedHasMore);
 
         if (page === 1 && !append) {
-          persistFirstPageCache(
-            communitiesList,
-            categoriesList,
-            communityUsersList,
-            filesList,
-            pagingData
-              ? {
-                  next: pagingData.next ?? null,
-                  previous: pagingData.previous ?? null,
-                }
-              : null,
-            resolvedHasMore,
-          );
+          persistFirstPageCache(buildCommunitiesCacheEntryFromListResponse(response, page));
         }
       } catch (err) {
         hasErrorRef.current = true;
@@ -268,12 +247,15 @@ export const useCommunities = (options: UseCommunitiesOptions = {}): UseCommunit
   );
 
   useEffect(() => {
-    if (!enabled || !initialCacheIsFresh || backgroundRefreshStartedRef.current) {
+    if (!enabled || !initialCacheIsFresh || backgroundRefreshStartedRef.current || initialCacheEntry == null) {
+      return;
+    }
+    if (shouldSkipCommunitiesListBackgroundRefresh(initialCacheEntry)) {
       return;
     }
     backgroundRefreshStartedRef.current = true;
     void loadCommunities(1);
-  }, [enabled, initialCacheIsFresh, loadCommunities]);
+  }, [enabled, initialCacheEntry, initialCacheIsFresh, loadCommunities]);
 
   const loadMore = useCallback(() => {
     if (!loadingMore && hasMore && !loading && enabled) {

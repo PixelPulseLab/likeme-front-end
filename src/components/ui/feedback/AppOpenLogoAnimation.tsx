@@ -4,7 +4,6 @@ import { LogoFullSvg } from '@/assets/auth';
 import { COLORS } from '@/constants';
 
 const LOGO_ASPECT_RATIO = 285 / 54;
-const TOTAL_MS = 2000;
 const REVEAL_MS = 500;
 const EXIT_MS = 500;
 const EXIT_SCALE = 0.72;
@@ -16,18 +15,20 @@ export type AppOpenLogoAnimationHandle = {
 export const AppOpenLogoAnimation = forwardRef<AppOpenLogoAnimationHandle>((_props, ref) => {
   const opacity = useRef(new Animated.Value(0)).current;
   const scale = useRef(new Animated.Value(0.88)).current;
-  const startedAtRef = useRef(0);
   const revealFinishedRef = useRef(Promise.resolve());
+  const holdFinishedRef = useRef(Promise.resolve());
   const dismissedRef = useRef(false);
   const exitAnimationRef = useRef<Animated.CompositeAnimation | null>(null);
-  const holdTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     let settleReveal: (() => void) | null = null;
+    let settleHold: (() => void) | null = null;
     revealFinishedRef.current = new Promise<void>((resolve) => {
       settleReveal = resolve;
     });
-    startedAtRef.current = Date.now();
+    holdFinishedRef.current = new Promise<void>((resolve) => {
+      settleHold = resolve;
+    });
 
     const animation = Animated.parallel([
       Animated.timing(opacity, {
@@ -43,15 +44,16 @@ export const AppOpenLogoAnimation = forwardRef<AppOpenLogoAnimationHandle>((_pro
         useNativeDriver: true,
       }),
     ]);
-    animation.start(() => settleReveal?.());
+    animation.start(() => {
+      settleReveal?.();
+      settleHold?.();
+    });
 
     return () => {
       animation.stop();
       exitAnimationRef.current?.stop();
-      if (holdTimeoutRef.current) {
-        clearTimeout(holdTimeoutRef.current);
-      }
       settleReveal?.();
+      settleHold?.();
     };
   }, [opacity, scale]);
 
@@ -61,14 +63,7 @@ export const AppOpenLogoAnimation = forwardRef<AppOpenLogoAnimationHandle>((_pro
         return;
       }
       dismissedRef.current = true;
-      await revealFinishedRef.current;
-
-      const remainingHoldMs = Math.max(0, TOTAL_MS - EXIT_MS - (Date.now() - startedAtRef.current));
-      if (remainingHoldMs > 0) {
-        await new Promise<void>((resolve) => {
-          holdTimeoutRef.current = setTimeout(resolve, remainingHoldMs);
-        });
-      }
+      await holdFinishedRef.current;
 
       await new Promise<void>((resolve) => {
         const exit = Animated.parallel([

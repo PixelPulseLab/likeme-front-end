@@ -1,3 +1,4 @@
+import { productService } from '@/services';
 import type { Product } from '@/types/product';
 
 export type SuggestedProductsCacheQuery = {
@@ -62,4 +63,53 @@ export function deleteInflightSuggestedProducts(key: string): void {
 export function clearSuggestedProductsCache(): void {
   cache.clear();
   inflight.clear();
+}
+
+type FetchSuggestedProductsOptions = {
+  bypassCache?: boolean;
+};
+
+export async function fetchSuggestedProducts(
+  query: SuggestedProductsCacheQuery,
+  options: FetchSuggestedProductsOptions = {},
+): Promise<Product[]> {
+  const key = suggestedProductsCacheKey(query);
+
+  if (!options.bypassCache) {
+    const cached = getCachedSuggestedProducts(key);
+    if (cached) {
+      return cached;
+    }
+    const pending = getInflightSuggestedProducts(key);
+    if (pending) {
+      return pending;
+    }
+  }
+
+  const request = (async () => {
+    const productsResponse = await productService.listProducts({
+      limit: query.limit,
+      status: query.status,
+      ...(query.categoryId != null && query.categoryId !== '' ? { categoryId: query.categoryId } : {}),
+      ...(query.type != null && query.type !== '' ? { type: query.type } : {}),
+      ...(query.excludeProductId ? { excludeProductId: query.excludeProductId } : {}),
+      ...(query.fillWithOtherCategories !== undefined
+        ? { fillWithOtherCategories: query.fillWithOtherCategories }
+        : {}),
+    });
+
+    if (productsResponse.success && productsResponse.data) {
+      return productsResponse.data.products.slice(0, query.limit);
+    }
+    return [];
+  })();
+
+  setInflightSuggestedProducts(key, request);
+  try {
+    const products = await request;
+    setCachedSuggestedProducts(key, products);
+    return products;
+  } finally {
+    deleteInflightSuggestedProducts(key);
+  }
 }

@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
-import { SafeAreaView } from 'react-native';
+import React, { useLayoutEffect } from 'react';
+import { View } from 'react-native';
 import { useAnalyticsScreen } from '@/analytics';
 import { styles } from './styles';
 
@@ -10,11 +10,11 @@ type Props = {
 
 const HomeScreen: React.FC<Props> = ({ navigation }) => {
   useAnalyticsScreen({ screenName: 'Home', screenClass: 'HomeScreen' });
-  useEffect(() => {
+  useLayoutEffect(() => {
     navigation.replace('Summary' as never);
   }, [navigation]);
 
-  return <SafeAreaView style={styles.container} />;
+  return <View style={styles.container} />;
 };
 
 export default HomeScreen;

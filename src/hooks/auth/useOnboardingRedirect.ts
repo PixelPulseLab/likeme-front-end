@@ -1,65 +1,54 @@
 import { useEffect } from 'react';
-import { AUTH_BOOTSTRAP_HTTP_TIMEOUT_MS, FORCE_START_ONBOARDING_LOCALLY } from '@/constants';
-import { getNextOnboardingDestination } from '@/utils';
-import { storageService, AuthService, userService } from '@/services';
+import { FORCE_START_ONBOARDING_LOCALLY } from '@/constants';
+import { AUTH_ONBOARDING_SCREENS_ORDER } from '@/constants/authOnboarding';
+import { storageService, AuthService } from '@/services';
+import { getCachedPostAuthRoute } from '@/services/auth/applyAuthSessionResponse';
 import { invalidateApiClientAuthTokenMemoryCache } from '@/services/infrastructure/apiClient';
 import { isE2eAuthBypassEnabled } from '@/utils/e2e/e2eAuthBypass';
 import { logger } from '@/utils/logger';
+import { getNextOnboardingDestination } from '@/utils/auth/navigation';
 
 type NavigationReplace = (screen: string, params?: object) => void;
 
-/**
- * Sincroniza JWT e flags de onboarding com o backend (`GET /api/auth/token`) quando há token.
- * Com `FORCE_START_ONBOARDING_LOCALLY` não chama a API (onboarding forçado só no device).
- */
-async function syncOnboardingStateFromBackend(): Promise<void> {
+async function syncAuthSessionFromBackend(): Promise<void> {
   if (FORCE_START_ONBOARDING_LOCALLY || isE2eAuthBypassEnabled()) {
     return;
   }
   const token = await storageService.getToken();
-  if (!token) return;
+  if (!token) {
+    return;
+  }
   try {
     await AuthService.refreshBackendSessionFromStoredCredentials();
   } catch (error) {
-    logger.warn('[useOnboardingRedirect] syncOnboardingStateFromBackend falhou; segue com flags do storage', {
+    logger.warn('[useOnboardingRedirect] syncAuthSessionFromBackend falhou; segue com storage local', {
       cause: error,
     });
   }
 }
 
-/**
- * Obtém o nome do usuário logado para exibir nas telas de onboarding (storage primeiro, depois perfil da API).
- */
-async function getLoggedInUserDisplayName(): Promise<string | null> {
-  const token = await storageService.getToken();
-  if (!token) return null;
-  try {
-    const response = await Promise.race([
-      userService.getProfile(),
-      new Promise<'timeout'>((resolve) => {
-        setTimeout(() => resolve('timeout'), AUTH_BOOTSTRAP_HTTP_TIMEOUT_MS);
-      }),
+async function destinationFromLocalStorage(): Promise<{ screen: string; params?: object }> {
+  const [welcomeScreenAccessedAt, privacyPolicyAcceptedAt, registerCompletedAt, objectivesSelectedAt, user] =
+    await Promise.all([
+      storageService.getWelcomeScreenAccessedAt(),
+      storageService.getPrivacyPolicyAcceptedAt(),
+      storageService.getRegisterCompletedAt(),
+      storageService.getCategorySelectedAt(),
+      storageService.getUser(),
     ]);
-    if (response !== 'timeout' && response && typeof response === 'object' && 'success' in response) {
-      if (response.success && response.data) {
-        const person = response.data.person;
-        if (person?.firstName) {
-          const full = [person.firstName, person.lastName, person.surname].filter(Boolean).join(' ').trim();
-          return full || response.data.name?.trim() || null;
-        }
-        if (response.data.name?.trim()) {
-          return response.data.name.trim();
-        }
-      }
-    }
-    if (response === 'timeout') {
-      logger.warn('[useOnboardingRedirect] Timeout ao buscar perfil; usa nome do storage');
-    }
-  } catch (error) {
-    logger.warn('[useOnboardingRedirect] getProfile falhou; fallback de nome no onboarding', { cause: error });
+
+  if (!welcomeScreenAccessedAt) {
+    return { screen: AUTH_ONBOARDING_SCREENS_ORDER[0] };
   }
-  const stored = await storageService.getUser();
-  return stored?.name?.trim() || stored?.nickname?.trim() || null;
+
+  const displayName = user?.name?.trim() || user?.nickname?.trim() || null;
+  return getNextOnboardingDestination(
+    welcomeScreenAccessedAt,
+    privacyPolicyAcceptedAt,
+    registerCompletedAt,
+    objectivesSelectedAt,
+    displayName,
+  );
 }
 
 export function useOnboardingRedirect(navigationReplace: NavigationReplace): void {
@@ -70,22 +59,27 @@ export function useOnboardingRedirect(navigationReplace: NavigationReplace): voi
           await storageService.clearAll();
           invalidateApiClientAuthTokenMemoryCache();
         }
-        await syncOnboardingStateFromBackend();
 
         const welcomeScreenAccessedAt = await storageService.getWelcomeScreenAccessedAt();
-        const privacyPolicyAcceptedAt = await storageService.getPrivacyPolicyAcceptedAt();
-        const registerCompletedAt = await storageService.getRegisterCompletedAt();
-        const objectivesSelectedAt = await storageService.getCategorySelectedAt();
-        const userDisplayName = await getLoggedInUserDisplayName();
+        if (!welcomeScreenAccessedAt) {
+          navigationReplace(AUTH_ONBOARDING_SCREENS_ORDER[0]);
+          return;
+        }
 
-        const destination = getNextOnboardingDestination(
-          welcomeScreenAccessedAt,
-          privacyPolicyAcceptedAt,
-          registerCompletedAt,
-          objectivesSelectedAt,
-          userDisplayName,
-        );
-        navigationReplace(destination.screen, destination.params);
+        let postAuthRoute = getCachedPostAuthRoute();
+        if (!postAuthRoute) {
+          await syncAuthSessionFromBackend();
+          postAuthRoute = getCachedPostAuthRoute();
+        }
+
+        if (postAuthRoute) {
+          navigationReplace(postAuthRoute.screen, postAuthRoute.params);
+          return;
+        }
+
+        // Rede falhou ou resposta sem postAuthRoute: não empurrar para Register às cegas.
+        const localDestination = await destinationFromLocalStorage();
+        navigationReplace(localDestination.screen, localDestination.params);
       } catch (error) {
         logger.error('Error checking onboarding status:', error);
         navigationReplace('Register');

@@ -5,22 +5,23 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { PartialLogo3, GradientSplash7, GradientSplash8, GradientSplash9 } from '@/assets/auth';
 import { AppOpenLogoAnimation, type AppOpenLogoAnimationHandle } from '@/components/ui/feedback/AppOpenLogoAnimation';
 import { styles, GRADIENT_STRIP_HEIGHT, GRADIENT_STRIP_WIDTH } from './styles';
-import { AuthService, invalidateApiClientAuthTokenMemoryCache, storageService } from '@/services';
-import { fetchAppReleasePolicy } from '@/services/app/appReleasePolicyService';
+import { invalidateApiClientAuthTokenMemoryCache, storageService } from '@/services';
 import { useTranslation } from '@/hooks/i18n';
 import { useAnalyticsScreen } from '@/analytics';
 import { STORE_URL_CONFIG } from '@/config';
 import type { AppReleasePolicy } from '@/types/app/appReleasePolicy';
 import { getInstalledAppVersion, resolveStoreUrlForPlatform } from '@/utils/app/appVersionPolicy';
-import { ensureI18nHydrated, hydrateI18nFromCache, startI18nHydration } from '@/i18n/hydration';
+import { ensureI18nHydrated, startI18nHydration } from '@/i18n/hydration';
+import { runReturningUserBootstrap } from '@/utils/auth/returningUserBootstrap';
 import { logger } from '@/utils/logger';
 import { openStoreListingWithFallback } from '@/utils/url/storeListingUrl';
-import { isE2eAuthBypassEnabled } from '@/utils/e2e/e2eAuthBypass';
 
 const AnimatedImage = Animated.createAnimatedComponent(ExpoImage);
 const GRADIENT_SOURCES = [GradientSplash7, GradientSplash8, GradientSplash9];
 const BOOTSTRAP_WATCHDOG_INTERVAL_MS = 8_000;
 const BOOTSTRAP_WATCHDOG_MAX_RETRIES = 2;
+
+type BootstrapMode = 'pending' | 'returning' | 'firstLaunch';
 
 type Props = { navigation: any };
 
@@ -31,7 +32,7 @@ const LoadingScreen: React.FC<Props> = ({ navigation }) => {
   const fadeAnim = useRef(new Animated.Value(1)).current;
   const taglineOpacity = useRef(new Animated.Value(1)).current;
   const [step, setStep] = useState(0);
-  const [hasLocalSessionCache, setHasLocalSessionCache] = useState<boolean | null>(null);
+  const [bootstrapMode, setBootstrapMode] = useState<BootstrapMode>('pending');
   const hasNavigatedRef = useRef(false);
   const logoAnimationRef = useRef<AppOpenLogoAnimationHandle>(null);
   const bootstrapWatchdogTimersRef = useRef<Array<ReturnType<typeof setTimeout>>>([]);
@@ -93,7 +94,7 @@ const LoadingScreen: React.FC<Props> = ({ navigation }) => {
       nav.replace(routeName, params);
     };
 
-    const dismissLogo = async () => {
+    const dismissReturningUserLogo = async () => {
       try {
         await logoAnimationRef.current?.dismiss();
       } catch (error) {
@@ -101,57 +102,35 @@ const LoadingScreen: React.FC<Props> = ({ navigation }) => {
       }
     };
 
-    const run = async () => {
-      let shouldAuthenticate = false;
-      let hadStoredToken = false;
-      let releasePolicy: AppReleasePolicy | null = null;
-      let serverMustUpdate: boolean | null = null;
-      let serverRecommendUpdate: boolean | null = null;
-      const installedVersionForPolicy = getInstalledAppVersion();
-      const releasePolicyPromise =
-        Platform.OS === 'ios' || Platform.OS === 'android'
-          ? fetchAppReleasePolicy(installedVersionForPolicy)
-          : Promise.resolve({ policy: null, serverMustUpdate: null, serverRecommendUpdate: null });
+    const showRecommendedUpdateAlert = (releasePolicy: AppReleasePolicy) => {
+      const storeUrl = resolveStoreUrlForPlatform(releasePolicy, STORE_URL_CONFIG);
+      if (storeUrl.length === 0) {
+        return;
+      }
+      Alert.alert(
+        t('appUpdate.recommendedTitle'),
+        t('appUpdate.recommendedBody'),
+        [
+          { text: t('appUpdate.later'), style: 'cancel' },
+          {
+            text: t('appUpdate.openStore'),
+            onPress: () => {
+              void openStoreListingWithFallback(storeUrl).catch((linkError) => {
+                logger.error('[LoadingScreen] Falha ao abrir loja (soft update)', {
+                  storeUrl,
+                  cause: linkError,
+                });
+              });
+            },
+          },
+        ],
+        { cancelable: true },
+      );
+    };
 
-      let isReturningUser = false;
-      let storedToken: string | null = null;
-      try {
-        storedToken = await storageService.getToken();
-        isReturningUser = Boolean(storedToken);
-      } catch (error) {
-        logger.error('[LoadingScreen] Falha ao ler sessão local para o loading inicial', error);
-      }
-      if (isScreenActive) {
-        setHasLocalSessionCache(isReturningUser);
-      }
-      if (isReturningUser) {
-        await new Promise<void>((resolve) => {
-          setTimeout(resolve, 0);
-        });
-      }
+    const runFirstLaunchBootstrap = async () => {
+      void startI18nHydration('pt-BR');
 
-      if (isReturningUser) {
-        await hydrateI18nFromCache('pt-BR');
-        void startI18nHydration('pt-BR');
-      } else {
-        void startI18nHydration('pt-BR');
-      }
-
-      const tokenRefreshPromise: Promise<{ hadStoredToken: boolean; shouldAuthenticate: boolean }> = (async () => {
-        if (!storedToken) {
-          return { hadStoredToken: false, shouldAuthenticate: false };
-        }
-        try {
-          if (isE2eAuthBypassEnabled()) {
-            return { hadStoredToken: true, shouldAuthenticate: true };
-          }
-          const { ok } = await AuthService.refreshBackendSessionFromStoredCredentials();
-          return { hadStoredToken: true, shouldAuthenticate: ok };
-        } catch (error) {
-          logger.error('[LoadingScreen] Erro ao renovar token', error);
-          return { hadStoredToken: true, shouldAuthenticate: false };
-        }
-      })();
       const safeSetStep = (next: number) => {
         if (isScreenActive) {
           setStep(next);
@@ -178,131 +157,124 @@ const LoadingScreen: React.FC<Props> = ({ navigation }) => {
           });
         });
 
+      await timing(fadeAnim, 1, 300);
+      if (!isScreenActive) {
+        return;
+      }
+      await delay(300);
+      if (!isScreenActive) {
+        return;
+      }
+
+      const firstOffset = cumulativeOffsets[0] ?? -GRADIENT_STRIP_HEIGHT;
+      await Promise.all([timing(scrollAnim, firstOffset, 1200), fadeTagToStep(1, 160, 1040)]);
+      if (!isScreenActive) {
+        return;
+      }
+      await delay(240);
+      if (!isScreenActive) {
+        return;
+      }
+
+      const secondOffset = cumulativeOffsets[1] ?? cumulativeOffsets[0] ?? -GRADIENT_STRIP_HEIGHT;
+      await Promise.all([timing(scrollAnim, secondOffset, 1200), fadeTagToStep(2, 160, 1040)]);
+      if (!isScreenActive) {
+        return;
+      }
+      await delay(360);
+      if (!isScreenActive) {
+        return;
+      }
+
       try {
-        if (!isReturningUser) {
-          await timing(fadeAnim, 1, 300);
-          if (!isScreenActive) {
-            return;
-          }
-          await delay(300);
-          if (!isScreenActive) {
-            return;
-          }
+        await ensureI18nHydrated({ lang: 'pt-BR', timeoutMs: 8000 });
+      } catch (hydrationError) {
+        logger.error('[LoadingScreen] Falha ao aguardar i18n', hydrationError);
+      }
 
-          const firstOffset = cumulativeOffsets[0] ?? -GRADIENT_STRIP_HEIGHT;
+      replaceOnce('Unauthenticated');
+    };
 
-          await Promise.all([timing(scrollAnim, firstOffset, 1200), fadeTagToStep(1, 160, 1040)]);
-          if (!isScreenActive) {
-            return;
-          }
-          await delay(240);
-          if (!isScreenActive) {
-            return;
-          }
+    const runReturningUserBootstrapFlow = async (storedToken: string) => {
+      if (isScreenActive) {
+        setBootstrapMode('returning');
+      }
 
-          const secondOffset = cumulativeOffsets[1] ?? cumulativeOffsets[0] ?? -GRADIENT_STRIP_HEIGHT;
+      try {
+        const installedVersion = getInstalledAppVersion();
+        const bootstrap = await runReturningUserBootstrap(storedToken, installedVersion);
 
-          await Promise.all([timing(scrollAnim, secondOffset, 1200), fadeTagToStep(2, 160, 1040)]);
-          if (!isScreenActive) {
-            return;
-          }
-
-          await delay(360);
-          if (!isScreenActive) {
-            return;
-          }
-        }
-
-        const policyFetch = await releasePolicyPromise;
-        releasePolicy = policyFetch.policy;
-        serverMustUpdate = policyFetch.serverMustUpdate;
-        serverRecommendUpdate = policyFetch.serverRecommendUpdate;
         if (__DEV__) {
           logger.info('[LoadingScreen] Política de versão (release-policy)', {
             platform: Platform.OS,
-            installedVersion: installedVersionForPolicy,
-            serverMustUpdate,
-            serverRecommendUpdate,
-            minIos: releasePolicy?.minVersionIos,
-            minAndroid: releasePolicy?.minVersionAndroid,
+            installedVersion,
+            serverMustUpdate: bootstrap.serverMustUpdate,
+            serverRecommendUpdate: bootstrap.serverRecommendUpdate,
+            minIos: bootstrap.releasePolicy?.minVersionIos,
+            minAndroid: bootstrap.releasePolicy?.minVersionAndroid,
           });
         }
-        if (releasePolicy && serverMustUpdate === true) {
+
+        if (bootstrap.releasePolicy && bootstrap.serverMustUpdate === true) {
           logger.warn('[LoadingScreen] mustUpdate: versão instalada abaixo do mínimo do backend', {
             platform: Platform.OS,
-            installedVersion: installedVersionForPolicy,
-            minIos: releasePolicy.minVersionIos,
-            minAndroid: releasePolicy.minVersionAndroid,
+            installedVersion,
+            minIos: bootstrap.releasePolicy.minVersionIos,
+            minAndroid: bootstrap.releasePolicy.minVersionAndroid,
           });
-          const storeUrl = resolveStoreUrlForPlatform(releasePolicy, STORE_URL_CONFIG);
-          await dismissLogo();
+          const storeUrl = resolveStoreUrlForPlatform(bootstrap.releasePolicy, STORE_URL_CONFIG);
+          await dismissReturningUserLogo();
           replaceOnce('ForcedUpdate', {
             storeUrl,
-            message: releasePolicy.message ?? undefined,
+            message: bootstrap.releasePolicy.message ?? undefined,
           });
           return;
         }
 
-        const tokenResult = await tokenRefreshPromise;
-        hadStoredToken = tokenResult.hadStoredToken;
-        shouldAuthenticate = tokenResult.shouldAuthenticate;
+        if (bootstrap.shouldAuthenticate) {
+          await dismissReturningUserLogo();
+          replaceOnce('Authenticated');
+          if (bootstrap.releasePolicy && bootstrap.serverRecommendUpdate === true) {
+            showRecommendedUpdateAlert(bootstrap.releasePolicy);
+          }
+          return;
+        }
+
+        if (bootstrap.hadStoredToken) {
+          try {
+            await storageService.removeToken();
+            invalidateApiClientAuthTokenMemoryCache();
+          } catch (removeError) {
+            logger.error('[LoadingScreen] Falha ao limpar token invalido', removeError);
+          }
+        }
+
+        await dismissReturningUserLogo();
+        replaceOnce('Unauthenticated');
       } catch (error) {
-        logger.error('[LoadingScreen] Falha no fluxo inicial (animacao ou bootstrap)', error);
+        logger.error('[LoadingScreen] Falha no bootstrap de returning user', error);
+        await dismissReturningUserLogo();
+        replaceOnce('Unauthenticated');
+      }
+    };
+
+    const run = async () => {
+      let storedToken: string | null = null;
+      try {
+        storedToken = await storageService.getToken();
+      } catch (error) {
+        logger.error('[LoadingScreen] Falha ao ler sessão local para o loading inicial', error);
       }
 
-      if (!isReturningUser) {
-        try {
-          await ensureI18nHydrated({ lang: 'pt-BR', timeoutMs: 8000 });
-        } catch (hydrationError) {
-          logger.error('[LoadingScreen] Falha ao aguardar i18n', hydrationError);
-        }
-      }
-
-      if (releasePolicy && serverRecommendUpdate === true) {
-        const storeUrl = resolveStoreUrlForPlatform(releasePolicy, STORE_URL_CONFIG);
-        if (storeUrl.length > 0) {
-          await new Promise<void>((resolve) => {
-            Alert.alert(
-              t('appUpdate.recommendedTitle'),
-              t('appUpdate.recommendedBody'),
-              [
-                { text: t('appUpdate.later'), style: 'cancel', onPress: () => resolve() },
-                {
-                  text: t('appUpdate.openStore'),
-                  onPress: () => {
-                    void openStoreListingWithFallback(storeUrl).catch((linkError) => {
-                      logger.error('[LoadingScreen] Falha ao abrir loja (soft update)', {
-                        storeUrl,
-                        cause: linkError,
-                      });
-                    });
-                    resolve();
-                  },
-                },
-              ],
-              { cancelable: true, onDismiss: () => resolve() },
-            );
-          });
-        }
-      }
-
-      if (shouldAuthenticate) {
-        await dismissLogo();
-        replaceOnce('Authenticated');
+      if (storedToken) {
+        await runReturningUserBootstrapFlow(storedToken);
         return;
       }
 
-      if (hadStoredToken) {
-        try {
-          await storageService.removeToken();
-          invalidateApiClientAuthTokenMemoryCache();
-        } catch (removeError) {
-          logger.error('[LoadingScreen] Falha ao limpar token invalido', removeError);
-        }
+      if (isScreenActive) {
+        setBootstrapMode('firstLaunch');
       }
-
-      await dismissLogo();
-      replaceOnce('Unauthenticated');
+      await runFirstLaunchBootstrap();
     };
 
     const scheduleBootstrapWatchdog = (retryAttempt: number) => {
@@ -331,24 +303,20 @@ const LoadingScreen: React.FC<Props> = ({ navigation }) => {
     };
 
     scheduleBootstrapWatchdog(0);
-
     void run();
+
     return () => {
       isScreenActive = false;
       clearBootstrapWatchdogTimers();
     };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps -- bootstrap só na montagem; `navigation` via ref (deps instáveis cancelavam o timer antes de `run()`)
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  if (hasLocalSessionCache) {
+  if (bootstrapMode !== 'firstLaunch') {
     return (
       <View style={styles.container}>
         <AppOpenLogoAnimation ref={logoAnimationRef} />
       </View>
     );
-  }
-
-  if (hasLocalSessionCache === null) {
-    return <View style={styles.container} />;
   }
 
   return (

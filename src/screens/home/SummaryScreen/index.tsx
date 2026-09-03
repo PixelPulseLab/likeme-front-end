@@ -8,7 +8,6 @@ import { StickyFilterCarouselRow } from '@/components/ui/menu';
 import {
   useCommunities,
   useSuggestedProducts,
-  SUGGESTED_PRODUCTS_HOME_ACTIVITIES_DEFAULTS,
   useMenuItems,
   useSolutions,
   useSessionTokenReady,
@@ -16,6 +15,11 @@ import {
   useCommunityEventBanner,
   useAdvertisers,
 } from '@/hooks';
+import {
+  HOME_SUMMARY_COMMUNITIES_LIST_PARAMS,
+  HOME_SUMMARY_COMMUNITIES_PAGE_SIZE,
+  HOME_SUMMARY_SUGGESTED_PROGRAMS_QUERY,
+} from '@/constants/home/summaryHomeData';
 import { EventBanner } from '@/components/sections/community';
 import { EventWebViewSession } from '@/components/infrastructure/webview/EventWebViewSession';
 import { styles as socialListStyles } from '@/components/sections/community/SocialList/styles';
@@ -32,7 +36,6 @@ import ProfileFloatingMenu from '@/components/sections/profile/ProfileFloatingMe
 // TODO: Temporariamente desabilitados
 // import { AnamnesisPromptCard } from '@/components/sections/anamnesis';
 // import { AvatarSection } from '@/components/sections/avatar';
-import { PRODUCT_CATALOG_TYPE } from '@/types/product';
 import { useAnalyticsScreen } from '@/analytics';
 import { getCommunityStackNavigator } from '@/navigation/rootStackScreenLoaders';
 import { navigateToCommunity } from '@/utils/navigation/communityNavigation';
@@ -165,11 +168,8 @@ const SummaryScreen: React.FC<Props> = ({ navigation }) => {
 
   const { filteredJoinCommunities, loading: _communitiesLoading } = useCommunities({
     enabled: hasSessionToken,
-    pageSize: 20,
-    params: {
-      sortBy: 'createdAt',
-      includeDeleted: false,
-    },
+    pageSize: HOME_SUMMARY_COMMUNITIES_PAGE_SIZE,
+    params: HOME_SUMMARY_COMMUNITIES_LIST_PARAMS,
   });
 
   const homeBannerCommunity = filteredJoinCommunities[0];
@@ -205,9 +205,8 @@ const SummaryScreen: React.FC<Props> = ({ navigation }) => {
   );
 
   const { products: suggestedPrograms } = useSuggestedProducts({
-    ...SUGGESTED_PRODUCTS_HOME_ACTIVITIES_DEFAULTS,
+    ...HOME_SUMMARY_SUGGESTED_PROGRAMS_QUERY,
     enabled: hasSessionToken,
-    type: PRODUCT_CATALOG_TYPE.PROGRAM,
   });
 
   const recommendedProgramCards = useMemo(

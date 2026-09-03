@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { productService } from '@/services';
 import type { Product as CarouselProduct } from '@/components/sections/product';
 import type { Product as ApiProduct } from '@/types/product';
 import { useCategories } from '@/hooks/category/useCategories';
@@ -7,11 +6,8 @@ import { logger } from '@/utils/logger';
 import { buildMarketplaceCategoryBadgeLabels } from '@/utils/marketplace/buildMarketplaceCategoryBadgeLabels';
 import { prefetchImageUris } from '@/utils/image/prefetchImageUris';
 import {
-  deleteInflightSuggestedProducts,
+  fetchSuggestedProducts,
   getCachedSuggestedProducts,
-  getInflightSuggestedProducts,
-  setCachedSuggestedProducts,
-  setInflightSuggestedProducts,
   suggestedProductsCacheKey,
   type SuggestedProductsCacheQuery,
 } from '@/services/product/suggestedProductsCache';
@@ -58,51 +54,6 @@ interface UseSuggestedProductsReturn {
 type SuggestedProductsQuery = SuggestedProductsCacheQuery & {
   status: 'active' | 'inactive';
 };
-
-async function fetchSuggestedProductList(
-  query: SuggestedProductsQuery,
-  options: { bypassCache?: boolean } = {},
-): Promise<ApiProduct[]> {
-  const key = suggestedProductsCacheKey(query);
-
-  if (!options.bypassCache) {
-    const cached = getCachedSuggestedProducts(key);
-    if (cached) {
-      return cached;
-    }
-    const pending = getInflightSuggestedProducts(key);
-    if (pending) {
-      return pending;
-    }
-  }
-
-  const request = (async () => {
-    const productsResponse = await productService.listProducts({
-      limit: query.limit,
-      status: query.status,
-      ...(query.categoryId != null && query.categoryId !== '' ? { categoryId: query.categoryId } : {}),
-      ...(query.type != null && query.type !== '' ? { type: query.type } : {}),
-      ...(query.excludeProductId ? { excludeProductId: query.excludeProductId } : {}),
-      ...(query.fillWithOtherCategories !== undefined
-        ? { fillWithOtherCategories: query.fillWithOtherCategories }
-        : {}),
-    });
-
-    if (productsResponse.success && productsResponse.data) {
-      return productsResponse.data.products.slice(0, query.limit);
-    }
-    return [];
-  })();
-
-  setInflightSuggestedProducts(key, request);
-  try {
-    const products = await request;
-    setCachedSuggestedProducts(key, products);
-    return products;
-  } finally {
-    deleteInflightSuggestedProducts(key);
-  }
-}
 
 export const useSuggestedProducts = (options: UseSuggestedProductsOptions = {}): UseSuggestedProductsReturn => {
   const {
@@ -161,7 +112,7 @@ export const useSuggestedProducts = (options: UseSuggestedProductsOptions = {}):
     }
     setError(null);
 
-    void fetchSuggestedProductList(query)
+    void fetchSuggestedProducts(query)
       .then((nextProducts) => {
         if (!cancelled) {
           setApiProducts(nextProducts);
@@ -201,7 +152,7 @@ export const useSuggestedProducts = (options: UseSuggestedProductsOptions = {}):
     }
     setError(null);
     try {
-      const nextProducts = await fetchSuggestedProductList(query, { bypassCache: true });
+      const nextProducts = await fetchSuggestedProducts(query, { bypassCache: true });
       setApiProducts(nextProducts);
     } catch (err) {
       logger.error('[useSuggestedProducts] Erro ao carregar produtos sugeridos', err);

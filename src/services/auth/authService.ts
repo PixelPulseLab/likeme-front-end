@@ -5,9 +5,16 @@ import { invalidateApiClientAuthTokenMemoryCache } from '@/services/infrastructu
 import notificationService from '@/services/notification/notificationService';
 import { clearAdvertisersListCache } from '@/services/advertiser/advertisersListCache';
 import { clearSuggestedProductsCache } from '@/services/product/suggestedProductsCache';
+import { clearCommunitiesListCache } from '@/utils/community/communitiesListCache';
 import { clearPublicUserCache } from '@/services/user/publicUserCache';
 import { fetchWithTimeout } from '@/utils/network/fetchWithTimeout';
+import { Platform } from 'react-native';
 import { setOnboardingStep } from './setOnboardingStep';
+import {
+  applyAuthSessionResponse,
+  clearCachedPostAuthRoute,
+  type AuthSessionApplyResult,
+} from './applyAuthSessionResponse';
 import storageService from './storageService';
 import { logger } from '@/utils/logger';
 import type { AuthResult } from '@/types/auth';
@@ -409,6 +416,7 @@ class AuthService {
       }
 
       await storageService.clearLocalUserDataIfOwnerChanged(authResult.user.email);
+      clearCachedPostAuthRoute();
 
       await storageService.setUser({
         ...authResult.user,
@@ -432,20 +440,51 @@ class AuthService {
   }
 
   /**
-   * GET /api/auth/token: valida o token guardado, persiste o JWT de sessão do backend quando a API o devolve
-   * e aplica `data.onboarding` no storage (com fallback ao formato antigo no mesmo nível que `token`).
+   * GET /api/auth/token — refresh leve (JWT + onboarding + postAuthRoute).
+   * Use no onboarding / sync pontual. Bootstrap cold-start: `bootstrapBackendSession`.
    */
-  async refreshBackendSessionFromStoredCredentials(): Promise<{
-    ok: boolean;
-    responseBody: Record<string, unknown> | null;
-  }> {
+  async refreshBackendSessionFromStoredCredentials(): Promise<
+    AuthSessionApplyResult & { responseBody: Record<string, unknown> | null }
+  > {
+    return this.fetchAndApplyAuthEndpoint('/api/auth/token');
+  }
+
+  /**
+   * GET /api/auth/session — bootstrap returning user (token + release policy + home summary).
+   */
+  async bootstrapBackendSession(options?: {
+    installedVersion?: string;
+  }): Promise<AuthSessionApplyResult & { responseBody: Record<string, unknown> | null }> {
+    const qs = new URLSearchParams();
+    const installedVersion = typeof options?.installedVersion === 'string' ? options.installedVersion.trim() : '';
+    if (installedVersion !== '') {
+      qs.set('currentVersion', installedVersion);
+    }
+    if (Platform.OS === 'ios' || Platform.OS === 'android') {
+      qs.set('platform', Platform.OS);
+    }
+    const path = qs.toString() ? `/api/auth/session?${qs.toString()}` : '/api/auth/session';
+    return this.fetchAndApplyAuthEndpoint(path);
+  }
+
+  private async fetchAndApplyAuthEndpoint(
+    path: string,
+  ): Promise<AuthSessionApplyResult & { responseBody: Record<string, unknown> | null }> {
+    const empty = {
+      ok: false as const,
+      responseBody: null,
+      releasePolicy: null,
+      serverMustUpdate: null,
+      serverRecommendUpdate: null,
+      postAuthRoute: null,
+    };
     try {
       const token = await storageService.getToken();
       if (!token) {
-        return { ok: false, responseBody: null };
+        return empty;
       }
       const response = await fetchWithTimeout(
-        getApiUrl('/api/auth/token'),
+        getApiUrl(path),
         {
           method: 'GET',
           headers: {
@@ -456,26 +495,14 @@ class AuthService {
         AUTH_BOOTSTRAP_HTTP_TIMEOUT_MS,
       );
       if (!response.ok) {
-        return { ok: false, responseBody: null };
+        return empty;
       }
       const data = (await response.json()) as Record<string, unknown>;
-      await setOnboardingStep(data);
-      const payload = data.data ?? data;
-      const sessionTokenCandidate =
-        (typeof payload === 'object' &&
-          payload !== null &&
-          ((payload as Record<string, unknown>).token ?? (payload as Record<string, unknown>).accessToken)) ??
-        data.token ??
-        data.accessToken;
-      const sessionToken = typeof sessionTokenCandidate === 'string' ? sessionTokenCandidate : null;
-      if (sessionToken && sessionToken.length > 0) {
-        await storageService.setToken(sessionToken);
-        invalidateApiClientAuthTokenMemoryCache();
-      }
-      return { ok: true, responseBody: data };
+      const applied = await applyAuthSessionResponse(data);
+      return { ...applied, responseBody: data };
     } catch (error) {
-      logger.warn('[AuthService] refreshBackendSessionFromStoredCredentials falhou', { cause: error });
-      return { ok: false, responseBody: null };
+      logger.warn('[AuthService] falha ao aplicar endpoint de auth', { path, cause: error });
+      return empty;
     }
   }
 
@@ -516,6 +543,8 @@ class AuthService {
       invalidateApiClientAuthTokenMemoryCache();
       clearPublicUserCache();
       clearSuggestedProductsCache();
+      clearCommunitiesListCache();
+      clearCachedPostAuthRoute();
       clearAdvertisersListCache();
     } catch (error) {
       logger.error('Logout error:', error);
@@ -523,6 +552,8 @@ class AuthService {
       invalidateApiClientAuthTokenMemoryCache();
       clearPublicUserCache();
       clearSuggestedProductsCache();
+      clearCommunitiesListCache();
+      clearCachedPostAuthRoute();
       clearAdvertisersListCache();
     }
   }

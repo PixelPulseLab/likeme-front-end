@@ -1,6 +1,5 @@
 import { renderHook, waitFor } from '@testing-library/react-native';
 import { useOnboardingRedirect } from './useOnboardingRedirect';
-import { setOnboardingStep } from '@/services/auth/setOnboardingStep';
 
 const mockGetToken = jest.fn();
 const mockGetWelcomeScreenAccessedAt = jest.fn();
@@ -9,18 +8,14 @@ const mockGetRegisterCompletedAt = jest.fn();
 const mockGetCategorySelectedAt = jest.fn();
 const mockGetUser = jest.fn();
 const mockRefreshBackendSession = jest.fn();
+const mockGetCachedPostAuthRoute = jest.fn();
 
 jest.mock('@/constants', () => ({
-  AUTH_BOOTSTRAP_HTTP_TIMEOUT_MS: 100,
   FORCE_START_ONBOARDING_LOCALLY: false,
 }));
 
-jest.mock('@/utils', () => ({
-  getNextOnboardingDestination: jest.requireActual('@/utils/auth/navigation').getNextOnboardingDestination,
-}));
-
-jest.mock('@/services/auth/setOnboardingStep', () => ({
-  setOnboardingStep: jest.fn(),
+jest.mock('@/services/auth/applyAuthSessionResponse', () => ({
+  getCachedPostAuthRoute: (...args: unknown[]) => mockGetCachedPostAuthRoute(...args),
 }));
 
 jest.mock('@/services/infrastructure/apiClient', () => ({
@@ -40,12 +35,7 @@ jest.mock('@/services', () => ({
   AuthService: {
     refreshBackendSessionFromStoredCredentials: (...args: unknown[]) => mockRefreshBackendSession(...args),
   },
-  userService: {
-    getProfile: jest.fn(),
-  },
 }));
-
-const mockSetOnboardingStep = setOnboardingStep as jest.MockedFunction<typeof setOnboardingStep>;
 
 describe('useOnboardingRedirect', () => {
   const navigationReplace = jest.fn();
@@ -53,50 +43,41 @@ describe('useOnboardingRedirect', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockGetToken.mockResolvedValue('session-token');
-    mockGetUser.mockResolvedValue({ name: 'João Souza' });
+    mockGetWelcomeScreenAccessedAt.mockResolvedValue('2026-01-01T00:00:00.000Z');
+    mockGetPrivacyPolicyAcceptedAt.mockResolvedValue('2026-01-02T00:00:00.000Z');
+    mockGetRegisterCompletedAt.mockResolvedValue('2026-01-03T00:00:00.000Z');
     mockGetCategorySelectedAt.mockResolvedValue('2026-01-04T00:00:00.000Z');
-    mockRefreshBackendSession.mockImplementation(async () => {
-      await mockSetOnboardingStep({
-        data: {
-          onboarding: {
-            registerCompletedAt: '2026-01-03T00:00:00.000Z',
-            objectivesSelectedAt: '2026-01-04T00:00:00.000Z',
-            privacyPolicyAcceptedAt: '2026-01-02T00:00:00.000Z',
-          },
-        },
-      });
-      return { ok: true, responseBody: {} };
+    mockGetUser.mockResolvedValue({ name: 'João Souza' });
+    mockRefreshBackendSession.mockResolvedValue({
+      ok: true,
+      postAuthRoute: { screen: 'Home' },
+      releasePolicy: null,
+      serverMustUpdate: null,
+      serverRecommendUpdate: null,
+      responseBody: {},
     });
   });
 
-  it('sincroniza com backend e redireciona para Home quando snapshot está completo', async () => {
-    mockSetOnboardingStep.mockImplementation(async () => {
-      mockGetWelcomeScreenAccessedAt.mockResolvedValue('2026-01-01T00:00:00.000Z');
-      mockGetPrivacyPolicyAcceptedAt.mockResolvedValue('2026-01-02T00:00:00.000Z');
-      mockGetRegisterCompletedAt.mockResolvedValue('2026-01-03T00:00:00.000Z');
-      mockGetCategorySelectedAt.mockResolvedValue('2026-01-04T00:00:00.000Z');
+  it('usa postAuthRoute em cache sem chamar backend novamente', async () => {
+    mockGetCachedPostAuthRoute.mockReturnValue({ screen: 'Home' });
+
+    renderHook(() => useOnboardingRedirect(navigationReplace));
+
+    await waitFor(() => {
+      expect(mockRefreshBackendSession).not.toHaveBeenCalled();
+      expect(navigationReplace).toHaveBeenCalledWith('Home', undefined);
     });
+  });
+
+  it('sincroniza sessão quando não há postAuthRoute em cache', async () => {
+    mockGetCachedPostAuthRoute
+      .mockReturnValueOnce(null)
+      .mockReturnValueOnce({ screen: 'InterestCategories', params: { userName: 'João Souza', firstName: 'João' } });
 
     renderHook(() => useOnboardingRedirect(navigationReplace));
 
     await waitFor(() => {
       expect(mockRefreshBackendSession).toHaveBeenCalledTimes(1);
-      expect(mockGetCategorySelectedAt).toHaveBeenCalled();
-      expect(navigationReplace).toHaveBeenCalledWith('Home', undefined);
-    });
-  });
-
-  it('redireciona para InterestCategories quando categorias ainda não foram selecionadas', async () => {
-    mockSetOnboardingStep.mockImplementation(async () => {
-      mockGetWelcomeScreenAccessedAt.mockResolvedValue('2026-01-01T00:00:00.000Z');
-      mockGetPrivacyPolicyAcceptedAt.mockResolvedValue('2026-01-02T00:00:00.000Z');
-      mockGetRegisterCompletedAt.mockResolvedValue('2026-01-03T00:00:00.000Z');
-      mockGetCategorySelectedAt.mockResolvedValue(null);
-    });
-
-    renderHook(() => useOnboardingRedirect(navigationReplace));
-
-    await waitFor(() => {
       expect(navigationReplace).toHaveBeenCalledWith('InterestCategories', {
         userName: 'João Souza',
         firstName: 'João',
@@ -104,13 +85,25 @@ describe('useOnboardingRedirect', () => {
     });
   });
 
-  it('não sincroniza quando não há token', async () => {
-    mockGetToken.mockResolvedValue(null);
+  it('cai no destino local quando sync falha sem postAuthRoute', async () => {
+    mockGetCachedPostAuthRoute.mockReturnValue(null);
+    mockRefreshBackendSession.mockResolvedValue({ ok: false, postAuthRoute: null });
+
+    renderHook(() => useOnboardingRedirect(navigationReplace));
+
+    await waitFor(() => {
+      expect(navigationReplace).toHaveBeenCalledWith('Home', undefined);
+    });
+  });
+
+  it('redireciona para Welcome quando ainda não foi acessada localmente', async () => {
+    mockGetWelcomeScreenAccessedAt.mockResolvedValue(null);
 
     renderHook(() => useOnboardingRedirect(navigationReplace));
 
     await waitFor(() => {
       expect(mockRefreshBackendSession).not.toHaveBeenCalled();
+      expect(navigationReplace).toHaveBeenCalledWith('Welcome');
     });
   });
 });

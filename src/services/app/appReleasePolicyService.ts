@@ -26,7 +26,7 @@ function parseForceUpdateEnabled(value: unknown): boolean {
   return Boolean(value);
 }
 
-function parsePolicyPayload(raw: unknown): AppReleasePolicyFetchResult {
+export function parseAppReleasePolicyPayload(raw: unknown): AppReleasePolicyFetchResult {
   if (!raw || typeof raw !== 'object') {
     return { policy: null, serverMustUpdate: null, serverRecommendUpdate: null };
   }
@@ -91,7 +91,7 @@ export async function fetchAppReleasePolicy(installedVersion: string): Promise<A
       return { policy: null, serverMustUpdate: null, serverRecommendUpdate: null };
     }
     const json: unknown = await response.json();
-    return parsePolicyPayload(json);
+    return parseAppReleasePolicyPayload(json);
   } catch (cause) {
     logger.error('[appReleasePolicyService] Falha ao buscar política de versão', { cause });
     return { policy: null, serverMustUpdate: null, serverRecommendUpdate: null };
