@@ -1,18 +1,25 @@
 {
-  "version": "1.14.1",
-  "releasedAt": "2026-08-21",
+  "version": "1.15.0",
+  "releasedAt": "2026-09-03",
   "android": {
-    "versionCode": 256
+    "versionCode": 257
   },
   "ios": {
-    "buildNumber": 32
+    "buildNumber": 33
   },
   "changelog": {
     "added": [
-      "Comunidade mostra a imagem de destaque no topo da tela e nos cards"
+      "Checkout do marketplace aceita Google Pay (Android) e Apple Pay (iOS)",
+      "Programas do tipo comunidade levam direto ao feed após a assinatura (APP-441)",
+      "Animação da logo ao abrir o app para quem já usa o LikeMe (APP-403)"
     ],
     "changed": [
-      "Telas de apresentação do app ficam mais leves, com imagens menores"
+      "Home lista um card por comunidade e abre o feed correspondente",
+      "Assinatura em atraso (PAST_DUE) mantém acesso ao conteúdo; inadimplência (UNPAID) bloqueia"
+    ],
+    "fixed": [
+      "Abertura do detalhe do protocolo sem travar na tela de carregamento",
+      "Preço de serviços sob consulta no marketplace exibe fallback correto"
     ]
   }
 }

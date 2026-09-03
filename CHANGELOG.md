@@ -296,3 +296,18 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 
 ### Alterado
 - Telas de apresentação do app ficam mais leves, com imagens menores
+
+## [1.15.0] - 2026-09-03
+
+### Adicionado
+- Checkout do marketplace aceita Google Pay (Android) e Apple Pay (iOS)
+- Programas do tipo comunidade levam direto ao feed após a assinatura (APP-441)
+- Animação da logo ao abrir o app para quem já usa o LikeMe (APP-403)
+
+### Alterado
+- Home lista um card por comunidade e abre o feed correspondente
+- Assinatura em atraso (PAST_DUE) mantém acesso ao conteúdo; inadimplência (UNPAID) bloqueia
+
+### Corrigido
+- Abertura do detalhe do protocolo sem travar na tela de carregamento
+- Preço de serviços sob consulta no marketplace exibe fallback correto
