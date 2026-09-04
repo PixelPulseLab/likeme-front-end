@@ -21,6 +21,7 @@ import {
   useMenuItems,
 } from '@/hooks';
 import { ADVERTISER_RECOMMENDATION_TARGET_TYPE } from '@/constants/recommendation/advertiserRecommendationTargetType';
+import { HOME_COMMUNITY_CARD_BADGE_I18N_KEY } from '@/constants/home/summaryHomeData';
 import { useTranslation } from '@/hooks/i18n';
 import type { RootStackParamList } from '@/types/navigation';
 import { useAnalyticsScreen } from '@/analytics';
@@ -36,7 +37,7 @@ import { useSetFloatingMenu } from '@/contexts/FloatingMenuContext';
 import { logger } from '@/utils/logger';
 import { ContactButtonsRow } from '@/components/sections/advertiser/ContactButtonsRow';
 import { formatAdvertiserDocumentsLine } from '@/utils/advertiser/documents';
-import { resolveCommunityBannerImageUri } from '@/utils/community/mappers';
+import { communityJoinCardBadges, resolveCommunityBannerImageUri } from '@/utils/community/mappers';
 import { navigateToCommunity } from '@/utils/navigation/communityNavigation';
 import { navigateRootStack, rootStackNavigationFrom } from '@/utils/navigation/rootStackNavigation';
 import { navigateToProviderProfile } from '@/utils/navigation/marketplaceNavigation';
@@ -291,11 +292,7 @@ const ProviderProfileScreen: React.FC<ProviderProfileScreenProps> = ({ navigatio
 
     const filteredCommunities = rawCommunities.filter((community) => community.communityId === targetCommunityId);
 
-    const names = categories
-      .map((category) => category.name.trim())
-      .filter(Boolean)
-      .slice(0, 2);
-    const badges = names.length > 0 ? names : ['Community'];
+    const badges = communityJoinCardBadges(categories, t(HOME_COMMUNITY_CARD_BADGE_I18N_KEY));
 
     return filteredCommunities.map((community) => ({
       id: community.communityId,
@@ -303,7 +300,7 @@ const ProviderProfileScreen: React.FC<ProviderProfileScreenProps> = ({ navigatio
       badges,
       image: resolveCommunityBannerImageUri(community, communityFiles, JOIN_CARD_COMMUNITY_IMAGE_FALLBACK),
     }));
-  }, [rawCommunities, categories, advertiser, communityFiles]);
+  }, [rawCommunities, categories, advertiser, communityFiles, t]);
 
   const handleJoinCommunity = useCallback(
     async (community: JoinCardItem) => {

@@ -311,3 +311,10 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 ### Corrigido
 - Abertura do detalhe do protocolo sem travar na tela de carregamento
 - Preço de serviços sob consulta no marketplace exibe fallback correto
+
+## [1.15.1] - 2026-09-04
+
+### Corrigido
+- Badge da comunidade na home em português (Comunidade)
+- Home atualiza a lista de comunidades ao voltar para a tela
+- Programa do tipo comunidade abre o feed pelo detalhe, sem tratar como conteúdo exclusivo

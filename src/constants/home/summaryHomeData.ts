@@ -1,5 +1,7 @@
 export const HOME_SUMMARY_COMMUNITIES_PAGE_SIZE = 20;
 
+export const HOME_COMMUNITY_CARD_BADGE_I18N_KEY = 'home.community';
+
 /** Alinhar com `AUTH_SESSION_HOME_SUMMARY` no back-end. Só comunidades sem produto programa. */
 export const HOME_SUMMARY_COMMUNITIES_LIST_PARAMS = {
   sortBy: 'createdAt',

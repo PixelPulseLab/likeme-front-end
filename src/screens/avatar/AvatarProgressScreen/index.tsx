@@ -13,6 +13,7 @@ import { chatService, communityService, anamnesisService, userService } from '@/
 import type { UserMarker } from '@/types/anamnesis';
 import { getMarkerColor, getMarkerGradient, hasMarkerGradient, MARKER_NAMES } from '@/constants/markers';
 import { COLORS } from '@/constants';
+import { HOME_COMMUNITY_CARD_BADGE_I18N_KEY } from '@/constants/home/summaryHomeData';
 import { useTranslation } from '@/hooks/i18n';
 import type { FeedEvent } from '@/types/event';
 import { NextEventsSection, PopularProvidersSection, type Provider } from '@/components/sections/community';
@@ -22,6 +23,7 @@ import { RecommendedProductsSection } from '@/components/sections/marketplace/Re
 import Carousel from '@/components/sections/product/Carousel';
 import { useAnalyticsScreen } from '@/analytics';
 import { logger } from '@/utils/logger';
+import { communityJoinCardBadges } from '@/utils/community/mappers';
 import { navigateToCommunity } from '@/utils/navigation/communityNavigation';
 import { rootStackNavigationFrom } from '@/utils/navigation/rootStackNavigation';
 import type { RootStackParamList } from '@/types/navigation';
@@ -66,11 +68,7 @@ const AvatarProgressScreen: React.FC<Props> = ({ navigation }) => {
   });
 
   const joinCommunities = useMemo((): JoinCardItem[] => {
-    const names = categories
-      .map((category) => category.name.trim())
-      .filter(Boolean)
-      .slice(0, 2);
-    const badges = names.length > 0 ? names : ['Community'];
+    const badges = communityJoinCardBadges(categories, t(HOME_COMMUNITY_CARD_BADGE_I18N_KEY));
 
     return rawCommunities.map((community) => ({
       id: community.communityId,
@@ -78,7 +76,7 @@ const AvatarProgressScreen: React.FC<Props> = ({ navigation }) => {
       badges,
       image: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=800',
     }));
-  }, [rawCommunities, categories]);
+  }, [rawCommunities, categories, t]);
 
   useEffect(() => {
     const loadEvents = async () => {

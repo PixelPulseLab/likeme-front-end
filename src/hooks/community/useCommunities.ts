@@ -12,7 +12,13 @@ import type { CategoryName } from '@/types/category';
 import { PAGINATION } from '@/constants';
 import { logger } from '@/utils/logger';
 import { prefetchImageUris } from '@/utils/image/prefetchImageUris';
-import { resolveCommunityBannerImageUri } from '@/utils/community/mappers';
+import {
+  communityJoinCardBadges,
+  resolveCommunityBannerImageUri,
+  COMMUNITY_JOIN_CARD_BADGE_LIMIT,
+} from '@/utils/community/mappers';
+import { useTranslation } from '@/hooks/i18n';
+import { HOME_COMMUNITY_CARD_BADGE_I18N_KEY } from '@/constants/home/summaryHomeData';
 import {
   isCommunitiesListCacheEntryFresh,
   shouldSkipCommunitiesListBackgroundRefresh,
@@ -77,6 +83,7 @@ interface UseCommunitiesReturn {
 }
 
 export const useCommunities = (options: UseCommunitiesOptions = {}): UseCommunitiesReturn => {
+  const { t } = useTranslation();
   const {
     enabled = true,
     pageSize = DEFAULT_PAGE_SIZE,
@@ -297,11 +304,7 @@ export const useCommunities = (options: UseCommunitiesOptions = {}): UseCommunit
   }, [enabled, loadCommunities, paramsKey]);
 
   const joinCommunities = useMemo((): JoinCommunityItem[] => {
-    const defaultBadges = categories
-      .map((category) => category.name.trim())
-      .filter(Boolean)
-      .slice(0, 2);
-    const badges = defaultBadges.length > 0 ? defaultBadges : ['Community'];
+    const badges = communityJoinCardBadges(categories, t(HOME_COMMUNITY_CARD_BADGE_I18N_KEY));
 
     const list: JoinCommunityItem[] = communities.map((community) => ({
       id: community.communityId,
@@ -315,7 +318,10 @@ export const useCommunities = (options: UseCommunitiesOptions = {}): UseCommunit
         getCategoryName != null && selectedCategoryName != null ? getCategoryName(selectedCategoryName).trim() : '';
       const firstBadges =
         selectedLabel.length > 0
-          ? [selectedLabel, ...badges.filter((label) => label !== selectedLabel)].slice(0, 2)
+          ? [selectedLabel, ...badges.filter((label) => label !== selectedLabel)].slice(
+              0,
+              COMMUNITY_JOIN_CARD_BADGE_LIMIT,
+            )
           : badges;
 
       list[0] = {
@@ -325,7 +331,7 @@ export const useCommunities = (options: UseCommunitiesOptions = {}): UseCommunit
       };
     }
     return list;
-  }, [communities, categories, communityFiles, selectedCategoryName, getCategoryName, firstCardImageUrl]);
+  }, [communities, categories, communityFiles, selectedCategoryName, getCategoryName, firstCardImageUrl, t]);
 
   const filteredJoinCommunities = useMemo((): JoinCommunityItem[] => {
     const base = solutionTab === 'all' || solutionTab === 'communities' ? joinCommunities : [];

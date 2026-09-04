@@ -438,12 +438,27 @@ export const mapCommunityToProgram = (community: Community, files?: CommunityFil
   };
 };
 
+export const COMMUNITY_JOIN_CARD_BADGE_LIMIT = 2;
+
+export function communityJoinCardBadges(
+  categories: Array<Pick<CommunityCategory, 'name'>>,
+  fallbackLabel: string,
+): string[] {
+  const names = categories
+    .map((category) => category.name.trim())
+    .filter(Boolean)
+    .slice(0, COMMUNITY_JOIN_CARD_BADGE_LIMIT);
+  const fallback = fallbackLabel.trim();
+  return names.length > 0 ? names : fallback ? [fallback] : [];
+}
+
 export const mapCommunityToOtherCommunity = (
   community: Community,
   category?: CommunityCategory,
   files?: CommunityFile[],
+  fallbackBadgeLabel = '',
 ): { id: string; title: string; badge: string; image: string; rating: number; price: string } => {
-  const badge = category?.name || 'Community';
+  const badge = communityJoinCardBadges(category ? [category] : [], fallbackBadgeLabel)[0] ?? '';
 
   const image =
     community.avatarFileId && files
