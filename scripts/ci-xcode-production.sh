@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Build / archive / export Production no CI (sem conta Apple no Xcode).
-# Automatic + ASC API Key; fallback manual só no export se automático falhar.
+# Manual com P12 + perfil App Store. Automatic tenta criar certificado Development e estoura a cota da equipe.
 set -euo pipefail
 
 ACTION="${1:?Uso: ci-xcode-production.sh build|archive|export}"
@@ -10,43 +10,35 @@ cd "$ROOT/ios"
 
 TEAM_ID="${IOS_DEVELOPMENT_TEAM:-VS752K4DT8}"
 
+USE_MANUAL_SIGNING=false
+SIGNING_ARGS=()
+XCODE_PROVISIONING=()
 XCODE_AUTH=()
-if [[ -n "${ASC_API_KEY_PATH:-}" && -f "${ASC_API_KEY_PATH}" ]]; then
+
+if [[ -n "${IOS_PROVISIONING_PROFILE_UUID:-}" ]]; then
+  USE_MANUAL_SIGNING=true
+  PROFILE_SPECIFIER="${IOS_PROVISIONING_PROFILE_NAME:-${IOS_PROVISIONING_PROFILE_UUID}}"
+  SIGNING_ARGS=(
+    "DEVELOPMENT_TEAM=${TEAM_ID}"
+    CODE_SIGN_STYLE=Manual
+    "CODE_SIGN_IDENTITY=${IOS_CODE_SIGN_IDENTITY:-Apple Distribution}"
+    "PROVISIONING_PROFILE_SPECIFIER=${PROFILE_SPECIFIER}"
+  )
+  echo "Assinatura CI: manual (perfil ${PROFILE_SPECIFIER})"
+elif [[ -n "${ASC_API_KEY_PATH:-}" && -f "${ASC_API_KEY_PATH}" ]]; then
+  XCODE_PROVISIONING=( -allowProvisioningUpdates )
   XCODE_AUTH=(
     -authenticationKeyPath "$ASC_API_KEY_PATH"
     -authenticationKeyID "${ASC_API_KEY_ID:-74BTTLL273}"
     -authenticationKeyIssuerID "${ASC_API_ISSUER_ID:-f4a624c3-e2af-4ad0-a365-f60b90c2dc9d}"
   )
-fi
-
-HAS_ASC=false
-[[ ${#XCODE_AUTH[@]} -gt 0 ]] && HAS_ASC=true
-
-USE_MANUAL_SIGNING=false
-SIGNING_ARGS=()
-XCODE_PROVISIONING=( -allowProvisioningUpdates )
-
-if [[ "$HAS_ASC" == true ]]; then
   SIGNING_ARGS=(
     "DEVELOPMENT_TEAM=${TEAM_ID}"
     CODE_SIGN_STYLE=Automatic
   )
-  echo "Assinatura CI: Automatic + App Store Connect API Key"
-  if [[ -n "${IOS_PROVISIONING_PROFILE_UUID:-}" ]]; then
-    echo "Perfil manual (${IOS_PROVISIONING_PROFILE_UUID}) instalado — usado só se o export automático falhar."
-  fi
-elif [[ -n "${IOS_PROVISIONING_PROFILE_UUID:-}" ]]; then
-  USE_MANUAL_SIGNING=true
-  XCODE_PROVISIONING=()
-  SIGNING_ARGS=(
-    "DEVELOPMENT_TEAM=${TEAM_ID}"
-    CODE_SIGN_STYLE=Manual
-    "CODE_SIGN_IDENTITY=${IOS_CODE_SIGN_IDENTITY:-Apple Distribution}"
-    "PROVISIONING_PROFILE_SPECIFIER=${IOS_PROVISIONING_PROFILE_UUID}"
-  )
-  echo "Assinatura CI: manual (profile ${IOS_PROVISIONING_PROFILE_UUID})"
+  echo "Assinatura CI: Automatic + App Store Connect API Key (sem perfil App Store no runner)"
 else
-  echo "::error::Configure ASC_API_KEY_P8 no GitHub, ou IOS_PROVISIONING_PROFILE_BASE64 com perfil App Store Distribution (sem ProvisionedDevices)." >&2
+  echo "::error::Configure IOS_PROVISIONING_PROFILE_BASE64 (perfil App Store Distribution) no GitHub." >&2
   exit 1
 fi
 
@@ -171,7 +163,7 @@ case "$ACTION" in
     fi
 
     if [[ "$export_status" -ne 0 ]]; then
-      echo "::error::Export falhou. Corrija permissões da API Key ASC (Admin + Certificates/Profiles) ou atualize IOS_PROVISIONING_PROFILE_BASE64 com perfil App Store do mesmo certificado do P12." >&2
+      echo "::error::Export falhou. Atualize IOS_PROVISIONING_PROFILE_BASE64 com o perfil App Store do mesmo certificado do P12." >&2
       exit "$export_status"
     fi
 
