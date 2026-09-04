@@ -88,7 +88,12 @@ xcode_optional_args() {
 
 xcode_build_args() {
   xcode_optional_args
-  XCODE_BUILD_ARGS=("${XCODE_OPTIONAL_ARGS[@]}" "${SIGNING_ARGS[@]}")
+  # bash 3.2 + set -u: "${arr[@]}" em array vazio aborta.
+  if ((${#XCODE_OPTIONAL_ARGS[@]} > 0)); then
+    XCODE_BUILD_ARGS=("${XCODE_OPTIONAL_ARGS[@]}" "${SIGNING_ARGS[@]}")
+  else
+    XCODE_BUILD_ARGS=("${SIGNING_ARGS[@]}")
+  fi
 }
 
 run_export_archive() {
@@ -97,13 +102,22 @@ run_export_archive() {
   export_log="$(mktemp)"
   xcode_optional_args
   set +e
-  xcodebuild \
-    -exportArchive \
-    -archivePath "$PWD/build/LikeMe.xcarchive" \
-    -exportPath "$PWD/build/export" \
-    -exportOptionsPlist "$export_plist" \
-    "${XCODE_OPTIONAL_ARGS[@]}" \
-    2>&1 | tee "$export_log"
+  if ((${#XCODE_OPTIONAL_ARGS[@]} > 0)); then
+    xcodebuild \
+      -exportArchive \
+      -archivePath "$PWD/build/LikeMe.xcarchive" \
+      -exportPath "$PWD/build/export" \
+      -exportOptionsPlist "$export_plist" \
+      "${XCODE_OPTIONAL_ARGS[@]}" \
+      2>&1 | tee "$export_log"
+  else
+    xcodebuild \
+      -exportArchive \
+      -archivePath "$PWD/build/LikeMe.xcarchive" \
+      -exportPath "$PWD/build/export" \
+      -exportOptionsPlist "$export_plist" \
+      2>&1 | tee "$export_log"
+  fi
   local status="${PIPESTATUS[0]}"
   set -e
 
