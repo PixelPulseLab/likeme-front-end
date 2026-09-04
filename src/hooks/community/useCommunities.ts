@@ -17,8 +17,6 @@ import {
   resolveCommunityBannerImageUri,
   COMMUNITY_JOIN_CARD_BADGE_LIMIT,
 } from '@/utils/community/mappers';
-import { useTranslation } from '@/hooks/i18n';
-import { HOME_COMMUNITY_CARD_BADGE_I18N_KEY } from '@/constants/home/summaryHomeData';
 import {
   isCommunitiesListCacheEntryFresh,
   shouldSkipCommunitiesListBackgroundRefresh,
@@ -83,7 +81,6 @@ interface UseCommunitiesReturn {
 }
 
 export const useCommunities = (options: UseCommunitiesOptions = {}): UseCommunitiesReturn => {
-  const { t } = useTranslation();
   const {
     enabled = true,
     pageSize = DEFAULT_PAGE_SIZE,
@@ -304,25 +301,24 @@ export const useCommunities = (options: UseCommunitiesOptions = {}): UseCommunit
   }, [enabled, loadCommunities, paramsKey]);
 
   const joinCommunities = useMemo((): JoinCommunityItem[] => {
-    const badges = communityJoinCardBadges(categories, t(HOME_COMMUNITY_CARD_BADGE_I18N_KEY));
-
     const list: JoinCommunityItem[] = communities.map((community) => ({
       id: community.communityId,
       title: community.displayName,
-      badges,
+      badges: communityJoinCardBadges(community, categories),
       image: resolveCommunityBannerImageUri(community, communityFiles, JOIN_CARD_IMAGE_FALLBACK),
     }));
 
     if (list.length > 0 && (firstCardImageUrl != null || (getCategoryName != null && selectedCategoryName != null))) {
       const selectedLabel =
         getCategoryName != null && selectedCategoryName != null ? getCategoryName(selectedCategoryName).trim() : '';
+      const communityBadges = list[0].badges;
       const firstBadges =
         selectedLabel.length > 0
-          ? [selectedLabel, ...badges.filter((label) => label !== selectedLabel)].slice(
+          ? [selectedLabel, ...communityBadges.filter((label) => label !== selectedLabel)].slice(
               0,
               COMMUNITY_JOIN_CARD_BADGE_LIMIT,
             )
-          : badges;
+          : communityBadges;
 
       list[0] = {
         ...list[0],
@@ -331,7 +327,7 @@ export const useCommunities = (options: UseCommunitiesOptions = {}): UseCommunit
       };
     }
     return list;
-  }, [communities, categories, communityFiles, selectedCategoryName, getCategoryName, firstCardImageUrl, t]);
+  }, [communities, categories, communityFiles, selectedCategoryName, getCategoryName, firstCardImageUrl]);
 
   const filteredJoinCommunities = useMemo((): JoinCommunityItem[] => {
     const base = solutionTab === 'all' || solutionTab === 'communities' ? joinCommunities : [];

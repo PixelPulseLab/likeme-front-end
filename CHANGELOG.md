@@ -318,3 +318,8 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 - Badge da comunidade na home em português (Comunidade)
 - Home atualiza a lista de comunidades ao voltar para a tela
 - Programa do tipo comunidade abre o feed pelo detalhe, sem tratar como conteúdo exclusivo
+
+## [1.15.2] - 2026-09-04
+
+### Corrigido
+- Badge da comunidade na home mostra a categoria enviada pela API

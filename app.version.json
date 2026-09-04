@@ -1,17 +1,15 @@
 {
-  "version": "1.15.1",
+  "version": "1.15.2",
   "releasedAt": "2026-09-04",
   "android": {
-    "versionCode": 258
+    "versionCode": 259
   },
   "ios": {
-    "buildNumber": 34
+    "buildNumber": 35
   },
   "changelog": {
     "fixed": [
-      "Badge da comunidade na home em português (Comunidade)",
-      "Home atualiza a lista de comunidades ao voltar para a tela",
-      "Programa do tipo comunidade abre o feed pelo detalhe, sem tratar como conteúdo exclusivo"
+      "Badge da comunidade na home mostra a categoria enviada pela API"
     ]
   }
 }

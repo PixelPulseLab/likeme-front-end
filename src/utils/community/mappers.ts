@@ -441,24 +441,28 @@ export const mapCommunityToProgram = (community: Community, files?: CommunityFil
 export const COMMUNITY_JOIN_CARD_BADGE_LIMIT = 2;
 
 export function communityJoinCardBadges(
-  categories: Array<Pick<CommunityCategory, 'name'>>,
-  fallbackLabel: string,
+  community: Pick<Community, 'categoryIds'>,
+  categories: Array<Pick<CommunityCategory, 'categoryId' | 'name'>>,
 ): string[] {
-  const names = categories
-    .map((category) => category.name.trim())
-    .filter(Boolean)
-    .slice(0, COMMUNITY_JOIN_CARD_BADGE_LIMIT);
-  const fallback = fallbackLabel.trim();
-  return names.length > 0 ? names : fallback ? [fallback] : [];
+  const categoryById = new Map(
+    categories
+      .map((category) => [String(category.categoryId).trim(), category.name.trim()] as const)
+      .filter(([id, name]) => id.length > 0 && name.length > 0),
+  );
+
+  const names = (community.categoryIds ?? [])
+    .map((categoryId) => categoryById.get(String(categoryId).trim()))
+    .filter((name): name is string => Boolean(name));
+
+  return [...new Set(names)].slice(0, COMMUNITY_JOIN_CARD_BADGE_LIMIT);
 }
 
 export const mapCommunityToOtherCommunity = (
   community: Community,
   category?: CommunityCategory,
   files?: CommunityFile[],
-  fallbackBadgeLabel = '',
 ): { id: string; title: string; badge: string; image: string; rating: number; price: string } => {
-  const badge = communityJoinCardBadges(category ? [category] : [], fallbackBadgeLabel)[0] ?? '';
+  const badge = communityJoinCardBadges(community, category ? [category] : [])[0] ?? '';
 
   const image =
     community.avatarFileId && files

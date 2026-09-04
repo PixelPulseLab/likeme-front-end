@@ -21,7 +21,6 @@ import {
   useMenuItems,
 } from '@/hooks';
 import { ADVERTISER_RECOMMENDATION_TARGET_TYPE } from '@/constants/recommendation/advertiserRecommendationTargetType';
-import { HOME_COMMUNITY_CARD_BADGE_I18N_KEY } from '@/constants/home/summaryHomeData';
 import { useTranslation } from '@/hooks/i18n';
 import type { RootStackParamList } from '@/types/navigation';
 import { useAnalyticsScreen } from '@/analytics';
@@ -292,15 +291,13 @@ const ProviderProfileScreen: React.FC<ProviderProfileScreenProps> = ({ navigatio
 
     const filteredCommunities = rawCommunities.filter((community) => community.communityId === targetCommunityId);
 
-    const badges = communityJoinCardBadges(categories, t(HOME_COMMUNITY_CARD_BADGE_I18N_KEY));
-
     return filteredCommunities.map((community) => ({
       id: community.communityId,
       title: community.displayName,
-      badges,
+      badges: communityJoinCardBadges(community, categories),
       image: resolveCommunityBannerImageUri(community, communityFiles, JOIN_CARD_COMMUNITY_IMAGE_FALLBACK),
     }));
-  }, [rawCommunities, categories, advertiser, communityFiles, t]);
+  }, [rawCommunities, categories, advertiser, communityFiles]);
 
   const handleJoinCommunity = useCallback(
     async (community: JoinCardItem) => {
