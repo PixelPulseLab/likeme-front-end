@@ -123,7 +123,11 @@ export const useUserFeed = (options: UseUserFeedOptions = {}): UseUserFeedReturn
         nextFeedCursorRef.current = undefined;
       }
 
-      if (page > 1 && (nextFeedCursorRef.current == null || nextFeedCursorRef.current.trim() === '')) {
+      if (
+        !scopedCommunityId &&
+        page > 1 &&
+        (nextFeedCursorRef.current == null || nextFeedCursorRef.current.trim() === '')
+      ) {
         logger.warn('[useUserFeed] loadMore sem cursor: paging.next ausente na página anterior.');
         setHasMore(false);
         hasMoreRef.current = false;

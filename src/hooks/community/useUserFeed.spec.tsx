@@ -277,6 +277,47 @@ describe('useUserFeed (scroll infinito / paginação)', () => {
     expect(result.current.posts.map((p) => p.id)).toEqual(['c1', 'c2']);
   });
 
+  it('com communityId carrega page 2 por pagination mesmo sem paging.next', async () => {
+    const pageOnePosts = Array.from({ length: 10 }, (_, i) => ({ postId: `c-page-${i}` }));
+    getCommunityPostsMock
+      .mockResolvedValueOnce(
+        feedPayload({
+          posts: pageOnePosts,
+          paging: {},
+          pagination: { page: 1, limit: 10, total: 12, totalPages: 2 },
+        }),
+      )
+      .mockResolvedValueOnce(
+        feedPayload({
+          posts: [{ postId: 'c-page-2' }],
+          paging: {},
+          pagination: { page: 2, limit: 10, total: 12, totalPages: 2 },
+        }),
+      );
+
+    const { result } = renderHook(() =>
+      useUserFeed({
+        pageSize: 10,
+        searchQuery: '',
+        params: { communityId: COMMUNITY_ID },
+      }),
+    );
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.hasMore).toBe(true);
+
+    await act(async () => {
+      result.current.loadMore();
+    });
+
+    await waitFor(() => expect(result.current.loadingMore).toBe(false));
+    expect(getCommunityPostsMock).toHaveBeenCalledTimes(2);
+    const secondPageParams = getCommunityPostsMock.mock.calls[1][1];
+    expect(secondPageParams).toEqual(expect.objectContaining({ page: 2, limit: 10 }));
+    expect(secondPageParams).not.toHaveProperty('token');
+    expect(result.current.posts.map((p) => p.id)).toEqual([...pageOnePosts.map((p) => p.postId), 'c-page-2']);
+  });
+
   it('com communityId respeita pagination do backend quando page veio cheia', async () => {
     const ten = Array.from({ length: 10 }, (_, i) => ({ postId: `c-full-${i}` }));
     getCommunityPostsMock.mockResolvedValue(
