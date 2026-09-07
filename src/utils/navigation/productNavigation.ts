@@ -6,6 +6,7 @@ import { formatPriceLabel } from '@/utils/formatters/priceFormatter';
 import { advertiserToRouteProductProvider } from '@/utils/marketplace/routeProductProvider';
 import { navigateWithAppLoading } from '@/utils/navigation/appLoadingNavigation';
 import { navigateToCommunity } from '@/utils/navigation/communityNavigation';
+import { subscriptionHasProtocolContentAccess } from '@/utils/subscription/subscriptionManageDisplay';
 
 const priceForNav = (raw: number | null | undefined) => formatPriceLabel(raw);
 
@@ -118,11 +119,19 @@ export function navigateToSubscribedProgram(
   params: {
     programType?: ProgramType | null;
     communityId?: string | null;
+    subscriptionStatus?: string | null;
+    cancelAtPeriodEnd?: boolean | null;
+    canceledAt?: string | null;
     protocolDetailParams: RootStackParamList['ProtocolDetail'];
   },
 ): void {
   const communityId = params.communityId?.trim();
-  if (params.programType === PROGRAM_TYPE.COMMUNITY && communityId) {
+  const hasCommunityFeedAccess = subscriptionHasProtocolContentAccess({
+    status: params.subscriptionStatus,
+    cancelAtPeriodEnd: params.cancelAtPeriodEnd,
+    canceledAt: params.canceledAt,
+  });
+  if (params.programType === PROGRAM_TYPE.COMMUNITY && communityId && hasCommunityFeedAccess) {
     navigateToCommunity(navigation, { focusCommunityId: communityId });
     return;
   }
