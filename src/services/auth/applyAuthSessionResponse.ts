@@ -35,6 +35,10 @@ export type AuthSessionApplyResult = {
   postAuthRoute: AuthSessionPostAuthRoute | null;
 };
 
+export type ApplyAuthSessionResponseOptions = {
+  allowExistingToken?: boolean;
+};
+
 let cachedPostAuthRoute: AuthSessionPostAuthRoute | null = null;
 
 export function getCachedPostAuthRoute(): AuthSessionPostAuthRoute | null {
@@ -143,7 +147,10 @@ function seedHomeSummaryCaches(payload: Record<string, unknown>): void {
  * Aplica resposta de GET /api/auth/token ou /api/auth/session.
  * Home summary / release policy só existem em /session.
  */
-export async function applyAuthSessionResponse(envelope: unknown): Promise<AuthSessionApplyResult> {
+export async function applyAuthSessionResponse(
+  envelope: unknown,
+  options: ApplyAuthSessionResponseOptions = {},
+): Promise<AuthSessionApplyResult> {
   const payload = readSessionPayload(envelope);
   if (!payload) {
     return {
@@ -157,6 +164,7 @@ export async function applyAuthSessionResponse(envelope: unknown): Promise<AuthS
 
   await setOnboardingStep(envelope);
   const tokenPersisted = await persistSessionToken(payload);
+  const sessionAccepted = tokenPersisted || options.allowExistingToken === true;
 
   cachedPostAuthRoute = readPostAuthRoute(payload);
   seedHomeSummaryCaches(payload);
@@ -167,7 +175,7 @@ export async function applyAuthSessionResponse(envelope: unknown): Promise<AuthS
       : { policy: null, serverMustUpdate: null, serverRecommendUpdate: null };
 
   return {
-    ok: tokenPersisted,
+    ok: sessionAccepted,
     releasePolicy: releasePolicyParsed.policy,
     serverMustUpdate: releasePolicyParsed.serverMustUpdate,
     serverRecommendUpdate: releasePolicyParsed.serverRecommendUpdate,

@@ -138,6 +138,7 @@ const ProtocolDetailScreen: React.FC<Props> = ({ navigation, route }) => {
   };
   const hasActiveProtocolAccess =
     Boolean(protocol) && subscriptionHasProtocolContentAccess(subscriptionLifecycleFields);
+  const shouldOpenCommunityFeed = opensCommunityFeed && hasActiveProtocolAccess;
 
   const [activeTab, setActiveTab] = useState<ProtocolTabId>('content');
   const [agreementsText, setAgreementsText] = useState(protocol?.agreements?.trim() ?? '');
@@ -182,7 +183,7 @@ const ProtocolDetailScreen: React.FC<Props> = ({ navigation, route }) => {
   const aboutText = protocol?.description?.trim() || protocol?.shortDescription?.trim() || null;
 
   useEffect(() => {
-    if (opensCommunityFeed) {
+    if (shouldOpenCommunityFeed) {
       return;
     }
 
@@ -217,7 +218,7 @@ const ProtocolDetailScreen: React.FC<Props> = ({ navigation, route }) => {
     return () => {
       cancelled = true;
     };
-  }, [opensCommunityFeed, productId, protocol?.agreements]);
+  }, [shouldOpenCommunityFeed, productId, protocol?.agreements]);
 
   const contentLoading = hasCommunity && courseLoading;
   const moduleStorageScopeId = communityId || protocol?.id || productId;
@@ -225,7 +226,7 @@ const ProtocolDetailScreen: React.FC<Props> = ({ navigation, route }) => {
   useFocusEffect(
     useCallback(() => {
       setMenu(menuItems, 'profile');
-      if (opensCommunityFeed) {
+      if (shouldOpenCommunityFeed) {
         return;
       }
       setProtocolAccessedAt(Date.now());
@@ -267,7 +268,7 @@ const ProtocolDetailScreen: React.FC<Props> = ({ navigation, route }) => {
       return () => {
         cancelled = true;
       };
-    }, [menuItems, opensCommunityFeed, resolvedProtocol?.subscriptionId, setMenu]),
+    }, [menuItems, shouldOpenCommunityFeed, resolvedProtocol?.subscriptionId, setMenu]),
   );
 
   const handleBack = () => {
@@ -342,13 +343,13 @@ const ProtocolDetailScreen: React.FC<Props> = ({ navigation, route }) => {
   };
 
   useEffect(() => {
-    if (!opensCommunityFeed) {
+    if (!shouldOpenCommunityFeed) {
       return;
     }
     navigateToCommunity(navigation, { focusCommunityId: communityId }, { replace: true });
-  }, [opensCommunityFeed, communityId, navigation]);
+  }, [shouldOpenCommunityFeed, communityId, navigation]);
 
-  if (opensCommunityFeed || protocolLoadState === 'loading') {
+  if (shouldOpenCommunityFeed || protocolLoadState === 'loading') {
     return (
       <ScreenWithHeader
         navigation={navigation}

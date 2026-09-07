@@ -57,6 +57,29 @@ describe('subscriptionListMapper', () => {
     expect(item.communityId).toBe('community-feed-id');
   });
 
+  it('infere programa de comunidade quando programCommunity vem sem programType', () => {
+    const row: UserSubscriptionListItem = {
+      id: 'sub-community-legacy',
+      productId: 'prod-community',
+      status: 'ACTIVE',
+      nextBillingAt: null,
+      createdAt: '2026-01-01T00:00:00.000Z',
+      product: {
+        id: 'prod-community',
+        name: 'Comunidade',
+        image: 'https://example.com/community.jpg',
+        type: 'program',
+      },
+      programCommunity: {
+        communityId: ' community-feed-id ',
+      },
+    };
+
+    const item = mapSubscriptionToListItem(row, t);
+    expect(item.programType).toBe('community');
+    expect(item.communityId).toBe('community-feed-id');
+  });
+
   it('marca protocolo em cancelamento com badge e card dessaturado', () => {
     const row: UserSubscriptionListItem = {
       id: 'sub-canceling',

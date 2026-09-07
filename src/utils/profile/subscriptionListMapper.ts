@@ -35,6 +35,9 @@ export function mapSubscriptionToListItem(row: UserSubscriptionListItem, t: Tran
   const typeBadges = catalogTypeTranslatedBadgeLabels(row.product.type, t);
   const statusBadge = subscriptionStatusBadge(row, t);
   const badges = [...typeBadges, ...(statusBadge ? [statusBadge] : [])];
+  const programCommunityId = row.programCommunity?.communityId?.trim() || undefined;
+  const programType =
+    row.programType ?? row.product.programType ?? (programCommunityId ? PROGRAM_TYPE.COMMUNITY : PROGRAM_TYPE.COURSE);
 
   return {
     id: row.id,
@@ -45,8 +48,8 @@ export function mapSubscriptionToListItem(row: UserSubscriptionListItem, t: Tran
     badges,
     acquiredAt: row.createdAt,
     subscriptionId: row.id,
-    communityId: row.programCommunity?.communityId,
-    programType: row.programType ?? row.product.programType ?? PROGRAM_TYPE.COURSE,
+    communityId: programCommunityId,
+    programType,
     description: row.programCommunity?.description ?? row.product.description ?? null,
     status: row.status,
     cancelAtPeriodEnd: Boolean(row.cancelAtPeriodEnd),

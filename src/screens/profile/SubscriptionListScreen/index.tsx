@@ -72,6 +72,9 @@ const SubscriptionListScreen: React.FC<Props> = ({ navigation }) => {
       navigateToSubscribedProgram(navigation, {
         programType: item.programType,
         communityId: item.communityId,
+        subscriptionStatus: item.status,
+        cancelAtPeriodEnd: item.cancelAtPeriodEnd,
+        canceledAt: item.canceledAt,
         protocolDetailParams: {
           protocol: {
             id: item.productId,
