@@ -499,7 +499,7 @@ class AuthService {
         return empty;
       }
       const data = (await response.json()) as Record<string, unknown>;
-      const applied = await applyAuthSessionResponse(data);
+      const applied = await applyAuthSessionResponse(data, { allowExistingToken: true });
       return { ...applied, responseBody: data };
     } catch (error) {
       logger.warn('[AuthService] falha ao aplicar endpoint de auth', { path, cause: error });

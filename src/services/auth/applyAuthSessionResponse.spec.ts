@@ -57,4 +57,22 @@ describe('applyAuthSessionResponse', () => {
     expect(bad.postAuthRoute).toBeNull();
     expect(getCachedPostAuthRoute()).toBeNull();
   });
+
+  it('aceita sessão autenticada existente quando backend não reemite token', async () => {
+    const ok = await applyAuthSessionResponse(
+      {
+        data: {
+          onboarding: {
+            registerCompletedAt: '2026-01-01T00:00:00.000Z',
+          },
+          postAuthRoute: { screen: 'Home' },
+        },
+      },
+      { allowExistingToken: true },
+    );
+
+    expect(ok.ok).toBe(true);
+    expect(getCachedPostAuthRoute()).toEqual({ screen: 'Home' });
+    expect(mockSetToken).not.toHaveBeenCalled();
+  });
 });
