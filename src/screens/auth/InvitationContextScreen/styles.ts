@@ -12,4 +12,7 @@ export const styles = StyleSheet.create({
     ...TYPOGRAPHY.title3,
     color: COLORS.TEXT,
   },
+  continueButton: {
+    marginTop: SPACING.XL,
+  },
 });

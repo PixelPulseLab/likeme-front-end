@@ -22,3 +22,7 @@ export type InvitationCodeValidationContext = {
   provider: InvitationCodeValidationProvider;
   community: InvitationCodeValidationCommunity | null;
 };
+
+export type InvitationActivationContext = InvitationCodeValidationContext & {
+  displayName: string | null;
+};

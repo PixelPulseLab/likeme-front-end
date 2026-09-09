@@ -4,6 +4,7 @@ export const INVITATION_CODE_VALIDATION_REASON = {
   CANCELLED: 'CANCELLED',
   REDEEMED: 'REDEEMED',
   PROGRAM_UNAVAILABLE: 'PROGRAM_UNAVAILABLE',
+  IDENTITY: 'IDENTITY',
 } as const;
 
 export type InvitationCodeValidationReason =
@@ -15,6 +16,7 @@ export const INVITATION_CODE_VALIDATION_ERROR = {
   CANCELLED: 'Este código de convite foi cancelado',
   REDEEMED: 'Este código de convite já foi utilizado',
   PROGRAM_UNAVAILABLE: 'Este código de convite não pode ser utilizado',
+  IDENTITY: 'Não foi possível vincular este convite à sua conta',
 } as const;
 
 export const INVITATION_CODE_VALIDATION_I18N_KEY = {
@@ -23,6 +25,7 @@ export const INVITATION_CODE_VALIDATION_I18N_KEY = {
   CANCELLED: 'invitation.codeCancelled',
   REDEEMED: 'invitation.codeRedeemed',
   PROGRAM_UNAVAILABLE: 'invitation.codeUnavailable',
+  IDENTITY: 'invitation.identityMismatch',
 } as const;
 
 export const INVITATION_CODE_VALIDATE_FAILED_I18N_KEY = 'invitation.codeValidateFailed';

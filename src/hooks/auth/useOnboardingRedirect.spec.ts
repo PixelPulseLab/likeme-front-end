@@ -22,6 +22,18 @@ jest.mock('@/services/infrastructure/apiClient', () => ({
   invalidateApiClientAuthTokenMemoryCache: jest.fn(),
 }));
 
+const mockActivatePendingStoredCode = jest.fn();
+
+jest.mock('@/services/invitation/invitationService', () => ({
+  invitationService: {
+    activatePendingStoredCode: (...args: unknown[]) => mockActivatePendingStoredCode(...args),
+  },
+}));
+
+jest.mock('@/hooks/i18n', () => ({
+  useTranslation: () => ({ t: (key: string) => key }),
+}));
+
 jest.mock('@/services', () => ({
   storageService: {
     getToken: (...args: unknown[]) => mockGetToken(...args),
@@ -48,6 +60,7 @@ describe('useOnboardingRedirect', () => {
     mockGetRegisterCompletedAt.mockResolvedValue('2026-01-03T00:00:00.000Z');
     mockGetCategorySelectedAt.mockResolvedValue('2026-01-04T00:00:00.000Z');
     mockGetUser.mockResolvedValue({ name: 'João Souza' });
+    mockActivatePendingStoredCode.mockResolvedValue({ outcome: 'none' });
     mockRefreshBackendSession.mockResolvedValue({
       ok: true,
       postAuthRoute: { screen: 'Home' },

@@ -254,7 +254,11 @@ class AuthService {
       }
 
       try {
+        const pendingInvitationCode = await storageService.getPendingInvitationCode();
         await storageService.clearAll();
+        if (pendingInvitationCode) {
+          await storageService.setPendingInvitationCode(pendingInvitationCode);
+        }
         invalidateApiClientAuthTokenMemoryCache();
       } catch (clearError) {
         logger.warn('Falha ao limpar sessão local após erro de login', { cause: clearError });

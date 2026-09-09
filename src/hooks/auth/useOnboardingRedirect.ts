@@ -1,9 +1,12 @@
 import { useEffect } from 'react';
+import { Alert } from 'react-native';
 import { FORCE_START_ONBOARDING_LOCALLY } from '@/constants';
 import { AUTH_ONBOARDING_SCREENS_ORDER } from '@/constants/authOnboarding';
 import { storageService, AuthService } from '@/services';
+import { invitationService } from '@/services/invitation/invitationService';
 import { getCachedPostAuthRoute } from '@/services/auth/applyAuthSessionResponse';
 import { invalidateApiClientAuthTokenMemoryCache } from '@/services/infrastructure/apiClient';
+import { useTranslation } from '@/hooks/i18n';
 import { isE2eAuthBypassEnabled } from '@/utils/e2e/e2eAuthBypass';
 import { logger } from '@/utils/logger';
 import { getNextOnboardingDestination } from '@/utils/auth/navigation';
@@ -52,12 +55,19 @@ async function destinationFromLocalStorage(): Promise<{ screen: string; params?:
 }
 
 export function useOnboardingRedirect(navigationReplace: NavigationReplace): void {
+  const { t } = useTranslation();
+
   useEffect(() => {
     const redirect = async () => {
       try {
         if (FORCE_START_ONBOARDING_LOCALLY) {
           await storageService.clearAll();
           invalidateApiClientAuthTokenMemoryCache();
+        }
+
+        const activation = await invitationService.activatePendingStoredCode();
+        if (activation.outcome === 'mismatch') {
+          Alert.alert(t('invitation.identityMismatch'));
         }
 
         const welcomeScreenAccessedAt = await storageService.getWelcomeScreenAccessedAt();
@@ -87,5 +97,5 @@ export function useOnboardingRedirect(navigationReplace: NavigationReplace): voi
     };
 
     redirect();
-  }, [navigationReplace]);
+  }, [navigationReplace, t]);
 }

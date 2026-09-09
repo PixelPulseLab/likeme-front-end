@@ -23,6 +23,7 @@ const COMMUNITY_WELCOME_DISMISSED_KEY = '@likeme:community_welcome_dismissed';
 const COMMUNITY_SHOPPING_TIP_DISMISSED_KEY = '@likeme:community_shopping_tip_dismissed';
 const COMMUNITY_FAVORITE_IDS_KEY = '@likeme:community_favorite_ids';
 const PROGRAM_MODULE_COMPLETED_IDS_KEY = '@likeme:program_module_completed_ids';
+const PENDING_INVITATION_CODE_KEY = '@likeme:pending_invitation_code';
 
 const ONBOARDING_STORAGE_KEYS = [
   REGISTER_COMPLETED_AT_KEY,
@@ -507,6 +508,39 @@ class StorageService {
     }
   }
 
+  async setPendingInvitationCode(code: string): Promise<void> {
+    const trimmed = code.trim();
+    if (!trimmed) {
+      await this.removePendingInvitationCode();
+      return;
+    }
+    try {
+      await AsyncStorage.setItem(PENDING_INVITATION_CODE_KEY, trimmed);
+    } catch (error) {
+      logger.error('Error saving pending invitation code:', error);
+      throw error;
+    }
+  }
+
+  async getPendingInvitationCode(): Promise<string | null> {
+    try {
+      const value = await AsyncStorage.getItem(PENDING_INVITATION_CODE_KEY);
+      const trimmed = value?.trim();
+      return trimmed ? trimmed : null;
+    } catch (error) {
+      logger.error('Error getting pending invitation code:', error);
+      return null;
+    }
+  }
+
+  async removePendingInvitationCode(): Promise<void> {
+    try {
+      await AsyncStorage.removeItem(PENDING_INVITATION_CODE_KEY);
+    } catch (error) {
+      logger.error('Error removing pending invitation code:', error);
+    }
+  }
+
   async clearAll(): Promise<void> {
     try {
       await this.removeToken();
@@ -518,6 +552,7 @@ class StorageService {
         COMMUNITY_SHOPPING_TIP_DISMISSED_KEY,
         COMMUNITY_FAVORITE_IDS_KEY,
         PROGRAM_MODULE_COMPLETED_IDS_KEY,
+        PENDING_INVITATION_CODE_KEY,
       ]);
       await this.clearCart();
     } catch (error) {
