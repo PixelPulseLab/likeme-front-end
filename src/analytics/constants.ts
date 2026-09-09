@@ -110,6 +110,8 @@ export type AnalyticsParamName = (typeof ANALYTICS_PARAMS)[keyof typeof ANALYTIC
 export const SCREEN_NAMES = {
   Loading: 'loading',
   Unauthenticated: 'unauthenticated',
+  InvitationCode: 'invitation_code',
+  InvitationContext: 'invitation_context',
   Authenticated: 'authenticated',
   Welcome: 'welcome',
   AppPresentation: 'app_presentation',

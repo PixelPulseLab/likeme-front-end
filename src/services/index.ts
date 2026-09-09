@@ -18,6 +18,7 @@ export { default as paymentService } from './payment/paymentService';
 export { default as activityService } from './activity/activityService';
 export { default as anamnesisService } from './anamnesis/anamnesisService';
 export { default as userService } from './user/userService';
+export { invitationService } from './invitation/invitationService';
 export { default as categoryService } from './category/categoryService';
 export { default as eventService } from './event/eventService';
 

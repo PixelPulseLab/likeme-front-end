@@ -26,6 +26,13 @@ export function canNavigateFromDeepLink(activeRouteName: string | undefined): bo
     return false;
   }
 
-  const blockedRoutes = new Set(['Loading', 'Unauthenticated', 'Authenticated', 'ForcedUpdate', 'AppLoading']);
+  const blockedRoutes = new Set([
+    'Loading',
+    'Unauthenticated',
+    'InvitationCode',
+    'Authenticated',
+    'ForcedUpdate',
+    'AppLoading',
+  ]);
   return !blockedRoutes.has(activeRouteName);
 }

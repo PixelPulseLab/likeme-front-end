@@ -192,7 +192,7 @@ const LoadingScreen: React.FC<Props> = ({ navigation }) => {
         logger.error('[LoadingScreen] Falha ao aguardar i18n', hydrationError);
       }
 
-      replaceOnce('Unauthenticated');
+      replaceOnce('InvitationCode');
     };
 
     const runReturningUserBootstrapFlow = async (storedToken: string) => {

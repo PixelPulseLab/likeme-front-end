@@ -107,7 +107,7 @@ describe('LoadingScreen', () => {
     jest.useRealTimers();
   });
 
-  it('navega para Unauthenticated quando não há token (sem login interativo na splash)', async () => {
+  it('navega para InvitationCode quando não há token (sem login interativo na splash)', async () => {
     const replace = jest.fn();
 
     render(<LoadingScreen navigation={{ replace, navigate: jest.fn() }} />);
@@ -117,7 +117,7 @@ describe('LoadingScreen', () => {
 
     await waitFor(
       () => {
-        expect(replace).toHaveBeenCalledWith('Unauthenticated');
+        expect(replace).toHaveBeenCalledWith('InvitationCode');
       },
       { timeout: 12_000 },
     );

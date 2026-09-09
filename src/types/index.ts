@@ -5,6 +5,7 @@ export * from './community';
 export * from './auth';
 export * from './person';
 export * from './infrastructure';
+export * from './invitation/invitation';
 export * from './event';
 export * from './program';
 export * from './product';
