@@ -30,7 +30,7 @@ export const INVITATION_CODE_VALIDATION_I18N_KEY = {
 
 export const INVITATION_CODE_VALIDATE_FAILED_I18N_KEY = 'invitation.codeValidateFailed';
 
-const VALIDATION_ERROR_MESSAGES = Object.values(INVITATION_CODE_VALIDATION_ERROR);
+const VALIDATION_ERROR_MESSAGES: readonly string[] = Object.values(INVITATION_CODE_VALIDATION_ERROR);
 
 export function invitationCodeValidationI18nKey(error: unknown): string {
   const message = error instanceof Error ? error.message.trim() : '';
