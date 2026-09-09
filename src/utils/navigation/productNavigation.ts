@@ -123,7 +123,10 @@ export function navigateToSubscribedProgram(
 ): void {
   const communityId = params.communityId?.trim();
   if (params.programType === PROGRAM_TYPE.COMMUNITY && communityId) {
-    navigateToCommunity(navigation, { focusCommunityId: communityId });
+    navigateToCommunity(navigation, {
+      focusCommunityId: communityId,
+      programType: PROGRAM_TYPE.COMMUNITY,
+    });
     return;
   }
 

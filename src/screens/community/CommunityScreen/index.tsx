@@ -48,6 +48,7 @@ import { shareContent } from '@/utils/share/shareContent';
 import { filterAdsForProviderProfile } from '@/utils/marketplace/filterAdsForProviderProfile';
 import type { Advertiser } from '@/types/ad';
 import type { ShopTabId } from '@/components/sections/community/ShoppingList';
+import { PROGRAM_TYPE } from '@/types/product/programType';
 import Toggle from '@/components/ui/buttons/Toggle';
 import { Checkbox } from '@/components/ui/inputs';
 import { EventWebViewSession } from '@/components/infrastructure/webview/EventWebViewSession';
@@ -82,14 +83,16 @@ const CommunityScreen: React.FC<Props> = ({ navigation }) => {
     navigateToShareDiscover(rootNavigation);
   };
   const [selectedMode, setSelectedMode] = useState<CommunityViewId>(COMMUNITY_VIEW.FEED);
+  const isProgramCommunityFeed = route.params?.programType === PROGRAM_TYPE.COMMUNITY;
+  const viewMode: CommunityViewId = isProgramCommunityFeed ? COMMUNITY_VIEW.FEED : selectedMode;
   const [activeInfoTab, setActiveInfoTab] = useState<CommunityInfoTabId>('posts');
   const [welcomeDismissed, setWelcomeDismissed] = useState(true);
   const [shoppingTipDismissed, setShoppingTipDismissed] = useState(true);
   const [isCommunityFavorite, setIsCommunityFavorite] = useState(false);
 
   const toggleSelectedLabel = useMemo(
-    () => (selectedMode === COMMUNITY_VIEW.FEED ? toggleOptions[0] : toggleOptions[1]),
-    [selectedMode, toggleOptions],
+    () => (viewMode === COMMUNITY_VIEW.FEED ? toggleOptions[0] : toggleOptions[1]),
+    [viewMode, toggleOptions],
   );
 
   useEffect(() => {
@@ -124,7 +127,7 @@ const CommunityScreen: React.FC<Props> = ({ navigation }) => {
     storageService.setCommunityShoppingTipDismissed(true);
   }, []);
 
-  const isFeedMode = selectedMode === COMMUNITY_VIEW.FEED;
+  const isFeedMode = viewMode === COMMUNITY_VIEW.FEED;
   const loadCommunityEvents = isFeedMode;
 
   const {
@@ -188,7 +191,7 @@ const CommunityScreen: React.FC<Props> = ({ navigation }) => {
     };
   }, [selectedCommunityId]);
 
-  const solutionsMode = selectedMode === COMMUNITY_VIEW.SOLUTIONS;
+  const solutionsMode = viewMode === COMMUNITY_VIEW.SOLUTIONS;
   const feedParams = useMemo(
     () => (selectedCommunityId?.trim() ? { communityId: selectedCommunityId.trim() } : {}),
     [selectedCommunityId],
@@ -438,7 +441,7 @@ const CommunityScreen: React.FC<Props> = ({ navigation }) => {
   }, []);
 
   const tryLoadMoreFeed = useCallback(() => {
-    if (selectedMode !== COMMUNITY_VIEW.FEED) {
+    if (viewMode !== COMMUNITY_VIEW.FEED) {
       return;
     }
     if (
@@ -451,7 +454,7 @@ const CommunityScreen: React.FC<Props> = ({ navigation }) => {
     }
     feedLoadMoreLockedRef.current = true;
     loadMore();
-  }, [loadMore, selectedMode]);
+  }, [loadMore, viewMode]);
 
   useEffect(() => {
     if (!feedLoading && !loadingMore) {
@@ -653,14 +656,15 @@ const CommunityScreen: React.FC<Props> = ({ navigation }) => {
   );
 
   const toggleBlock = useMemo(
-    () => (
-      <View style={styles.toggleRow}>
-        <View style={styles.toggleContainer}>
-          <Toggle options={[...toggleOptions]} selected={toggleSelectedLabel} onSelect={handleModeSelect} />
+    () =>
+      isProgramCommunityFeed ? null : (
+        <View style={styles.toggleRow}>
+          <View style={styles.toggleContainer}>
+            <Toggle options={[...toggleOptions]} selected={toggleSelectedLabel} onSelect={handleModeSelect} />
+          </View>
         </View>
-      </View>
-    ),
-    [toggleOptions, toggleSelectedLabel, handleModeSelect],
+      ),
+    [isProgramCommunityFeed, toggleOptions, toggleSelectedLabel, handleModeSelect],
   );
 
   const feedAuxiliaryBlock = useMemo(
