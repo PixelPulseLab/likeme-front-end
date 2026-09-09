@@ -32,7 +32,8 @@ jest.mock('@/services/invitation/invitationService', () => ({
   invitationService: {
     activatePendingStoredCode: (...args: unknown[]) => mockActivatePendingStoredCode(...args),
   },
-  invitationProgramRouteInsteadOfHome: (...args: unknown[]) => mockInvitationProgramRouteInsteadOfHome(...args),
+  invitationProgramRouteInsteadOfHome: (screen: string, params?: object) =>
+    mockInvitationProgramRouteInsteadOfHome(screen, params),
 }));
 
 jest.mock('@/hooks/i18n', () => ({
