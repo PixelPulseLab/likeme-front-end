@@ -25,4 +25,5 @@ export type InvitationCodeValidationContext = {
 
 export type InvitationActivationContext = InvitationCodeValidationContext & {
   displayName: string | null;
+  alreadyParticipating: boolean;
 };

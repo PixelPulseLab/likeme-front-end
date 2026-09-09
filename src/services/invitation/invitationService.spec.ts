@@ -80,8 +80,23 @@ describe('invitationService.activateCode', () => {
     await expect(invitationService.activateCode('7F3K9Q')).resolves.toEqual({
       ...validContext,
       displayName: 'Camilla',
+      alreadyParticipating: false,
     });
     expect(mockPost).toHaveBeenCalledWith('/api/invitations/activate', { code: '7F3K9Q' });
+  });
+
+  it('propaga alreadyParticipating quando o usuário já está no programa', async () => {
+    mockPost.mockResolvedValue({
+      success: true,
+      message: 'Convite vinculado',
+      data: { ...validContext, displayName: 'Camilla', alreadyParticipating: true },
+    });
+
+    await expect(invitationService.activateCode('7F3K9Q')).resolves.toEqual({
+      ...validContext,
+      displayName: 'Camilla',
+      alreadyParticipating: true,
+    });
   });
 });
 
@@ -110,7 +125,7 @@ describe('invitationService.activatePendingStoredCode', () => {
 
     await expect(invitationService.activatePendingStoredCode()).resolves.toEqual({
       outcome: 'linked',
-      context: { ...validContext, displayName: 'Camilla' },
+      context: { ...validContext, displayName: 'Camilla', alreadyParticipating: false },
     });
     expect(mockRemovePendingInvitationCode).toHaveBeenCalled();
     expect(mockSetUser).toHaveBeenCalledWith({ email: 'camilla@email.com', name: 'Camilla' });

@@ -58,6 +58,7 @@ function mapInvitationActivationContext(
   return {
     ...context,
     displayName: optionalDisplayName(data?.displayName),
+    alreadyParticipating: data?.alreadyParticipating === true,
   };
 }
 
