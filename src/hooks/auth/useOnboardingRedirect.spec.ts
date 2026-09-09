@@ -23,11 +23,16 @@ jest.mock('@/services/infrastructure/apiClient', () => ({
 }));
 
 const mockActivatePendingStoredCode = jest.fn();
+const mockInvitationProgramRouteInsteadOfHome = jest.fn(async (screen: string, params?: object) => ({
+  screen,
+  params,
+}));
 
 jest.mock('@/services/invitation/invitationService', () => ({
   invitationService: {
     activatePendingStoredCode: (...args: unknown[]) => mockActivatePendingStoredCode(...args),
   },
+  invitationProgramRouteInsteadOfHome: (...args: unknown[]) => mockInvitationProgramRouteInsteadOfHome(...args),
 }));
 
 jest.mock('@/hooks/i18n', () => ({
@@ -61,6 +66,10 @@ describe('useOnboardingRedirect', () => {
     mockGetCategorySelectedAt.mockResolvedValue('2026-01-04T00:00:00.000Z');
     mockGetUser.mockResolvedValue({ name: 'João Souza' });
     mockActivatePendingStoredCode.mockResolvedValue({ outcome: 'none' });
+    mockInvitationProgramRouteInsteadOfHome.mockImplementation(async (screen: string, params?: object) => ({
+      screen,
+      params,
+    }));
     mockRefreshBackendSession.mockResolvedValue({
       ok: true,
       postAuthRoute: { screen: 'Home' },
@@ -117,6 +126,22 @@ describe('useOnboardingRedirect', () => {
     await waitFor(() => {
       expect(mockRefreshBackendSession).not.toHaveBeenCalled();
       expect(navigationReplace).toHaveBeenCalledWith('Welcome');
+    });
+    expect(mockInvitationProgramRouteInsteadOfHome).not.toHaveBeenCalled();
+  });
+
+  it('substitui Home pelo programa do convite', async () => {
+    mockGetCachedPostAuthRoute.mockReturnValue({ screen: 'Home' });
+    mockInvitationProgramRouteInsteadOfHome.mockResolvedValue({
+      screen: 'ProtocolDetail',
+      params: { productId: 'program-1' },
+    });
+
+    renderHook(() => useOnboardingRedirect(navigationReplace));
+
+    await waitFor(() => {
+      expect(mockInvitationProgramRouteInsteadOfHome).toHaveBeenCalledWith('Home', undefined);
+      expect(navigationReplace).toHaveBeenCalledWith('ProtocolDetail', { productId: 'program-1' });
     });
   });
 });

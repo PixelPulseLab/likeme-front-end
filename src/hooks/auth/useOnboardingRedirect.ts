@@ -3,7 +3,7 @@ import { Alert } from 'react-native';
 import { FORCE_START_ONBOARDING_LOCALLY } from '@/constants';
 import { AUTH_ONBOARDING_SCREENS_ORDER } from '@/constants/authOnboarding';
 import { storageService, AuthService } from '@/services';
-import { invitationService } from '@/services/invitation/invitationService';
+import { invitationProgramRouteInsteadOfHome, invitationService } from '@/services/invitation/invitationService';
 import { getCachedPostAuthRoute } from '@/services/auth/applyAuthSessionResponse';
 import { invalidateApiClientAuthTokenMemoryCache } from '@/services/infrastructure/apiClient';
 import { useTranslation } from '@/hooks/i18n';
@@ -83,13 +83,15 @@ export function useOnboardingRedirect(navigationReplace: NavigationReplace): voi
         }
 
         if (postAuthRoute) {
-          navigationReplace(postAuthRoute.screen, postAuthRoute.params);
+          const destination = await invitationProgramRouteInsteadOfHome(postAuthRoute.screen, postAuthRoute.params);
+          navigationReplace(destination.screen, destination.params);
           return;
         }
 
         // Rede falhou ou resposta sem postAuthRoute: não empurrar para Register às cegas.
         const localDestination = await destinationFromLocalStorage();
-        navigationReplace(localDestination.screen, localDestination.params);
+        const destination = await invitationProgramRouteInsteadOfHome(localDestination.screen, localDestination.params);
+        navigationReplace(destination.screen, destination.params);
       } catch (error) {
         logger.error('Error checking onboarding status:', error);
         navigationReplace('Register');

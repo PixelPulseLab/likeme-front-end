@@ -1,8 +1,10 @@
 import apiClient from '@/services/infrastructure/apiClient';
 import storageService from '@/services/auth/storageService';
 import { logger } from '@/utils/logger';
+import { subscribedProgramStackRoute } from '@/utils/navigation/productNavigation';
 import type { ApiResponse } from '@/types/infrastructure';
 import type { InvitationActivationContext, InvitationCodeValidationContext } from '@/types/invitation/invitation';
+import { PROGRAM_TYPE } from '@/types/product/programType';
 import { INVITATION_CODE_VALIDATION_ERROR } from '@/constants/invitation/invitationCodeValidation';
 
 export type PendingInvitationActivationOutcome = 'none' | 'linked' | 'mismatch' | 'failed';
@@ -32,6 +34,7 @@ function mapInvitationCodeValidationContext(
       id: data.program.id,
       name: data.program.name,
       imageUrl: optionalImageUrl(data.program.imageUrl),
+      programType: data.program.programType === PROGRAM_TYPE.COMMUNITY ? PROGRAM_TYPE.COMMUNITY : PROGRAM_TYPE.COURSE,
     },
     provider: {
       id: data.provider.id,
@@ -79,6 +82,28 @@ function isUnrecoverableInvitationActivationError(error: unknown): boolean {
     message === INVITATION_CODE_VALIDATION_ERROR.REDEEMED ||
     message === INVITATION_CODE_VALIDATION_ERROR.PROGRAM_UNAVAILABLE
   );
+}
+
+async function persistInvitationProgramDestination(context: InvitationActivationContext): Promise<void> {
+  await storageService.setPendingInvitationProgramDestination({
+    productId: context.program.id,
+    programType: context.program.programType,
+    communityId: context.community?.id ?? null,
+  });
+}
+
+export async function invitationProgramRouteInsteadOfHome(
+  screen: string,
+  params?: object,
+): Promise<{ screen: string; params?: object }> {
+  if (screen !== 'Home') {
+    return { screen, params };
+  }
+  const pending = await storageService.takePendingInvitationProgramDestination();
+  if (!pending) {
+    return { screen, params };
+  }
+  return subscribedProgramStackRoute(pending);
 }
 
 async function applyInvitationDisplayNameIfEmpty(displayName: string | null): Promise<void> {
@@ -143,6 +168,7 @@ class InvitationService {
     try {
       const context = await this.activateCode(code);
       await storageService.removePendingInvitationCode();
+      await persistInvitationProgramDestination(context);
       await applyInvitationDisplayNameIfEmpty(context.displayName);
       return { outcome: 'linked', context };
     } catch (error) {

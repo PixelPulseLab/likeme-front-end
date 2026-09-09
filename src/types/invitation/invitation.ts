@@ -1,7 +1,10 @@
+import type { ProgramType } from '@/types/product/programType';
+
 export type InvitationCodeValidationProgram = {
   id: string;
   name: string;
   imageUrl: string | null;
+  programType: ProgramType;
 };
 
 export type InvitationCodeValidationProvider = {
@@ -26,4 +29,10 @@ export type InvitationCodeValidationContext = {
 export type InvitationActivationContext = InvitationCodeValidationContext & {
   displayName: string | null;
   alreadyParticipating: boolean;
+};
+
+export type PendingInvitationProgramDestination = {
+  productId: string;
+  programType: ProgramType;
+  communityId: string | null;
 };

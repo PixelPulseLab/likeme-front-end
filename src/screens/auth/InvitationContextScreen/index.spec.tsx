@@ -95,7 +95,7 @@ jest.mock('@/services', () => ({
 
 const validContext = {
   code: '7F3K9Q',
-  program: { id: 'program-1', name: 'Protocolo', imageUrl: 'https://cdn.example/program.jpg' },
+  program: { id: 'program-1', name: 'Protocolo', imageUrl: 'https://cdn.example/program.jpg', programType: 'course' },
   provider: { id: 'provider-1', name: 'Clínica', logoUrl: 'https://cdn.example/logo.jpg' },
   community: { id: 'community-1', displayName: 'Movimento', imageUrl: null },
 };
