@@ -6,11 +6,18 @@ const mockNavigation = {
   goBack: jest.fn(),
 };
 
+const mockAuthLogin = jest.fn();
+const mockUseFeatureFlag = jest.fn();
+
 jest.mock('@/hooks', () => ({
-  useAuthLogin: (navigation: any) => ({
-    handleLogin: () => navigation.navigate('Welcome'),
+  useAuthLogin: () => ({
+    handleLogin: mockAuthLogin,
     isLoading: false,
   }),
+}));
+
+jest.mock('@/hooks/featureFlags/useFeatureFlag', () => ({
+  useFeatureFlag: (...args: unknown[]) => mockUseFeatureFlag(...args),
 }));
 
 jest.mock('@/analytics', () => ({
@@ -21,45 +28,59 @@ jest.mock('@/analytics', () => ({
 
 jest.mock('./components', () => {
   const { View, Text, TouchableOpacity } = require('react-native');
-  const { useTranslation } = require('@/hooks/i18n');
   return {
-    UnauthenticatedStep1: ({ onLogin }: any) => {
-      const { t } = useTranslation();
-      return (
-        <View>
-          <Text>{t('auth.tagline')}</Text>
-          <TouchableOpacity onPress={onLogin}>
-            <Text>{t('auth.login')}</Text>
-          </TouchableOpacity>
-        </View>
-      );
-    },
+    UnauthenticatedStep1: ({ onStart }: any) => (
+      <View>
+        <Text>invitation.headline</Text>
+        <TouchableOpacity onPress={onStart}>
+          <Text>invitation.start</Text>
+        </TouchableOpacity>
+      </View>
+    ),
   };
 });
 
 describe('UnauthenticatedScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockUseFeatureFlag.mockReturnValue({ isEnabled: false, isLoading: false });
   });
 
   const mockRoute = { key: 'Unauthenticated', name: 'Unauthenticated' as const, params: {} };
 
-  it('renders correctly', async () => {
-    const { getByText } = render(<UnauthenticatedScreen navigation={mockNavigation} route={mockRoute} />);
+  it('não dispara login sozinho no first launch', async () => {
+    render(<UnauthenticatedScreen navigation={mockNavigation} route={mockRoute} />);
 
-    expect(getByText('auth.tagline')).toBeTruthy();
-    expect(getByText('auth.login')).toBeTruthy();
-    await waitFor(() => {
-      expect(mockNavigation.navigate).toHaveBeenCalledWith('Welcome');
-    });
+    expect(mockAuthLogin).not.toHaveBeenCalled();
+    expect(mockNavigation.navigate).not.toHaveBeenCalled();
   });
 
-  it('handles login button press', () => {
+  it('Começar vai para o login quando a flag de convite está desligada', () => {
     const { getByText } = render(<UnauthenticatedScreen navigation={mockNavigation} route={mockRoute} />);
 
-    const loginButton = getByText('auth.login');
-    fireEvent.press(loginButton);
+    fireEvent.press(getByText('invitation.start'));
 
-    expect(mockNavigation.navigate).toHaveBeenCalledWith('Welcome');
+    expect(mockAuthLogin).toHaveBeenCalled();
+    expect(mockNavigation.navigate).not.toHaveBeenCalled();
+  });
+
+  it('Começar vai para InvitationCode quando a flag de convite está ligada', () => {
+    mockUseFeatureFlag.mockReturnValue({ isEnabled: true, isLoading: false });
+    const { getByText } = render(<UnauthenticatedScreen navigation={mockNavigation} route={mockRoute} />);
+
+    fireEvent.press(getByText('invitation.start'));
+
+    expect(mockNavigation.navigate).toHaveBeenCalledWith('InvitationCode');
+    expect(mockAuthLogin).not.toHaveBeenCalled();
+  });
+
+  it('dispara login ao chegar com startLogin', async () => {
+    render(
+      <UnauthenticatedScreen navigation={mockNavigation} route={{ ...mockRoute, params: { startLogin: true } }} />,
+    );
+
+    await waitFor(() => {
+      expect(mockAuthLogin).toHaveBeenCalled();
+    });
   });
 });

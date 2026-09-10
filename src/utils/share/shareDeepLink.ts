@@ -1,5 +1,6 @@
 import { CommonActions, type NavigationContainerRefWithCurrent } from '@react-navigation/native';
 import { GA4_EVENTS, logEvent, ANALYTICS_PARAMS } from '@/analytics';
+import { FEATURE_FLAGS } from '@/constants';
 import { SHARE_CONFIG } from '@/config/environment';
 import {
   AFFILIATE_SHARE_PATH_PREFIX,
@@ -18,6 +19,7 @@ import {
   type ShareContentType,
 } from '@/constants/share';
 import storageService from '@/services/auth/storageService';
+import { featureFlagService } from '@/services/featureFlags/featureFlagService';
 import type { CommunityStackParamList, RootStackParamList } from '@/types/navigation';
 import {
   canNavigateFromDeepLink,
@@ -328,9 +330,28 @@ function dispatchDeepLinkTarget(
   );
 }
 
+async function invitationOnboardingEnabled(): Promise<boolean> {
+  return featureFlagService.getBoolean(FEATURE_FLAGS.INVITATION_ENABLED);
+}
+
 async function hasStoredSessionToken(): Promise<boolean> {
   const token = await storageService.getToken();
   return Boolean(token?.trim());
+}
+
+async function skipInvitationOnboardingToLogin(
+  navigationRef: NavigationContainerRefWithCurrent<RootStackParamList>,
+  activeRouteName: string | undefined,
+): Promise<void> {
+  consumePendingDeepLinkNavigation();
+  if (!canFlushInvitationDeepLink(activeRouteName)) {
+    return;
+  }
+  const hasSession = await hasStoredSessionToken();
+  if (hasSession) {
+    return;
+  }
+  navigateToUnauthenticatedIfNeeded(navigationRef, activeRouteName);
 }
 
 function navigateToUnauthenticatedIfNeeded(
@@ -391,6 +412,11 @@ export async function openDeepLinkTarget(
       return;
     }
 
+    if (!(await invitationOnboardingEnabled())) {
+      await skipInvitationOnboardingToLogin(navigationRef, activeRouteName);
+      return;
+    }
+
     dispatchInvitationCodeTarget(navigationRef, invitationTarget, activeRouteName);
     consumePendingDeepLinkNavigation();
     return;
@@ -443,6 +469,10 @@ export async function flushPendingDeepLinkNavigation(
   const pendingInvitation = peekPendingDeepLinkNavigation();
   if (pendingInvitation && isInvitationCodeTarget(pendingInvitation)) {
     if (!canFlushInvitationDeepLink(activeRouteName)) {
+      return;
+    }
+    if (!(await invitationOnboardingEnabled())) {
+      await skipInvitationOnboardingToLogin(navigationRef, activeRouteName);
       return;
     }
     const target = consumePendingDeepLinkNavigation();

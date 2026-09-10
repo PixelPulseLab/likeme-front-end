@@ -52,7 +52,7 @@ export type ProtocolDetailProtocol = {
 
 type RootStackParamListCore = {
   ForcedUpdate: { storeUrl: string; message?: string };
-  Unauthenticated: { skipAutoLogin?: boolean } | undefined;
+  Unauthenticated: { skipAutoLogin?: boolean; startLogin?: boolean } | undefined;
   InvitationCode: { code?: string } | undefined;
   InvitationContext: InvitationCodeValidationContext;
   Authenticated: undefined;

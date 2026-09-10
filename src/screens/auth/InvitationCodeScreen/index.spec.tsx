@@ -34,20 +34,17 @@ jest.mock('@/components/ui', () => {
         <Text>{label}</Text>
       </TouchableOpacity>
     ),
-    SecondaryButton: ({ label, onPress, testID }: any) => (
-      <TouchableOpacity onPress={onPress} testID={testID}>
-        <Text>{label}</Text>
-      </TouchableOpacity>
-    ),
   };
 });
 
 jest.mock('@/components/ui/layout', () => {
   const { View, ScrollView } = require('react-native');
   return {
-    KeyboardAwareScreen: ({ children }: any) => (
+    ScreenWithHeader: ({ children }: any) => <View>{children}</View>,
+    KeyboardAwareScreen: ({ children, footer }: any) => (
       <View>
         <ScrollView>{children}</ScrollView>
+        {footer}
       </View>
     ),
   };
@@ -134,16 +131,13 @@ describe('InvitationCodeScreen', () => {
     expect(getByPlaceholderText('invitation.codePlaceholder').props.value).toBe('7F3K9Q');
   });
 
-  it('vai para áreas de interesse sem validar o código', () => {
-    const navigation = { navigate: jest.fn() };
-    const { getByText } = render(
-      <InvitationCodeScreen navigation={navigation as never} route={{ params: undefined } as never} />,
+  it('não oferece áreas de interesse nesta tela', () => {
+    const { queryByText } = render(
+      <InvitationCodeScreen navigation={{ navigate: jest.fn() } as never} route={{ params: undefined } as never} />,
     );
 
-    fireEvent.press(getByText('invitation.interestAreas'));
-
-    expect(mockValidateCode).not.toHaveBeenCalled();
-    expect(navigation.navigate).toHaveBeenCalledWith('InterestCategories');
+    expect(queryByText('invitation.notInvitedTitle')).toBeNull();
+    expect(queryByText('invitation.interestAreas')).toBeNull();
   });
 
   it('preenche o campo a partir de route.params.code', () => {

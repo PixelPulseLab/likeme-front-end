@@ -152,7 +152,7 @@ describe('InvitationContextScreen', () => {
     await waitFor(() => {
       expect(mockValidateCode).toHaveBeenCalledWith('7F3K9Q');
       expect(mockSetPendingInvitationCode).toHaveBeenCalledWith('7F3K9Q');
-      expect(navigation.navigate).toHaveBeenCalledWith('Unauthenticated');
+      expect(navigation.navigate).toHaveBeenCalledWith('Unauthenticated', { startLogin: true });
     });
     expect(mockActivateCode).not.toHaveBeenCalled();
   });

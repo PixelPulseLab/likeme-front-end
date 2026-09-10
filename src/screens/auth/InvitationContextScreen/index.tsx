@@ -118,7 +118,7 @@ const InvitationContextScreen: React.FC<Props> = ({ navigation, route }) => {
         destination_screen: 'unauthenticated',
         action_name: 'continue',
       });
-      navigation.navigate('Unauthenticated');
+      navigation.navigate('Unauthenticated', { startLogin: true });
     } catch (error) {
       logger.error('[InvitationContextScreen] Falha ao revalidar código de convite', error);
       Alert.alert(t(invitationCodeValidationI18nKey(error)));

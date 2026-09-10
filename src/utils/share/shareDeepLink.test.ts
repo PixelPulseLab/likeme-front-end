@@ -34,6 +34,14 @@ jest.mock('@/services/auth/storageService', () => ({
   },
 }));
 
+const mockGetInvitationEnabled = jest.fn();
+
+jest.mock('@/services/featureFlags/featureFlagService', () => ({
+  featureFlagService: {
+    getBoolean: (...args: unknown[]) => mockGetInvitationEnabled(...args),
+  },
+}));
+
 import storageService from '@/services/auth/storageService';
 
 function shareContentResetAction(screen: string, params?: object) {
@@ -414,6 +422,7 @@ describe('convite /invite (APP-421)', () => {
     jest.clearAllMocks();
     consumePendingDeepLinkNavigation();
     (storageService.getToken as jest.Mock).mockResolvedValue('session-token');
+    mockGetInvitationEnabled.mockResolvedValue(true);
   });
 
   it('abre a etapa do código com prefill, sem exigir sessão', async () => {
@@ -470,5 +479,32 @@ describe('convite /invite (APP-421)', () => {
     await flushPendingDeepLinkNavigation(navigationRef, 'Authenticated');
 
     expect(navigationRef.dispatch).toHaveBeenCalledWith(invitationResetAction('7F3K9Q'));
+  });
+
+  it('redireciona para o login quando o fluxo de convite está desligado', async () => {
+    mockGetInvitationEnabled.mockResolvedValue(false);
+    (storageService.getToken as jest.Mock).mockResolvedValue(null);
+    const navigationRef = createNavigationRef();
+
+    await openDeepLinkTarget(navigationRef, INVITE_URL, 'Summary');
+
+    expect(navigationRef.dispatch).toHaveBeenCalledWith(
+      CommonActions.reset({
+        index: 0,
+        routes: [{ name: 'Unauthenticated' }],
+      }),
+    );
+  });
+
+  it('não abre InvitationCode no flush quando a flag está desligada', async () => {
+    mockGetInvitationEnabled.mockResolvedValue(false);
+    (storageService.getToken as jest.Mock).mockResolvedValue(null);
+    const navigationRef = createNavigationRef();
+
+    await openDeepLinkTarget(navigationRef, INVITE_URL, 'Loading');
+    await flushPendingDeepLinkNavigation(navigationRef, 'Unauthenticated');
+
+    expect(navigationRef.dispatch).not.toHaveBeenCalled();
+    expect(consumePendingDeepLinkNavigation()).toBeNull();
   });
 });

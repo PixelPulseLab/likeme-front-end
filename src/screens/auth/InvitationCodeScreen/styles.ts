@@ -2,7 +2,7 @@ import { StyleSheet } from 'react-native';
 import { COLORS, SPACING, TYPOGRAPHY } from '@/constants';
 
 export const styles = StyleSheet.create({
-  safe: {
+  container: {
     flex: 1,
     backgroundColor: COLORS.BACKGROUND,
   },
@@ -10,7 +10,7 @@ export const styles = StyleSheet.create({
     flexGrow: 1,
     paddingHorizontal: SPACING.XL,
     paddingTop: SPACING.XL,
-    paddingBottom: SPACING.XL,
+    paddingBottom: SPACING.LG,
   },
   headline: {
     ...TYPOGRAPHY.displaySm,
@@ -34,13 +34,8 @@ export const styles = StyleSheet.create({
     ...TYPOGRAPHY.bodyMdMedium,
     color: COLORS.TEXT,
   },
-  enterButton: {
-    marginTop: SPACING.SM,
-  },
-  separator: {
-    height: 1,
-    backgroundColor: COLORS.NEUTRAL.LOW.LIGHT,
-    marginVertical: SPACING.SECTION,
+  footer: {
     width: '100%',
+    paddingHorizontal: SPACING.MD,
   },
 });

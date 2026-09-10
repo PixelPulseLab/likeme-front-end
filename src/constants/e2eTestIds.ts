@@ -2,7 +2,6 @@
 export const E2E_TEST_IDS = {
   INVITATION_CODE_INPUT: 'e2e.invitation.codeInput',
   INVITATION_CODE_ENTER: 'e2e.invitation.enter',
-  INVITATION_CODE_INTERESTS: 'e2e.invitation.interestAreas',
   INVITATION_CONTEXT_CONTINUE: 'e2e.invitation.contextContinue',
   UNAUTH_LOGIN: 'e2e.unauth.login',
   UNAUTH_E2E_CONTINUE: 'e2e.unauth.e2eContinue',

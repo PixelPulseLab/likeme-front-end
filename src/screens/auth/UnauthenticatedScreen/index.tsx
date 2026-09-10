@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { SafeAreaView } from 'react-native';
-import { UnauthenticatedStep1 } from './components';
 import { useAuthLogin } from '@/hooks';
+import { useFeatureFlag } from '@/hooks/featureFlags/useFeatureFlag';
 import { useAnalyticsScreen, logButtonClick, logNavigation } from '@/analytics';
+import { FEATURE_FLAGS } from '@/constants';
 import { bootstrapE2eSessionAndNavigate } from '@/utils/e2e/bootstrapE2eSession';
 import { isE2eAuthBypassEnabled } from '@/utils/e2e/e2eAuthBypass';
 import { logger } from '@/utils/logger';
-import { styles } from './styles';
+import { UnauthenticatedStep1 } from './components';
 
 type Props = {
   navigation: any;
@@ -19,12 +19,16 @@ let lastUnauthenticatedAutoLoginMs = 0;
 const UnauthenticatedScreen: React.FC<Props> = ({ navigation, route }) => {
   useAnalyticsScreen({ screenName: 'Unauthenticated', screenClass: 'UnauthenticatedScreen' });
   const { handleLogin: authLogin, isLoading } = useAuthLogin(navigation);
+  const { isEnabled: isInvitationEnabled, isLoading: isInvitationFlagLoading } = useFeatureFlag(
+    FEATURE_FLAGS.INVITATION_ENABLED,
+  );
   const skipAutoLogin = Boolean(route?.params?.skipAutoLogin);
+  const startLogin = Boolean(route?.params?.startLogin);
   const e2eBypass = isE2eAuthBypassEnabled();
   const [e2eLoading, setE2eLoading] = useState(false);
 
   useEffect(() => {
-    if (skipAutoLogin || e2eBypass) {
+    if (!startLogin || skipAutoLogin || e2eBypass) {
       return;
     }
     const now = Date.now();
@@ -38,18 +42,37 @@ const UnauthenticatedScreen: React.FC<Props> = ({ navigation, route }) => {
       action_name: 'login_auto_on_mount',
     });
     void authLogin();
-  }, [authLogin, skipAutoLogin, e2eBypass]);
+  }, [authLogin, skipAutoLogin, startLogin, e2eBypass]);
 
-  const handleLogin = () => {
+  const handleStart = () => {
+    if (isInvitationFlagLoading) {
+      return;
+    }
+
+    if (isInvitationEnabled) {
+      logButtonClick({
+        screen_name: 'unauthenticated',
+        button_label: 'start',
+        action_name: 'invitation_code',
+      });
+      logNavigation({
+        source_screen: 'unauthenticated',
+        destination_screen: 'invitation_code',
+        action_name: 'start',
+      });
+      navigation.navigate('InvitationCode');
+      return;
+    }
+
     logButtonClick({
       screen_name: 'unauthenticated',
-      button_label: 'login',
+      button_label: 'start',
       action_name: 'login',
     });
     logNavigation({
       source_screen: 'unauthenticated',
       destination_screen: 'authenticated',
-      action_name: 'login',
+      action_name: 'start',
     });
     authLogin();
   };
@@ -74,14 +97,13 @@ const UnauthenticatedScreen: React.FC<Props> = ({ navigation, route }) => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <UnauthenticatedStep1
-        onLogin={handleLogin}
-        isLoading={isLoading}
-        onE2eContinue={e2eBypass ? () => void handleE2eContinue() : undefined}
-        e2eLoading={e2eLoading}
-      />
-    </SafeAreaView>
+    <UnauthenticatedStep1
+      onStart={handleStart}
+      isLoading={isLoading}
+      isStartDisabled={isInvitationFlagLoading}
+      onE2eContinue={e2eBypass ? () => void handleE2eContinue() : undefined}
+      e2eLoading={e2eLoading}
+    />
   );
 };
 
