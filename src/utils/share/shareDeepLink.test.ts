@@ -1,7 +1,7 @@
 import { CommonActions } from '@react-navigation/native';
 import type { NavigationContainerRefWithCurrent } from '@react-navigation/native';
 import { GA4_EVENTS, logEvent, ANALYTICS_PARAMS } from '@/analytics';
-import { SHARE_CONTENT_TYPES, SHARE_DEEP_LINK_HOME_SCREEN } from '@/constants/share';
+import { SHARE_CONTENT_TYPES, SHARE_DEEP_LINK_HOME_SCREEN, INVITATION_DEEP_LINK_CONTENT_TYPE } from '@/constants/share';
 import type { RootStackParamList } from '@/types/navigation';
 import { consumePendingDeepLinkNavigation } from '@/utils/navigation/pendingDeepLinkNavigation';
 import { shareEntityIdFromPath, sharePathFromUrl } from '@/utils/share/sharePath';
@@ -31,6 +31,14 @@ jest.mock('@/services/auth/storageService', () => ({
   __esModule: true,
   default: {
     getToken: jest.fn().mockResolvedValue('session-token'),
+  },
+}));
+
+const mockGetInvitationEnabled = jest.fn();
+
+jest.mock('@/services/featureFlags/featureFlagService', () => ({
+  featureFlagService: {
+    getBoolean: (...args: unknown[]) => mockGetInvitationEnabled(...args),
   },
 }));
 
@@ -154,6 +162,10 @@ describe('shareDeepLinkTargetFromUrl', () => {
       SUBSCRIPTION_PAYMENT_TARGET,
     );
     expect(shareDeepLinkTargetFromUrl(`${SHARE_BASE_URL}/subscription/sub-abc`)).toEqual(SUBSCRIPTION_MANAGE_TARGET);
+    expect(shareDeepLinkTargetFromUrl(`${SHARE_BASE_URL}/invite/7F3K9Q`)).toEqual({
+      screen: 'InvitationCode',
+      params: { code: '7F3K9Q' },
+    });
   });
 
   it('resolve rotas via custom scheme likeme://', () => {
@@ -167,6 +179,10 @@ describe('shareDeepLinkTargetFromUrl', () => {
     expect(shareDeepLinkTargetFromUrl('likeme://affiliate/aff-1?adId=ad-9')).toEqual(AFFILIATE_TARGET);
     expect(shareDeepLinkTargetFromUrl('likeme://subscription/sub-abc/payment')).toEqual(SUBSCRIPTION_PAYMENT_TARGET);
     expect(shareDeepLinkTargetFromUrl('likeme:///subscription/sub-abc/payment')).toEqual(SUBSCRIPTION_PAYMENT_TARGET);
+    expect(shareDeepLinkTargetFromUrl('likeme://invite/7f3k9q')).toEqual({
+      screen: 'InvitationCode',
+      params: { code: '7F3K9Q' },
+    });
   });
 
   it('retorna null para paths desconhecidos', () => {
@@ -385,5 +401,110 @@ describe('flushPendingDeepLinkNavigation', () => {
       }),
     );
     expect(consumePendingDeepLinkNavigation()).toEqual(POST_TARGET);
+  });
+});
+
+describe('convite /invite (APP-421)', () => {
+  const INVITE_URL = `${SHARE_BASE_URL}/invite/7f3k9q`;
+  const INVITE_TARGET = {
+    screen: 'InvitationCode',
+    params: { code: '7F3K9Q' },
+  } as const;
+
+  function invitationResetAction(code: string) {
+    return CommonActions.reset({
+      index: 0,
+      routes: [{ name: 'InvitationCode', params: { code } }],
+    });
+  }
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    consumePendingDeepLinkNavigation();
+    (storageService.getToken as jest.Mock).mockResolvedValue('session-token');
+    mockGetInvitationEnabled.mockResolvedValue(true);
+  });
+
+  it('abre a etapa do código com prefill, sem exigir sessão', async () => {
+    (storageService.getToken as jest.Mock).mockResolvedValue(null);
+    const navigationRef = createNavigationRef();
+
+    await openDeepLinkTarget(navigationRef, INVITE_URL, 'Summary');
+
+    expect(logEvent).toHaveBeenCalledWith(GA4_EVENTS.SELECT_CONTENT, {
+      [ANALYTICS_PARAMS.CONTENT_TYPE]: INVITATION_DEEP_LINK_CONTENT_TYPE,
+      [ANALYTICS_PARAMS.ITEM_ID]: '7F3K9Q',
+      [ANALYTICS_PARAMS.ACTION_NAME]: 'deep_link_open',
+    });
+    expect(navigationRef.dispatch).toHaveBeenCalledWith(invitationResetAction('7F3K9Q'));
+    expect(consumePendingDeepLinkNavigation()).toBeNull();
+  });
+
+  it('preenche o código se a tela de convite já está aberta', async () => {
+    const navigationRef = createNavigationRef();
+
+    await openDeepLinkTarget(navigationRef, INVITE_URL, 'InvitationCode');
+
+    expect(navigationRef.dispatch).toHaveBeenCalledWith(
+      CommonActions.navigate({
+        name: 'InvitationCode',
+        params: { code: '7F3K9Q' },
+      }),
+    );
+  });
+
+  it('enfileira o convite durante o Loading e entrega em InvitationCode', async () => {
+    const navigationRef = createNavigationRef();
+
+    await openDeepLinkTarget(navigationRef, INVITE_URL, 'Loading');
+    expect(navigationRef.dispatch).not.toHaveBeenCalled();
+    expect(consumePendingDeepLinkNavigation()).toEqual(INVITE_TARGET);
+
+    await openDeepLinkTarget(navigationRef, INVITE_URL, 'Loading');
+    await flushPendingDeepLinkNavigation(navigationRef, 'InvitationCode');
+
+    expect(navigationRef.dispatch).toHaveBeenCalledWith(
+      CommonActions.navigate({
+        name: 'InvitationCode',
+        params: { code: '7F3K9Q' },
+      }),
+    );
+    expect(consumePendingDeepLinkNavigation()).toBeNull();
+  });
+
+  it('apresenta a etapa do código para returning user autenticado', async () => {
+    const navigationRef = createNavigationRef();
+
+    await openDeepLinkTarget(navigationRef, INVITE_URL, 'Loading');
+    await flushPendingDeepLinkNavigation(navigationRef, 'Authenticated');
+
+    expect(navigationRef.dispatch).toHaveBeenCalledWith(invitationResetAction('7F3K9Q'));
+  });
+
+  it('redireciona para o login quando o fluxo de convite está desligado', async () => {
+    mockGetInvitationEnabled.mockResolvedValue(false);
+    (storageService.getToken as jest.Mock).mockResolvedValue(null);
+    const navigationRef = createNavigationRef();
+
+    await openDeepLinkTarget(navigationRef, INVITE_URL, 'Summary');
+
+    expect(navigationRef.dispatch).toHaveBeenCalledWith(
+      CommonActions.reset({
+        index: 0,
+        routes: [{ name: 'Unauthenticated' }],
+      }),
+    );
+  });
+
+  it('não abre InvitationCode no flush quando a flag está desligada', async () => {
+    mockGetInvitationEnabled.mockResolvedValue(false);
+    (storageService.getToken as jest.Mock).mockResolvedValue(null);
+    const navigationRef = createNavigationRef();
+
+    await openDeepLinkTarget(navigationRef, INVITE_URL, 'Loading');
+    await flushPendingDeepLinkNavigation(navigationRef, 'Unauthenticated');
+
+    expect(navigationRef.dispatch).not.toHaveBeenCalled();
+    expect(consumePendingDeepLinkNavigation()).toBeNull();
   });
 });

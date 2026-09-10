@@ -1,6 +1,6 @@
 import type { Ad } from '@/types/ad';
 import { PRODUCT_CATALOG_TYPE } from '@/types/product';
-import type { RootStackParamList } from '@/types/navigation';
+import type { CommunityStackParamList, RootStackParamList } from '@/types/navigation';
 import { PROGRAM_TYPE, type ProgramType } from '@/types/product/programType';
 import { formatPriceLabel } from '@/utils/formatters/priceFormatter';
 import { advertiserToRouteProductProvider } from '@/utils/marketplace/routeProductProvider';
@@ -113,6 +113,45 @@ export function navigateToProductDetailsScreen(
   navigateWithAppLoading(navigation, { name: 'ProductDetails', params });
 }
 
+export type SubscribedProgramStackRoute =
+  | { screen: 'Community'; params: RootStackParamList['Community'] }
+  | { screen: 'ProtocolDetail'; params: RootStackParamList['ProtocolDetail'] };
+
+export function subscribedCommunityFeedParams(
+  programType?: ProgramType | null,
+  communityId?: string | null,
+): CommunityStackParamList['CommunityList'] | null {
+  const trimmedCommunityId = communityId?.trim();
+  if (programType !== PROGRAM_TYPE.COMMUNITY || !trimmedCommunityId) {
+    return null;
+  }
+  return {
+    focusCommunityId: trimmedCommunityId,
+    programType: PROGRAM_TYPE.COMMUNITY,
+  };
+}
+
+export function subscribedProgramStackRoute(params: {
+  programType?: ProgramType | null;
+  communityId?: string | null;
+  productId: string;
+}): SubscribedProgramStackRoute {
+  const communityParams = subscribedCommunityFeedParams(params.programType, params.communityId);
+  if (communityParams) {
+    return {
+      screen: 'Community',
+      params: {
+        screen: 'CommunityList',
+        params: communityParams,
+      },
+    };
+  }
+  return {
+    screen: 'ProtocolDetail',
+    params: { productId: params.productId },
+  };
+}
+
 export function navigateToSubscribedProgram(
   navigation: Navigation,
   params: {
@@ -121,9 +160,9 @@ export function navigateToSubscribedProgram(
     protocolDetailParams: RootStackParamList['ProtocolDetail'];
   },
 ): void {
-  const communityId = params.communityId?.trim();
-  if (params.programType === PROGRAM_TYPE.COMMUNITY && communityId) {
-    navigateToCommunity(navigation, { focusCommunityId: communityId });
+  const communityParams = subscribedCommunityFeedParams(params.programType, params.communityId);
+  if (communityParams) {
+    navigateToCommunity(navigation, communityParams);
     return;
   }
 

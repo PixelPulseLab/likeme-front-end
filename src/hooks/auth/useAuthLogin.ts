@@ -1,10 +1,13 @@
 import { useState, useCallback, useRef } from 'react';
 import { Alert } from 'react-native';
 import { AuthService } from '@/services';
+import { invitationService } from '@/services/invitation/invitationService';
+import { useTranslation } from '@/hooks/i18n';
 import { logger } from '@/utils/logger';
 import { isLoginUserAbortError } from '@/utils/auth/loginUserAbort';
 
 export const useAuthLogin = (navigation: any) => {
+  const { t } = useTranslation();
   const [isLoading, setIsLoading] = useState(false);
   const loginInFlightRef = useRef(false);
 
@@ -18,6 +21,11 @@ export const useAuthLogin = (navigation: any) => {
     try {
       const authResult = await AuthService.login();
       await AuthService.validateToken(authResult);
+
+      const activation = await invitationService.activatePendingStoredCode();
+      if (activation.outcome === 'mismatch') {
+        Alert.alert(t('invitation.identityMismatch'));
+      }
 
       navigation.reset({
         index: 0,
@@ -39,7 +47,7 @@ export const useAuthLogin = (navigation: any) => {
       loginInFlightRef.current = false;
       setIsLoading(false);
     }
-  }, [navigation]);
+  }, [navigation, t]);
 
   return { handleLogin, isLoading };
 };

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { FEATURE_FLAG_DEFAULTS, type FeatureFlagKey } from '@/constants';
-import { featureFlagService } from '@/services';
+import featureFlagService from '@/services/featureFlags/featureFlagService';
 import { logger } from '@/utils/logger';
 
 type UseFeatureFlagsReturn = {
@@ -56,9 +56,13 @@ export function useFeatureFlags(flagKeys: FeatureFlagKey[]): UseFeatureFlagsRetu
     };
 
     void loadFlags();
+    const unsubscribe = featureFlagService.subscribe(() => {
+      void loadFlags();
+    });
 
     return () => {
       isMounted = false;
+      unsubscribe();
     };
   }, [keysSignature]);
 

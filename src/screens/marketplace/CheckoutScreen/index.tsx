@@ -83,7 +83,7 @@ const CheckoutScreen: React.FC<Props> = ({ navigation, route }) => {
   const effectiveShipping = isShippingDisabled ? 0 : shipping;
   const productIds = useMemo(() => cartItems.map((item) => item.id).filter(Boolean), [cartItems]);
   const cartHasProgram = useMemo(() => cartItems.some((item) => isProtocolCartItem(item)), [cartItems]);
-  const { googlePayAvailable, applePayAvailable, googlePayConfig, applePayConfig } =
+  const { googlePayAvailable, applePayAvailable, googlePayVisible, applePayVisible, googlePayConfig, applePayConfig } =
     useCheckoutPaymentMethods(cartHasProgram);
 
   useEffect(() => {
@@ -698,6 +698,8 @@ const CheckoutScreen: React.FC<Props> = ({ navigation, route }) => {
                 selectedPaymentMethod={selectedPaymentMethod}
                 googlePayAvailable={googlePayAvailable}
                 applePayAvailable={applePayAvailable}
+                googlePayVisible={googlePayVisible}
+                applePayVisible={applePayVisible}
                 onPaymentMethodChange={setSelectedPaymentMethod}
                 onCardholderNameChange={payment.onCardholderNameChange}
                 onCardNumberChange={payment.onCardNumberChange}

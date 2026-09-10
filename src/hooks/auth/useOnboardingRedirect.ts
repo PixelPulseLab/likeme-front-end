@@ -1,9 +1,12 @@
 import { useEffect } from 'react';
+import { Alert } from 'react-native';
 import { FORCE_START_ONBOARDING_LOCALLY } from '@/constants';
 import { AUTH_ONBOARDING_SCREENS_ORDER } from '@/constants/authOnboarding';
 import { storageService, AuthService } from '@/services';
+import { invitationProgramRouteInsteadOfHome, invitationService } from '@/services/invitation/invitationService';
 import { getCachedPostAuthRoute } from '@/services/auth/applyAuthSessionResponse';
 import { invalidateApiClientAuthTokenMemoryCache } from '@/services/infrastructure/apiClient';
+import { useTranslation } from '@/hooks/i18n';
 import { isE2eAuthBypassEnabled } from '@/utils/e2e/e2eAuthBypass';
 import { logger } from '@/utils/logger';
 import { getNextOnboardingDestination } from '@/utils/auth/navigation';
@@ -52,6 +55,8 @@ async function destinationFromLocalStorage(): Promise<{ screen: string; params?:
 }
 
 export function useOnboardingRedirect(navigationReplace: NavigationReplace): void {
+  const { t } = useTranslation();
+
   useEffect(() => {
     const redirect = async () => {
       try {
@@ -60,9 +65,18 @@ export function useOnboardingRedirect(navigationReplace: NavigationReplace): voi
           invalidateApiClientAuthTokenMemoryCache();
         }
 
+        const activation = await invitationService.activatePendingStoredCode();
+        if (activation.outcome === 'mismatch') {
+          Alert.alert(t('invitation.identityMismatch'));
+        }
+
         const welcomeScreenAccessedAt = await storageService.getWelcomeScreenAccessedAt();
         if (!welcomeScreenAccessedAt) {
-          navigationReplace(AUTH_ONBOARDING_SCREENS_ORDER[0]);
+          const destination = await invitationProgramRouteInsteadOfHome(AUTH_ONBOARDING_SCREENS_ORDER[0]);
+          if (destination.screen !== AUTH_ONBOARDING_SCREENS_ORDER[0]) {
+            await storageService.setWelcomeScreenAccessedAt(new Date().toISOString());
+          }
+          navigationReplace(destination.screen, destination.params);
           return;
         }
 
@@ -73,13 +87,15 @@ export function useOnboardingRedirect(navigationReplace: NavigationReplace): voi
         }
 
         if (postAuthRoute) {
-          navigationReplace(postAuthRoute.screen, postAuthRoute.params);
+          const destination = await invitationProgramRouteInsteadOfHome(postAuthRoute.screen, postAuthRoute.params);
+          navigationReplace(destination.screen, destination.params);
           return;
         }
 
         // Rede falhou ou resposta sem postAuthRoute: não empurrar para Register às cegas.
         const localDestination = await destinationFromLocalStorage();
-        navigationReplace(localDestination.screen, localDestination.params);
+        const destination = await invitationProgramRouteInsteadOfHome(localDestination.screen, localDestination.params);
+        navigationReplace(destination.screen, destination.params);
       } catch (error) {
         logger.error('Error checking onboarding status:', error);
         navigationReplace('Register');
@@ -87,5 +103,5 @@ export function useOnboardingRedirect(navigationReplace: NavigationReplace): voi
     };
 
     redirect();
-  }, [navigationReplace]);
+  }, [navigationReplace, t]);
 }

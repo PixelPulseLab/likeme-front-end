@@ -107,7 +107,7 @@ describe('LoadingScreen', () => {
     jest.useRealTimers();
   });
 
-  it('navega para Unauthenticated quando não há token (sem login interativo na splash)', async () => {
+  it('navega para Unauthenticated no first launch sem token', async () => {
     const replace = jest.fn();
 
     render(<LoadingScreen navigation={{ replace, navigate: jest.fn() }} />);
@@ -121,6 +121,7 @@ describe('LoadingScreen', () => {
       },
       { timeout: 12_000 },
     );
+    expect(replace).not.toHaveBeenCalledWith('InvitationCode');
     expect(mockRemoveToken).not.toHaveBeenCalled();
     expect(mockHydrateI18nFromCache).not.toHaveBeenCalled();
     expect(mockEnsureI18nHydrated).toHaveBeenCalled();

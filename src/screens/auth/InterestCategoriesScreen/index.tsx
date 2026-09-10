@@ -9,6 +9,7 @@ import { CTACard } from '@/components/ui/cards';
 import { COLORS, SPACING } from '@/constants';
 import { GradientSplash6 } from '@/assets/auth';
 import { AuthService, personCategoryService } from '@/services';
+import { invitationProgramRouteInsteadOfHome } from '@/services/invitation/invitationService';
 import { useTranslation } from '@/hooks/i18n';
 import { useAnalyticsScreen, logEvent } from '@/analytics';
 import { CUSTOM_EVENTS, ANALYTICS_PARAMS } from '@/analytics/constants';
@@ -80,7 +81,12 @@ const InterestCategoriesScreen: React.FC<Props> = ({ navigation, route }) => {
         [ANALYTICS_PARAMS.VALUE]: selectedCategoryIds.size,
       });
       const nextScreen = getNextOnboardingScreen('InterestCategories');
-      navigation.navigate(nextScreen as never);
+      const destination = await invitationProgramRouteInsteadOfHome(nextScreen);
+      if (destination.screen === 'Home') {
+        navigation.navigate(destination.screen);
+        return;
+      }
+      navigation.replace(destination.screen as never, destination.params as never);
     } catch (error) {
       logger.error('[InterestCategoriesScreen] Falha ao salvar categorias no backend.', error);
       Alert.alert(t('common.error'), t('auth.objectivesSaveError'));
@@ -89,9 +95,14 @@ const InterestCategoriesScreen: React.FC<Props> = ({ navigation, route }) => {
     }
   }, [selectedCategoryIds, navigation, t]);
 
-  const handleSkip = useCallback(() => {
+  const handleSkip = useCallback(async () => {
     const nextScreen = getNextOnboardingScreen('InterestCategories');
-    navigation.navigate(nextScreen as never);
+    const destination = await invitationProgramRouteInsteadOfHome(nextScreen);
+    if (destination.screen === 'Home') {
+      navigation.navigate(destination.screen);
+      return;
+    }
+    navigation.replace(destination.screen as never, destination.params as never);
   }, [navigation]);
 
   return (

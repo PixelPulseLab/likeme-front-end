@@ -35,19 +35,21 @@ export function JoinCard({
   const footerSection = (
     <View style={styles.bottom}>
       <View style={styles.footerTextBlock}>
-        <Text style={styles.title} {...(square ? {} : { numberOfLines: 2 })}>
+        <Text style={[styles.title, !onPress && styles.titleWithoutCta]} {...(square ? {} : { numberOfLines: 2 })}>
           {title}
         </Text>
         {price !== undefined ? <Text style={styles.price}>{formatPriceLabel(price)}</Text> : null}
       </View>
-      <IconButton
-        icon='chevron-right'
-        iconColor='#001137'
-        iconSize={28}
-        onPress={onPress}
-        backgroundSize='large'
-        containerStyle={styles.ctaIconButton}
-      />
+      {onPress ? (
+        <IconButton
+          icon='chevron-right'
+          iconColor='#001137'
+          iconSize={28}
+          onPress={onPress}
+          backgroundSize='large'
+          containerStyle={styles.ctaIconButton}
+        />
+      ) : null}
     </View>
   );
 

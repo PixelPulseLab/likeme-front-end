@@ -345,7 +345,11 @@ const ProtocolDetailScreen: React.FC<Props> = ({ navigation, route }) => {
     if (!opensCommunityFeed) {
       return;
     }
-    navigateToCommunity(navigation, { focusCommunityId: communityId }, { replace: true });
+    navigateToCommunity(
+      navigation,
+      { focusCommunityId: communityId, programType: PROGRAM_TYPE.COMMUNITY },
+      { replace: true },
+    );
   }, [opensCommunityFeed, communityId, navigation]);
 
   if (opensCommunityFeed || protocolLoadState === 'loading') {

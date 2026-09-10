@@ -12,6 +12,10 @@ export const styles = StyleSheet.create({
     flex: 1,
     position: 'relative',
   },
+  loadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 20,
+  },
   /** Header em posição absoluta no topo para o HeroImage começar logo abaixo. */
   headerWrapper: {
     position: 'absolute',
@@ -34,6 +38,22 @@ export const styles = StyleSheet.create({
   },
   heroFooter: {
     width: '100%',
+  },
+  feedListWrap: {
+    flex: 1,
+    zIndex: 1,
+  },
+  feedList: {
+    flex: 1,
+  },
+  feedRefreshIndicator: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 2,
+    alignItems: 'center',
+    paddingTop: SPACING.SM,
   },
   feedContentContainer: {
     paddingBottom: SPACING.XL,
@@ -60,19 +80,6 @@ export const styles = StyleSheet.create({
   feedLoadingFooterLabel: {
     fontSize: 12,
     color: COLORS.TEXT_LIGHT,
-  },
-  feedLoadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: SPACING.XL,
-    zIndex: 1,
-  },
-  feedLoadingText: {
-    marginTop: SPACING.MD,
-    fontSize: 16,
-    color: '#666666',
-    fontFamily: 'DM Sans',
   },
   feedEmptyContainer: {
     paddingHorizontal: SPACING.MD,

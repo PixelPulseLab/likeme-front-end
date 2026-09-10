@@ -42,6 +42,62 @@ export function shouldSkipCommunitiesListBackgroundRefresh(
 
 const cache = new Map<string, CommunitiesCacheEntry>();
 const inflight = new Map<string, Promise<CommunitiesCacheEntry | null>>();
+const communityById = new Map<string, { community: Community; fetchedAt: number }>();
+
+export function writeCachedCommunity(community: Community, fetchedAt: number = Date.now()): void {
+  const communityId = community.communityId?.trim();
+  if (!communityId) {
+    return;
+  }
+  communityById.set(communityId, { community, fetchedAt });
+}
+
+export function readCachedCommunity(communityId: string, now: number = Date.now()): Community | undefined {
+  const id = communityId.trim();
+  if (!id) {
+    return undefined;
+  }
+
+  const byId = communityById.get(id);
+  if (byId) {
+    if (now - byId.fetchedAt >= COMMUNITIES_CACHE_STALE_MS) {
+      communityById.delete(id);
+    } else {
+      return byId.community;
+    }
+  }
+
+  for (const [key, entry] of cache) {
+    if (!isCommunitiesListCacheEntryFresh(entry, now)) {
+      cache.delete(key);
+      continue;
+    }
+    const found = entry.communities.find((community) => community.communityId === id);
+    if (found) {
+      writeCachedCommunity(found, entry.fetchedAt);
+      return found;
+    }
+  }
+
+  return undefined;
+}
+
+export function shouldSkipCommunityBackgroundRefresh(communityId: string, now: number = Date.now()): boolean {
+  const id = communityId.trim();
+  if (!id) {
+    return false;
+  }
+  const byId = communityById.get(id);
+  if (byId) {
+    return now - byId.fetchedAt < COMMUNITIES_LIST_CACHE_FRESH_SKIP_MS;
+  }
+  const fromList = readCachedCommunity(id, now);
+  if (!fromList) {
+    return false;
+  }
+  const seeded = communityById.get(id);
+  return seeded != null && now - seeded.fetchedAt < COMMUNITIES_LIST_CACHE_FRESH_SKIP_MS;
+}
 
 export function communitiesListCacheKeyFromParams(params: Partial<ListCommunitiesParams>, pageSize: number): string {
   return communitiesListCacheKey(JSON.stringify(params ?? {}), pageSize);
@@ -61,11 +117,15 @@ export function readCommunitiesListCache(key: string): CommunitiesCacheEntry | u
 
 export function writeCommunitiesListCache(key: string, entry: CommunitiesCacheEntry): void {
   cache.set(key, entry);
+  for (const community of entry.communities) {
+    writeCachedCommunity(community, entry.fetchedAt);
+  }
 }
 
 export function invalidateCommunitiesListCache(key?: string): void {
   if (key == null) {
     cache.clear();
+    communityById.clear();
     return;
   }
   cache.delete(key);
@@ -144,4 +204,5 @@ export async function prefetchCommunitiesList(
 export function clearCommunitiesListCache(): void {
   cache.clear();
   inflight.clear();
+  communityById.clear();
 }

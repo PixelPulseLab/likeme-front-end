@@ -21,11 +21,22 @@ export function consumePendingDeepLinkNavigation(): PendingDeepLinkNavigationTar
   return target;
 }
 
+export function peekPendingDeepLinkNavigation(): PendingDeepLinkNavigationTarget | null {
+  return pendingTarget;
+}
+
 export function canNavigateFromDeepLink(activeRouteName: string | undefined): boolean {
   if (!activeRouteName) {
     return false;
   }
 
-  const blockedRoutes = new Set(['Loading', 'Unauthenticated', 'Authenticated', 'ForcedUpdate', 'AppLoading']);
+  const blockedRoutes = new Set([
+    'Loading',
+    'Unauthenticated',
+    'InvitationCode',
+    'Authenticated',
+    'ForcedUpdate',
+    'AppLoading',
+  ]);
   return !blockedRoutes.has(activeRouteName);
 }

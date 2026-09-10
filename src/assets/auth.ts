@@ -8,6 +8,9 @@ import PartialLogo3Svg from '../../assets/ui/LogoPartial3.svg';
 // Gradiente principal
 import GradientSplashSvg from '../../assets/auth/GradientSplash.svg';
 import GradientForceUpdatePng from '../../assets/auth/GradientForceUpdate.png';
+import InvitationContextBackgroundJpg from '../../assets/auth/InvitationContextBackground.jpg';
+import LandingPhotosTopPng from '../../assets/auth/LandingPhotosTop.png';
+import LandingPhotosBottomPng from '../../assets/auth/LandingPhotosBottom.png';
 
 // PNGs de gradiente da tela de loading
 import GradientSplash2Png from '../../assets/auth/GradientSplash2.png';
@@ -34,6 +37,9 @@ export const PartialLogo2 = PartialLogo2Svg;
 export const PartialLogo3 = PartialLogo3Svg;
 export const GradientSplash = GradientSplashSvg;
 export const GradientForceUpdate = GradientForceUpdatePng;
+export const InvitationContextBackground = InvitationContextBackgroundJpg;
+export const LandingPhotosTop = LandingPhotosTopPng;
+export const LandingPhotosBottom = LandingPhotosBottomPng;
 
 export const GradientSplash2 = GradientSplash2Png;
 export const GradientSplash3 = GradientSplash3Png;

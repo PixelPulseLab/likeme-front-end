@@ -58,13 +58,16 @@ export const styles = StyleSheet.create({
     }),
   },
   buttonContent: {
-    flexDirection: 'row',
     alignItems: 'center',
+    flexDirection: 'row',
+    flexShrink: 0,
     justifyContent: 'center',
+    overflow: 'visible',
   },
   label: {
     ...TYPOGRAPHY.labelMd,
     color: COLORS.TEXT,
+    flexShrink: 0,
     textAlign: 'center',
   },
   labelDark: {

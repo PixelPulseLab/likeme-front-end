@@ -2,6 +2,11 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { communityService } from '@/services';
 import type { Community } from '@/types/community';
 import { logger } from '@/utils/logger';
+import {
+  readCachedCommunity,
+  shouldSkipCommunityBackgroundRefresh,
+  writeCachedCommunity,
+} from '@/utils/community/communitiesListCache';
 
 export type UseCommunityOptions = {
   communityId: string | undefined;
@@ -17,8 +22,9 @@ export type UseCommunityReturn = {
 
 export function useCommunity({ communityId }: UseCommunityOptions): UseCommunityReturn {
   const trimmedCommunityId = communityId?.trim() || undefined;
-  const [community, setCommunity] = useState<Community | null>(null);
-  const [loading, setLoading] = useState(Boolean(trimmedCommunityId));
+  const initialCachedCommunity = trimmedCommunityId ? readCachedCommunity(trimmedCommunityId) ?? null : null;
+  const [community, setCommunity] = useState<Community | null>(initialCachedCommunity);
+  const [loading, setLoading] = useState(Boolean(trimmedCommunityId) && initialCachedCommunity == null);
   const [error, setError] = useState<string | null>(null);
   const [termsAccepted, setTermsAccepted] = useState<boolean | null>(null);
   const latestCommunityIdRef = useRef(trimmedCommunityId);
@@ -32,9 +38,20 @@ export function useCommunity({ communityId }: UseCommunityOptions): UseCommunity
       return;
     }
 
+    const cachedCommunity = readCachedCommunity(trimmedCommunityId) ?? null;
+    if (cachedCommunity) {
+      setCommunity(cachedCommunity);
+      setLoading(false);
+      setError(null);
+      if (shouldSkipCommunityBackgroundRefresh(trimmedCommunityId)) {
+        return;
+      }
+    } else {
+      setLoading(true);
+      setError(null);
+    }
+
     let cancelled = false;
-    setLoading(true);
-    setError(null);
 
     void (async () => {
       try {
@@ -42,7 +59,9 @@ export function useCommunity({ communityId }: UseCommunityOptions): UseCommunity
         if (cancelled || latestCommunityIdRef.current !== trimmedCommunityId) {
           return;
         }
+        writeCachedCommunity(fetchedCommunity);
         setCommunity(fetchedCommunity);
+        setError(null);
       } catch (cause) {
         if (cancelled || latestCommunityIdRef.current !== trimmedCommunityId) {
           return;
@@ -51,8 +70,10 @@ export function useCommunity({ communityId }: UseCommunityOptions): UseCommunity
           communityId: trimmedCommunityId,
           cause,
         });
-        setCommunity(null);
-        setError(cause instanceof Error ? cause.message : 'Comunidade não encontrada');
+        if (cachedCommunity == null) {
+          setCommunity(null);
+          setError(cause instanceof Error ? cause.message : 'Comunidade não encontrada');
+        }
       } finally {
         if (!cancelled && latestCommunityIdRef.current === trimmedCommunityId) {
           setLoading(false);

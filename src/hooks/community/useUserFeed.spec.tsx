@@ -2,7 +2,7 @@ import React, { useRef } from 'react';
 import { renderHook, waitFor, act } from '@testing-library/react-native';
 import { useUserFeed } from './useUserFeed';
 import { communityService } from '@/services';
-import { FeedCacheProvider, useFeedCache, type FeedCacheEntry } from '@/contexts/FeedCacheContext';
+import { FeedCacheProvider, useFeedCache, type FeedCacheEntry, FEED_CACHE_STALE_MS } from '@/contexts/FeedCacheContext';
 
 jest.mock('@/services', () => ({
   communityService: {
@@ -208,7 +208,7 @@ describe('useUserFeed (scroll infinito / paginação)', () => {
     expect(result.current.posts[0]?.id).toBe('old');
 
     await act(async () => {
-      result.current.refresh();
+      await result.current.refresh();
     });
 
     await waitFor(() => expect(result.current.posts[0]?.id).toBe('fresh'));
@@ -216,6 +216,54 @@ describe('useUserFeed (scroll infinito / paginação)', () => {
     expect(communityService.getUserFeed).toHaveBeenCalledTimes(2);
     expect(communityService.getUserFeed).toHaveBeenNthCalledWith(2, expect.objectContaining({ page: 1, limit: 10 }));
     expect(getUserFeedMock.mock.calls[1][0]).not.toHaveProperty('token');
+  });
+
+  it('refresh descarta loadMore que termina depois da página 1 nova', async () => {
+    let resolveLoadMore: ((value: ReturnType<typeof feedPayload>) => void) | undefined;
+    const loadMoreInFlight = new Promise<ReturnType<typeof feedPayload>>((resolve) => {
+      resolveLoadMore = resolve;
+    });
+
+    (communityService.getUserFeed as jest.Mock)
+      .mockResolvedValueOnce(
+        feedPayload({
+          posts: [{ postId: 'p1' }],
+          paging: { next: 'cursor-2' },
+        }),
+      )
+      .mockReturnValueOnce(loadMoreInFlight)
+      .mockResolvedValueOnce(
+        feedPayload({
+          posts: [{ postId: 'fresh' }],
+          paging: {},
+        }),
+      );
+
+    const { result } = renderHook(() => useUserFeed({ pageSize: 10, searchQuery: '' }));
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    await act(async () => {
+      result.current.loadMore();
+    });
+
+    await waitFor(() => expect(communityService.getUserFeed).toHaveBeenCalledTimes(2));
+
+    await act(async () => {
+      await result.current.refresh();
+    });
+
+    await act(async () => {
+      resolveLoadMore?.(
+        feedPayload({
+          posts: [{ postId: 'stale-p2' }],
+          paging: {},
+        }),
+      );
+    });
+
+    expect(result.current.posts.map((p) => p.id)).toEqual(['fresh']);
+    expect(communityService.getUserFeed).toHaveBeenCalledTimes(3);
   });
 
   it('com enabled=false não dispara getUserFeed no mount', async () => {
@@ -609,5 +657,92 @@ describe('useUserFeed (scroll infinito / paginação)', () => {
 
     await waitFor(() => expect(result.current.loadingMore).toBe(false));
     expect(getCommunityPostsMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('cache expirado mantém os posts na tela e revalida page 1 sem loading cheio', async () => {
+    const cachedPosts = [
+      {
+        id: 'cached-old',
+        content: '',
+        comments: [],
+        createdAt: new Date('2026-01-01T00:00:00.000Z'),
+      },
+    ];
+
+    getCommunityPostsMock.mockResolvedValue(
+      feedPayload({
+        posts: [{ postId: 'fresh-after-stale' }],
+        paging: {},
+      }),
+    );
+
+    const wrapper = createFeedCacheWrapper(COMMUNITY_FEED_CACHE_KEY, {
+      posts: cachedPosts,
+      nextCursor: undefined,
+      hasMore: false,
+      currentPage: 1,
+      fetchedAt: Date.now() - FEED_CACHE_STALE_MS - 1,
+    });
+
+    const { result } = renderHook(
+      () =>
+        useUserFeed({
+          pageSize: 10,
+          searchQuery: '',
+          params: { communityId: COMMUNITY_ID },
+        }),
+      { wrapper },
+    );
+
+    expect(result.current.loading).toBe(false);
+    expect(result.current.posts[0]?.id).toBe('cached-old');
+
+    await waitFor(() => expect(result.current.posts[0]?.id).toBe('fresh-after-stale'));
+    expect(result.current.loading).toBe(false);
+    expect(getCommunityPostsMock).toHaveBeenCalled();
+  });
+
+  it('refreshIfStale não busca de novo enquanto o cache está fresco', async () => {
+    const cachedPosts = [
+      {
+        id: 'cached-fresh',
+        content: '',
+        comments: [],
+        createdAt: new Date('2026-01-01T00:00:00.000Z'),
+      },
+    ];
+
+    getCommunityPostsMock.mockResolvedValue(
+      feedPayload({
+        posts: [{ postId: 'background' }],
+        paging: {},
+      }),
+    );
+
+    const wrapper = createFeedCacheWrapper(COMMUNITY_FEED_CACHE_KEY, {
+      posts: cachedPosts,
+      nextCursor: undefined,
+      hasMore: false,
+      currentPage: 1,
+      fetchedAt: Date.now(),
+    });
+
+    const { result } = renderHook(
+      () =>
+        useUserFeed({
+          pageSize: 10,
+          searchQuery: '',
+          params: { communityId: COMMUNITY_ID },
+        }),
+      { wrapper },
+    );
+
+    await waitFor(() => expect(getCommunityPostsMock).toHaveBeenCalledTimes(1));
+
+    await act(async () => {
+      result.current.refreshIfStale();
+    });
+
+    expect(getCommunityPostsMock).toHaveBeenCalledTimes(1);
   });
 });

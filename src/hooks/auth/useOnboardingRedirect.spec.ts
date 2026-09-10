@@ -3,6 +3,7 @@ import { useOnboardingRedirect } from './useOnboardingRedirect';
 
 const mockGetToken = jest.fn();
 const mockGetWelcomeScreenAccessedAt = jest.fn();
+const mockSetWelcomeScreenAccessedAt = jest.fn();
 const mockGetPrivacyPolicyAcceptedAt = jest.fn();
 const mockGetRegisterCompletedAt = jest.fn();
 const mockGetCategorySelectedAt = jest.fn();
@@ -22,10 +23,29 @@ jest.mock('@/services/infrastructure/apiClient', () => ({
   invalidateApiClientAuthTokenMemoryCache: jest.fn(),
 }));
 
+const mockActivatePendingStoredCode = jest.fn();
+const mockInvitationProgramRouteInsteadOfHome = jest.fn(async (screen: string, params?: object) => ({
+  screen,
+  params,
+}));
+
+jest.mock('@/services/invitation/invitationService', () => ({
+  invitationService: {
+    activatePendingStoredCode: (...args: unknown[]) => mockActivatePendingStoredCode(...args),
+  },
+  invitationProgramRouteInsteadOfHome: (screen: string, params?: object) =>
+    mockInvitationProgramRouteInsteadOfHome(screen, params),
+}));
+
+jest.mock('@/hooks/i18n', () => ({
+  useTranslation: () => ({ t: (key: string) => key }),
+}));
+
 jest.mock('@/services', () => ({
   storageService: {
     getToken: (...args: unknown[]) => mockGetToken(...args),
     getWelcomeScreenAccessedAt: (...args: unknown[]) => mockGetWelcomeScreenAccessedAt(...args),
+    setWelcomeScreenAccessedAt: (...args: unknown[]) => mockSetWelcomeScreenAccessedAt(...args),
     getPrivacyPolicyAcceptedAt: (...args: unknown[]) => mockGetPrivacyPolicyAcceptedAt(...args),
     getRegisterCompletedAt: (...args: unknown[]) => mockGetRegisterCompletedAt(...args),
     getCategorySelectedAt: (...args: unknown[]) => mockGetCategorySelectedAt(...args),
@@ -44,10 +64,16 @@ describe('useOnboardingRedirect', () => {
     jest.clearAllMocks();
     mockGetToken.mockResolvedValue('session-token');
     mockGetWelcomeScreenAccessedAt.mockResolvedValue('2026-01-01T00:00:00.000Z');
+    mockSetWelcomeScreenAccessedAt.mockResolvedValue(undefined);
     mockGetPrivacyPolicyAcceptedAt.mockResolvedValue('2026-01-02T00:00:00.000Z');
     mockGetRegisterCompletedAt.mockResolvedValue('2026-01-03T00:00:00.000Z');
     mockGetCategorySelectedAt.mockResolvedValue('2026-01-04T00:00:00.000Z');
     mockGetUser.mockResolvedValue({ name: 'João Souza' });
+    mockActivatePendingStoredCode.mockResolvedValue({ outcome: 'none' });
+    mockInvitationProgramRouteInsteadOfHome.mockImplementation(async (screen: string, params?: object) => ({
+      screen,
+      params,
+    }));
     mockRefreshBackendSession.mockResolvedValue({
       ok: true,
       postAuthRoute: { screen: 'Home' },
@@ -103,7 +129,56 @@ describe('useOnboardingRedirect', () => {
 
     await waitFor(() => {
       expect(mockRefreshBackendSession).not.toHaveBeenCalled();
-      expect(navigationReplace).toHaveBeenCalledWith('Welcome');
+      expect(mockInvitationProgramRouteInsteadOfHome).toHaveBeenCalledWith('Welcome', undefined);
+      expect(navigationReplace).toHaveBeenCalledWith('Welcome', undefined);
+    });
+    expect(mockSetWelcomeScreenAccessedAt).not.toHaveBeenCalled();
+  });
+
+  it('pula o onboarding e vai ao programa do convite no primeiro acesso', async () => {
+    mockGetWelcomeScreenAccessedAt.mockResolvedValue(null);
+    mockInvitationProgramRouteInsteadOfHome.mockResolvedValue({
+      screen: 'ProtocolDetail',
+      params: { productId: 'program-1' },
+    });
+
+    renderHook(() => useOnboardingRedirect(navigationReplace));
+
+    await waitFor(() => {
+      expect(mockInvitationProgramRouteInsteadOfHome).toHaveBeenCalledWith('Welcome', undefined);
+      expect(mockSetWelcomeScreenAccessedAt).toHaveBeenCalled();
+      expect(navigationReplace).toHaveBeenCalledWith('ProtocolDetail', { productId: 'program-1' });
+    });
+    expect(mockRefreshBackendSession).not.toHaveBeenCalled();
+  });
+
+  it('pula Register do postAuthRoute quando há programa de convite', async () => {
+    mockGetCachedPostAuthRoute.mockReturnValue({ screen: 'Register', params: { userName: 'Camilla' } });
+    mockInvitationProgramRouteInsteadOfHome.mockResolvedValue({
+      screen: 'ProtocolDetail',
+      params: { productId: 'program-1' },
+    });
+
+    renderHook(() => useOnboardingRedirect(navigationReplace));
+
+    await waitFor(() => {
+      expect(mockInvitationProgramRouteInsteadOfHome).toHaveBeenCalledWith('Register', { userName: 'Camilla' });
+      expect(navigationReplace).toHaveBeenCalledWith('ProtocolDetail', { productId: 'program-1' });
+    });
+  });
+
+  it('substitui Home pelo programa do convite', async () => {
+    mockGetCachedPostAuthRoute.mockReturnValue({ screen: 'Home' });
+    mockInvitationProgramRouteInsteadOfHome.mockResolvedValue({
+      screen: 'ProtocolDetail',
+      params: { productId: 'program-1' },
+    });
+
+    renderHook(() => useOnboardingRedirect(navigationReplace));
+
+    await waitFor(() => {
+      expect(mockInvitationProgramRouteInsteadOfHome).toHaveBeenCalledWith('Home', undefined);
+      expect(navigationReplace).toHaveBeenCalledWith('ProtocolDetail', { productId: 'program-1' });
     });
   });
 });

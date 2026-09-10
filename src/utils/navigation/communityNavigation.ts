@@ -1,5 +1,6 @@
 import type { CommunityStackParamList, RootStackParamList } from '@/types/navigation';
-import { navigateWithAppLoading } from '@/utils/navigation/appLoadingNavigation';
+import { preloadAppLoadingTarget } from '@/utils/navigation/appLoadingNavigation';
+import { navigateRootStack } from '@/utils/navigation/rootStackNavigation';
 
 type Navigation = {
   navigate: (screen: string, params?: unknown) => void;
@@ -11,9 +12,15 @@ export function navigateToCommunity(
   communityListParams?: CommunityStackParamList['CommunityList'],
   options?: { replace?: boolean },
 ): void {
+  // A comunidade já mostra o Loading; o hop AppLoading repetia os dois pontos sem header.
+  preloadAppLoadingTarget('Community');
   const params: RootStackParamList['Community'] = {
     screen: 'CommunityList',
     params: communityListParams,
   };
-  navigateWithAppLoading(navigation, { name: 'Community', params }, options);
+  if (options?.replace && typeof navigation.replace === 'function') {
+    navigation.replace('Community', params);
+    return;
+  }
+  navigateRootStack(navigation, 'Community', params);
 }

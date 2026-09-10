@@ -9,6 +9,7 @@ describe('canNavigateFromDeepLink', () => {
     expect(canNavigateFromDeepLink(undefined)).toBe(false);
     expect(canNavigateFromDeepLink('Loading')).toBe(false);
     expect(canNavigateFromDeepLink('Unauthenticated')).toBe(false);
+    expect(canNavigateFromDeepLink('InvitationCode')).toBe(false);
     expect(canNavigateFromDeepLink('Authenticated')).toBe(false);
     expect(canNavigateFromDeepLink('ForcedUpdate')).toBe(false);
     expect(canNavigateFromDeepLink('AppLoading')).toBe(false);

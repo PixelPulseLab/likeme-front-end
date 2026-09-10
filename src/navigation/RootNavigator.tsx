@@ -15,6 +15,8 @@ import {
   getLoadingScreen,
   getForcedUpdateScreen,
   getUnauthenticatedScreen,
+  getInvitationCodeScreen,
+  getInvitationContextScreen,
   getAuthenticatedScreen,
   getWelcomeScreen,
   getAppPresentationScreen,
@@ -123,6 +125,16 @@ const RootNavigator: React.FC = () => {
                   name='Unauthenticated'
                   getComponent={getUnauthenticatedScreen}
                   options={{ title: 'Tela Deslogada' }}
+                />
+                <Stack.Screen
+                  name='InvitationCode'
+                  getComponent={getInvitationCodeScreen}
+                  options={{ title: 'Código de convite' }}
+                />
+                <Stack.Screen
+                  name='InvitationContext'
+                  getComponent={getInvitationContextScreen}
+                  options={{ title: 'Contexto do convite' }}
                 />
                 <Stack.Screen
                   name='Authenticated'

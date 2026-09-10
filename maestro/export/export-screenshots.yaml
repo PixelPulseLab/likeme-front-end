@@ -14,14 +14,8 @@ appId: app.likeme.com
 
 # === TELAS DE AUTH (sem login) ===
 
-# Unauthenticated (botão: "Próximo" em pt-BR ou "Next" em en)
-- takeScreenshot: screens/01-Unauthenticated
-- tapOn:
-    text: "Próximo"
-    optional: true
-- tapOn:
-    text: "Next"
-    optional: true
+# InvitationCode (first launch sem token)
+- takeScreenshot: screens/01-InvitationCode
 
 # Welcome
 - waitForAnimationToEnd

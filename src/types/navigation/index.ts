@@ -1,6 +1,7 @@
 import type { NavigatorScreenParams } from '@react-navigation/native';
 import type { AdvertiserRecommendationTargetType } from '@/constants/recommendation/advertiserRecommendationTargetType';
 import type { CategoryName } from '@/types';
+import type { InvitationCodeValidationContext } from '@/types/invitation/invitation';
 import type { MarketplaceSolutionTab, SolutionFilterId } from '@/types/solution';
 
 export type MarketplaceRouteParams = {
@@ -14,7 +15,13 @@ export type MarketplaceRouteParams = {
 };
 
 export type CommunityStackParamList = {
-  CommunityList: { openFeedFromMenu?: true; focusCommunityId?: string } | undefined;
+  CommunityList:
+    | {
+        openFeedFromMenu?: true;
+        focusCommunityId?: string;
+        programType?: import('@/types/product/programType').ProgramType;
+      }
+    | undefined;
   PostDetail: { post: import('@/types').Post } | { postId: string };
 };
 
@@ -45,7 +52,9 @@ export type ProtocolDetailProtocol = {
 
 type RootStackParamListCore = {
   ForcedUpdate: { storeUrl: string; message?: string };
-  Unauthenticated: { skipAutoLogin?: boolean } | undefined;
+  Unauthenticated: { skipAutoLogin?: boolean; startLogin?: boolean } | undefined;
+  InvitationCode: { code?: string } | undefined;
+  InvitationContext: InvitationCodeValidationContext;
   Authenticated: undefined;
   Welcome: undefined;
   AppPresentation: { userName?: string };

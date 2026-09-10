@@ -87,7 +87,7 @@ describe('PaymentForm', () => {
     expect(getByText('checkout.cvv')).toBeTruthy();
   });
 
-  it('shows Google Pay as a payment method when available', () => {
+  it('shows Google Pay as a payment button when available', () => {
     const onPaymentMethodChange = jest.fn();
     const { getByTestId } = render(
       <PaymentForm
@@ -111,9 +111,9 @@ describe('PaymentForm', () => {
     expect(getByText('checkout.cpf')).toBeTruthy();
   });
 
-  it('shows Apple Pay as a payment method when available', () => {
+  it('shows Apple Pay as a payment button when available', () => {
     const onPaymentMethodChange = jest.fn();
-    const { getByTestId } = render(
+    const { getByTestId, getByText } = render(
       <PaymentForm
         {...mockProps}
         applePayAvailable
@@ -124,6 +124,7 @@ describe('PaymentForm', () => {
 
     fireEvent.press(getByTestId('e2e.checkout.paymentMethod.applePay'));
     expect(onPaymentMethodChange).toHaveBeenCalledWith('apple_pay');
+    expect(getByText('Pay')).toBeTruthy();
   });
 
   it('hides card fields when Apple Pay is selected', () => {
@@ -135,10 +136,46 @@ describe('PaymentForm', () => {
     expect(getByText('checkout.cpf')).toBeTruthy();
   });
 
-  it('does not show Google Pay radios when unavailable', () => {
+  it('does not show Google Pay buttons when unavailable', () => {
     const { queryByTestId } = render(<PaymentForm {...mockProps} />);
 
     expect(queryByTestId('e2e.checkout.paymentMethod.googlePay')).toBeNull();
+  });
+
+  it('shows both wallet buttons when visible even if only one can pay', () => {
+    const onPaymentMethodChange = jest.fn();
+    const { getByTestId } = render(
+      <PaymentForm
+        {...mockProps}
+        applePayVisible
+        googlePayVisible
+        applePayAvailable
+        selectedPaymentMethod='credit_card'
+        onPaymentMethodChange={onPaymentMethodChange}
+      />,
+    );
+
+    fireEvent.press(getByTestId('e2e.checkout.paymentMethod.applePay'));
+    expect(onPaymentMethodChange).toHaveBeenCalledWith('apple_pay');
+    fireEvent.press(getByTestId('e2e.checkout.paymentMethod.googlePay'));
+    expect(onPaymentMethodChange).not.toHaveBeenCalledWith('google_pay');
+  });
+
+  it('shows the card option after wallet buttons when a wallet is available', () => {
+    const onPaymentMethodChange = jest.fn();
+    const { getByTestId, getByText } = render(
+      <PaymentForm
+        {...mockProps}
+        applePayAvailable
+        selectedPaymentMethod='apple_pay'
+        onPaymentMethodChange={onPaymentMethodChange}
+      />,
+    );
+
+    expect(getByText(/checkout\.or/)).toBeTruthy();
+    expect(getByText(/checkout\.creditCard/)).toBeTruthy();
+    fireEvent.press(getByTestId('e2e.checkout.paymentMethod.creditCard'));
+    expect(onPaymentMethodChange).toHaveBeenCalledWith('credit_card');
   });
 
   it('should call onCardholderNameChange when cardholder name is changed', () => {

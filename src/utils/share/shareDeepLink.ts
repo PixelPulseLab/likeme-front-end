@@ -1,10 +1,13 @@
 import { CommonActions, type NavigationContainerRefWithCurrent } from '@react-navigation/native';
 import { GA4_EVENTS, logEvent, ANALYTICS_PARAMS } from '@/analytics';
+import { FEATURE_FLAGS } from '@/constants';
 import { SHARE_CONFIG } from '@/config/environment';
 import {
   AFFILIATE_SHARE_PATH_PREFIX,
   COMMUNITY_POST_SHARE_PATH_PREFIX,
   COMMUNITY_SHARE_PATH_PREFIX,
+  INVITATION_DEEP_LINK_CONTENT_TYPE,
+  INVITATION_SHARE_PATH_PREFIX,
   PRODUCT_SHARE_PATH_PREFIX,
   PROTOCOL_SHARE_PATH_PREFIX,
   PROVIDER_SHARE_PATH_PREFIX,
@@ -16,11 +19,13 @@ import {
   type ShareContentType,
 } from '@/constants/share';
 import storageService from '@/services/auth/storageService';
+import { featureFlagService } from '@/services/featureFlags/featureFlagService';
 import type { CommunityStackParamList, RootStackParamList } from '@/types/navigation';
 import {
   canNavigateFromDeepLink,
   consumePendingDeepLinkNavigation,
   hasPendingDeepLinkNavigation,
+  peekPendingDeepLinkNavigation,
   setPendingDeepLinkNavigation,
   type PendingDeepLinkNavigationTarget,
 } from '@/utils/navigation/pendingDeepLinkNavigation';
@@ -161,6 +166,47 @@ function subscriptionManageTarget(
   };
 }
 
+function invitationCodeFromPath(path: string): string | null {
+  const raw = shareEntityIdFromPath(path, INVITATION_SHARE_PATH_PREFIX);
+  if (!raw) {
+    return null;
+  }
+  const code = raw.trim().toUpperCase();
+  return code.length > 0 ? code : null;
+}
+
+function invitationCodeTarget(code: string): PendingDeepLinkNavigationTarget {
+  return {
+    screen: 'InvitationCode',
+    params: { code },
+  };
+}
+
+function isInvitationCodeTarget(target: PendingDeepLinkNavigationTarget): boolean {
+  return target.screen === 'InvitationCode';
+}
+
+function invitationCodeFromTarget(target: PendingDeepLinkNavigationTarget): string {
+  const params = target.params as RootStackParamList['InvitationCode'];
+  return typeof params?.code === 'string' ? params.code : '';
+}
+
+function canFlushInvitationDeepLink(activeRouteName: string | undefined): boolean {
+  if (!activeRouteName) {
+    return false;
+  }
+  return activeRouteName !== 'Loading' && activeRouteName !== 'ForcedUpdate' && activeRouteName !== 'AppLoading';
+}
+
+export function invitationDeepLinkTargetFromUrl(url: string): PendingDeepLinkNavigationTarget | null {
+  const path = sharePathFromUrl(url);
+  if (!path) {
+    return null;
+  }
+  const code = invitationCodeFromPath(path);
+  return code ? invitationCodeTarget(code) : null;
+}
+
 function shareDeepLinkMatchFromUrl(url: string): ShareDeepLinkMatch | null {
   const path = sharePathFromUrl(url);
   if (!path) {
@@ -235,7 +281,31 @@ function shareDeepLinkMatchFromUrl(url: string): ShareDeepLinkMatch | null {
 }
 
 export function shareDeepLinkTargetFromUrl(url: string): PendingDeepLinkNavigationTarget | null {
-  return shareDeepLinkMatchFromUrl(url)?.target ?? null;
+  return invitationDeepLinkTargetFromUrl(url) ?? shareDeepLinkMatchFromUrl(url)?.target ?? null;
+}
+
+function dispatchInvitationCodeTarget(
+  navigationRef: NavigationContainerRefWithCurrent<RootStackParamList>,
+  target: PendingDeepLinkNavigationTarget,
+  activeRouteName: string | undefined,
+): void {
+  const params = { code: invitationCodeFromTarget(target) };
+  if (activeRouteName === 'InvitationCode') {
+    navigationRef.dispatch(
+      CommonActions.navigate({
+        name: 'InvitationCode',
+        params,
+      }),
+    );
+    return;
+  }
+
+  navigationRef.dispatch(
+    CommonActions.reset({
+      index: 0,
+      routes: [{ name: 'InvitationCode', params }],
+    }),
+  );
 }
 
 function dispatchDeepLinkTarget(
@@ -260,9 +330,28 @@ function dispatchDeepLinkTarget(
   );
 }
 
+async function invitationOnboardingEnabled(): Promise<boolean> {
+  return featureFlagService.getBoolean(FEATURE_FLAGS.INVITATION_ENABLED);
+}
+
 async function hasStoredSessionToken(): Promise<boolean> {
   const token = await storageService.getToken();
   return Boolean(token?.trim());
+}
+
+async function skipInvitationOnboardingToLogin(
+  navigationRef: NavigationContainerRefWithCurrent<RootStackParamList>,
+  activeRouteName: string | undefined,
+): Promise<void> {
+  consumePendingDeepLinkNavigation();
+  if (!canFlushInvitationDeepLink(activeRouteName)) {
+    return;
+  }
+  const hasSession = await hasStoredSessionToken();
+  if (hasSession) {
+    return;
+  }
+  navigateToUnauthenticatedIfNeeded(navigationRef, activeRouteName);
 }
 
 function navigateToUnauthenticatedIfNeeded(
@@ -310,6 +399,29 @@ export async function openDeepLinkTarget(
     return;
   }
 
+  const invitationTarget = invitationDeepLinkTargetFromUrl(url);
+  if (invitationTarget) {
+    logEvent(GA4_EVENTS.SELECT_CONTENT, {
+      [ANALYTICS_PARAMS.CONTENT_TYPE]: INVITATION_DEEP_LINK_CONTENT_TYPE,
+      [ANALYTICS_PARAMS.ITEM_ID]: invitationCodeFromTarget(invitationTarget),
+      [ANALYTICS_PARAMS.ACTION_NAME]: 'deep_link_open',
+    });
+
+    if (!canFlushInvitationDeepLink(activeRouteName)) {
+      setPendingDeepLinkNavigation(invitationTarget);
+      return;
+    }
+
+    if (!(await invitationOnboardingEnabled())) {
+      await skipInvitationOnboardingToLogin(navigationRef, activeRouteName);
+      return;
+    }
+
+    dispatchInvitationCodeTarget(navigationRef, invitationTarget, activeRouteName);
+    consumePendingDeepLinkNavigation();
+    return;
+  }
+
   const match = shareDeepLinkMatchFromUrl(url);
   const target = match?.target ?? (isShareHostUrl(url) ? SHARE_HOME_TARGET : null);
   if (!target) {
@@ -350,7 +462,27 @@ export async function flushPendingDeepLinkNavigation(
   navigationRef: NavigationContainerRefWithCurrent<RootStackParamList>,
   activeRouteName: string | undefined,
 ): Promise<void> {
-  if (!navigationRef.isReady() || !canNavigateFromDeepLink(activeRouteName)) {
+  if (!navigationRef.isReady()) {
+    return;
+  }
+
+  const pendingInvitation = peekPendingDeepLinkNavigation();
+  if (pendingInvitation && isInvitationCodeTarget(pendingInvitation)) {
+    if (!canFlushInvitationDeepLink(activeRouteName)) {
+      return;
+    }
+    if (!(await invitationOnboardingEnabled())) {
+      await skipInvitationOnboardingToLogin(navigationRef, activeRouteName);
+      return;
+    }
+    const target = consumePendingDeepLinkNavigation();
+    if (target) {
+      dispatchInvitationCodeTarget(navigationRef, target, activeRouteName);
+    }
+    return;
+  }
+
+  if (!canNavigateFromDeepLink(activeRouteName)) {
     return;
   }
 

@@ -19,19 +19,27 @@ function methodEnabledForCheckout(
 }
 
 export function useCheckoutPaymentMethods(subscriptionCheckout: boolean) {
-  const { isEnabled: isWalletEnabled } = useFeatureFlag(FEATURE_FLAGS.WALLET_ENABLED);
+  const { isEnabled: isWalletEnabled, isLoading: isWalletFlagLoading } = useFeatureFlag(FEATURE_FLAGS.WALLET_ENABLED);
   const [googlePayConfig, setGooglePayConfig] = useState<GooglePayClientConfig | null>(null);
   const [applePayConfig, setApplePayConfig] = useState<ApplePayClientConfig | null>(null);
   const [googlePayAvailable, setGooglePayAvailable] = useState(false);
   const [applePayAvailable, setApplePayAvailable] = useState(false);
+  const [googlePayVisible, setGooglePayVisible] = useState(false);
+  const [applePayVisible, setApplePayVisible] = useState(false);
 
   useEffect(() => {
     const hideWallets = () => {
       setGooglePayAvailable(false);
       setApplePayAvailable(false);
+      setGooglePayVisible(false);
+      setApplePayVisible(false);
       setGooglePayConfig(null);
       setApplePayConfig(null);
     };
+
+    if (isWalletFlagLoading) {
+      return;
+    }
 
     if (!isWalletEnabled) {
       hideWallets();
@@ -49,15 +57,20 @@ export function useCheckoutPaymentMethods(subscriptionCheckout: boolean) {
         const nextGooglePayConfig = googlePayFromApi?.gatewayMerchantId ? googlePayFromApi : null;
         const nextApplePayConfig = applePayFromApi?.merchantIdentifier ? applePayFromApi : null;
 
-        if (cancelled) {
-          return;
-        }
-
         setGooglePayConfig(nextGooglePayConfig);
         setApplePayConfig(nextApplePayConfig);
 
         const googlePayEnabled = methodEnabledForCheckout(methods, PAYMENT_METHOD.GOOGLE_PAY, subscriptionCheckout);
         const applePayEnabled = methodEnabledForCheckout(methods, PAYMENT_METHOD.APPLE_PAY, subscriptionCheckout);
+        const showGooglePay = googlePayEnabled && Boolean(nextGooglePayConfig);
+        const showApplePay = applePayEnabled && Boolean(nextApplePayConfig);
+
+        if (cancelled) {
+          return;
+        }
+
+        setGooglePayVisible(showGooglePay);
+        setApplePayVisible(showApplePay);
 
         if (Platform.OS === 'android' && googlePayEnabled && nextGooglePayConfig) {
           const available = await isGooglePayAvailableOnDevice(nextGooglePayConfig);
@@ -68,7 +81,7 @@ export function useCheckoutPaymentMethods(subscriptionCheckout: boolean) {
           return;
         }
 
-        if (Platform.OS === 'ios' && applePayEnabled && nextApplePayConfig) {
+        if (Platform.OS === 'ios' && applePayEnabled) {
           const available = await isApplePayAvailableOnDevice();
           if (!cancelled) {
             setApplePayAvailable(available);
@@ -92,11 +105,13 @@ export function useCheckoutPaymentMethods(subscriptionCheckout: boolean) {
     return () => {
       cancelled = true;
     };
-  }, [subscriptionCheckout, isWalletEnabled]);
+  }, [subscriptionCheckout, isWalletEnabled, isWalletFlagLoading]);
 
   return {
     googlePayAvailable,
     applePayAvailable,
+    googlePayVisible,
+    applePayVisible,
     googlePayConfig,
     applePayConfig,
   };

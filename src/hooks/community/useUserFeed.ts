@@ -56,7 +56,8 @@ interface UseUserFeedReturn {
   currentPage: number;
   loadPosts: (page: number, search?: string, append?: boolean) => Promise<void>;
   loadMore: () => void;
-  refresh: () => void;
+  refresh: () => Promise<void>;
+  refreshIfStale: () => void;
   search: (query: string) => void;
 }
 
@@ -70,17 +71,18 @@ export const useUserFeed = (options: UseUserFeedOptions = {}): UseUserFeedReturn
     ? `${searchQuery}::${paramsKey}::community-feed-v8`
     : `${searchQuery}::${paramsKey}`;
   const initialCacheEntry = feedCache.read(cacheKey);
-  const initialCacheIsFresh = initialCacheEntry != null && isFeedCacheEntryFresh(initialCacheEntry);
+  const hasCachedEntry = initialCacheEntry != null;
+  const initialCacheIsFresh = hasCachedEntry && isFeedCacheEntryFresh(initialCacheEntry);
 
-  const [posts, setPosts] = useState<Post[]>(() => (initialCacheIsFresh ? initialCacheEntry.posts : []));
-  const [loading, setLoading] = useState(() => !initialCacheIsFresh);
+  const [posts, setPosts] = useState<Post[]>(() => initialCacheEntry?.posts ?? []);
+  const [loading, setLoading] = useState(() => !hasCachedEntry);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [currentPage, setCurrentPage] = useState(() => (initialCacheIsFresh ? initialCacheEntry.currentPage : 1));
-  const [hasMore, setHasMore] = useState(() => (initialCacheIsFresh ? initialCacheEntry.hasMore : true));
+  const [currentPage, setCurrentPage] = useState(() => initialCacheEntry?.currentPage ?? 1);
+  const [hasMore, setHasMore] = useState(() => (hasCachedEntry ? initialCacheEntry.hasMore : true));
   const [error, setError] = useState<string | null>(null);
 
-  const currentPageRef = useRef(initialCacheIsFresh ? initialCacheEntry.currentPage : 1);
-  const nextFeedCursorRef = useRef<string | undefined>(initialCacheIsFresh ? initialCacheEntry.nextCursor : undefined);
+  const currentPageRef = useRef(initialCacheEntry?.currentPage ?? 1);
+  const nextFeedCursorRef = useRef<string | undefined>(initialCacheEntry?.nextCursor);
   const postsRef = useRef<Post[]>(posts);
   postsRef.current = posts;
 
@@ -98,6 +100,7 @@ export const useUserFeed = (options: UseUserFeedOptions = {}): UseUserFeedReturn
   const previousParamsKey = useRef<string>(initialCacheIsFresh ? paramsKey : '');
   const isLoadingFirstPageRef = useRef(false);
   const isLoadingMoreRef = useRef(false);
+  const feedLoadEpochRef = useRef(0);
   const hasErrorRef = useRef(false);
   const backgroundRefreshStartedRef = useRef(false);
   const hasMoreRef = useRef(hasMore);
@@ -112,7 +115,7 @@ export const useUserFeed = (options: UseUserFeedOptions = {}): UseUserFeedReturn
   const loadPosts = useCallback(
     async (page: number, search?: string, append = false) => {
       if (page > 1) {
-        if (isLoadingMoreRef.current) {
+        if (isLoadingMoreRef.current || isLoadingFirstPageRef.current) {
           return;
         }
       } else if (isLoadingFirstPageRef.current) {
@@ -131,6 +134,11 @@ export const useUserFeed = (options: UseUserFeedOptions = {}): UseUserFeedReturn
       }
 
       const feedCursor = page === 1 ? undefined : nextFeedCursorRef.current?.trim();
+
+      if (page === 1) {
+        feedLoadEpochRef.current += 1;
+      }
+      const loadEpoch = feedLoadEpochRef.current;
 
       try {
         if (page > 1) {
@@ -175,6 +183,10 @@ export const useUserFeed = (options: UseUserFeedOptions = {}): UseUserFeedReturn
 
         if (!isSuccess || !feedData) {
           throw new Error(userFeedResponse.message || 'Erro ao carregar feed do usuário');
+        }
+
+        if (loadEpoch !== feedLoadEpochRef.current) {
+          return;
         }
 
         const feedPosts = feedData.posts ?? [];
@@ -228,6 +240,9 @@ export const useUserFeed = (options: UseUserFeedOptions = {}): UseUserFeedReturn
           fetchedAt: Date.now(),
         });
       } catch (err) {
+        if (loadEpoch !== feedLoadEpochRef.current) {
+          return;
+        }
         hasErrorRef.current = true;
         const errorMessage = err instanceof Error ? err.message : 'Erro ao carregar posts';
         setError(errorMessage);
@@ -253,13 +268,19 @@ export const useUserFeed = (options: UseUserFeedOptions = {}): UseUserFeedReturn
   );
 
   const loadMore = useCallback(() => {
-    if (loadingMoreRef.current || !hasMoreRef.current || loadingRef.current || !enabledRef.current) {
+    if (
+      loadingMoreRef.current ||
+      isLoadingFirstPageRef.current ||
+      !hasMoreRef.current ||
+      loadingRef.current ||
+      !enabledRef.current
+    ) {
       return;
     }
     void loadPosts(currentPageRef.current + 1, searchQuery, true);
   }, [searchQuery, loadPosts]);
 
-  const refresh = useCallback(() => {
+  const refresh = useCallback(async () => {
     feedCache.invalidate(cacheKey);
     hasLoadedInitially.current = false;
     previousSearchQuery.current = '';
@@ -268,8 +289,19 @@ export const useUserFeed = (options: UseUserFeedOptions = {}): UseUserFeedReturn
     currentPageRef.current = 1;
     setHasMore(true);
     hasMoreRef.current = true;
-    loadPosts(1, searchQuery);
+    await loadPosts(1, searchQuery);
   }, [searchQuery, loadPosts, feedCache, cacheKey]);
+
+  const refreshIfStale = useCallback(() => {
+    if (!enabledRef.current) {
+      return;
+    }
+    const entry = feedCache.read(cacheKey);
+    if (entry != null && isFeedCacheEntryFresh(entry)) {
+      return;
+    }
+    void loadPosts(1, searchQuery);
+  }, [cacheKey, feedCache, loadPosts, searchQuery]);
 
   const search = useCallback(
     (query: string) => {
@@ -336,6 +368,7 @@ export const useUserFeed = (options: UseUserFeedOptions = {}): UseUserFeedReturn
     loadPosts,
     loadMore,
     refresh,
+    refreshIfStale,
     search,
   };
 };

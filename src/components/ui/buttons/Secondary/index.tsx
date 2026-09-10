@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { type ReactNode } from 'react';
 import {
   Text,
   Pressable,
@@ -27,6 +27,7 @@ type Props = {
   disabled?: boolean;
   size?: Size;
   icon?: string;
+  iconElement?: ReactNode;
   iconImage?: ImageSourcePropType;
   iconImageStyle?: ImageStyle;
   iconSize?: number;
@@ -45,6 +46,7 @@ const SecondaryButton: React.FC<Props> = ({
   disabled = false,
   size = 'medium',
   icon,
+  iconElement,
   iconImage,
   iconImageStyle,
   iconSize = 16,
@@ -69,6 +71,9 @@ const SecondaryButton: React.FC<Props> = ({
   };
 
   const renderIcon = () => {
+    if (iconElement != null) {
+      return <View style={iconPosition === 'left' ? styles.iconLeft : styles.iconRight}>{iconElement}</View>;
+    }
     if (iconImage != null) {
       return (
         <CachedImage

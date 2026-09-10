@@ -76,6 +76,14 @@ describe('useCheckoutPaymentMethods', () => {
     expect(mockListPaymentMethods).not.toHaveBeenCalled();
   });
 
+  it('não consulta a API enquanto a feature flag ainda está carregando', () => {
+    mockUseFeatureFlag.mockReturnValue({ isEnabled: false, isLoading: true });
+
+    renderHook(() => useCheckoutPaymentMethods(false));
+
+    expect(mockListPaymentMethods).not.toHaveBeenCalled();
+  });
+
   it('oferece Google Pay no Android quando a API e o device permitem', async () => {
     Object.defineProperty(Platform, 'OS', { value: 'android' });
 
@@ -84,6 +92,8 @@ describe('useCheckoutPaymentMethods', () => {
     await waitFor(() => {
       expect(result.current.googlePayAvailable).toBe(true);
     });
+    expect(result.current.googlePayVisible).toBe(true);
+    expect(result.current.applePayVisible).toBe(true);
     expect(result.current.applePayAvailable).toBe(false);
     expect(mockIsGooglePayAvailableOnDevice).toHaveBeenCalled();
   });
@@ -96,6 +106,8 @@ describe('useCheckoutPaymentMethods', () => {
     await waitFor(() => {
       expect(result.current.applePayAvailable).toBe(true);
     });
+    expect(result.current.applePayVisible).toBe(true);
+    expect(result.current.googlePayVisible).toBe(true);
     expect(result.current.googlePayAvailable).toBe(false);
     expect(mockIsApplePayAvailableOnDevice).toHaveBeenCalled();
   });
@@ -108,6 +120,8 @@ describe('useCheckoutPaymentMethods', () => {
     await waitFor(() => {
       expect(result.current.googlePayAvailable).toBe(false);
     });
+    expect(result.current.googlePayVisible).toBe(false);
+    expect(result.current.applePayVisible).toBe(false);
     expect(mockIsGooglePayAvailableOnDevice).not.toHaveBeenCalled();
   });
 
@@ -122,9 +136,10 @@ describe('useCheckoutPaymentMethods', () => {
     const { result } = renderHook(() => useCheckoutPaymentMethods(false));
 
     await waitFor(() => {
-      expect(result.current.googlePayAvailable).toBe(false);
+      expect(result.current.googlePayConfig).toBeNull();
     });
-    expect(result.current.googlePayConfig).toBeNull();
+    expect(result.current.googlePayVisible).toBe(false);
+    expect(result.current.googlePayAvailable).toBe(false);
     expect(mockIsGooglePayAvailableOnDevice).not.toHaveBeenCalled();
   });
 });

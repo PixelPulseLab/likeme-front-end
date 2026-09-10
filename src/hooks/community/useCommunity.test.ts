@@ -3,6 +3,7 @@ import { useCommunity } from '@/hooks/community/useCommunity';
 import { communityService } from '@/services';
 import { logger } from '@/utils/logger';
 import type { Community } from '@/types/community';
+import { clearCommunitiesListCache, writeCachedCommunity } from '@/utils/community/communitiesListCache';
 
 jest.mock('@/services', () => ({
   communityService: {
@@ -34,6 +35,7 @@ const community: Community = {
 describe('useCommunity', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    clearCommunitiesListCache();
     (communityService.getCommunity as jest.Mock).mockResolvedValue(community);
     (communityService.getMyCommunityTermsAccepted as jest.Mock).mockResolvedValue(false);
   });
@@ -58,6 +60,20 @@ describe('useCommunity', () => {
     expect(communityService.getCommunity).toHaveBeenCalledWith('channel-1');
     expect(result.current.loading).toBe(false);
     expect(result.current.error).toBeNull();
+  });
+
+  it('hidrata da cache e não dispara GET quando a entrada ainda está fresca', async () => {
+    writeCachedCommunity(community);
+
+    const { result } = renderHook(() => useCommunity({ communityId: 'channel-1' }));
+
+    expect(result.current.loading).toBe(false);
+    expect(result.current.community).toEqual(community);
+    expect(communityService.getCommunity).not.toHaveBeenCalled();
+
+    await waitFor(() => {
+      expect(result.current.termsAccepted).toBe(false);
+    });
   });
 
   it('expõe erro quando a comunidade não existe ou não há acesso', async () => {

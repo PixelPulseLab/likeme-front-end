@@ -1,70 +1,50 @@
-import React, { useEffect, useRef } from 'react';
-import { View, Text, Animated, Dimensions } from 'react-native';
-import { CachedImage } from '@/components/ui/media/CachedImage';
-import { PrimaryButton, ButtonGroup } from '@/components/ui';
+import React from 'react';
+import { Image, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { LandingPhotosBottom, LandingPhotosTop, LogoFullSvg } from '@/assets/auth';
+import { PrimaryButton } from '@/components/ui';
 import { E2E_TEST_IDS } from '@/constants/e2eTestIds';
 import { useTranslation } from '@/hooks/i18n';
-import { GradientSplash2, PartialLogo, PartialLogo2 } from '@/assets/auth';
-import { styles } from './UnauthenticatedStep1.styles';
+import { LANDING_LOGO_HEIGHT, LANDING_LOGO_WIDTH, styles } from './UnauthenticatedStep1.styles';
 
 interface UnauthenticatedStep1Props {
-  onLogin: () => void;
+  onStart: () => void;
   isLoading?: boolean;
+  isStartDisabled?: boolean;
   onE2eContinue?: () => void;
   e2eLoading?: boolean;
 }
 
 const UnauthenticatedStep1: React.FC<UnauthenticatedStep1Props> = ({
-  onLogin,
+  onStart,
   isLoading = false,
+  isStartDisabled = false,
   onE2eContinue,
   e2eLoading = false,
 }) => {
   const { t } = useTranslation();
-  const { width } = Dimensions.get('window');
-  const slideLeft = useRef(new Animated.Value(0)).current;
-  const slideRight = useRef(new Animated.Value(width * 0.5)).current;
-  const bgOpacity = useRef(new Animated.Value(0)).current;
-  const buttonsOpacity = useRef(new Animated.Value(0)).current;
+  const startBusy = isLoading || e2eLoading || isStartDisabled;
 
-  useEffect(() => {
-    Animated.parallel([
-      Animated.timing(slideLeft, {
-        toValue: -59,
-        duration: 420,
-        useNativeDriver: true,
-      }),
-      Animated.timing(slideRight, {
-        toValue: 89,
-        duration: 420,
-        useNativeDriver: true,
-      }),
-      Animated.timing(bgOpacity, {
-        toValue: 1,
-        duration: 320,
-        useNativeDriver: true,
-      }),
-      Animated.timing(buttonsOpacity, {
-        toValue: 1,
-        duration: 420,
-        delay: 120,
-        useNativeDriver: true,
-      }),
-    ]).start();
-  }, [slideLeft, slideRight, bgOpacity, buttonsOpacity]);
   return (
-    <View style={styles.container}>
-      <Animated.View style={[styles.background, { opacity: bgOpacity }]}>
-        <CachedImage source={GradientSplash2} />
-      </Animated.View>
-
-      <Animated.View style={[styles.buttonContainer, { opacity: buttonsOpacity }]}>
-        <ButtonGroup direction='vertical'>
+    <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
+      <View style={styles.root}>
+        <Image source={LandingPhotosTop} style={styles.photosTop} resizeMode='cover' accessible={false} />
+        <View style={styles.copy}>
+          <View style={styles.logoWrap} accessible accessibilityRole='image' accessibilityLabel='LIKE:ME'>
+            <LogoFullSvg width={LANDING_LOGO_WIDTH} height={LANDING_LOGO_HEIGHT} />
+          </View>
+          <View style={styles.texts}>
+            <Text style={styles.title}>{t('auth.landingTitle')}</Text>
+            <Text style={styles.body}>{t('auth.landingBody')}</Text>
+          </View>
+        </View>
+        <Image source={LandingPhotosBottom} style={styles.photosBottom} resizeMode='cover' accessible={false} />
+        <View style={styles.footer}>
           <PrimaryButton
-            label={t('auth.login')}
-            onPress={onLogin}
+            label={t('invitation.start')}
+            onPress={onStart}
             loading={isLoading}
-            disabled={isLoading || e2eLoading}
+            disabled={startBusy}
             size='large'
             testID={E2E_TEST_IDS.UNAUTH_LOGIN}
           />
@@ -73,28 +53,15 @@ const UnauthenticatedStep1: React.FC<UnauthenticatedStep1Props> = ({
               label='Continuar E2E'
               onPress={onE2eContinue}
               loading={e2eLoading}
-              disabled={isLoading || e2eLoading}
+              disabled={startBusy}
               size='large'
               variant='light'
               testID={E2E_TEST_IDS.UNAUTH_E2E_CONTINUE}
             />
           ) : null}
-        </ButtonGroup>
-      </Animated.View>
-
-      <View style={styles.logoContainer}>
-        <Animated.View style={[styles.logoOverlay, { transform: [{ translateX: slideLeft }] }]}>
-          <PartialLogo width={170} height={54} />
-        </Animated.View>
-        <Animated.View style={[styles.logoOverlay, { transform: [{ translateX: slideRight }] }]}>
-          <PartialLogo2 width={170} height={54} />
-        </Animated.View>
+        </View>
       </View>
-
-      <View style={styles.taglineContainer}>
-        <Text style={styles.taglineText}>{t('auth.tagline')}</Text>
-      </View>
-    </View>
+    </SafeAreaView>
   );
 };
 
