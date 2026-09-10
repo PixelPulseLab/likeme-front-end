@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { FEATURE_FLAG_DEFAULTS, type FeatureFlagKey } from '@/constants';
-import { featureFlagService } from '@/services';
+import featureFlagService from '@/services/featureFlags/featureFlagService';
 import { logger } from '@/utils/logger';
 
 type UseFeatureFlagsReturn = {
