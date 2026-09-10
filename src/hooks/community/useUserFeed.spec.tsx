@@ -208,7 +208,7 @@ describe('useUserFeed (scroll infinito / paginação)', () => {
     expect(result.current.posts[0]?.id).toBe('old');
 
     await act(async () => {
-      result.current.refresh();
+      await result.current.refresh();
     });
 
     await waitFor(() => expect(result.current.posts[0]?.id).toBe('fresh'));
@@ -216,6 +216,54 @@ describe('useUserFeed (scroll infinito / paginação)', () => {
     expect(communityService.getUserFeed).toHaveBeenCalledTimes(2);
     expect(communityService.getUserFeed).toHaveBeenNthCalledWith(2, expect.objectContaining({ page: 1, limit: 10 }));
     expect(getUserFeedMock.mock.calls[1][0]).not.toHaveProperty('token');
+  });
+
+  it('refresh descarta loadMore que termina depois da página 1 nova', async () => {
+    let resolveLoadMore: ((value: ReturnType<typeof feedPayload>) => void) | undefined;
+    const loadMoreInFlight = new Promise<ReturnType<typeof feedPayload>>((resolve) => {
+      resolveLoadMore = resolve;
+    });
+
+    (communityService.getUserFeed as jest.Mock)
+      .mockResolvedValueOnce(
+        feedPayload({
+          posts: [{ postId: 'p1' }],
+          paging: { next: 'cursor-2' },
+        }),
+      )
+      .mockReturnValueOnce(loadMoreInFlight)
+      .mockResolvedValueOnce(
+        feedPayload({
+          posts: [{ postId: 'fresh' }],
+          paging: {},
+        }),
+      );
+
+    const { result } = renderHook(() => useUserFeed({ pageSize: 10, searchQuery: '' }));
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    await act(async () => {
+      result.current.loadMore();
+    });
+
+    await waitFor(() => expect(communityService.getUserFeed).toHaveBeenCalledTimes(2));
+
+    await act(async () => {
+      await result.current.refresh();
+    });
+
+    await act(async () => {
+      resolveLoadMore?.(
+        feedPayload({
+          posts: [{ postId: 'stale-p2' }],
+          paging: {},
+        }),
+      );
+    });
+
+    expect(result.current.posts.map((p) => p.id)).toEqual(['fresh']);
+    expect(communityService.getUserFeed).toHaveBeenCalledTimes(3);
   });
 
   it('com enabled=false não dispara getUserFeed no mount', async () => {

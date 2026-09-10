@@ -1,5 +1,15 @@
 import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
-import { View, ScrollView, FlatList, Text, type ListRenderItem, type ViewToken } from 'react-native';
+import {
+  View,
+  ScrollView,
+  FlatList,
+  Text,
+  RefreshControl,
+  type ListRenderItem,
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
+  type ViewToken,
+} from 'react-native';
 import type { RouteProp } from '@react-navigation/native';
 import { useRoute } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
@@ -22,6 +32,10 @@ import InfoSectionTabsRow from '@/components/ui/carousel/InfoSectionTabsRow';
 import { HeroImage, ScreenWithHeader } from '@/components/ui/layout';
 import type { FeedEvent } from '@/types/event';
 import { SPACING, COMMUNITY_FEED_POSTS_PAGE_SIZE, ADVERTISER_STATUS, ADVERTISER_TYPE } from '@/constants';
+import {
+  HOME_SUMMARY_COMMUNITIES_LIST_PARAMS,
+  HOME_SUMMARY_COMMUNITIES_PAGE_SIZE,
+} from '@/constants/home/summaryHomeData';
 import { styles } from './styles';
 import type { CommunityStackParamList, RootStackParamList } from '@/types/navigation';
 import {
@@ -66,6 +80,7 @@ type NavigationProp = StackNavigationProp<CommunityStackParamList, 'CommunityLis
 type Props = { navigation: NavigationProp };
 
 const DEFAULT_COMMUNITY_IMAGE = 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=400';
+const FEED_TWO_DOTS_SIZE = 20;
 
 const CommunityScreen: React.FC<Props> = ({ navigation }) => {
   useAnalyticsScreen({ screenName: 'CommunityList', screenClass: 'CommunityScreen' });
@@ -143,12 +158,11 @@ const CommunityScreen: React.FC<Props> = ({ navigation }) => {
     communityFiles,
   } = useCommunities({
     enabled: !focusCommunityId,
-    pageSize: 20,
-    params: {
-      sortBy: 'createdAt',
-      includeDeleted: false,
-    },
+    pageSize: HOME_SUMMARY_COMMUNITIES_PAGE_SIZE,
+    params: HOME_SUMMARY_COMMUNITIES_LIST_PARAMS,
   });
+
+  const selectedCommunityId = focusCommunityId ?? rawCommunities[0]?.communityId?.trim() ?? undefined;
 
   const {
     community: communityFromApi,
@@ -157,17 +171,10 @@ const CommunityScreen: React.FC<Props> = ({ navigation }) => {
     termsAccepted: communityTermsAccepted,
     toggleTermsAccepted: toggleCommunityTermsAccepted,
   } = useCommunity({
-    communityId: focusCommunityId ?? (activeInfoTab === 'agreements' ? rawCommunities[0]?.communityId : undefined),
+    communityId: selectedCommunityId,
   });
 
-  const selectedCommunity = useMemo(() => {
-    if (focusCommunityId) {
-      return communityFromApi;
-    }
-    return rawCommunities[0] ?? null;
-  }, [rawCommunities, focusCommunityId, communityFromApi]);
-
-  const selectedCommunityId = selectedCommunity?.communityId;
+  const selectedCommunity = communityFromApi ?? rawCommunities[0] ?? null;
 
   const handleSharePress = useCallback(async () => {
     const communityId = selectedCommunityId?.trim();
@@ -203,12 +210,15 @@ const CommunityScreen: React.FC<Props> = ({ navigation }) => {
     error,
     hasMore: feedHasMore,
     loadMore,
+    refresh: refreshFeed,
   } = useUserFeed({
     enabled: isFeedMode && Boolean(selectedCommunityId?.trim()),
     searchQuery: '',
     pageSize: COMMUNITY_FEED_POSTS_PAGE_SIZE,
     params: feedParams,
   });
+  const [feedRefreshing, setFeedRefreshing] = useState(false);
+  const [isPullingFeed, setIsPullingFeed] = useState(false);
 
   const { post: featuredPost } = useCommunityFeaturedPost({
     communityId: selectedCommunityId,
@@ -445,6 +455,7 @@ const CommunityScreen: React.FC<Props> = ({ navigation }) => {
       return;
     }
     if (
+      feedRefreshing ||
       feedLoadMoreLockedRef.current ||
       feedLoadingRef.current ||
       feedLoadingMoreRef.current ||
@@ -454,7 +465,7 @@ const CommunityScreen: React.FC<Props> = ({ navigation }) => {
     }
     feedLoadMoreLockedRef.current = true;
     loadMore();
-  }, [loadMore, viewMode]);
+  }, [feedRefreshing, loadMore, viewMode]);
 
   useEffect(() => {
     if (!feedLoading && !loadingMore) {
@@ -482,6 +493,26 @@ const CommunityScreen: React.FC<Props> = ({ navigation }) => {
   const handleLoadMore = useCallback(() => {
     tryLoadMoreFeed();
   }, [tryLoadMoreFeed]);
+
+  const handleFeedRefresh = useCallback(async () => {
+    setFeedRefreshing(true);
+    try {
+      await refreshFeed();
+    } catch (cause) {
+      logger.error('[CommunityScreen] Falha ao atualizar o feed', {
+        communityId: selectedCommunityId,
+        cause,
+      });
+    } finally {
+      setFeedRefreshing(false);
+      setIsPullingFeed(false);
+    }
+  }, [refreshFeed, selectedCommunityId]);
+
+  const handleFeedScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const pulling = event.nativeEvent.contentOffset.y < -SPACING.LG;
+    setIsPullingFeed((current) => (current === pulling ? current : pulling));
+  }, []);
 
   const handlePostCardPress = useCallback(
     (selectedPost: Post) => {
@@ -747,7 +778,7 @@ const CommunityScreen: React.FC<Props> = ({ navigation }) => {
             accessibilityRole='progressbar'
             accessibilityLabel={t('community.loadingMorePosts')}
           >
-            <TwoDotsLoading size={20} accessibilityLabel={t('community.loadingMorePosts')} />
+            <TwoDotsLoading size={FEED_TWO_DOTS_SIZE} accessibilityLabel={t('community.loadingMorePosts')} />
             <Text style={styles.feedLoadingFooterLabel}>{t('community.loadingMorePosts')}</Text>
           </View>
         ) : null}
@@ -768,11 +799,10 @@ const CommunityScreen: React.FC<Props> = ({ navigation }) => {
     return <EmptyState title={t('community.noPostsFound')} description={t('community.noPostsFoundDescription')} />;
   }, [error, t]);
 
-  const isFocusCommunityLoading = Boolean(focusCommunityId && communityLoading);
   const isFocusCommunityUnavailable = Boolean(
     focusCommunityId && !communityLoading && (communityError || !communityFromApi),
   );
-  const isCommunityLoading = isFocusCommunityLoading || (!isFocusCommunityUnavailable && showFeedInitialLoading);
+  const isCommunityLoading = !isFocusCommunityUnavailable && showFeedInitialLoading;
   const [holdsLoading, setHoldsLoading] = useState(isCommunityLoading);
   const loadingRef = useRef<LoadingHandle>(null);
 
@@ -812,30 +842,50 @@ const CommunityScreen: React.FC<Props> = ({ navigation }) => {
       />
     );
   } else if (showVirtualizedFeed) {
+    const showFeedRefreshIndicator = !holdsLoading && (feedRefreshing || isPullingFeed);
     communityBody = (
-      <FlatList
-        style={[{ flex: 1 }, { zIndex: 1 }]}
-        contentContainerStyle={styles.feedContentContainer}
-        showsVerticalScrollIndicator={false}
-        data={feedPosts}
-        keyExtractor={postKeyExtractor}
-        renderItem={renderPostItem}
-        ItemSeparatorComponent={renderPostSeparator}
-        ListHeaderComponent={feedListHeader}
-        ListFooterComponent={feedListFooter}
-        ListEmptyComponent={holdsLoading ? null : feedListEmpty}
-        onEndReached={holdsLoading ? undefined : handleLoadMore}
-        onEndReachedThreshold={0.5}
-        viewabilityConfig={feedViewabilityConfig}
-        onViewableItemsChanged={onFeedViewableItemsChanged}
-        onMomentumScrollBegin={() => {
-          feedLoadMoreLockedRef.current = false;
-        }}
-        removeClippedSubviews
-        initialNumToRender={6}
-        maxToRenderPerBatch={4}
-        windowSize={7}
-      />
+      <View style={styles.feedListWrap}>
+        {showFeedRefreshIndicator ? (
+          <View style={styles.feedRefreshIndicator} pointerEvents='none'>
+            <TwoDotsLoading size={FEED_TWO_DOTS_SIZE} accessibilityLabel={t('common.loading')} />
+          </View>
+        ) : null}
+        <FlatList
+          style={styles.feedList}
+          contentContainerStyle={styles.feedContentContainer}
+          showsVerticalScrollIndicator={false}
+          data={feedPosts}
+          keyExtractor={postKeyExtractor}
+          renderItem={renderPostItem}
+          ItemSeparatorComponent={renderPostSeparator}
+          ListHeaderComponent={feedListHeader}
+          ListFooterComponent={feedListFooter}
+          ListEmptyComponent={holdsLoading ? null : feedListEmpty}
+          onEndReached={holdsLoading || feedRefreshing ? undefined : handleLoadMore}
+          onEndReachedThreshold={0.5}
+          onScroll={holdsLoading ? undefined : handleFeedScroll}
+          scrollEventThrottle={16}
+          refreshControl={
+            holdsLoading ? undefined : (
+              <RefreshControl
+                refreshing={feedRefreshing}
+                onRefresh={handleFeedRefresh}
+                tintColor='transparent'
+                colors={['transparent']}
+              />
+            )
+          }
+          viewabilityConfig={feedViewabilityConfig}
+          onViewableItemsChanged={onFeedViewableItemsChanged}
+          onMomentumScrollBegin={() => {
+            feedLoadMoreLockedRef.current = false;
+          }}
+          removeClippedSubviews
+          initialNumToRender={6}
+          maxToRenderPerBatch={4}
+          windowSize={7}
+        />
+      </View>
     );
   } else {
     communityBody = (
@@ -882,7 +932,7 @@ const CommunityScreen: React.FC<Props> = ({ navigation }) => {
 
   return (
     <View style={styles.screenRoot} testID='e2e.community.root'>
-      {!isFocusCommunityLoading && !isFocusCommunityUnavailable && eventJoinUrl ? (
+      {!isFocusCommunityUnavailable && eventJoinUrl ? (
         <EventWebViewSession url={eventJoinUrl} onClose={closeEventSession} />
       ) : null}
       <ScreenWithHeader
@@ -897,12 +947,12 @@ const CommunityScreen: React.FC<Props> = ({ navigation }) => {
         contentContainerStyle={styles.container}
       >
         {communityBody}
-        {holdsLoading ? (
-          <View style={styles.loadingOverlay} pointerEvents='auto'>
-            <Loading ref={loadingRef} accessibilityLabel={t('common.loading')} fullScreen />
-          </View>
-        ) : null}
       </ScreenWithHeader>
+      {holdsLoading ? (
+        <View style={styles.loadingOverlay} pointerEvents='auto'>
+          <Loading ref={loadingRef} accessibilityLabel={t('common.loading')} fullScreen />
+        </View>
+      ) : null}
     </View>
   );
 };

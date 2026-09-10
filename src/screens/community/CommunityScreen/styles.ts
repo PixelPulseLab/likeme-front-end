@@ -39,6 +39,22 @@ export const styles = StyleSheet.create({
   heroFooter: {
     width: '100%',
   },
+  feedListWrap: {
+    flex: 1,
+    zIndex: 1,
+  },
+  feedList: {
+    flex: 1,
+  },
+  feedRefreshIndicator: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 2,
+    alignItems: 'center',
+    paddingTop: SPACING.SM,
+  },
   feedContentContainer: {
     paddingBottom: SPACING.XL,
   },
