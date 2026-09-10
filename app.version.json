@@ -1,15 +1,19 @@
 {
-  "version": "1.15.2",
-  "releasedAt": "2026-09-04",
+  "version": "1.16.0",
+  "releasedAt": "2026-09-10",
   "android": {
-    "versionCode": 259
+    "versionCode": 260
   },
   "ios": {
-    "buildNumber": 35
+    "buildNumber": 36
   },
   "changelog": {
-    "fixed": [
-      "Badge da comunidade na home mostra a categoria enviada pela API"
+    "added": [
+      "Tela inicial de convite com Começar, código e celebração do programa",
+      "Depois do login pelo convite, abre o programa sem onboarding nem cadastro"
+    ],
+    "changed": [
+      "Logar na celebração do convite abre o Auth0 na hora, sem voltar à landing"
     ]
   }
 }

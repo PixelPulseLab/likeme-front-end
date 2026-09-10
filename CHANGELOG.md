@@ -323,3 +323,12 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 
 ### Corrigido
 - Badge da comunidade na home mostra a categoria enviada pela API
+
+## [1.16.0] - 2026-09-10
+
+### Adicionado
+- Tela inicial de convite com Começar, código e celebração do programa
+- Depois do login pelo convite, abre o programa sem onboarding nem cadastro
+
+### Alterado
+- Logar na celebração do convite abre o Auth0 na hora, sem voltar à landing
