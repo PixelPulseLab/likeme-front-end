@@ -14,7 +14,7 @@ import {
 } from '@/components/sections/community';
 import { styles as socialListStyles } from '@/components/sections/community/SocialList/styles';
 import { RecommendedProductsSection } from '@/components/sections/marketplace/RecommendedProductsSection';
-import { EmptyState, Loading, ShareContentUnavailable, TwoDotsLoading } from '@/components/ui';
+import { EmptyState, Loading, ShareContentUnavailable, TwoDotsLoading, type LoadingHandle } from '@/components/ui';
 import { SHARE_CONTENT_TYPES } from '@/constants/share';
 import type { Post } from '@/types';
 import { type ButtonCarouselOption } from '@/components/ui/carousel';
@@ -772,11 +772,36 @@ const CommunityScreen: React.FC<Props> = ({ navigation }) => {
   const isFocusCommunityUnavailable = Boolean(
     focusCommunityId && !communityLoading && (communityError || !communityFromApi),
   );
+  const isCommunityLoading = isFocusCommunityLoading || (!isFocusCommunityUnavailable && showFeedInitialLoading);
+  const [holdsLoading, setHoldsLoading] = useState(isCommunityLoading);
+  const loadingRef = useRef<LoadingHandle>(null);
+
+  useEffect(() => {
+    if (isCommunityLoading) {
+      setHoldsLoading(true);
+      return;
+    }
+    if (!holdsLoading) {
+      return;
+    }
+    let cancelled = false;
+    const dismiss = loadingRef.current?.dismiss();
+    if (!dismiss) {
+      setHoldsLoading(false);
+      return;
+    }
+    void dismiss.then(() => {
+      if (!cancelled) {
+        setHoldsLoading(false);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [isCommunityLoading, holdsLoading]);
 
   let communityBody: React.ReactNode;
-  if (isFocusCommunityLoading || (!isFocusCommunityUnavailable && showFeedInitialLoading)) {
-    communityBody = <Loading accessibilityLabel={t('common.loading')} fullScreen />;
-  } else if (isFocusCommunityUnavailable) {
+  if (isFocusCommunityUnavailable) {
     communityBody = (
       <ShareContentUnavailable
         contentType={SHARE_CONTENT_TYPES.COMMUNITY}
@@ -798,8 +823,8 @@ const CommunityScreen: React.FC<Props> = ({ navigation }) => {
         ItemSeparatorComponent={renderPostSeparator}
         ListHeaderComponent={feedListHeader}
         ListFooterComponent={feedListFooter}
-        ListEmptyComponent={feedListEmpty}
-        onEndReached={handleLoadMore}
+        ListEmptyComponent={holdsLoading ? null : feedListEmpty}
+        onEndReached={holdsLoading ? undefined : handleLoadMore}
         onEndReachedThreshold={0.5}
         viewabilityConfig={feedViewabilityConfig}
         onViewableItemsChanged={onFeedViewableItemsChanged}
@@ -872,6 +897,11 @@ const CommunityScreen: React.FC<Props> = ({ navigation }) => {
         contentContainerStyle={styles.container}
       >
         {communityBody}
+        {holdsLoading ? (
+          <View style={styles.loadingOverlay} pointerEvents='auto'>
+            <Loading ref={loadingRef} accessibilityLabel={t('common.loading')} fullScreen />
+          </View>
+        ) : null}
       </ScreenWithHeader>
     </View>
   );

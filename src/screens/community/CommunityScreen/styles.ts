@@ -12,6 +12,10 @@ export const styles = StyleSheet.create({
     flex: 1,
     position: 'relative',
   },
+  loadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 20,
+  },
   /** Header em posição absoluta no topo para o HeroImage começar logo abaixo. */
   headerWrapper: {
     position: 'absolute',

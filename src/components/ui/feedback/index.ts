@@ -1,4 +1,5 @@
 export { default as Loading } from './Loading';
+export type { LoadingHandle } from './Loading';
 export { AppOpenLogoAnimation } from './AppOpenLogoAnimation';
 export { TwoDotsLoading } from './TwoDotsLoading';
 export { default as Chip } from './Chip';
