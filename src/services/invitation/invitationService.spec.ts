@@ -181,12 +181,27 @@ describe('invitationProgramRouteInsteadOfHome', () => {
     jest.clearAllMocks();
   });
 
-  it('mantém a tela quando o destino não é Home', async () => {
+  it('mantém a tela quando não há destino de convite pendente', async () => {
+    mockTakePendingInvitationProgramDestination.mockResolvedValue(null);
+
     await expect(invitationProgramRouteInsteadOfHome('InterestCategories', { firstName: 'Camilla' })).resolves.toEqual({
       screen: 'InterestCategories',
       params: { firstName: 'Camilla' },
     });
-    expect(mockTakePendingInvitationProgramDestination).not.toHaveBeenCalled();
+    expect(mockTakePendingInvitationProgramDestination).toHaveBeenCalled();
+  });
+
+  it('vai ao programa mesmo quando o destino seria onboarding', async () => {
+    mockTakePendingInvitationProgramDestination.mockResolvedValue({
+      productId: 'program-1',
+      programType: 'course',
+      communityId: null,
+    });
+
+    await expect(invitationProgramRouteInsteadOfHome('Register', { userName: 'Camilla' })).resolves.toEqual({
+      screen: 'ProtocolDetail',
+      params: { productId: 'program-1' },
+    });
   });
 
   it('vai ao ProtocolDetail do convite quando o destino seria Home', async () => {

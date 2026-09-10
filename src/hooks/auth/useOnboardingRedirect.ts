@@ -72,7 +72,11 @@ export function useOnboardingRedirect(navigationReplace: NavigationReplace): voi
 
         const welcomeScreenAccessedAt = await storageService.getWelcomeScreenAccessedAt();
         if (!welcomeScreenAccessedAt) {
-          navigationReplace(AUTH_ONBOARDING_SCREENS_ORDER[0]);
+          const destination = await invitationProgramRouteInsteadOfHome(AUTH_ONBOARDING_SCREENS_ORDER[0]);
+          if (destination.screen !== AUTH_ONBOARDING_SCREENS_ORDER[0]) {
+            await storageService.setWelcomeScreenAccessedAt(new Date().toISOString());
+          }
+          navigationReplace(destination.screen, destination.params);
           return;
         }
 

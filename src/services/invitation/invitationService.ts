@@ -96,9 +96,6 @@ export async function invitationProgramRouteInsteadOfHome(
   screen: string,
   params?: object,
 ): Promise<{ screen: string; params?: object }> {
-  if (screen !== 'Home') {
-    return { screen, params };
-  }
   const pending = await storageService.takePendingInvitationProgramDestination();
   if (!pending) {
     return { screen, params };
