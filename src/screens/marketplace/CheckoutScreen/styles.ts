@@ -1,5 +1,5 @@
 import { StyleSheet } from 'react-native';
-import { SPACING, FONT_SIZES } from '@/constants';
+import { COLORS, FONT_SIZES, SPACING } from '@/constants';
 
 export const styles = StyleSheet.create({
   container: {
@@ -134,6 +134,44 @@ export const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: SPACING.XL,
     marginTop: SPACING.SM,
+  },
+  walletPayButtons: {
+    gap: SPACING.SM,
+  },
+  walletPayButton: {
+    overflow: 'visible',
+    paddingVertical: 12,
+  },
+  walletPayLabel: {
+    flexShrink: 0,
+    lineHeight: 22,
+  },
+  walletPayMarkSlot: {
+    alignItems: 'center',
+    height: 24,
+    justifyContent: 'center',
+    overflow: 'visible',
+    width: 24,
+  },
+  walletPayButtonSelected: {
+    borderColor: COLORS.PRIMARY.PURE,
+  },
+  walletPayOrRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: SPACING.SM,
+    marginVertical: SPACING.MD,
+  },
+  walletPayOrLine: {
+    backgroundColor: COLORS.TEXT,
+    flex: 1,
+    height: 1,
+  },
+  walletPayOrLabel: {
+    color: COLORS.TEXT,
+    fontFamily: 'DM Sans',
+    fontSize: FONT_SIZES.SM,
+    fontWeight: '500',
   },
   paymentMethodOption: {
     flexDirection: 'row',

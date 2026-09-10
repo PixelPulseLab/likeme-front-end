@@ -56,9 +56,13 @@ export function useFeatureFlags(flagKeys: FeatureFlagKey[]): UseFeatureFlagsRetu
     };
 
     void loadFlags();
+    const unsubscribe = featureFlagService.subscribe(() => {
+      void loadFlags();
+    });
 
     return () => {
       isMounted = false;
+      unsubscribe();
     };
   }, [keysSignature]);
 

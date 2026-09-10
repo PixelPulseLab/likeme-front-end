@@ -74,7 +74,7 @@ public class ApplePayModule: Module {
     Name("ApplePay")
 
     AsyncFunction("canMakePayments") { () -> Bool in
-      PKPaymentAuthorizationController.canMakePayments(usingNetworks: [.visa, .masterCard])
+      PKPaymentAuthorizationController.canMakePayments()
     }
 
     AsyncFunction("requestPayment") { (options: [String: String]) -> [String: Any] in

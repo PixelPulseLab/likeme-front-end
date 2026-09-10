@@ -16,6 +16,7 @@ type RemoteConfigInstance = {
 };
 
 type FirebaseRemoteConfigModule = () => RemoteConfigInstance;
+type FlagsUpdatedListener = () => void;
 
 function getRemoteConfigInstance(): RemoteConfigInstance | null {
   try {
@@ -25,23 +26,6 @@ function getRemoteConfigInstance(): RemoteConfigInstance | null {
   } catch {
     return null;
   }
-}
-
-function runFetchAndActivateInBackground(remoteConfig: RemoteConfigInstance, context: string): void {
-  const pending = remoteConfig.fetchAndActivate();
-  const slowLogTimer = setTimeout(() => {
-    logger.warn(
-      `[FeatureFlags] ${context}: fetchAndActivate ainda em andamento após ${REMOTE_CONFIG_FETCH_TIMEOUT_MS}ms; UI segue com defaults/cache.`,
-    );
-  }, REMOTE_CONFIG_FETCH_TIMEOUT_MS);
-
-  void pending
-    .catch((error) => {
-      logger.warn(`[FeatureFlags] ${context}: fetchAndActivate falhou:`, error);
-    })
-    .finally(() => {
-      clearTimeout(slowLogTimer);
-    });
 }
 
 async function awaitFetchWithTimeout(remoteConfig: RemoteConfigInstance, context: string): Promise<void> {
@@ -68,6 +52,26 @@ async function awaitFetchWithTimeout(remoteConfig: RemoteConfigInstance, context
 
 class FeatureFlagService {
   private initializationPromise: Promise<void> | null = null;
+  private fetchPromise: Promise<void> = Promise.resolve();
+  private readonly listeners = new Set<FlagsUpdatedListener>();
+
+  subscribe(listener: FlagsUpdatedListener): () => void {
+    this.listeners.add(listener);
+    return () => {
+      this.listeners.delete(listener);
+    };
+  }
+
+  private notifyFlagsUpdated(): void {
+    this.listeners.forEach((listener) => {
+      listener();
+    });
+  }
+
+  private trackFetch(remoteConfig: RemoteConfigInstance, context: string): Promise<void> {
+    this.fetchPromise = awaitFetchWithTimeout(remoteConfig, context);
+    return this.fetchPromise;
+  }
 
   private async ensureInitialized(remoteConfig: RemoteConfigInstance): Promise<void> {
     if (!this.initializationPromise) {
@@ -87,7 +91,7 @@ class FeatureFlagService {
           logger.warn('[FeatureFlags] Erro ao aplicar defaults locais:', error);
         }
 
-        runFetchAndActivateInBackground(remoteConfig, 'init');
+        void this.trackFetch(remoteConfig, 'init');
       })();
     }
 
@@ -110,7 +114,8 @@ class FeatureFlagService {
     }
 
     await this.ensureInitialized(remoteConfig);
-    await awaitFetchWithTimeout(remoteConfig, 'refresh');
+    await this.trackFetch(remoteConfig, 'refresh');
+    this.notifyFlagsUpdated();
   }
 
   async getBoolean(flagKey: FeatureFlagKey): Promise<boolean> {
@@ -122,6 +127,7 @@ class FeatureFlagService {
     }
 
     await this.ensureInitialized(remoteConfig);
+    await this.fetchPromise;
 
     try {
       const value = remoteConfig.getValue(flagKey);
