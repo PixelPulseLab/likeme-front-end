@@ -7,6 +7,7 @@ import { E2E_TEST_IDS } from '@/constants/e2eTestIds';
 const mockValidateCode = jest.fn();
 const mockActivateCode = jest.fn();
 const mockSetPendingInvitationCode = jest.fn();
+const mockAuthLogin = jest.fn();
 
 jest.mock('react-native-safe-area-context', () => {
   const ReactNative = require('react-native');
@@ -65,6 +66,13 @@ jest.mock('@/components/ui/layout', () => {
   };
 });
 
+jest.mock('@/hooks', () => ({
+  useAuthLogin: () => ({
+    handleLogin: mockAuthLogin,
+    isLoading: false,
+  }),
+}));
+
 jest.mock('@/analytics', () => ({
   useAnalyticsScreen: jest.fn(),
   logButtonClick: jest.fn(),
@@ -106,6 +114,7 @@ describe('InvitationContextScreen', () => {
     jest.spyOn(Alert, 'alert').mockImplementation(() => undefined);
     mockValidateCode.mockResolvedValue(validContext);
     mockSetPendingInvitationCode.mockResolvedValue(undefined);
+    mockAuthLogin.mockResolvedValue(undefined);
   });
 
   afterEach(() => {
@@ -124,20 +133,32 @@ describe('InvitationContextScreen', () => {
     expect(getByText('invitation.accessGranted')).toBeTruthy();
     expect(getAllByText('Protocolo').length).toBeGreaterThan(0);
     expect(getAllByText('Clínica').length).toBeGreaterThan(0);
-    expect(getByText('Movimento')).toBeTruthy();
+    expect(getByText('marketplace.productCatalogType.program')).toBeTruthy();
     expect(getByText('invitation.login')).toBeTruthy();
     expect(queryByText('Bailarina')).toBeNull();
     expect(queryByText('5')).toBeNull();
   });
 
-  it('omite o badge quando o convite não tem comunidade', () => {
-    const { queryByText } = render(
+  it('usa o placeholder da home quando o programa não tem imagem', () => {
+    const { getAllByText } = render(
+      <InvitationContextScreen
+        navigation={{ navigate: jest.fn(), goBack: jest.fn(), canGoBack: () => true } as never}
+        route={{ params: { ...validContext, program: { ...validContext.program, imageUrl: null } } as never } as never}
+      />,
+    );
+
+    expect(getAllByText('Protocolo').length).toBeGreaterThan(0);
+  });
+
+  it('mostra a tag de programa mesmo sem comunidade no convite', () => {
+    const { getByText, queryByText } = render(
       <InvitationContextScreen
         navigation={{ navigate: jest.fn(), goBack: jest.fn(), canGoBack: () => true } as never}
         route={{ params: { ...validContext, community: null } } as never}
       />,
     );
 
+    expect(getByText('marketplace.productCatalogType.program')).toBeTruthy();
     expect(queryByText('Movimento')).toBeNull();
   });
 
@@ -152,8 +173,9 @@ describe('InvitationContextScreen', () => {
     await waitFor(() => {
       expect(mockValidateCode).toHaveBeenCalledWith('7F3K9Q');
       expect(mockSetPendingInvitationCode).toHaveBeenCalledWith('7F3K9Q');
-      expect(navigation.navigate).toHaveBeenCalledWith('Unauthenticated', { startLogin: true });
+      expect(mockAuthLogin).toHaveBeenCalled();
     });
+    expect(navigation.navigate).not.toHaveBeenCalledWith('Unauthenticated', { startLogin: true });
     expect(mockActivateCode).not.toHaveBeenCalled();
   });
 
@@ -172,6 +194,7 @@ describe('InvitationContextScreen', () => {
     });
     expect(mockSetPendingInvitationCode).not.toHaveBeenCalled();
     expect(mockActivateCode).not.toHaveBeenCalled();
+    expect(mockAuthLogin).not.toHaveBeenCalled();
     expect(navigation.navigate).not.toHaveBeenCalledWith('Unauthenticated');
   });
 

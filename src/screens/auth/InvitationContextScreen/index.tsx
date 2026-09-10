@@ -1,14 +1,18 @@
 import React, { useState } from 'react';
 import { Alert, Text, View } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import type { StackScreenProps } from '@react-navigation/stack';
 import { InvitationContextBackground } from '@/assets/auth';
+import { PartnerSection } from '@/components/sections/advertiser/PartnerSection';
 import { PrimaryButton } from '@/components/ui';
+import { JoinCard } from '@/components/ui/cards/JoinCard';
 import { KeyboardAwareScreen, ScreenWithHeader } from '@/components/ui/layout';
 import { CachedImage } from '@/components/ui/media/CachedImage';
+import { MARKETPLACE_PRODUCT_PLACEHOLDER_IMAGE_URI } from '@/constants';
+import { PRODUCT_CATALOG_TYPE, catalogTypeTranslatedBadgeLabels } from '@/types/product';
 import { E2E_TEST_IDS } from '@/constants/e2eTestIds';
 import { invitationCodeValidationI18nKey } from '@/constants/invitation/invitationCodeValidation';
 import { useAnalyticsScreen, logButtonClick, logNavigation } from '@/analytics';
+import { useAuthLogin } from '@/hooks';
 import { useTranslation } from '@/hooks/i18n';
 import { storageService } from '@/services';
 import { invitationService } from '@/services/invitation/invitationService';
@@ -31,47 +35,15 @@ function hasInvitationContext(
   );
 }
 
-function InvitationProgramCard({
-  title,
-  imageUrl,
-  badge,
-}: {
-  title: string;
-  imageUrl: string | null;
-  badge: string | null;
-}) {
-  return (
-    <View style={styles.card}>
-      {imageUrl ? (
-        <CachedImage source={{ uri: imageUrl }} style={styles.cardImage} />
-      ) : (
-        <View style={styles.cardImageFallback} />
-      )}
-      <LinearGradient
-        colors={['rgba(0,0,0,0)', 'rgba(0,17,55,0.7)']}
-        locations={[0.3, 1]}
-        style={styles.cardGradient}
-      />
-      {badge ? (
-        <View style={styles.badge}>
-          <Text style={styles.badgeText}>{badge}</Text>
-        </View>
-      ) : null}
-      <View style={styles.cardContent}>
-        <Text style={styles.cardTitle} numberOfLines={2}>
-          {title}
-        </Text>
-      </View>
-    </View>
-  );
-}
-
 const InvitationContextScreen: React.FC<Props> = ({ navigation, route }) => {
   useAnalyticsScreen({ screenName: 'InvitationContext', screenClass: 'InvitationContextScreen' });
   const { t } = useTranslation();
+  const { handleLogin, isLoading: isLoginLoading } = useAuthLogin(navigation);
   const [isContinuing, setIsContinuing] = useState(false);
+  const isBusy = isContinuing || isLoginLoading;
   const invitation = hasInvitationContext(route.params) ? route.params : null;
-  const communityBadge = invitation?.community?.displayName?.trim() || null;
+  const programImage = invitation?.program.imageUrl?.trim() || MARKETPLACE_PRODUCT_PLACEHOLDER_IMAGE_URI;
+  const programTags = invitation ? catalogTypeTranslatedBadgeLabels(PRODUCT_CATALOG_TYPE.PROGRAM, t) : [];
 
   const goToInvitationCode = (code?: string) => {
     navigation.navigate('InvitationCode', code ? { code } : undefined);
@@ -115,10 +87,10 @@ const InvitationContextScreen: React.FC<Props> = ({ navigation, route }) => {
       });
       logNavigation({
         source_screen: 'invitation_context',
-        destination_screen: 'unauthenticated',
+        destination_screen: 'authenticated',
         action_name: 'continue',
       });
-      navigation.navigate('Unauthenticated', { startLogin: true });
+      await handleLogin();
     } catch (error) {
       logger.error('[InvitationContextScreen] Falha ao revalidar código de convite', error);
       Alert.alert(t(invitationCodeValidationI18nKey(error)));
@@ -130,12 +102,14 @@ const InvitationContextScreen: React.FC<Props> = ({ navigation, route }) => {
 
   return (
     <View style={styles.root}>
-      <CachedImage
-        source={InvitationContextBackground}
-        style={styles.background}
-        contentFit='cover'
-        pointerEvents='none'
-      />
+      <View style={styles.backgroundClip} pointerEvents='none'>
+        <CachedImage
+          source={InvitationContextBackground}
+          style={styles.background}
+          contentFit='cover'
+          contentPosition={{ top: '50%', left: '50%' }}
+        />
+      </View>
       <ScreenWithHeader
         navigation={navigation}
         contentBackgroundColor='transparent'
@@ -157,43 +131,40 @@ const InvitationContextScreen: React.FC<Props> = ({ navigation, route }) => {
                   onPress={() => {
                     void handleContinue();
                   }}
-                  loading={isContinuing}
-                  disabled={isContinuing}
+                  loading={isBusy}
+                  disabled={isBusy}
                   size='large'
                   testID={E2E_TEST_IDS.INVITATION_CONTEXT_CONTINUE}
                 />
               </View>
             }
           >
-            <View style={styles.titles}>
-              <Text style={styles.congratulations}>{t('invitation.congratulations')}</Text>
-              <Text style={styles.accessGranted}>{t('invitation.accessGranted')}</Text>
-            </View>
-            <Text style={styles.body}>
-              {t('invitation.contextBodyPrefix')}
-              <Text style={styles.bodyEmphasis}>{invitation.program.name}</Text>
-              {t('invitation.contextBodyWith')}
-              <Text style={styles.bodyEmphasis}>{invitation.provider.name}</Text>
-              {t('invitation.contextBodySuffix')}
-            </Text>
-            <Text style={styles.enjoy}>{t('invitation.contextEnjoy')}</Text>
-            <InvitationProgramCard
-              title={invitation.program.name}
-              imageUrl={invitation.program.imageUrl}
-              badge={communityBadge}
-            />
-            <Text style={styles.recommendedBy}>{t('invitation.recommendedBy')}</Text>
-            <View style={styles.providerRow}>
-              {invitation.provider.logoUrl ? (
-                <CachedImage source={{ uri: invitation.provider.logoUrl }} style={styles.avatar} />
-              ) : (
-                <View style={styles.avatarPlaceholder}>
-                  <Text style={styles.avatarInitial}>{invitation.provider.name.trim().charAt(0)}</Text>
-                </View>
-              )}
-              <Text style={styles.providerName} numberOfLines={2}>
-                {invitation.provider.name}
-              </Text>
+            <View style={styles.content}>
+              <View style={styles.titles}>
+                <Text style={styles.congratulations}>{t('invitation.congratulations')}</Text>
+                <Text style={styles.accessGranted}>{t('invitation.accessGranted')}</Text>
+              </View>
+              <View style={styles.bodyBlock}>
+                <Text style={styles.body}>
+                  {t('invitation.contextBodyPrefix')}
+                  <Text style={styles.bodyEmphasis}>{invitation.program.name}</Text>
+                  {t('invitation.contextBodyWith')}
+                  <Text style={styles.bodyEmphasis}>{invitation.provider.name}</Text>
+                  {t('invitation.contextBodySuffix')}
+                </Text>
+                <Text style={styles.enjoy}>{t('invitation.contextEnjoy')}</Text>
+              </View>
+              <JoinCard title={invitation.program.name} image={programImage} badges={programTags} />
+              <PartnerSection
+                recommendedByLabel={t('invitation.recommendedBy')}
+                recommenders={[
+                  {
+                    id: invitation.provider.id,
+                    name: invitation.provider.name,
+                    avatar: invitation.provider.logoUrl ?? undefined,
+                  },
+                ]}
+              />
             </View>
           </KeyboardAwareScreen>
         ) : (

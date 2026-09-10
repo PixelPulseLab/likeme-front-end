@@ -70,6 +70,10 @@ export const styles = StyleSheet.create({
     color: '#FFFFFF',
     lineHeight: 24,
   },
+  titleWithoutCta: {
+    flex: 0,
+    alignSelf: 'flex-start',
+  },
   ctaIconButton: {
     alignSelf: 'flex-end',
   },

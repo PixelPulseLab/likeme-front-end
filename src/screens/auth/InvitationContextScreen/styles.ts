@@ -1,31 +1,38 @@
 import { StyleSheet } from 'react-native';
 import { COLORS, FONT_FAMILY, SPACING, TYPOGRAPHY } from '@/constants';
 
-const CARD_HEIGHT = 130;
-const AVATAR_SIZE = 40;
-const BADGE_TEXT = '#F6DEA9';
-
 export const styles = StyleSheet.create({
   root: {
     flex: 1,
+    overflow: 'hidden',
     backgroundColor: COLORS.BACKGROUND,
+  },
+  backgroundClip: {
+    ...StyleSheet.absoluteFillObject,
+    overflow: 'hidden',
+    zIndex: 0,
   },
   background: {
     ...StyleSheet.absoluteFillObject,
     width: '100%',
     height: '100%',
+    transform: [{ scale: 1.6 }],
   },
   screenContent: {
     flex: 1,
     backgroundColor: 'transparent',
     paddingBottom: 0,
+    zIndex: 1,
   },
   scrollContent: {
     flexGrow: 1,
-    paddingHorizontal: SPACING.XL,
+    paddingHorizontal: SPACING.LG,
     paddingTop: SPACING.LG,
     paddingBottom: SPACING.LG,
-    alignItems: 'center',
+  },
+  content: {
+    width: '100%',
+    gap: SPACING.LG,
   },
   titles: {
     width: '100%',
@@ -43,11 +50,14 @@ export const styles = StyleSheet.create({
     textAlign: 'center',
     textTransform: 'uppercase',
   },
+  bodyBlock: {
+    width: '100%',
+    gap: SPACING.SM,
+  },
   body: {
     ...TYPOGRAPHY.bodyMd,
     color: COLORS.TEXT,
-    marginTop: SPACING.LG,
-    width: '100%',
+    textAlign: 'center',
   },
   bodyEmphasis: {
     ...TYPOGRAPHY.bodyMd,
@@ -57,98 +67,7 @@ export const styles = StyleSheet.create({
   enjoy: {
     ...TYPOGRAPHY.bodyMd,
     color: COLORS.TEXT,
-    marginTop: SPACING.SM,
-    width: '100%',
-  },
-  card: {
-    width: 286,
-    maxWidth: '100%',
-    height: CARD_HEIGHT,
-    marginTop: SPACING.XL,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 28,
-    borderBottomLeftRadius: 12,
-    borderBottomRightRadius: 32,
-    overflow: 'hidden',
-    position: 'relative',
-  },
-  cardImage: {
-    ...StyleSheet.absoluteFillObject,
-    width: '100%',
-    height: '100%',
-  },
-  cardImageFallback: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: COLORS.NEUTRAL.LOW.PURE,
-  },
-  cardGradient: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  cardContent: {
-    ...StyleSheet.absoluteFillObject,
-    justifyContent: 'flex-end',
-    padding: SPACING.MD,
-  },
-  badge: {
-    position: 'absolute',
-    top: SPACING.MD,
-    left: SPACING.MD,
-    backgroundColor: 'rgba(0, 17, 55, 0.64)',
-    paddingHorizontal: 14,
-    minHeight: 24,
-    borderTopLeftRadius: 12,
-    borderTopRightRadius: 12,
-    borderBottomLeftRadius: 11,
-    borderBottomRightRadius: 11,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  badgeText: {
-    ...TYPOGRAPHY.badge,
-    color: BADGE_TEXT,
-    lineHeight: 22,
-  },
-  cardTitle: {
-    fontFamily: FONT_FAMILY.DM_SANS_BOLD,
-    fontSize: 20,
-    lineHeight: 22,
-    letterSpacing: 0.2,
-    color: COLORS.WHITE,
-  },
-  recommendedBy: {
-    ...TYPOGRAPHY.bodySm,
-    color: COLORS.TEXT,
-    marginTop: SPACING.LG,
-    width: '100%',
-  },
-  providerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.MD,
-    marginTop: SPACING.SM,
-    width: '100%',
-  },
-  avatar: {
-    width: AVATAR_SIZE,
-    height: AVATAR_SIZE,
-    borderRadius: AVATAR_SIZE / 2,
-  },
-  avatarPlaceholder: {
-    width: AVATAR_SIZE,
-    height: AVATAR_SIZE,
-    borderRadius: AVATAR_SIZE / 2,
-    backgroundColor: COLORS.NEUTRAL.LOW.LIGHT,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  avatarInitial: {
-    ...TYPOGRAPHY.title3,
-    color: COLORS.TEXT,
-  },
-  providerName: {
-    ...TYPOGRAPHY.bodyMd,
-    color: COLORS.TEXT,
-    flex: 1,
+    textAlign: 'center',
   },
   error: {
     ...TYPOGRAPHY.bodyMd,
