@@ -16,7 +16,7 @@ type Props = {
 const LoadingScreen: React.FC<Props> = ({ navigation, route }) => {
   useAnalyticsScreen({ screenName: 'AppLoading', screenClass: 'LoadingScreen' });
   const { t } = useTranslation();
-  const loadingMessage = route.params?.loadingMessage ?? t('common.loading');
+  const loadingMessage = route.params?.loadingMessage;
   const target = route.params?.target;
 
   useEffect(() => {
@@ -44,7 +44,7 @@ const LoadingScreen: React.FC<Props> = ({ navigation, route }) => {
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
-      <Loading message={loadingMessage} fullScreen />
+      <Loading message={loadingMessage} accessibilityLabel={loadingMessage ?? t('common.loading')} fullScreen />
     </SafeAreaView>
   );
 };
