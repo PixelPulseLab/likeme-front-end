@@ -156,4 +156,16 @@ describe('InvitationCodeScreen', () => {
 
     expect(getByPlaceholderText('invitation.codePlaceholder').props.value).toBe('ABC123');
   });
+
+  it('permite editar o código preenchido pelo deep link', () => {
+    const { getByPlaceholderText } = render(
+      <InvitationCodeScreen
+        navigation={{ navigate: jest.fn() } as never}
+        route={{ params: { code: '7F3K9Q' } } as never}
+      />,
+    );
+
+    fireEvent.changeText(getByPlaceholderText('invitation.codePlaceholder'), 'EDIT12');
+    expect(getByPlaceholderText('invitation.codePlaceholder').props.value).toBe('EDIT12');
+  });
 });

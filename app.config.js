@@ -199,6 +199,7 @@ const SHARE_ANDROID_PATH_PREFIXES = [
   '/affiliate',
   '/provider',
   '/subscription',
+  '/invite',
 ];
 
 const REVOPUSH_SERVER_URL = 'https://api.revopush.org';
