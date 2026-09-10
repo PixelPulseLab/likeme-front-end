@@ -11,7 +11,7 @@ import {
   type ViewToken,
 } from 'react-native';
 import type { RouteProp } from '@react-navigation/native';
-import { useRoute } from '@react-navigation/native';
+import { useFocusEffect, useRoute } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
 import {
   ShoppingList,
@@ -211,6 +211,7 @@ const CommunityScreen: React.FC<Props> = ({ navigation }) => {
     hasMore: feedHasMore,
     loadMore,
     refresh: refreshFeed,
+    refreshIfStale: refreshFeedIfStale,
   } = useUserFeed({
     enabled: isFeedMode && Boolean(selectedCommunityId?.trim()),
     searchQuery: '',
@@ -219,6 +220,12 @@ const CommunityScreen: React.FC<Props> = ({ navigation }) => {
   });
   const [feedRefreshing, setFeedRefreshing] = useState(false);
   const [isPullingFeed, setIsPullingFeed] = useState(false);
+
+  useFocusEffect(
+    useCallback(() => {
+      refreshFeedIfStale();
+    }, [refreshFeedIfStale]),
+  );
 
   const { post: featuredPost } = useCommunityFeaturedPost({
     communityId: selectedCommunityId,

@@ -57,6 +57,7 @@ interface UseUserFeedReturn {
   loadPosts: (page: number, search?: string, append?: boolean) => Promise<void>;
   loadMore: () => void;
   refresh: () => Promise<void>;
+  refreshIfStale: () => void;
   search: (query: string) => void;
 }
 
@@ -70,17 +71,18 @@ export const useUserFeed = (options: UseUserFeedOptions = {}): UseUserFeedReturn
     ? `${searchQuery}::${paramsKey}::community-feed-v8`
     : `${searchQuery}::${paramsKey}`;
   const initialCacheEntry = feedCache.read(cacheKey);
-  const initialCacheIsFresh = initialCacheEntry != null && isFeedCacheEntryFresh(initialCacheEntry);
+  const hasCachedEntry = initialCacheEntry != null;
+  const initialCacheIsFresh = hasCachedEntry && isFeedCacheEntryFresh(initialCacheEntry);
 
-  const [posts, setPosts] = useState<Post[]>(() => (initialCacheIsFresh ? initialCacheEntry.posts : []));
-  const [loading, setLoading] = useState(() => !initialCacheIsFresh);
+  const [posts, setPosts] = useState<Post[]>(() => initialCacheEntry?.posts ?? []);
+  const [loading, setLoading] = useState(() => !hasCachedEntry);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [currentPage, setCurrentPage] = useState(() => (initialCacheIsFresh ? initialCacheEntry.currentPage : 1));
-  const [hasMore, setHasMore] = useState(() => (initialCacheIsFresh ? initialCacheEntry.hasMore : true));
+  const [currentPage, setCurrentPage] = useState(() => initialCacheEntry?.currentPage ?? 1);
+  const [hasMore, setHasMore] = useState(() => (hasCachedEntry ? initialCacheEntry.hasMore : true));
   const [error, setError] = useState<string | null>(null);
 
-  const currentPageRef = useRef(initialCacheIsFresh ? initialCacheEntry.currentPage : 1);
-  const nextFeedCursorRef = useRef<string | undefined>(initialCacheIsFresh ? initialCacheEntry.nextCursor : undefined);
+  const currentPageRef = useRef(initialCacheEntry?.currentPage ?? 1);
+  const nextFeedCursorRef = useRef<string | undefined>(initialCacheEntry?.nextCursor);
   const postsRef = useRef<Post[]>(posts);
   postsRef.current = posts;
 
@@ -290,6 +292,17 @@ export const useUserFeed = (options: UseUserFeedOptions = {}): UseUserFeedReturn
     await loadPosts(1, searchQuery);
   }, [searchQuery, loadPosts, feedCache, cacheKey]);
 
+  const refreshIfStale = useCallback(() => {
+    if (!enabledRef.current) {
+      return;
+    }
+    const entry = feedCache.read(cacheKey);
+    if (entry != null && isFeedCacheEntryFresh(entry)) {
+      return;
+    }
+    void loadPosts(1, searchQuery);
+  }, [cacheKey, feedCache, loadPosts, searchQuery]);
+
   const search = useCallback(
     (query: string) => {
       previousSearchQuery.current = query;
@@ -355,6 +368,7 @@ export const useUserFeed = (options: UseUserFeedOptions = {}): UseUserFeedReturn
     loadPosts,
     loadMore,
     refresh,
+    refreshIfStale,
     search,
   };
 };
