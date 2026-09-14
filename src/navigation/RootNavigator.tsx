@@ -140,7 +140,7 @@ const RootNavigator: React.FC = () => {
                 <Stack.Screen
                   name='OnboardingAvatar'
                   getComponent={getAvatarScreen}
-                  options={{ title: 'Áreas de interesse' }}
+                  options={{ title: 'Áreas de interesse', gestureEnabled: false }}
                 />
                 <Stack.Screen
                   name='Authenticated'

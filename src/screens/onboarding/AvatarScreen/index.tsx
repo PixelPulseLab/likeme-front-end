@@ -5,13 +5,18 @@ import { OnboardingBodyAvatar, OnboardingMindAvatar } from '@/assets/auth';
 import { CachedImage } from '@/components/ui/media/CachedImage';
 import { ScreenWithHeader } from '@/components/ui/layout';
 import { COLORS } from '@/constants';
+import BubbleMap from '@/components/ui/BubbleMap';
 import { E2E_TEST_IDS } from '@/constants/e2eTestIds';
 import { INTEREST_CATEGORIES } from '@/hooks/interestCategories/useInterestCategories';
 import { useAnalyticsScreen } from '@/analytics';
 import { useTranslation } from '@/hooks/i18n';
 import type { RootStackParamList } from '@/types/navigation';
-import { CATEGORY_BUBBLE_LAYOUT, CATEGORY_BUBBLE_PILLAR, CATEGORY_BUBBLE_SOURCE } from './categoryBubbles';
+import { CATEGORY_BUBBLE_PILLAR, CATEGORY_BUBBLE_SOURCE, PACKED_CATEGORY_BUBBLES } from './categoryBubbles';
 import { styles } from './styles';
+
+const CATEGORY_BUBBLE_I18N_KEY = Object.fromEntries(
+  INTEREST_CATEGORIES.map((category) => [category.id, category.i18nKey]),
+);
 
 type Props = StackScreenProps<RootStackParamList, 'OnboardingAvatar'>;
 
@@ -126,22 +131,18 @@ const AvatarScreen: React.FC<Props> = ({ navigation }) => {
         {showCategories ? (
           <Animated.View
             style={[styles.categoryCloud, { opacity: categoriesOpacity, transform: [{ scale: categoriesScale }] }]}
-            testID={E2E_TEST_IDS.ONBOARDING_AVATAR_CATEGORIES}
-            pointerEvents='none'
           >
-            {INTEREST_CATEGORIES.map((category) => {
-              const pillar = CATEGORY_BUBBLE_PILLAR[category.id];
-              return (
-                <View key={category.id} style={[styles.bubble, CATEGORY_BUBBLE_LAYOUT[category.id]]}>
-                  <CachedImage
-                    source={CATEGORY_BUBBLE_SOURCE[pillar]}
-                    style={styles.bubbleImage}
-                    contentFit='contain'
-                  />
-                  <Text style={styles.bubbleLabel}>{t(category.i18nKey)}</Text>
-                </View>
-              );
-            })}
+            <BubbleMap
+              testID={E2E_TEST_IDS.ONBOARDING_AVATAR_CATEGORIES}
+              bubbles={PACKED_CATEGORY_BUBBLES.map((bubble) => ({
+                id: bubble.id,
+                x: bubble.x,
+                y: bubble.y,
+                radius: bubble.radius,
+                source: CATEGORY_BUBBLE_SOURCE[CATEGORY_BUBBLE_PILLAR[bubble.id]],
+                label: t(CATEGORY_BUBBLE_I18N_KEY[bubble.id]),
+              }))}
+            />
           </Animated.View>
         ) : null}
       </View>

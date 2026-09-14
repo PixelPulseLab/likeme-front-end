@@ -2,6 +2,18 @@ import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import AvatarScreen from './index';
 import { E2E_TEST_IDS } from '@/constants/e2eTestIds';
 
+jest.mock('react-native-gesture-handler', () => {
+  const React = require('react');
+  const { View } = require('react-native');
+  const GestureHandler = ({ children, ...props }: { children?: React.ReactNode }) =>
+    React.createElement(View, props, children);
+  return {
+    PanGestureHandler: GestureHandler,
+    PinchGestureHandler: GestureHandler,
+    State: { UNDETERMINED: 0, FAILED: 1, BEGAN: 2, CANCELLED: 3, ACTIVE: 4, END: 5 },
+  };
+});
+
 jest.mock('react-native-safe-area-context', () => {
   const ReactNative = require('react-native');
   return {

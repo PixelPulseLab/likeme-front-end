@@ -11,14 +11,14 @@ export const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    overflow: 'visible',
-    paddingHorizontal: SPACING.XL,
-    paddingTop: SPACING.XL,
+    overflow: 'hidden',
   },
   titles: {
     width: '100%',
     gap: SPACING.SM,
     marginBottom: SPACING.SECTION,
+    paddingHorizontal: SPACING.XL,
+    paddingTop: SPACING.XL,
   },
   title: {
     ...TYPOGRAPHY.displayMd,
@@ -33,6 +33,7 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: SPACING.LG,
+    paddingHorizontal: SPACING.XL,
   },
   avatarBlock: {
     alignItems: 'center',
@@ -54,22 +55,5 @@ export const styles = StyleSheet.create({
   },
   categoryCloud: {
     ...StyleSheet.absoluteFillObject,
-    overflow: 'visible',
-  },
-  bubble: {
-    position: 'absolute',
-    width: 176,
-    height: 158,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: SPACING.MD,
-  },
-  bubbleImage: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  bubbleLabel: {
-    ...TYPOGRAPHY.bodySm,
-    color: COLORS.WHITE,
-    textAlign: 'center',
   },
 });
