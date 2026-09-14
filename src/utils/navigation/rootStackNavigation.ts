@@ -6,9 +6,12 @@ export type NavWithParent = {
   getParent?: () => NavWithParent | undefined;
   navigate?: (screen: string, params?: unknown) => void;
   dispatch?: (action: RootStackAction) => void;
-  reset?: (state: { index: number; routes: Array<{ name: string; params?: object }> }) => void;
   canGoBack?: () => boolean;
   goBack?: () => void;
+};
+
+type NavWithReset = NavWithParent & {
+  reset?: (state: { index: number; routes: Array<{ name: string; params?: object }> }) => void;
 };
 
 export function rootStackNavigationFrom(navigation: NavWithParent | undefined): NavWithParent | undefined {
@@ -59,5 +62,5 @@ export function resetRootStack(navigation: NavWithParent | undefined, name: stri
     return;
   }
 
-  root.reset?.({ index: 0, routes });
+  (root as NavWithReset).reset?.({ index: 0, routes });
 }
