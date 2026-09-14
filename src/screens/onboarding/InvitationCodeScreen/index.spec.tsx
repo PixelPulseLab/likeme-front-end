@@ -34,6 +34,11 @@ jest.mock('@/components/ui', () => {
         <Text>{label}</Text>
       </TouchableOpacity>
     ),
+    SecondaryButton: ({ label, onPress, testID }: any) => (
+      <TouchableOpacity onPress={onPress} testID={testID}>
+        <Text>{label}</Text>
+      </TouchableOpacity>
+    ),
   };
 });
 
@@ -135,13 +140,17 @@ describe('InvitationCodeScreen', () => {
     expect(getByPlaceholderText('invitation.codePlaceholder').props.value).toBe('7F3K9Q');
   });
 
-  it('não oferece áreas de interesse nesta tela', () => {
-    const { queryByText } = render(
-      <InvitationCodeScreen navigation={{ navigate: jest.fn() } as never} route={{ params: undefined } as never} />,
+  it('oferece áreas de interesse e navega sem validar o código', () => {
+    const navigation = { navigate: jest.fn() };
+    const { getByText } = render(
+      <InvitationCodeScreen navigation={navigation as never} route={{ params: undefined } as never} />,
     );
 
-    expect(queryByText('invitation.notInvitedTitle')).toBeNull();
-    expect(queryByText('invitation.interestAreas')).toBeNull();
+    expect(getByText('invitation.notInvitedTitle')).toBeTruthy();
+    fireEvent.press(getByText('invitation.interestAreas'));
+
+    expect(navigation.navigate).toHaveBeenCalledWith('InterestCategories');
+    expect(mockValidateCode).not.toHaveBeenCalled();
   });
 
   it('preenche o campo a partir de route.params.code', () => {

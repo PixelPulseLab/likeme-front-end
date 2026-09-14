@@ -10,7 +10,7 @@ export const styles = StyleSheet.create({
     flexGrow: 1,
     paddingHorizontal: SPACING.XL,
     paddingTop: SPACING.XL,
-    paddingBottom: SPACING.LG,
+    paddingBottom: SPACING.XL,
   },
   headline: {
     ...TYPOGRAPHY.displaySm,
@@ -34,8 +34,13 @@ export const styles = StyleSheet.create({
     ...TYPOGRAPHY.bodyMdMedium,
     color: COLORS.TEXT,
   },
-  footer: {
+  enterButton: {
+    marginTop: SPACING.SM,
+  },
+  separator: {
+    height: 1,
+    backgroundColor: COLORS.NEUTRAL.LOW.LIGHT,
+    marginVertical: SPACING.SECTION,
     width: '100%',
-    paddingHorizontal: SPACING.MD,
   },
 });
