@@ -1,5 +1,6 @@
 import { renderHook, waitFor } from '@testing-library/react-native';
 import { useOnboardingRedirect } from './useOnboardingRedirect';
+import type { NavWithParent } from '@/utils/navigation/rootStackNavigation';
 
 const mockGetToken = jest.fn();
 const mockGetWelcomeScreenAccessedAt = jest.fn();
@@ -24,10 +25,12 @@ jest.mock('@/services/infrastructure/apiClient', () => ({
 }));
 
 const mockActivatePendingStoredCode = jest.fn();
-const mockInvitationHomeRoute = jest.fn(async (screen: string, params?: object) => ({
-  screen,
-  params,
-}));
+const mockInvitationHomeRoute = jest.fn(
+  async (screen: string, params?: object): Promise<{ screen: string; params?: object }> => ({
+    screen,
+    params,
+  }),
+);
 
 jest.mock('@/services/invitation/invitationService', () => ({
   invitationService: {
@@ -57,7 +60,7 @@ jest.mock('@/services', () => ({
 }));
 
 describe('useOnboardingRedirect', () => {
-  const navigation = { reset: jest.fn() };
+  const navigation = { reset: jest.fn() } as NavWithParent & { reset: jest.Mock };
 
   const expectResetTo = (screen: string, params?: object) => {
     expect(navigation.reset).toHaveBeenCalledWith({
