@@ -1,7 +1,6 @@
 import apiClient from '@/services/infrastructure/apiClient';
 import storageService from '@/services/auth/storageService';
 import { logger } from '@/utils/logger';
-import { subscribedProgramStackRoute } from '@/utils/navigation/productNavigation';
 import type { ApiResponse } from '@/types/infrastructure';
 import type { InvitationActivationContext, InvitationCodeValidationContext } from '@/types/invitation/invitation';
 import { PROGRAM_TYPE } from '@/types/product/programType';
@@ -84,23 +83,19 @@ function isUnrecoverableInvitationActivationError(error: unknown): boolean {
   );
 }
 
-async function persistInvitationProgramDestination(context: InvitationActivationContext): Promise<void> {
-  await storageService.setPendingInvitationProgramDestination({
-    productId: context.program.id,
-    programType: context.program.programType,
-    communityId: context.community?.id ?? null,
-  });
-}
-
-export async function invitationProgramRouteInsteadOfHome(
+export async function invitationHomeRoute(
   screen: string,
   params?: object,
 ): Promise<{ screen: string; params?: object }> {
+  if (await storageService.getInvitationOpensHome()) {
+    return { screen: 'Home' };
+  }
   const pending = await storageService.takePendingInvitationProgramDestination();
   if (!pending) {
     return { screen, params };
   }
-  return subscribedProgramStackRoute(pending);
+  await storageService.setInvitationOpensHome();
+  return { screen: 'Home' };
 }
 
 async function applyInvitationDisplayNameIfEmpty(displayName: string | null): Promise<void> {
@@ -165,9 +160,8 @@ class InvitationService {
     try {
       const context = await this.activateCode(code);
       await storageService.removePendingInvitationCode();
-      if (!context.alreadyParticipating) {
-        await persistInvitationProgramDestination(context);
-      }
+      await storageService.setInvitationOpensHome();
+      await storageService.removePendingInvitationProgramDestination();
       await applyInvitationDisplayNameIfEmpty(context.displayName);
       return { outcome: 'linked', context };
     } catch (error) {

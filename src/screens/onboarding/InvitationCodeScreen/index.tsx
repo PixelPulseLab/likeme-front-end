@@ -9,8 +9,7 @@ import { E2E_TEST_IDS } from '@/constants/e2eTestIds';
 import { invitationCodeValidationI18nKey } from '@/constants/invitation/invitationCodeValidation';
 import { useTranslation } from '@/hooks/i18n';
 import { useAnalyticsScreen, logFormSubmit, logNavigation } from '@/analytics';
-import { SHARE_DEEP_LINK_HOME_SCREEN } from '@/constants/share';
-import { useNavigation } from '@/hooks/navigation/useNavigation';
+import { useOnboardingRedirect } from '@/hooks/auth/useOnboardingRedirect';
 import { invitationService } from '@/services/invitation/invitationService';
 import type { RootStackParamList } from '@/types/navigation';
 import { logger } from '@/utils/logger';
@@ -26,7 +25,7 @@ const InvitationCodeScreen: React.FC<Props> = ({ navigation, route }) => {
   const [fieldError, setFieldError] = useState<string | undefined>(undefined);
   const [isValidating, setIsValidating] = useState(false);
   const canGoBack = typeof navigation.canGoBack === 'function' && navigation.canGoBack();
-  useNavigation(navigation, { resetToIfAuthenticated: SHARE_DEEP_LINK_HOME_SCREEN });
+  useOnboardingRedirect(navigation);
 
   useEffect(() => {
     const next = route.params?.code;

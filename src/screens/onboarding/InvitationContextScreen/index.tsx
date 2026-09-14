@@ -12,9 +12,8 @@ import { PRODUCT_CATALOG_TYPE, catalogTypeTranslatedBadgeLabels } from '@/types/
 import { E2E_TEST_IDS } from '@/constants/e2eTestIds';
 import { invitationCodeValidationI18nKey } from '@/constants/invitation/invitationCodeValidation';
 import { useAnalyticsScreen, logButtonClick, logNavigation } from '@/analytics';
-import { SHARE_DEEP_LINK_HOME_SCREEN } from '@/constants/share';
 import { useAuthLogin } from '@/hooks';
-import { useNavigation } from '@/hooks/navigation/useNavigation';
+import { useOnboardingRedirect } from '@/hooks/auth/useOnboardingRedirect';
 import { useTranslation } from '@/hooks/i18n';
 import { storageService } from '@/services';
 import { invitationService } from '@/services/invitation/invitationService';
@@ -46,7 +45,7 @@ const InvitationContextScreen: React.FC<Props> = ({ navigation, route }) => {
   const invitation = hasInvitationContext(route.params) ? route.params : null;
   const programImage = invitation?.program.imageUrl?.trim() || MARKETPLACE_PRODUCT_PLACEHOLDER_IMAGE_URI;
   const programTags = invitation ? catalogTypeTranslatedBadgeLabels(PRODUCT_CATALOG_TYPE.PROGRAM, t) : [];
-  useNavigation(navigation, { resetToIfAuthenticated: SHARE_DEEP_LINK_HOME_SCREEN });
+  useOnboardingRedirect(navigation);
 
   const goToInvitationCode = (code?: string) => {
     navigation.navigate('InvitationCode', code ? { code } : undefined);

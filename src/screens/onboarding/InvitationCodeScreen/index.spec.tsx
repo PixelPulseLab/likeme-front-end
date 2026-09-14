@@ -72,8 +72,8 @@ jest.mock('@/services/invitation/invitationService', () => ({
   },
 }));
 
-jest.mock('@/hooks/navigation/useNavigation', () => ({
-  useNavigation: jest.fn(),
+jest.mock('@/hooks/auth/useOnboardingRedirect', () => ({
+  useOnboardingRedirect: jest.fn(),
 }));
 
 const validContext = {

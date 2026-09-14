@@ -24,7 +24,7 @@ jest.mock('@/services/infrastructure/apiClient', () => ({
 }));
 
 const mockActivatePendingStoredCode = jest.fn();
-const mockInvitationProgramRouteInsteadOfHome = jest.fn(async (screen: string, params?: object) => ({
+const mockInvitationHomeRoute = jest.fn(async (screen: string, params?: object) => ({
   screen,
   params,
 }));
@@ -33,8 +33,7 @@ jest.mock('@/services/invitation/invitationService', () => ({
   invitationService: {
     activatePendingStoredCode: (...args: unknown[]) => mockActivatePendingStoredCode(...args),
   },
-  invitationProgramRouteInsteadOfHome: (screen: string, params?: object) =>
-    mockInvitationProgramRouteInsteadOfHome(screen, params),
+  invitationHomeRoute: (screen: string, params?: object) => mockInvitationHomeRoute(screen, params),
 }));
 
 jest.mock('@/hooks/i18n', () => ({
@@ -58,7 +57,14 @@ jest.mock('@/services', () => ({
 }));
 
 describe('useOnboardingRedirect', () => {
-  const navigationReplace = jest.fn();
+  const navigation = { reset: jest.fn() };
+
+  const expectResetTo = (screen: string, params?: object) => {
+    expect(navigation.reset).toHaveBeenCalledWith({
+      index: 0,
+      routes: [params != null ? { name: screen, params } : { name: screen }],
+    });
+  };
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -70,7 +76,7 @@ describe('useOnboardingRedirect', () => {
     mockGetCategorySelectedAt.mockResolvedValue('2026-01-04T00:00:00.000Z');
     mockGetUser.mockResolvedValue({ name: 'João Souza' });
     mockActivatePendingStoredCode.mockResolvedValue({ outcome: 'none' });
-    mockInvitationProgramRouteInsteadOfHome.mockImplementation(async (screen: string, params?: object) => ({
+    mockInvitationHomeRoute.mockImplementation(async (screen: string, params?: object) => ({
       screen,
       params,
     }));
@@ -84,14 +90,26 @@ describe('useOnboardingRedirect', () => {
     });
   });
 
+  it('não redireciona nem ativa convite quando não há sessão', async () => {
+    mockGetToken.mockResolvedValue(null);
+
+    renderHook(() => useOnboardingRedirect(navigation));
+
+    await waitFor(() => {
+      expect(mockGetToken).toHaveBeenCalled();
+    });
+    expect(mockActivatePendingStoredCode).not.toHaveBeenCalled();
+    expect(navigation.reset).not.toHaveBeenCalled();
+  });
+
   it('usa postAuthRoute em cache sem chamar backend novamente', async () => {
     mockGetCachedPostAuthRoute.mockReturnValue({ screen: 'Home' });
 
-    renderHook(() => useOnboardingRedirect(navigationReplace));
+    renderHook(() => useOnboardingRedirect(navigation));
 
     await waitFor(() => {
       expect(mockRefreshBackendSession).not.toHaveBeenCalled();
-      expect(navigationReplace).toHaveBeenCalledWith('Home', undefined);
+      expectResetTo('Home');
     });
   });
 
@@ -100,11 +118,11 @@ describe('useOnboardingRedirect', () => {
       .mockReturnValueOnce(null)
       .mockReturnValueOnce({ screen: 'InterestCategories', params: { userName: 'João Souza', firstName: 'João' } });
 
-    renderHook(() => useOnboardingRedirect(navigationReplace));
+    renderHook(() => useOnboardingRedirect(navigation));
 
     await waitFor(() => {
       expect(mockRefreshBackendSession).toHaveBeenCalledTimes(1);
-      expect(navigationReplace).toHaveBeenCalledWith('InterestCategories', {
+      expectResetTo('InterestCategories', {
         userName: 'João Souza',
         firstName: 'João',
       });
@@ -115,70 +133,67 @@ describe('useOnboardingRedirect', () => {
     mockGetCachedPostAuthRoute.mockReturnValue(null);
     mockRefreshBackendSession.mockResolvedValue({ ok: false, postAuthRoute: null });
 
-    renderHook(() => useOnboardingRedirect(navigationReplace));
+    renderHook(() => useOnboardingRedirect(navigation));
 
     await waitFor(() => {
-      expect(navigationReplace).toHaveBeenCalledWith('Home', undefined);
+      expectResetTo('Home');
     });
   });
 
   it('redireciona para Welcome quando ainda não foi acessada localmente', async () => {
     mockGetWelcomeScreenAccessedAt.mockResolvedValue(null);
 
-    renderHook(() => useOnboardingRedirect(navigationReplace));
+    renderHook(() => useOnboardingRedirect(navigation));
 
     await waitFor(() => {
       expect(mockRefreshBackendSession).not.toHaveBeenCalled();
-      expect(mockInvitationProgramRouteInsteadOfHome).toHaveBeenCalledWith('Welcome', undefined);
-      expect(navigationReplace).toHaveBeenCalledWith('Welcome', undefined);
+      expect(mockInvitationHomeRoute).toHaveBeenCalledWith('Welcome', undefined);
+      expectResetTo('Welcome');
     });
     expect(mockSetWelcomeScreenAccessedAt).not.toHaveBeenCalled();
   });
 
-  it('pula o onboarding e vai ao programa do convite no primeiro acesso', async () => {
+  it('pula o onboarding e vai à home do convite no primeiro acesso', async () => {
     mockGetWelcomeScreenAccessedAt.mockResolvedValue(null);
-    mockInvitationProgramRouteInsteadOfHome.mockResolvedValue({
-      screen: 'ProtocolDetail',
-      params: { productId: 'program-1' },
+    mockInvitationHomeRoute.mockResolvedValue({
+      screen: 'Home',
     });
 
-    renderHook(() => useOnboardingRedirect(navigationReplace));
+    renderHook(() => useOnboardingRedirect(navigation));
 
     await waitFor(() => {
-      expect(mockInvitationProgramRouteInsteadOfHome).toHaveBeenCalledWith('Welcome', undefined);
+      expect(mockInvitationHomeRoute).toHaveBeenCalledWith('Welcome', undefined);
       expect(mockSetWelcomeScreenAccessedAt).toHaveBeenCalled();
-      expect(navigationReplace).toHaveBeenCalledWith('ProtocolDetail', { productId: 'program-1' });
+      expectResetTo('Home');
     });
     expect(mockRefreshBackendSession).not.toHaveBeenCalled();
   });
 
-  it('pula Register do postAuthRoute quando há programa de convite', async () => {
+  it('pula Register do postAuthRoute quando o convite abre a home', async () => {
     mockGetCachedPostAuthRoute.mockReturnValue({ screen: 'Register', params: { userName: 'Camilla' } });
-    mockInvitationProgramRouteInsteadOfHome.mockResolvedValue({
-      screen: 'ProtocolDetail',
-      params: { productId: 'program-1' },
+    mockInvitationHomeRoute.mockResolvedValue({
+      screen: 'Home',
     });
 
-    renderHook(() => useOnboardingRedirect(navigationReplace));
+    renderHook(() => useOnboardingRedirect(navigation));
 
     await waitFor(() => {
-      expect(mockInvitationProgramRouteInsteadOfHome).toHaveBeenCalledWith('Register', { userName: 'Camilla' });
-      expect(navigationReplace).toHaveBeenCalledWith('ProtocolDetail', { productId: 'program-1' });
+      expect(mockInvitationHomeRoute).toHaveBeenCalledWith('Register', { userName: 'Camilla' });
+      expectResetTo('Home');
     });
   });
 
-  it('substitui Home pelo programa do convite', async () => {
+  it('mantém Home quando o convite já aponta para a home', async () => {
     mockGetCachedPostAuthRoute.mockReturnValue({ screen: 'Home' });
-    mockInvitationProgramRouteInsteadOfHome.mockResolvedValue({
-      screen: 'ProtocolDetail',
-      params: { productId: 'program-1' },
+    mockInvitationHomeRoute.mockResolvedValue({
+      screen: 'Home',
     });
 
-    renderHook(() => useOnboardingRedirect(navigationReplace));
+    renderHook(() => useOnboardingRedirect(navigation));
 
     await waitFor(() => {
-      expect(mockInvitationProgramRouteInsteadOfHome).toHaveBeenCalledWith('Home', undefined);
-      expect(navigationReplace).toHaveBeenCalledWith('ProtocolDetail', { productId: 'program-1' });
+      expect(mockInvitationHomeRoute).toHaveBeenCalledWith('Home', undefined);
+      expectResetTo('Home');
     });
   });
 });

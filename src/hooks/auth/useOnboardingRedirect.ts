@@ -1,17 +1,16 @@
-import { useEffect } from 'react';
+import { useCallback, useEffect } from 'react';
 import { Alert } from 'react-native';
 import { FORCE_START_ONBOARDING_LOCALLY } from '@/constants';
 import { AUTH_ONBOARDING_SCREENS_ORDER } from '@/constants/authOnboarding';
 import { storageService, AuthService } from '@/services';
-import { invitationProgramRouteInsteadOfHome, invitationService } from '@/services/invitation/invitationService';
+import { invitationHomeRoute, invitationService } from '@/services/invitation/invitationService';
 import { getCachedPostAuthRoute } from '@/services/auth/applyAuthSessionResponse';
 import { invalidateApiClientAuthTokenMemoryCache } from '@/services/infrastructure/apiClient';
 import { useTranslation } from '@/hooks/i18n';
 import { isE2eAuthBypassEnabled } from '@/utils/e2e/e2eAuthBypass';
 import { logger } from '@/utils/logger';
 import { getNextOnboardingDestination } from '@/utils/auth/navigation';
-
-type NavigationReplace = (screen: string, params?: object) => void;
+import { resetRootStack, type NavWithParent } from '@/utils/navigation/rootStackNavigation';
 
 async function syncAuthSessionFromBackend(): Promise<void> {
   if (FORCE_START_ONBOARDING_LOCALLY || isE2eAuthBypassEnabled()) {
@@ -54,8 +53,14 @@ async function destinationFromLocalStorage(): Promise<{ screen: string; params?:
   );
 }
 
-export function useOnboardingRedirect(navigationReplace: NavigationReplace): void {
+export function useOnboardingRedirect(navigation: NavWithParent): void {
   const { t } = useTranslation();
+  const replace = useCallback(
+    (screen: string, params?: object) => {
+      resetRootStack(navigation, screen, params);
+    },
+    [navigation],
+  );
 
   useEffect(() => {
     const redirect = async () => {
@@ -63,6 +68,11 @@ export function useOnboardingRedirect(navigationReplace: NavigationReplace): voi
         if (FORCE_START_ONBOARDING_LOCALLY) {
           await storageService.clearAll();
           invalidateApiClientAuthTokenMemoryCache();
+        } else {
+          const token = await storageService.getToken();
+          if (!token?.trim()) {
+            return;
+          }
         }
 
         const activation = await invitationService.activatePendingStoredCode();
@@ -72,11 +82,11 @@ export function useOnboardingRedirect(navigationReplace: NavigationReplace): voi
 
         const welcomeScreenAccessedAt = await storageService.getWelcomeScreenAccessedAt();
         if (!welcomeScreenAccessedAt) {
-          const destination = await invitationProgramRouteInsteadOfHome(AUTH_ONBOARDING_SCREENS_ORDER[0]);
+          const destination = await invitationHomeRoute(AUTH_ONBOARDING_SCREENS_ORDER[0]);
           if (destination.screen !== AUTH_ONBOARDING_SCREENS_ORDER[0]) {
             await storageService.setWelcomeScreenAccessedAt(new Date().toISOString());
           }
-          navigationReplace(destination.screen, destination.params);
+          replace(destination.screen, destination.params);
           return;
         }
 
@@ -87,21 +97,21 @@ export function useOnboardingRedirect(navigationReplace: NavigationReplace): voi
         }
 
         if (postAuthRoute) {
-          const destination = await invitationProgramRouteInsteadOfHome(postAuthRoute.screen, postAuthRoute.params);
-          navigationReplace(destination.screen, destination.params);
+          const destination = await invitationHomeRoute(postAuthRoute.screen, postAuthRoute.params);
+          replace(destination.screen, destination.params);
           return;
         }
 
         // Rede falhou ou resposta sem postAuthRoute: não empurrar para Register às cegas.
         const localDestination = await destinationFromLocalStorage();
-        const destination = await invitationProgramRouteInsteadOfHome(localDestination.screen, localDestination.params);
-        navigationReplace(destination.screen, destination.params);
+        const destination = await invitationHomeRoute(localDestination.screen, localDestination.params);
+        replace(destination.screen, destination.params);
       } catch (error) {
         logger.error('Error checking onboarding status:', error);
-        navigationReplace('Register');
+        replace('Register');
       }
     };
 
     redirect();
-  }, [navigationReplace, t]);
+  }, [replace, t]);
 }

@@ -9,7 +9,7 @@ import { CTACard } from '@/components/ui/cards';
 import { COLORS, SPACING } from '@/constants';
 import { GradientSplash6 } from '@/assets/auth';
 import { AuthService, personCategoryService } from '@/services';
-import { invitationProgramRouteInsteadOfHome } from '@/services/invitation/invitationService';
+import { invitationHomeRoute } from '@/services/invitation/invitationService';
 import { useTranslation } from '@/hooks/i18n';
 import { useAnalyticsScreen, logEvent } from '@/analytics';
 import { CUSTOM_EVENTS, ANALYTICS_PARAMS } from '@/analytics/constants';
@@ -81,7 +81,7 @@ const InterestCategoriesScreen: React.FC<Props> = ({ navigation, route }) => {
         [ANALYTICS_PARAMS.VALUE]: selectedCategoryIds.size,
       });
       const nextScreen = getNextOnboardingScreen('InterestCategories');
-      const destination = await invitationProgramRouteInsteadOfHome(nextScreen);
+      const destination = await invitationHomeRoute(nextScreen);
       if (destination.screen === 'Home') {
         navigation.navigate(destination.screen);
         return;
@@ -97,7 +97,7 @@ const InterestCategoriesScreen: React.FC<Props> = ({ navigation, route }) => {
 
   const handleSkip = useCallback(async () => {
     const nextScreen = getNextOnboardingScreen('InterestCategories');
-    const destination = await invitationProgramRouteInsteadOfHome(nextScreen);
+    const destination = await invitationHomeRoute(nextScreen);
     if (destination.screen === 'Home') {
       navigation.navigate(destination.screen);
       return;

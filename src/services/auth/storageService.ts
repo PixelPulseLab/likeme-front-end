@@ -27,6 +27,7 @@ const COMMUNITY_FAVORITE_IDS_KEY = '@likeme:community_favorite_ids';
 const PROGRAM_MODULE_COMPLETED_IDS_KEY = '@likeme:program_module_completed_ids';
 const PENDING_INVITATION_CODE_KEY = '@likeme:pending_invitation_code';
 const PENDING_INVITATION_PROGRAM_DESTINATION_KEY = '@likeme:pending_invitation_destination';
+const INVITATION_OPENS_HOME_KEY = '@likeme:invitation_opens_home';
 
 const ONBOARDING_STORAGE_KEYS = [
   REGISTER_COMPLETED_AT_KEY,
@@ -35,6 +36,7 @@ const ONBOARDING_STORAGE_KEYS = [
   SELECTED_OBJECTIVES_IDS_KEY,
   ANAMNESIS_COMPLETED_AT_KEY,
   PRIVACY_POLICY_ACCEPTED_AT_KEY,
+  INVITATION_OPENS_HOME_KEY,
 ] as const;
 
 function normalizeStorageOwnerEmail(email: string | null | undefined): string | null {
@@ -601,6 +603,24 @@ class StorageService {
       await AsyncStorage.removeItem(PENDING_INVITATION_PROGRAM_DESTINATION_KEY);
     } catch (error) {
       logger.error('Error removing pending invitation program destination:', error);
+    }
+  }
+
+  async setInvitationOpensHome(): Promise<void> {
+    try {
+      await AsyncStorage.setItem(INVITATION_OPENS_HOME_KEY, 'true');
+    } catch (error) {
+      logger.error('Error saving invitation opens home:', error);
+      throw error;
+    }
+  }
+
+  async getInvitationOpensHome(): Promise<boolean> {
+    try {
+      return (await AsyncStorage.getItem(INVITATION_OPENS_HOME_KEY)) === 'true';
+    } catch (error) {
+      logger.error('Error getting invitation opens home:', error);
+      return false;
     }
   }
 
