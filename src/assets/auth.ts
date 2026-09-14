@@ -27,6 +27,9 @@ import Presentation2Jpg from '../../assets/onboarding/presentation-2.jpg';
 import Presentation3Jpg from '../../assets/onboarding/presentation-3.jpg';
 import Presentation4Jpg from '../../assets/onboarding/presentation-4.jpg';
 import FirstStepBackgroundPng from '../../assets/onboarding/FirstStepBackground.png';
+import OnboardingMindAvatarPng from '../../assets/onboarding/MindAvatar.png';
+import OnboardingBodyAvatarPng from '../../assets/onboarding/BodyAvatar.png';
+import OnboardingLikeMeAvatarPng from '../../assets/onboarding/LikeMeAvatar.png';
 
 // Logo usada em telas de auth
 import LogoFullPng from '../../assets/ui/LogoFull.png';
@@ -54,6 +57,9 @@ export const Presentation2 = Presentation2Jpg;
 export const Presentation3 = Presentation3Jpg;
 export const Presentation4 = Presentation4Jpg;
 export const FirstStepBackground = FirstStepBackgroundPng;
+export const OnboardingMindAvatar = OnboardingMindAvatarPng;
+export const OnboardingBodyAvatar = OnboardingBodyAvatarPng;
+export const OnboardingLikeMeAvatar = OnboardingLikeMeAvatarPng;
 
 export const LogoFull = LogoFullPng;
 export const LogoFullSvg = LogoFullMarkSvg;

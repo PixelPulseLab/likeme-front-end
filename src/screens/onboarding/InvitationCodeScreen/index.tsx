@@ -98,10 +98,10 @@ const InvitationCodeScreen: React.FC<Props> = ({ navigation, route }) => {
     });
     logNavigation({
       source_screen: 'invitation_code',
-      destination_screen: 'interest_categories',
+      destination_screen: 'onboarding_avatar',
       action_name: 'interest_areas',
     });
-    navigation.navigate('InterestCategories');
+    navigation.navigate('OnboardingAvatar');
   };
 
   return (

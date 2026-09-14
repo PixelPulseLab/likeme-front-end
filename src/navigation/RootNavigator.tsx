@@ -17,6 +17,7 @@ import {
   getUnauthenticatedScreen,
   getInvitationCodeScreen,
   getInvitationContextScreen,
+  getAvatarScreen,
   getAuthenticatedScreen,
   getWelcomeScreen,
   getAppPresentationScreen,
@@ -135,6 +136,11 @@ const RootNavigator: React.FC = () => {
                   name='InvitationContext'
                   getComponent={getInvitationContextScreen}
                   options={{ title: 'Contexto do convite' }}
+                />
+                <Stack.Screen
+                  name='OnboardingAvatar'
+                  getComponent={getAvatarScreen}
+                  options={{ title: 'Áreas de interesse' }}
                 />
                 <Stack.Screen
                   name='Authenticated'

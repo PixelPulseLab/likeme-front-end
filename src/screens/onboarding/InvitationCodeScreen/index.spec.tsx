@@ -149,7 +149,7 @@ describe('InvitationCodeScreen', () => {
     expect(getByText('invitation.notInvitedTitle')).toBeTruthy();
     fireEvent.press(getByText('invitation.interestAreas'));
 
-    expect(navigation.navigate).toHaveBeenCalledWith('InterestCategories');
+    expect(navigation.navigate).toHaveBeenCalledWith('OnboardingAvatar');
     expect(mockValidateCode).not.toHaveBeenCalled();
   });
 
