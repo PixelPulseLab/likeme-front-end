@@ -165,7 +165,9 @@ class InvitationService {
     try {
       const context = await this.activateCode(code);
       await storageService.removePendingInvitationCode();
-      await persistInvitationProgramDestination(context);
+      if (!context.alreadyParticipating) {
+        await persistInvitationProgramDestination(context);
+      }
       await applyInvitationDisplayNameIfEmpty(context.displayName);
       return { outcome: 'linked', context };
     } catch (error) {

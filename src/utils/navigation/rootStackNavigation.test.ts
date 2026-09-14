@@ -1,5 +1,5 @@
 import { CommonActions } from '@react-navigation/native';
-import { navigateRootStack, rootStackNavigationFrom } from '@/utils/navigation/rootStackNavigation';
+import { navigateRootStack, resetRootStack, rootStackNavigationFrom } from '@/utils/navigation/rootStackNavigation';
 
 type MockNav = {
   dispatch: jest.Mock;
@@ -58,5 +58,36 @@ describe('navigateRootStack', () => {
     navigateRootStack(root, 'Marketplace', { initialSolutionTab: 'all' });
 
     expect(root.navigate).toHaveBeenCalledWith('Marketplace', { initialSolutionTab: 'all' });
+  });
+});
+
+describe('resetRootStack', () => {
+  it('usa dispatch com CommonActions.reset no root', () => {
+    const root = createNav();
+    const child = createNav(root);
+
+    resetRootStack(child, 'Summary');
+
+    expect(root.dispatch).toHaveBeenCalledWith(
+      CommonActions.reset({
+        index: 0,
+        routes: [{ name: 'Summary' }],
+      }),
+    );
+  });
+
+  it('faz fallback para reset quando dispatch não existe', () => {
+    const reset = jest.fn();
+    const root = {
+      reset,
+      getParent: () => undefined,
+    };
+
+    resetRootStack(root, 'Home', { tab: 'feed' });
+
+    expect(reset).toHaveBeenCalledWith({
+      index: 0,
+      routes: [{ name: 'Home', params: { tab: 'feed' } }],
+    });
   });
 });

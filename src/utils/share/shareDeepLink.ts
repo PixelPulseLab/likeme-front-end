@@ -339,6 +339,27 @@ async function hasStoredSessionToken(): Promise<boolean> {
   return Boolean(token?.trim());
 }
 
+function isAlreadyOnInvitationHome(activeRouteName: string | undefined): boolean {
+  return (
+    activeRouteName === SHARE_DEEP_LINK_HOME_SCREEN || activeRouteName === 'Home' || activeRouteName === 'Authenticated'
+  );
+}
+
+function dispatchInvitationHomeTarget(
+  navigationRef: NavigationContainerRefWithCurrent<RootStackParamList>,
+  activeRouteName: string | undefined,
+): void {
+  if (isAlreadyOnInvitationHome(activeRouteName)) {
+    return;
+  }
+  navigationRef.dispatch(
+    CommonActions.reset({
+      index: 0,
+      routes: [{ name: SHARE_DEEP_LINK_HOME_SCREEN }],
+    }),
+  );
+}
+
 async function skipInvitationOnboardingToLogin(
   navigationRef: NavigationContainerRefWithCurrent<RootStackParamList>,
   activeRouteName: string | undefined,
@@ -352,6 +373,21 @@ async function skipInvitationOnboardingToLogin(
     return;
   }
   navigateToUnauthenticatedIfNeeded(navigationRef, activeRouteName);
+}
+
+async function skipInvitationScreensWhenAlreadyAuthenticated(
+  navigationRef: NavigationContainerRefWithCurrent<RootStackParamList>,
+  activeRouteName: string | undefined,
+): Promise<boolean> {
+  if (!(await hasStoredSessionToken())) {
+    return false;
+  }
+  consumePendingDeepLinkNavigation();
+  if (!canFlushInvitationDeepLink(activeRouteName)) {
+    return true;
+  }
+  dispatchInvitationHomeTarget(navigationRef, activeRouteName);
+  return true;
 }
 
 function navigateToUnauthenticatedIfNeeded(
@@ -417,6 +453,10 @@ export async function openDeepLinkTarget(
       return;
     }
 
+    if (await skipInvitationScreensWhenAlreadyAuthenticated(navigationRef, activeRouteName)) {
+      return;
+    }
+
     dispatchInvitationCodeTarget(navigationRef, invitationTarget, activeRouteName);
     consumePendingDeepLinkNavigation();
     return;
@@ -473,6 +513,9 @@ export async function flushPendingDeepLinkNavigation(
     }
     if (!(await invitationOnboardingEnabled())) {
       await skipInvitationOnboardingToLogin(navigationRef, activeRouteName);
+      return;
+    }
+    if (await skipInvitationScreensWhenAlreadyAuthenticated(navigationRef, activeRouteName)) {
       return;
     }
     const target = consumePendingDeepLinkNavigation();

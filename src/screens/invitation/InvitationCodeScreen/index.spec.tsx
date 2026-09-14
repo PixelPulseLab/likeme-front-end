@@ -72,6 +72,10 @@ jest.mock('@/services/invitation/invitationService', () => ({
   },
 }));
 
+jest.mock('@/hooks/navigation/useNavigation', () => ({
+  useNavigation: jest.fn(),
+}));
+
 const validContext = {
   code: '7F3K9Q',
   program: { id: 'program-1', name: 'Protocolo', imageUrl: null, programType: 'course' },

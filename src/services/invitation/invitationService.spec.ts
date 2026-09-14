@@ -158,6 +158,22 @@ describe('invitationService.activatePendingStoredCode', () => {
     expect(mockSetUser).toHaveBeenCalledWith({ email: 'camilla@email.com', name: 'Camilla' });
   });
 
+  it('não persiste destino do programa quando o usuário já participa', async () => {
+    mockGetPendingInvitationCode.mockResolvedValue('7F3K9Q');
+    mockPost.mockResolvedValue({
+      success: true,
+      message: 'Convite vinculado',
+      data: { ...validContext, displayName: 'Camilla', alreadyParticipating: true },
+    });
+
+    await expect(invitationService.activatePendingStoredCode()).resolves.toEqual({
+      outcome: 'linked',
+      context: { ...validContext, displayName: 'Camilla', alreadyParticipating: true },
+    });
+    expect(mockRemovePendingInvitationCode).toHaveBeenCalled();
+    expect(mockSetPendingInvitationProgramDestination).not.toHaveBeenCalled();
+  });
+
   it('trata mismatch de identidade sem deixar o código pendente', async () => {
     mockGetPendingInvitationCode.mockResolvedValue('7F3K9Q');
     mockPost.mockRejectedValue(new Error(INVITATION_CODE_VALIDATION_ERROR.IDENTITY));

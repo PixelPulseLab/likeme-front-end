@@ -73,6 +73,10 @@ jest.mock('@/hooks', () => ({
   }),
 }));
 
+jest.mock('@/hooks/navigation/useNavigation', () => ({
+  useNavigation: jest.fn(),
+}));
+
 jest.mock('@/analytics', () => ({
   useAnalyticsScreen: jest.fn(),
   logButtonClick: jest.fn(),

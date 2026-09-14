@@ -21,9 +21,9 @@ export const getLoadingScreen = (): RootStackScreen => {
 export const getUnauthenticatedScreen = (): RootStackScreen =>
   asScreen(require('../screens/auth/UnauthenticatedScreen') as { default: RootStackScreen });
 export const getInvitationCodeScreen = (): RootStackScreen =>
-  asScreen(require('../screens/auth/InvitationCodeScreen') as { default: RootStackScreen });
+  asScreen(require('../screens/invitation/InvitationCodeScreen') as { default: RootStackScreen });
 export const getInvitationContextScreen = (): RootStackScreen =>
-  asScreen(require('../screens/auth/InvitationContextScreen') as { default: RootStackScreen });
+  asScreen(require('../screens/invitation/InvitationContextScreen') as { default: RootStackScreen });
 export const getAuthenticatedScreen = (): RootStackScreen =>
   asScreen(require('../screens/auth/AuthenticatedScreen') as { default: RootStackScreen });
 export const getWelcomeScreen = (): RootStackScreen =>
