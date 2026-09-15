@@ -3,12 +3,6 @@ import { useOnboardingRedirect } from './useOnboardingRedirect';
 import type { NavWithParent } from '@/utils/navigation/rootStackNavigation';
 
 const mockGetToken = jest.fn();
-const mockGetWelcomeScreenAccessedAt = jest.fn();
-const mockSetWelcomeScreenAccessedAt = jest.fn();
-const mockGetPrivacyPolicyAcceptedAt = jest.fn();
-const mockGetRegisterCompletedAt = jest.fn();
-const mockGetCategorySelectedAt = jest.fn();
-const mockGetUser = jest.fn();
 const mockRefreshBackendSession = jest.fn();
 const mockGetCachedPostAuthRoute = jest.fn();
 
@@ -18,6 +12,7 @@ jest.mock('@/constants', () => ({
 
 jest.mock('@/services/auth/applyAuthSessionResponse', () => ({
   getCachedPostAuthRoute: (...args: unknown[]) => mockGetCachedPostAuthRoute(...args),
+  clearCachedPostAuthRoute: jest.fn(),
 }));
 
 jest.mock('@/services/infrastructure/apiClient', () => ({
@@ -26,8 +21,8 @@ jest.mock('@/services/infrastructure/apiClient', () => ({
 
 const mockActivatePendingStoredCode = jest.fn();
 const mockInvitationHomeRoute = jest.fn(
-  async (screen: string, params?: object): Promise<{ screen: string; params?: object }> => ({
-    screen,
+  async (screen?: string, params?: object): Promise<{ screen: string; params?: object }> => ({
+    screen: screen ?? 'Wall',
     params,
   }),
 );
@@ -36,7 +31,7 @@ jest.mock('@/services/invitation/invitationService', () => ({
   invitationService: {
     activatePendingStoredCode: (...args: unknown[]) => mockActivatePendingStoredCode(...args),
   },
-  invitationHomeRoute: (screen: string, params?: object) => mockInvitationHomeRoute(screen, params),
+  invitationHomeRoute: (screen?: string, params?: object) => mockInvitationHomeRoute(screen, params),
 }));
 
 jest.mock('@/hooks/i18n', () => ({
@@ -46,12 +41,6 @@ jest.mock('@/hooks/i18n', () => ({
 jest.mock('@/services', () => ({
   storageService: {
     getToken: (...args: unknown[]) => mockGetToken(...args),
-    getWelcomeScreenAccessedAt: (...args: unknown[]) => mockGetWelcomeScreenAccessedAt(...args),
-    setWelcomeScreenAccessedAt: (...args: unknown[]) => mockSetWelcomeScreenAccessedAt(...args),
-    getPrivacyPolicyAcceptedAt: (...args: unknown[]) => mockGetPrivacyPolicyAcceptedAt(...args),
-    getRegisterCompletedAt: (...args: unknown[]) => mockGetRegisterCompletedAt(...args),
-    getCategorySelectedAt: (...args: unknown[]) => mockGetCategorySelectedAt(...args),
-    getUser: (...args: unknown[]) => mockGetUser(...args),
     clearAll: jest.fn(),
   },
   AuthService: {
@@ -72,15 +61,9 @@ describe('useOnboardingRedirect', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockGetToken.mockResolvedValue('session-token');
-    mockGetWelcomeScreenAccessedAt.mockResolvedValue('2026-01-01T00:00:00.000Z');
-    mockSetWelcomeScreenAccessedAt.mockResolvedValue(undefined);
-    mockGetPrivacyPolicyAcceptedAt.mockResolvedValue('2026-01-02T00:00:00.000Z');
-    mockGetRegisterCompletedAt.mockResolvedValue('2026-01-03T00:00:00.000Z');
-    mockGetCategorySelectedAt.mockResolvedValue('2026-01-04T00:00:00.000Z');
-    mockGetUser.mockResolvedValue({ name: 'João Souza' });
     mockActivatePendingStoredCode.mockResolvedValue({ outcome: 'none' });
-    mockInvitationHomeRoute.mockImplementation(async (screen: string, params?: object) => ({
-      screen,
+    mockInvitationHomeRoute.mockImplementation(async (screen?: string, params?: object) => ({
+      screen: screen ?? 'Wall',
       params,
     }));
     mockRefreshBackendSession.mockResolvedValue({
@@ -105,59 +88,47 @@ describe('useOnboardingRedirect', () => {
     expect(navigation.reset).not.toHaveBeenCalled();
   });
 
-  it('usa postAuthRoute em cache sem chamar backend novamente', async () => {
-    mockGetCachedPostAuthRoute.mockReturnValue({ screen: 'Home' });
+  it('após o activate sincroniza a sessão e segue o tapume', async () => {
+    mockGetCachedPostAuthRoute.mockReturnValue({ screen: 'Wall' });
 
     renderHook(() => useOnboardingRedirect(navigation));
 
     await waitFor(() => {
-      expect(mockRefreshBackendSession).not.toHaveBeenCalled();
-      expectResetTo('Home');
-    });
-  });
-
-  it('sincroniza sessão quando não há postAuthRoute em cache', async () => {
-    mockGetCachedPostAuthRoute
-      .mockReturnValueOnce(null)
-      .mockReturnValueOnce({ screen: 'InterestCategories', params: { userName: 'João Souza', firstName: 'João' } });
-
-    renderHook(() => useOnboardingRedirect(navigation));
-
-    await waitFor(() => {
+      expect(mockActivatePendingStoredCode).toHaveBeenCalled();
       expect(mockRefreshBackendSession).toHaveBeenCalledTimes(1);
-      expectResetTo('InterestCategories', {
-        userName: 'João Souza',
-        firstName: 'João',
-      });
+      expect(mockInvitationHomeRoute).toHaveBeenCalledWith('Wall', undefined);
+      expectResetTo('Wall');
     });
   });
 
-  it('cai no destino local quando sync falha sem postAuthRoute', async () => {
+  it('não segue Register nem onboarding quando o cache ainda traz essas telas', async () => {
+    mockGetCachedPostAuthRoute.mockReturnValue({
+      screen: 'InterestCategories',
+      params: { userName: 'João Souza', firstName: 'João' },
+    });
+
+    renderHook(() => useOnboardingRedirect(navigation));
+
+    await waitFor(() => {
+      expect(mockInvitationHomeRoute).toHaveBeenCalledWith(undefined, undefined);
+      expectResetTo('Wall');
+    });
+  });
+
+  it('cai no tapume quando o sync falha sem postAuthRoute', async () => {
     mockGetCachedPostAuthRoute.mockReturnValue(null);
     mockRefreshBackendSession.mockResolvedValue({ ok: false, postAuthRoute: null });
 
     renderHook(() => useOnboardingRedirect(navigation));
 
     await waitFor(() => {
-      expectResetTo('Home');
+      expect(mockInvitationHomeRoute).toHaveBeenCalledWith(undefined, undefined);
+      expectResetTo('Wall');
     });
   });
 
-  it('redireciona para Welcome quando ainda não foi acessada localmente', async () => {
-    mockGetWelcomeScreenAccessedAt.mockResolvedValue(null);
-
-    renderHook(() => useOnboardingRedirect(navigation));
-
-    await waitFor(() => {
-      expect(mockRefreshBackendSession).not.toHaveBeenCalled();
-      expect(mockInvitationHomeRoute).toHaveBeenCalledWith('Welcome', undefined);
-      expectResetTo('Welcome');
-    });
-    expect(mockSetWelcomeScreenAccessedAt).not.toHaveBeenCalled();
-  });
-
-  it('pula o onboarding e vai à home do convite no primeiro acesso', async () => {
-    mockGetWelcomeScreenAccessedAt.mockResolvedValue(null);
+  it('vai à home quando a sessão aponta para Home', async () => {
+    mockGetCachedPostAuthRoute.mockReturnValue({ screen: 'Home' });
     mockInvitationHomeRoute.mockResolvedValue({
       screen: 'Home',
     });
@@ -165,14 +136,13 @@ describe('useOnboardingRedirect', () => {
     renderHook(() => useOnboardingRedirect(navigation));
 
     await waitFor(() => {
-      expect(mockInvitationHomeRoute).toHaveBeenCalledWith('Welcome', undefined);
-      expect(mockSetWelcomeScreenAccessedAt).toHaveBeenCalled();
+      expect(mockRefreshBackendSession).toHaveBeenCalled();
+      expect(mockInvitationHomeRoute).toHaveBeenCalledWith('Home', undefined);
       expectResetTo('Home');
     });
-    expect(mockRefreshBackendSession).not.toHaveBeenCalled();
   });
 
-  it('pula Register do postAuthRoute quando o convite abre a home', async () => {
+  it('vai à home quando o fallback do convite substitui rota inválida', async () => {
     mockGetCachedPostAuthRoute.mockReturnValue({ screen: 'Register', params: { userName: 'Camilla' } });
     mockInvitationHomeRoute.mockResolvedValue({
       screen: 'Home',
@@ -181,21 +151,7 @@ describe('useOnboardingRedirect', () => {
     renderHook(() => useOnboardingRedirect(navigation));
 
     await waitFor(() => {
-      expect(mockInvitationHomeRoute).toHaveBeenCalledWith('Register', { userName: 'Camilla' });
-      expectResetTo('Home');
-    });
-  });
-
-  it('mantém Home quando o convite já aponta para a home', async () => {
-    mockGetCachedPostAuthRoute.mockReturnValue({ screen: 'Home' });
-    mockInvitationHomeRoute.mockResolvedValue({
-      screen: 'Home',
-    });
-
-    renderHook(() => useOnboardingRedirect(navigation));
-
-    await waitFor(() => {
-      expect(mockInvitationHomeRoute).toHaveBeenCalledWith('Home', undefined);
+      expect(mockInvitationHomeRoute).toHaveBeenCalledWith(undefined, undefined);
       expectResetTo('Home');
     });
   });

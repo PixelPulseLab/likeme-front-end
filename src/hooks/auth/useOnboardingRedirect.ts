@@ -1,15 +1,13 @@
 import { useCallback, useEffect } from 'react';
 import { Alert } from 'react-native';
 import { FORCE_START_ONBOARDING_LOCALLY } from '@/constants';
-import { AUTH_ONBOARDING_SCREENS_ORDER } from '@/constants/authOnboarding';
 import { storageService, AuthService } from '@/services';
 import { invitationHomeRoute, invitationService } from '@/services/invitation/invitationService';
-import { getCachedPostAuthRoute } from '@/services/auth/applyAuthSessionResponse';
+import { clearCachedPostAuthRoute, getCachedPostAuthRoute } from '@/services/auth/applyAuthSessionResponse';
 import { invalidateApiClientAuthTokenMemoryCache } from '@/services/infrastructure/apiClient';
 import { useTranslation } from '@/hooks/i18n';
 import { isE2eAuthBypassEnabled } from '@/utils/e2e/e2eAuthBypass';
 import { logger } from '@/utils/logger';
-import { getNextOnboardingDestination } from '@/utils/auth/navigation';
 import { resetRootStack, type NavWithParent } from '@/utils/navigation/rootStackNavigation';
 
 async function syncAuthSessionFromBackend(): Promise<void> {
@@ -23,34 +21,19 @@ async function syncAuthSessionFromBackend(): Promise<void> {
   try {
     await AuthService.refreshBackendSessionFromStoredCredentials();
   } catch (error) {
-    logger.warn('[useOnboardingRedirect] syncAuthSessionFromBackend falhou; segue com storage local', {
+    logger.warn('[useOnboardingRedirect] syncAuthSessionFromBackend falhou; segue Home ou Wall', {
       cause: error,
     });
   }
 }
 
-async function destinationFromLocalStorage(): Promise<{ screen: string; params?: object }> {
-  const [welcomeScreenAccessedAt, privacyPolicyAcceptedAt, registerCompletedAt, objectivesSelectedAt, user] =
-    await Promise.all([
-      storageService.getWelcomeScreenAccessedAt(),
-      storageService.getPrivacyPolicyAcceptedAt(),
-      storageService.getRegisterCompletedAt(),
-      storageService.getCategorySelectedAt(),
-      storageService.getUser(),
-    ]);
-
-  if (!welcomeScreenAccessedAt) {
-    return { screen: AUTH_ONBOARDING_SCREENS_ORDER[0] };
+function homeOrWallFromSession(
+  postAuthRoute: { screen: string; params?: object } | null,
+): { screen: string; params?: object } | undefined {
+  if (postAuthRoute?.screen === 'Home' || postAuthRoute?.screen === 'Wall') {
+    return postAuthRoute;
   }
-
-  const displayName = user?.name?.trim() || user?.nickname?.trim() || null;
-  return getNextOnboardingDestination(
-    welcomeScreenAccessedAt,
-    privacyPolicyAcceptedAt,
-    registerCompletedAt,
-    objectivesSelectedAt,
-    displayName,
-  );
+  return undefined;
 }
 
 export function useOnboardingRedirect(navigation: NavWithParent): void {
@@ -80,35 +63,14 @@ export function useOnboardingRedirect(navigation: NavWithParent): void {
           Alert.alert(t('invitation.identityMismatch'));
         }
 
-        const welcomeScreenAccessedAt = await storageService.getWelcomeScreenAccessedAt();
-        if (!welcomeScreenAccessedAt) {
-          const destination = await invitationHomeRoute(AUTH_ONBOARDING_SCREENS_ORDER[0]);
-          if (destination.screen !== AUTH_ONBOARDING_SCREENS_ORDER[0]) {
-            await storageService.setWelcomeScreenAccessedAt(new Date().toISOString());
-          }
-          replace(destination.screen, destination.params);
-          return;
-        }
-
-        let postAuthRoute = getCachedPostAuthRoute();
-        if (!postAuthRoute) {
-          await syncAuthSessionFromBackend();
-          postAuthRoute = getCachedPostAuthRoute();
-        }
-
-        if (postAuthRoute) {
-          const destination = await invitationHomeRoute(postAuthRoute.screen, postAuthRoute.params);
-          replace(destination.screen, destination.params);
-          return;
-        }
-
-        // Rede falhou ou resposta sem postAuthRoute: não empurrar para Register às cegas.
-        const localDestination = await destinationFromLocalStorage();
-        const destination = await invitationHomeRoute(localDestination.screen, localDestination.params);
+        clearCachedPostAuthRoute();
+        await syncAuthSessionFromBackend();
+        const sessionRoute = homeOrWallFromSession(getCachedPostAuthRoute());
+        const destination = await invitationHomeRoute(sessionRoute?.screen, sessionRoute?.params);
         replace(destination.screen, destination.params);
       } catch (error) {
         logger.error('Error checking onboarding status:', error);
-        replace('Register');
+        replace('Wall');
       }
     };
 

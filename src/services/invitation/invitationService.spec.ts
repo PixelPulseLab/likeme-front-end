@@ -205,11 +205,18 @@ describe('invitationHomeRoute', () => {
     mockSetInvitationOpensHome.mockResolvedValue(undefined);
   });
 
-  it('mantém a tela quando o convite não abriu a home', async () => {
+  it('vai ao tapume quando a rota não é Home/Wall e não há convite', async () => {
     await expect(invitationHomeRoute('InterestCategories', { firstName: 'Camilla' })).resolves.toEqual({
-      screen: 'InterestCategories',
-      params: { firstName: 'Camilla' },
+      screen: 'Wall',
     });
+    await expect(invitationHomeRoute()).resolves.toEqual({ screen: 'Wall' });
+  });
+
+  it('mantém o tapume quando a sessão aponta para Wall', async () => {
+    mockGetInvitationOpensHome.mockResolvedValue(true);
+
+    await expect(invitationHomeRoute('Wall')).resolves.toEqual({ screen: 'Wall' });
+    expect(mockTakePendingInvitationProgramDestination).not.toHaveBeenCalled();
   });
 
   it('vai à home quando o convite já foi vinculado', async () => {

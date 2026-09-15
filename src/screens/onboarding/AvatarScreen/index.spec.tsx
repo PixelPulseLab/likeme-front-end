@@ -40,6 +40,24 @@ jest.mock('@/analytics', () => ({
   useAnalyticsScreen: jest.fn(),
 }));
 
+const mockHandleLogin = jest.fn();
+
+jest.mock('@/hooks', () => ({
+  useAuthLogin: () => ({ handleLogin: mockHandleLogin, isLoading: false }),
+}));
+
+jest.mock('@/components/ui', () => {
+  const React = require('react');
+  const { Text, TouchableOpacity } = require('react-native');
+  return {
+    PrimaryButton: ({ label, onPress, testID }: { label: string; onPress: () => void; testID?: string }) => (
+      <TouchableOpacity onPress={onPress} testID={testID}>
+        <Text>{label}</Text>
+      </TouchableOpacity>
+    ),
+  };
+});
+
 describe('AvatarScreen', () => {
   it('mostra o título e os rótulos de mente e corpo', () => {
     const { getByText } = render(
@@ -71,5 +89,8 @@ describe('AvatarScreen', () => {
       expect(getByText('auth.objectiveRelationship')).toBeTruthy();
       expect(getByText('auth.objectiveNutrition')).toBeTruthy();
     });
+
+    fireEvent.press(getByText('invitation.login'));
+    expect(mockHandleLogin).toHaveBeenCalled();
   });
 });

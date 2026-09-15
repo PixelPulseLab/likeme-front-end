@@ -7,6 +7,7 @@ import { KeyboardAwareScreen, ScreenWithHeader } from '@/components/ui/layout';
 import { COLORS, SPACING } from '@/constants';
 import { E2E_TEST_IDS } from '@/constants/e2eTestIds';
 import { invitationCodeValidationI18nKey } from '@/constants/invitation/invitationCodeValidation';
+import { useAuthLogin } from '@/hooks';
 import { useTranslation } from '@/hooks/i18n';
 import { useAnalyticsScreen, logButtonClick, logFormSubmit, logNavigation } from '@/analytics';
 import { useOnboardingRedirect } from '@/hooks/auth/useOnboardingRedirect';
@@ -25,6 +26,8 @@ const InvitationCodeScreen: React.FC<Props> = ({ navigation, route }) => {
   const [fieldError, setFieldError] = useState<string | undefined>(undefined);
   const [isValidating, setIsValidating] = useState(false);
   const canGoBack = typeof navigation.canGoBack === 'function' && navigation.canGoBack();
+  const { handleLogin, isLoading: isLoginLoading } = useAuthLogin(navigation);
+  const isBusy = isValidating || isLoginLoading;
   useOnboardingRedirect(navigation);
 
   useEffect(() => {
@@ -42,7 +45,7 @@ const InvitationCodeScreen: React.FC<Props> = ({ navigation, route }) => {
   };
 
   const handleEnter = async () => {
-    if (isValidating) {
+    if (isBusy) {
       return;
     }
 
@@ -87,8 +90,8 @@ const InvitationCodeScreen: React.FC<Props> = ({ navigation, route }) => {
     }
   };
 
-  const handleInterestAreas = () => {
-    if (isValidating) {
+  const handleInterestAreas = async () => {
+    if (isBusy) {
       return;
     }
     logButtonClick({
@@ -98,10 +101,10 @@ const InvitationCodeScreen: React.FC<Props> = ({ navigation, route }) => {
     });
     logNavigation({
       source_screen: 'invitation_code',
-      destination_screen: 'onboarding_avatar',
+      destination_screen: 'wall',
       action_name: 'interest_areas',
     });
-    navigation.navigate('OnboardingAvatar');
+    await handleLogin();
   };
 
   return (
@@ -138,7 +141,7 @@ const InvitationCodeScreen: React.FC<Props> = ({ navigation, route }) => {
             autoCorrect={false}
             autoComplete='off'
             returnKeyType='done'
-            editable={!isValidating}
+            editable={!isBusy}
             onSubmitEditing={() => {
               void handleEnter();
             }}
@@ -150,7 +153,7 @@ const InvitationCodeScreen: React.FC<Props> = ({ navigation, route }) => {
               void handleEnter();
             }}
             loading={isValidating}
-            disabled={isValidating}
+            disabled={isBusy}
             size='large'
             style={styles.enterButton}
             testID={E2E_TEST_IDS.INVITATION_CODE_ENTER}
@@ -166,8 +169,11 @@ const InvitationCodeScreen: React.FC<Props> = ({ navigation, route }) => {
           </Text>
           <SecondaryButton
             label={t('invitation.interestAreas')}
-            onPress={handleInterestAreas}
-            disabled={isValidating}
+            onPress={() => {
+              void handleInterestAreas();
+            }}
+            loading={isLoginLoading}
+            disabled={isBusy}
             size='large'
             testID={E2E_TEST_IDS.INVITATION_CODE_INTERESTS}
           />

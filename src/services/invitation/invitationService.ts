@@ -84,15 +84,18 @@ function isUnrecoverableInvitationActivationError(error: unknown): boolean {
 }
 
 export async function invitationHomeRoute(
-  screen: string,
+  screen?: string,
   params?: object,
 ): Promise<{ screen: string; params?: object }> {
+  if (screen === 'Home' || screen === 'Wall') {
+    return { screen, params };
+  }
   if (await storageService.getInvitationOpensHome()) {
     return { screen: 'Home' };
   }
   const pending = await storageService.takePendingInvitationProgramDestination();
   if (!pending) {
-    return { screen, params };
+    return { screen: 'Wall' };
   }
   await storageService.setInvitationOpensHome();
   return { screen: 'Home' };

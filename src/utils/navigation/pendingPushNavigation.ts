@@ -22,6 +22,13 @@ export function canNavigateFromPush(activeRouteName: string | undefined): boolea
     return false;
   }
 
-  const blockedRoutes = new Set(['Loading', 'Unauthenticated', 'InvitationCode', 'Authenticated', 'ForcedUpdate']);
+  const blockedRoutes = new Set([
+    'Loading',
+    'Unauthenticated',
+    'InvitationCode',
+    'Wall',
+    'Authenticated',
+    'ForcedUpdate',
+  ]);
   return !blockedRoutes.has(activeRouteName);
 }

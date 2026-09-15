@@ -7,6 +7,7 @@ export const E2E_TEST_IDS = {
   ONBOARDING_AVATAR_MIND: 'e2e.onboarding.avatarMind',
   ONBOARDING_AVATAR_BODY: 'e2e.onboarding.avatarBody',
   ONBOARDING_AVATAR_CATEGORIES: 'e2e.onboarding.avatarCategories',
+  WALL_ROOT: 'e2e.wall.root',
   INVITATION_CONTEXT_CONTINUE: 'e2e.invitation.contextContinue',
   UNAUTH_LOGIN: 'e2e.unauth.login',
   UNAUTH_E2E_CONTINUE: 'e2e.unauth.e2eContinue',

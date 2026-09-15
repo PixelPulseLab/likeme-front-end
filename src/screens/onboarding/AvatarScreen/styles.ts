@@ -56,4 +56,11 @@ export const styles = StyleSheet.create({
   categoryCloud: {
     ...StyleSheet.absoluteFillObject,
   },
+  footer: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: SPACING.LG,
+    paddingHorizontal: SPACING.MD,
+  },
 });

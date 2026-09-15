@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, Pressable, Text, View } from 'react-native';
 import type { StackScreenProps } from '@react-navigation/stack';
 import { OnboardingBodyAvatar, OnboardingMindAvatar } from '@/assets/auth';
+import { PrimaryButton } from '@/components/ui';
 import { CachedImage } from '@/components/ui/media/CachedImage';
 import { ScreenWithHeader } from '@/components/ui/layout';
 import { COLORS } from '@/constants';
@@ -9,6 +10,7 @@ import BubbleMap from '@/components/ui/BubbleMap';
 import { E2E_TEST_IDS } from '@/constants/e2eTestIds';
 import { INTEREST_CATEGORIES } from '@/hooks/interestCategories/useInterestCategories';
 import { useAnalyticsScreen } from '@/analytics';
+import { useAuthLogin } from '@/hooks';
 import { useTranslation } from '@/hooks/i18n';
 import type { RootStackParamList } from '@/types/navigation';
 import { CATEGORY_BUBBLE_PILLAR, CATEGORY_BUBBLE_SOURCE, PACKED_CATEGORY_BUBBLES } from './categoryBubbles';
@@ -26,6 +28,7 @@ const AVATAR_ENTER_SCALE = 0.78;
 const AvatarScreen: React.FC<Props> = ({ navigation }) => {
   useAnalyticsScreen({ screenName: 'OnboardingAvatar', screenClass: 'AvatarScreen' });
   const { t } = useTranslation();
+  const { handleLogin, isLoading: isLoginLoading } = useAuthLogin(navigation);
   const avatarsOpacity = useRef(new Animated.Value(0)).current;
   const avatarsScale = useRef(new Animated.Value(AVATAR_ENTER_SCALE)).current;
   const titlesOpacity = useRef(new Animated.Value(1)).current;
@@ -143,6 +146,17 @@ const AvatarScreen: React.FC<Props> = ({ navigation }) => {
                 label: t(CATEGORY_BUBBLE_I18N_KEY[bubble.id]),
               }))}
             />
+            <View style={styles.footer}>
+              <PrimaryButton
+                label={t('invitation.login')}
+                onPress={() => {
+                  void handleLogin();
+                }}
+                loading={isLoginLoading}
+                disabled={isLoginLoading}
+                size='large'
+              />
+            </View>
           </Animated.View>
         ) : null}
       </View>

@@ -3,6 +3,7 @@ import InvitationCodeScreen from './index';
 import { INVITATION_CODE_VALIDATION_ERROR } from '@/constants/invitation/invitationCodeValidation';
 
 const mockValidateCode = jest.fn();
+const mockHandleLogin = jest.fn();
 
 jest.mock('react-native-safe-area-context', () => {
   const ReactNative = require('react-native');
@@ -77,6 +78,13 @@ jest.mock('@/services/invitation/invitationService', () => ({
   },
 }));
 
+jest.mock('@/hooks', () => ({
+  useAuthLogin: () => ({
+    handleLogin: mockHandleLogin,
+    isLoading: false,
+  }),
+}));
+
 jest.mock('@/hooks/auth/useOnboardingRedirect', () => ({
   useOnboardingRedirect: jest.fn(),
 }));
@@ -140,7 +148,7 @@ describe('InvitationCodeScreen', () => {
     expect(getByPlaceholderText('invitation.codePlaceholder').props.value).toBe('7F3K9Q');
   });
 
-  it('oferece áreas de interesse e navega sem validar o código', () => {
+  it('oferece áreas de interesse e abre o login sem validar o código', async () => {
     const navigation = { navigate: jest.fn() };
     const { getByText } = render(
       <InvitationCodeScreen navigation={navigation as never} route={{ params: undefined } as never} />,
@@ -149,7 +157,10 @@ describe('InvitationCodeScreen', () => {
     expect(getByText('invitation.notInvitedTitle')).toBeTruthy();
     fireEvent.press(getByText('invitation.interestAreas'));
 
-    expect(navigation.navigate).toHaveBeenCalledWith('OnboardingAvatar');
+    await waitFor(() => {
+      expect(mockHandleLogin).toHaveBeenCalled();
+    });
+    expect(navigation.navigate).not.toHaveBeenCalled();
     expect(mockValidateCode).not.toHaveBeenCalled();
   });
 

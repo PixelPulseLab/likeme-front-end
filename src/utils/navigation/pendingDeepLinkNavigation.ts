@@ -34,6 +34,7 @@ export function canNavigateFromDeepLink(activeRouteName: string | undefined): bo
     'Loading',
     'Unauthenticated',
     'InvitationCode',
+    'Wall',
     'Authenticated',
     'ForcedUpdate',
     'AppLoading',
