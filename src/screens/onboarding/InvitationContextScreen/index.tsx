@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import { Alert, Text, View } from 'react-native';
 import type { StackScreenProps } from '@react-navigation/stack';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { InvitationContextBackground } from '@/assets/auth';
 import { PartnerSection } from '@/components/sections/advertiser/PartnerSection';
 import { PrimaryButton } from '@/components/ui';
 import { JoinCard } from '@/components/ui/cards/JoinCard';
 import { KeyboardAwareScreen, ScreenWithHeader } from '@/components/ui/layout';
 import { CachedImage } from '@/components/ui/media/CachedImage';
-import { MARKETPLACE_PRODUCT_PLACEHOLDER_IMAGE_URI } from '@/constants';
+import { MARKETPLACE_PRODUCT_PLACEHOLDER_IMAGE_URI, SPACING } from '@/constants';
 import { PRODUCT_CATALOG_TYPE, catalogTypeTranslatedBadgeLabels } from '@/types/product';
 import { E2E_TEST_IDS } from '@/constants/e2eTestIds';
 import { invitationCodeValidationI18nKey } from '@/constants/invitation/invitationCodeValidation';
@@ -39,7 +40,9 @@ function hasInvitationContext(
 const InvitationContextScreen: React.FC<Props> = ({ navigation, route }) => {
   useAnalyticsScreen({ screenName: 'InvitationContext', screenClass: 'InvitationContextScreen' });
   const { t } = useTranslation();
+  const { bottom: bottomInset } = useSafeAreaInsets();
   const { handleLogin, isLoading: isLoginLoading } = useAuthLogin(navigation);
+  const footerPaddingBottom = Math.max(bottomInset, SPACING.MD);
   const [isContinuing, setIsContinuing] = useState(false);
   const isBusy = isContinuing || isLoginLoading;
   const invitation = hasInvitationContext(route.params) ? route.params : null;
@@ -125,9 +128,9 @@ const InvitationContextScreen: React.FC<Props> = ({ navigation, route }) => {
         {invitation ? (
           <KeyboardAwareScreen
             scrollContentContainerStyle={styles.scrollContent}
-            includeBottomSafeAreaOnFooter
+            includeBottomSafeAreaOnFooter={false}
             footer={
-              <View style={styles.footer}>
+              <View style={[styles.footer, { paddingBottom: footerPaddingBottom }]}>
                 <PrimaryButton
                   label={t('invitation.login')}
                   onPress={() => {
