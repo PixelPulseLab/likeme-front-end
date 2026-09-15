@@ -1,10 +1,35 @@
 module.exports = {
   root: true,
+  plugins: ['import'],
   extends: ['eslint:recommended', 'plugin:@typescript-eslint/recommended', 'prettier', '@react-native/eslint-config'],
+  settings: {
+    'import/parsers': {
+      '@typescript-eslint/parser': ['.ts', '.tsx'],
+    },
+    'import/resolver': {
+      alias: {
+        map: [['@', './src']],
+        extensions: ['.ts', '.tsx', '.js', '.jsx', '.json'],
+      },
+      node: {
+        extensions: ['.ts', '.tsx', '.js', '.jsx'],
+      },
+    },
+  },
   rules: {
     curly: ['warn', 'multi-line'],
     'react-hooks/exhaustive-deps': 'warn',
     'jsx-quotes': ['warn', 'prefer-single'],
+    'import/no-unused-modules': [
+      'warn',
+      {
+        unusedExports: true,
+        missingExports: false,
+        ignoreUnusedTypeExports: true,
+        src: ['./src/**/*.{js,jsx,ts,tsx}'],
+        ignoreExports: ['./src/screens/**/index.ts', './src/screens/**/index.tsx', './src/navigation/**/*.{ts,tsx}'],
+      },
+    ],
   },
   ignorePatterns: [
     'node_modules/',
