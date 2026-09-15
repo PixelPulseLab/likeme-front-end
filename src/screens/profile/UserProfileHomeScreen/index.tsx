@@ -62,6 +62,10 @@ const UserProfileHomeScreen: React.FC<Props> = ({ navigation }) => {
     navigation.navigate('SettingsAndSecurity');
   }, [navigation]);
 
+  const handleNotificationsPress = useCallback(() => {
+    navigation.navigate('NotificationPreferences');
+  }, [navigation]);
+
   const accountMenuItems: AccountMenuItem[] = [
     {
       key: 'personal-data',
@@ -82,7 +86,7 @@ const UserProfileHomeScreen: React.FC<Props> = ({ navigation }) => {
       labelKey: 'profile.home.notifications',
       labelDefault: 'Notificações',
       IconComponent: PROFILE_HOME_MENU_ICONS.notifications,
-      disabled: true,
+      onPress: handleNotificationsPress,
     },
     {
       key: 'settings-and-security',

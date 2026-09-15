@@ -24,4 +24,5 @@ export { default as eventService } from './event/eventService';
 
 export { default as notificationService } from './notification/notificationService';
 export { default as notificationApiService } from './notification/notificationApiService';
+export { notificationPreferenceService } from './notification/notificationPreferenceService';
 export { default as featureFlagService } from './featureFlags/featureFlagService';

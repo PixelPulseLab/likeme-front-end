@@ -49,6 +49,7 @@ import {
   getInterestCategoriesEditScreen,
   getPersonalDataEditScreen,
   getSettingsAndSecurityScreen,
+  getNotificationPreferencesScreen,
   getDesignSystemScreen,
   getDeleteAccountScreen,
   getProtocolDetailScreen,
@@ -258,6 +259,13 @@ const RootNavigator: React.FC = () => {
                     title: t('profile.settingsAndSecurity.title', {
                       defaultValue: 'Configurações e segurança',
                     }),
+                  }}
+                />
+                <Stack.Screen
+                  name='NotificationPreferences'
+                  getComponent={getNotificationPreferencesScreen}
+                  options={{
+                    title: t('profile.notifications.title', { defaultValue: 'Notificação' }),
                   }}
                 />
                 {__DEV__ ? (

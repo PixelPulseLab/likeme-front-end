@@ -119,6 +119,7 @@ type RootStackParamListCore = {
   PersonalDataEdit: undefined;
   InterestCategoriesEdit: undefined;
   SettingsAndSecurity: undefined;
+  NotificationPreferences: undefined;
   DesignSystem: undefined;
   DeleteAccount: undefined;
   SubscriptionList: undefined;
