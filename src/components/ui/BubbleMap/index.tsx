@@ -10,7 +10,13 @@ import {
   type PinchGestureHandlerStateChangeEvent,
 } from 'react-native-gesture-handler';
 import { CachedImage } from '@/components/ui/media/CachedImage';
-import { BUBBLE_MAP_SCALE, boundsForBubbleMap, bubbleMapFisheyeScale, clampBubbleMapCamera } from './camera';
+import {
+  BUBBLE_MAP_SCALE,
+  boundsForBubbleMap,
+  bubbleMapFisheyeScale,
+  clampBubbleMapCamera,
+  type BubbleMapCamera,
+} from './camera';
 import { styles } from './styles';
 
 export type BubbleMapItem = {
@@ -32,9 +38,9 @@ const BubbleMap: React.FC<Props> = ({ bubbles, testID }) => {
   const panRef = useRef<PanGestureHandler>(null);
   const [viewportSize, setViewportSize] = useState({ width: 0, height: 0 });
   const viewport = useRef(viewportSize);
-  const camera = useRef({ x: 0, y: 0, scale: BUBBLE_MAP_SCALE.initial });
+  const camera = useRef<BubbleMapCamera>({ x: 0, y: 0, scale: BUBBLE_MAP_SCALE.initial });
   const panOrigin = useRef({ x: 0, y: 0 });
-  const pinchOrigin = useRef({ x: 0, y: 0, scale: BUBBLE_MAP_SCALE.initial });
+  const pinchOrigin = useRef<BubbleMapCamera>({ x: 0, y: 0, scale: BUBBLE_MAP_SCALE.initial });
   const translateX = useRef(new Animated.Value(0)).current;
   const translateY = useRef(new Animated.Value(0)).current;
   const scale = useRef(new Animated.Value(BUBBLE_MAP_SCALE.initial)).current;
