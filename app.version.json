@@ -1,19 +1,24 @@
 {
-  "version": "1.16.0",
-  "releasedAt": "2026-09-10",
+  "version": "1.16.1",
+  "releasedAt": "2026-09-15",
   "android": {
-    "versionCode": 260
+    "versionCode": 261
   },
   "ios": {
-    "buildNumber": 36
+    "buildNumber": 37
   },
   "changelog": {
     "added": [
-      "Tela inicial de convite com Começar, código e celebração do programa",
-      "Depois do login pelo convite, abre o programa sem onboarding nem cadastro"
+      "Já tenho cadastro na tela inicial para entrar direto na conta",
+      "Tapume depois do login para quem ainda não tem convite",
+      "Mapa de categorias no onboarding, com toque no avatar"
     ],
     "changed": [
-      "Logar na celebração do convite abre o Auth0 na hora, sem voltar à landing"
+      "Depois de ativar o convite, abre a home sem passar pelo cadastro"
+    ],
+    "fixed": [
+      "Espaço do botão Logar na celebração do convite no Android",
+      "Login sem convite não tenta mais vincular um código antigo à conta"
     ]
   }
 }

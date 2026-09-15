@@ -332,3 +332,17 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 
 ### Alterado
 - Logar na celebração do convite abre o Auth0 na hora, sem voltar à landing
+
+## [1.16.1] - 2026-09-15
+
+### Adicionado
+- Já tenho cadastro na tela inicial para entrar direto na conta
+- Tapume depois do login para quem ainda não tem convite
+- Mapa de categorias no onboarding, com toque no avatar
+
+### Alterado
+- Depois de ativar o convite, abre a home sem passar pelo cadastro
+
+### Corrigido
+- Espaço do botão Logar na celebração do convite no Android
+- Login sem convite não tenta mais vincular um código antigo à conta
