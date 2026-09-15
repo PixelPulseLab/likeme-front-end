@@ -1,5 +1,8 @@
-import { StyleSheet } from 'react-native';
+import { Platform, StyleSheet } from 'react-native';
 import { COLORS, TYPOGRAPHY } from '@/constants';
+
+const androidLabelAlign =
+  Platform.OS === 'android' ? { includeFontPadding: false as const, textAlignVertical: 'center' as const } : {};
 
 export const styles = StyleSheet.create({
   button: {
@@ -34,11 +37,13 @@ export const styles = StyleSheet.create({
     ...TYPOGRAPHY.labelMd,
     color: COLORS.WHITE,
     textAlign: 'center',
+    ...androidLabelAlign,
   },
   labelLight: {
     ...TYPOGRAPHY.labelMd,
     color: COLORS.TEXT,
     textAlign: 'center',
+    ...androidLabelAlign,
   },
   buttonDisabled: {
     opacity: 0.6,

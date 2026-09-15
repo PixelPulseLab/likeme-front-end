@@ -55,6 +55,8 @@ type RootStackParamListCore = {
   Unauthenticated: { skipAutoLogin?: boolean; startLogin?: boolean } | undefined;
   InvitationCode: { code?: string } | undefined;
   InvitationContext: InvitationCodeValidationContext;
+  OnboardingAvatar: undefined;
+  Wall: undefined;
   Authenticated: undefined;
   Welcome: undefined;
   AppPresentation: { userName?: string };

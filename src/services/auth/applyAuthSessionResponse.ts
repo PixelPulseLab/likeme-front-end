@@ -19,8 +19,7 @@ import { logger } from '@/utils/logger';
 import storageService from './storageService';
 import { setOnboardingStep } from './setOnboardingStep';
 
-/** Telas que o backend pode indicar em `postAuthRoute` (espelha AuthSessionPostAuthScreen). */
-const AUTH_SESSION_POST_AUTH_SCREENS = new Set(['Home', 'PrivacyPolicies', 'Register', 'InterestCategories']);
+const AUTH_SESSION_POST_AUTH_SCREENS = new Set(['Home', 'Wall']);
 
 export type AuthSessionPostAuthRoute = {
   screen: string;

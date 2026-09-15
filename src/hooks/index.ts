@@ -87,6 +87,7 @@ export { useSolutions } from './solution/useSolutions';
 
 // Navigation hooks
 export { useMenuItems } from './navigation/useMenuItems';
+export { useNavigation } from './navigation/useNavigation';
 
 // Subscription hooks
 export { useSubscriptionList } from './subscription/useSubscriptionList';

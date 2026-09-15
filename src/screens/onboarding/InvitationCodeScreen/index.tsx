@@ -2,13 +2,15 @@ import React, { useEffect, useState } from 'react';
 import { Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { StackScreenProps } from '@react-navigation/stack';
-import { PrimaryButton, TextInput } from '@/components/ui';
+import { PrimaryButton, SecondaryButton, TextInput } from '@/components/ui';
 import { KeyboardAwareScreen, ScreenWithHeader } from '@/components/ui/layout';
-import { COLORS } from '@/constants';
+import { COLORS, SPACING } from '@/constants';
 import { E2E_TEST_IDS } from '@/constants/e2eTestIds';
 import { invitationCodeValidationI18nKey } from '@/constants/invitation/invitationCodeValidation';
+import { useAuthLogin } from '@/hooks';
 import { useTranslation } from '@/hooks/i18n';
-import { useAnalyticsScreen, logFormSubmit, logNavigation } from '@/analytics';
+import { useAnalyticsScreen, logButtonClick, logFormSubmit, logNavigation } from '@/analytics';
+import { useOnboardingRedirect } from '@/hooks/auth/useOnboardingRedirect';
 import { invitationService } from '@/services/invitation/invitationService';
 import type { RootStackParamList } from '@/types/navigation';
 import { logger } from '@/utils/logger';
@@ -24,6 +26,9 @@ const InvitationCodeScreen: React.FC<Props> = ({ navigation, route }) => {
   const [fieldError, setFieldError] = useState<string | undefined>(undefined);
   const [isValidating, setIsValidating] = useState(false);
   const canGoBack = typeof navigation.canGoBack === 'function' && navigation.canGoBack();
+  const { handleLogin, isLoading: isLoginLoading } = useAuthLogin(navigation);
+  const isBusy = isValidating || isLoginLoading;
+  useOnboardingRedirect(navigation);
 
   useEffect(() => {
     const next = route.params?.code;
@@ -40,7 +45,7 @@ const InvitationCodeScreen: React.FC<Props> = ({ navigation, route }) => {
   };
 
   const handleEnter = async () => {
-    if (isValidating) {
+    if (isBusy) {
       return;
     }
 
@@ -85,6 +90,23 @@ const InvitationCodeScreen: React.FC<Props> = ({ navigation, route }) => {
     }
   };
 
+  const handleInterestAreas = async () => {
+    if (isBusy) {
+      return;
+    }
+    logButtonClick({
+      screen_name: 'invitation_code',
+      button_label: 'interest_areas',
+      action_name: 'interest_areas',
+    });
+    logNavigation({
+      source_screen: 'invitation_code',
+      destination_screen: 'wall',
+      action_name: 'interest_areas',
+    });
+    await handleLogin({ discardPendingInvitation: true });
+  };
+
   return (
     <ScreenWithHeader
       navigation={navigation}
@@ -97,22 +119,10 @@ const InvitationCodeScreen: React.FC<Props> = ({ navigation, route }) => {
       contentContainerStyle={styles.container}
     >
       <KeyboardAwareScreen
-        scrollContentContainerStyle={styles.scrollContent}
-        includeBottomSafeAreaOnFooter={false}
-        footer={
-          <View style={[styles.footer, bottomInset > 0 ? { paddingBottom: 0 } : null]}>
-            <PrimaryButton
-              label={t('invitation.enter')}
-              onPress={() => {
-                void handleEnter();
-              }}
-              loading={isValidating}
-              disabled={isValidating}
-              size='large'
-              testID={E2E_TEST_IDS.INVITATION_CODE_ENTER}
-            />
-          </View>
-        }
+        scrollContentContainerStyle={[
+          styles.scrollContent,
+          bottomInset > 0 ? { paddingBottom: SPACING.XL + bottomInset } : null,
+        ]}
       >
         <Text style={styles.headline}>{t('invitation.headline')}</Text>
         <View style={styles.block}>
@@ -131,11 +141,41 @@ const InvitationCodeScreen: React.FC<Props> = ({ navigation, route }) => {
             autoCorrect={false}
             autoComplete='off'
             returnKeyType='done'
-            editable={!isValidating}
+            editable={!isBusy}
             onSubmitEditing={() => {
               void handleEnter();
             }}
             testID={E2E_TEST_IDS.INVITATION_CODE_INPUT}
+          />
+          <PrimaryButton
+            label={t('invitation.enter')}
+            onPress={() => {
+              void handleEnter();
+            }}
+            loading={isValidating}
+            disabled={isBusy}
+            size='large'
+            style={styles.enterButton}
+            testID={E2E_TEST_IDS.INVITATION_CODE_ENTER}
+          />
+        </View>
+        <View style={styles.separator} />
+        <View style={styles.block}>
+          <Text style={styles.blockTitle}>{t('invitation.notInvitedTitle')}</Text>
+          <Text style={styles.blockBody}>
+            {t('invitation.notInvitedBodyPrefix')}
+            <Text style={styles.blockBodyEmphasis}>{t('invitation.notInvitedBodyEmphasis')}</Text>
+            {t('invitation.notInvitedBodySuffix')}
+          </Text>
+          <SecondaryButton
+            label={t('invitation.interestAreas')}
+            onPress={() => {
+              void handleInterestAreas();
+            }}
+            loading={isLoginLoading}
+            disabled={isBusy}
+            size='large'
+            testID={E2E_TEST_IDS.INVITATION_CODE_INTERESTS}
           />
         </View>
       </KeyboardAwareScreen>

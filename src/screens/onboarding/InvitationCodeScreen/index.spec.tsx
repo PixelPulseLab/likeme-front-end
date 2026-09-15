@@ -3,6 +3,7 @@ import InvitationCodeScreen from './index';
 import { INVITATION_CODE_VALIDATION_ERROR } from '@/constants/invitation/invitationCodeValidation';
 
 const mockValidateCode = jest.fn();
+const mockHandleLogin = jest.fn();
 
 jest.mock('react-native-safe-area-context', () => {
   const ReactNative = require('react-native');
@@ -30,6 +31,11 @@ jest.mock('@/components/ui', () => {
       </View>
     ),
     PrimaryButton: ({ label, onPress, testID }: any) => (
+      <TouchableOpacity onPress={onPress} testID={testID}>
+        <Text>{label}</Text>
+      </TouchableOpacity>
+    ),
+    SecondaryButton: ({ label, onPress, testID }: any) => (
       <TouchableOpacity onPress={onPress} testID={testID}>
         <Text>{label}</Text>
       </TouchableOpacity>
@@ -70,6 +76,17 @@ jest.mock('@/services/invitation/invitationService', () => ({
   invitationService: {
     validateCode: (...args: unknown[]) => mockValidateCode(...args),
   },
+}));
+
+jest.mock('@/hooks', () => ({
+  useAuthLogin: () => ({
+    handleLogin: mockHandleLogin,
+    isLoading: false,
+  }),
+}));
+
+jest.mock('@/hooks/auth/useOnboardingRedirect', () => ({
+  useOnboardingRedirect: jest.fn(),
 }));
 
 const validContext = {
@@ -131,13 +148,20 @@ describe('InvitationCodeScreen', () => {
     expect(getByPlaceholderText('invitation.codePlaceholder').props.value).toBe('7F3K9Q');
   });
 
-  it('não oferece áreas de interesse nesta tela', () => {
-    const { queryByText } = render(
-      <InvitationCodeScreen navigation={{ navigate: jest.fn() } as never} route={{ params: undefined } as never} />,
+  it('oferece áreas de interesse e abre o login sem validar o código', async () => {
+    const navigation = { navigate: jest.fn() };
+    const { getByText } = render(
+      <InvitationCodeScreen navigation={navigation as never} route={{ params: undefined } as never} />,
     );
 
-    expect(queryByText('invitation.notInvitedTitle')).toBeNull();
-    expect(queryByText('invitation.interestAreas')).toBeNull();
+    expect(getByText('invitation.notInvitedTitle')).toBeTruthy();
+    fireEvent.press(getByText('invitation.interestAreas'));
+
+    await waitFor(() => {
+      expect(mockHandleLogin).toHaveBeenCalledWith({ discardPendingInvitation: true });
+    });
+    expect(navigation.navigate).not.toHaveBeenCalled();
+    expect(mockValidateCode).not.toHaveBeenCalled();
   });
 
   it('preenche o campo a partir de route.params.code', () => {

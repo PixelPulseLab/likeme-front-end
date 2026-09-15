@@ -1,6 +1,6 @@
 import apiClient from '@/services/infrastructure/apiClient';
 import storageService from '@/services/auth/storageService';
-import { invitationProgramRouteInsteadOfHome, invitationService } from '@/services/invitation/invitationService';
+import { invitationHomeRoute, invitationService } from '@/services/invitation/invitationService';
 import { INVITATION_CODE_VALIDATION_ERROR } from '@/constants/invitation/invitationCodeValidation';
 
 jest.mock('@/utils/logger', () => ({
@@ -26,8 +26,10 @@ jest.mock('@/services/auth/storageService', () => ({
     removePendingInvitationCode: jest.fn(),
     getUser: jest.fn(),
     setUser: jest.fn(),
-    setPendingInvitationProgramDestination: jest.fn(),
+    setInvitationOpensHome: jest.fn(),
+    getInvitationOpensHome: jest.fn(),
     takePendingInvitationProgramDestination: jest.fn(),
+    removePendingInvitationProgramDestination: jest.fn(),
   },
 }));
 
@@ -36,8 +38,11 @@ const mockGetPendingInvitationCode = storageService.getPendingInvitationCode as 
 const mockRemovePendingInvitationCode = storageService.removePendingInvitationCode as jest.Mock;
 const mockGetUser = storageService.getUser as jest.Mock;
 const mockSetUser = storageService.setUser as jest.Mock;
-const mockSetPendingInvitationProgramDestination = storageService.setPendingInvitationProgramDestination as jest.Mock;
+const mockSetInvitationOpensHome = storageService.setInvitationOpensHome as jest.Mock;
+const mockGetInvitationOpensHome = storageService.getInvitationOpensHome as jest.Mock;
 const mockTakePendingInvitationProgramDestination = storageService.takePendingInvitationProgramDestination as jest.Mock;
+const mockRemovePendingInvitationProgramDestination =
+  storageService.removePendingInvitationProgramDestination as jest.Mock;
 
 const validContext = {
   code: '7F3K9Q',
@@ -128,6 +133,8 @@ describe('invitationService.activatePendingStoredCode', () => {
     mockGetUser.mockResolvedValue({ email: 'camilla@email.com' });
     mockSetUser.mockResolvedValue(undefined);
     mockRemovePendingInvitationCode.mockResolvedValue(undefined);
+    mockSetInvitationOpensHome.mockResolvedValue(undefined);
+    mockRemovePendingInvitationProgramDestination.mockResolvedValue(undefined);
   });
 
   it('não chama a API quando não há código pendente', async () => {
@@ -150,12 +157,26 @@ describe('invitationService.activatePendingStoredCode', () => {
       context: { ...validContext, displayName: 'Camilla', alreadyParticipating: false },
     });
     expect(mockRemovePendingInvitationCode).toHaveBeenCalled();
-    expect(mockSetPendingInvitationProgramDestination).toHaveBeenCalledWith({
-      productId: 'program-1',
-      programType: 'course',
-      communityId: 'community-1',
-    });
+    expect(mockSetInvitationOpensHome).toHaveBeenCalled();
+    expect(mockRemovePendingInvitationProgramDestination).toHaveBeenCalled();
     expect(mockSetUser).toHaveBeenCalledWith({ email: 'camilla@email.com', name: 'Camilla' });
+  });
+
+  it('abre a home também quando o usuário já participa do programa', async () => {
+    mockGetPendingInvitationCode.mockResolvedValue('7F3K9Q');
+    mockPost.mockResolvedValue({
+      success: true,
+      message: 'Convite vinculado',
+      data: { ...validContext, displayName: 'Camilla', alreadyParticipating: true },
+    });
+
+    await expect(invitationService.activatePendingStoredCode()).resolves.toEqual({
+      outcome: 'linked',
+      context: { ...validContext, displayName: 'Camilla', alreadyParticipating: true },
+    });
+    expect(mockRemovePendingInvitationCode).toHaveBeenCalled();
+    expect(mockSetInvitationOpensHome).toHaveBeenCalled();
+    expect(mockRemovePendingInvitationProgramDestination).toHaveBeenCalled();
   });
 
   it('trata mismatch de identidade sem deixar o código pendente', async () => {
@@ -164,7 +185,7 @@ describe('invitationService.activatePendingStoredCode', () => {
 
     await expect(invitationService.activatePendingStoredCode()).resolves.toEqual({ outcome: 'mismatch' });
     expect(mockRemovePendingInvitationCode).toHaveBeenCalled();
-    expect(mockSetPendingInvitationProgramDestination).not.toHaveBeenCalled();
+    expect(mockSetInvitationOpensHome).not.toHaveBeenCalled();
   });
 
   it('mantém o código pendente quando a rede falha', async () => {
@@ -176,60 +197,45 @@ describe('invitationService.activatePendingStoredCode', () => {
   });
 });
 
-describe('invitationProgramRouteInsteadOfHome', () => {
+describe('invitationHomeRoute', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-  });
-
-  it('mantém a tela quando não há destino de convite pendente', async () => {
+    mockGetInvitationOpensHome.mockResolvedValue(false);
     mockTakePendingInvitationProgramDestination.mockResolvedValue(null);
-
-    await expect(invitationProgramRouteInsteadOfHome('InterestCategories', { firstName: 'Camilla' })).resolves.toEqual({
-      screen: 'InterestCategories',
-      params: { firstName: 'Camilla' },
-    });
-    expect(mockTakePendingInvitationProgramDestination).toHaveBeenCalled();
+    mockSetInvitationOpensHome.mockResolvedValue(undefined);
   });
 
-  it('vai ao programa mesmo quando o destino seria onboarding', async () => {
-    mockTakePendingInvitationProgramDestination.mockResolvedValue({
-      productId: 'program-1',
-      programType: 'course',
-      communityId: null,
+  it('vai ao tapume quando a rota não é Home/Wall e não há convite', async () => {
+    await expect(invitationHomeRoute('InterestCategories', { firstName: 'Camilla' })).resolves.toEqual({
+      screen: 'Wall',
     });
-
-    await expect(invitationProgramRouteInsteadOfHome('Register', { userName: 'Camilla' })).resolves.toEqual({
-      screen: 'ProtocolDetail',
-      params: { productId: 'program-1' },
-    });
+    await expect(invitationHomeRoute()).resolves.toEqual({ screen: 'Wall' });
   });
 
-  it('vai ao ProtocolDetail do convite quando o destino seria Home', async () => {
+  it('mantém o tapume quando a sessão aponta para Wall', async () => {
+    mockGetInvitationOpensHome.mockResolvedValue(true);
+
+    await expect(invitationHomeRoute('Wall')).resolves.toEqual({ screen: 'Wall' });
+    expect(mockTakePendingInvitationProgramDestination).not.toHaveBeenCalled();
+  });
+
+  it('vai à home quando o convite já foi vinculado', async () => {
+    mockGetInvitationOpensHome.mockResolvedValue(true);
+
+    await expect(invitationHomeRoute('Register', { userName: 'Camilla' })).resolves.toEqual({
+      screen: 'Home',
+    });
+    expect(mockTakePendingInvitationProgramDestination).not.toHaveBeenCalled();
+  });
+
+  it('vai à home e persiste o atalho quando ainda há destino antigo de programa', async () => {
     mockTakePendingInvitationProgramDestination.mockResolvedValue({
       productId: 'program-1',
       programType: 'course',
       communityId: 'community-1',
     });
 
-    await expect(invitationProgramRouteInsteadOfHome('Home')).resolves.toEqual({
-      screen: 'ProtocolDetail',
-      params: { productId: 'program-1' },
-    });
-  });
-
-  it('vai ao feed da comunidade quando o programa é community', async () => {
-    mockTakePendingInvitationProgramDestination.mockResolvedValue({
-      productId: 'program-1',
-      programType: 'community',
-      communityId: 'community-1',
-    });
-
-    await expect(invitationProgramRouteInsteadOfHome('Home')).resolves.toEqual({
-      screen: 'Community',
-      params: {
-        screen: 'CommunityList',
-        params: { focusCommunityId: 'community-1', programType: 'community' },
-      },
-    });
+    await expect(invitationHomeRoute('Welcome')).resolves.toEqual({ screen: 'Home' });
+    expect(mockSetInvitationOpensHome).toHaveBeenCalled();
   });
 });

@@ -441,6 +441,7 @@ describe('convite /invite (APP-421)', () => {
   });
 
   it('preenche o código se a tela de convite já está aberta', async () => {
+    (storageService.getToken as jest.Mock).mockResolvedValue(null);
     const navigationRef = createNavigationRef();
 
     await openDeepLinkTarget(navigationRef, INVITE_URL, 'InvitationCode');
@@ -454,6 +455,7 @@ describe('convite /invite (APP-421)', () => {
   });
 
   it('enfileira o convite durante o Loading e entrega em InvitationCode', async () => {
+    (storageService.getToken as jest.Mock).mockResolvedValue(null);
     const navigationRef = createNavigationRef();
 
     await openDeepLinkTarget(navigationRef, INVITE_URL, 'Loading');
@@ -472,13 +474,37 @@ describe('convite /invite (APP-421)', () => {
     expect(consumePendingDeepLinkNavigation()).toBeNull();
   });
 
-  it('apresenta a etapa do código para returning user autenticado', async () => {
+  it('manda returning user autenticado para a home sem abrir o convite', async () => {
     const navigationRef = createNavigationRef();
 
     await openDeepLinkTarget(navigationRef, INVITE_URL, 'Loading');
     await flushPendingDeepLinkNavigation(navigationRef, 'Authenticated');
 
-    expect(navigationRef.dispatch).toHaveBeenCalledWith(invitationResetAction('7F3K9Q'));
+    expect(navigationRef.dispatch).not.toHaveBeenCalled();
+    expect(consumePendingDeepLinkNavigation()).toBeNull();
+  });
+
+  it('redireciona para a home quando o usuário autenticado abre o convite fora do bootstrap', async () => {
+    const navigationRef = createNavigationRef();
+
+    await openDeepLinkTarget(navigationRef, INVITE_URL, 'Community');
+
+    expect(navigationRef.dispatch).toHaveBeenCalledWith(
+      CommonActions.reset({
+        index: 0,
+        routes: [{ name: SHARE_DEEP_LINK_HOME_SCREEN }],
+      }),
+    );
+    expect(consumePendingDeepLinkNavigation()).toBeNull();
+  });
+
+  it('não tira o usuário autenticado da home ao reabrir o convite', async () => {
+    const navigationRef = createNavigationRef();
+
+    await openDeepLinkTarget(navigationRef, INVITE_URL, 'Summary');
+
+    expect(navigationRef.dispatch).not.toHaveBeenCalled();
+    expect(consumePendingDeepLinkNavigation()).toBeNull();
   });
 
   it('redireciona para o login quando o fluxo de convite está desligado', async () => {

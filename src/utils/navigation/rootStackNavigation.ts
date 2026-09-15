@@ -1,11 +1,17 @@
 import { CommonActions } from '@react-navigation/native';
 
+type RootStackAction = ReturnType<typeof CommonActions.navigate> | ReturnType<typeof CommonActions.reset>;
+
 export type NavWithParent = {
   getParent?: () => NavWithParent | undefined;
   navigate?: (screen: string, params?: unknown) => void;
-  dispatch?: (action: ReturnType<typeof CommonActions.navigate>) => void;
+  dispatch?: (action: RootStackAction) => void;
   canGoBack?: () => boolean;
   goBack?: () => void;
+};
+
+type NavWithReset = NavWithParent & {
+  reset?: (state: { index: number; routes: Array<{ name: string; params?: object }> }) => void;
 };
 
 export function rootStackNavigationFrom(navigation: NavWithParent | undefined): NavWithParent | undefined {
@@ -37,4 +43,24 @@ export function navigateRootStack(navigation: NavWithParent | undefined, name: s
   }
 
   root.navigate?.(name, params);
+}
+
+export function resetRootStack(navigation: NavWithParent | undefined, name: string, params?: object): void {
+  const root = rootStackNavigationFrom(navigation);
+  if (!root) {
+    return;
+  }
+
+  const routes = [params != null ? { name, params } : { name }];
+  if (typeof root.dispatch === 'function') {
+    root.dispatch(
+      CommonActions.reset({
+        index: 0,
+        routes,
+      }),
+    );
+    return;
+  }
+
+  (root as NavWithReset).reset?.({ index: 0, routes });
 }

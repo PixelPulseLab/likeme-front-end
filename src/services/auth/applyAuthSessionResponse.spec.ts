@@ -46,6 +46,18 @@ describe('applyAuthSessionResponse', () => {
     expect(mockSetToken).toHaveBeenCalledWith('jwt');
   });
 
+  it('aceita postAuthRoute Wall', async () => {
+    const ok = await applyAuthSessionResponse({
+      data: {
+        token: 'jwt',
+        postAuthRoute: { screen: 'Wall' },
+      },
+    });
+    expect(ok.ok).toBe(true);
+    expect(ok.postAuthRoute).toEqual({ screen: 'Wall' });
+    expect(getCachedPostAuthRoute()).toEqual({ screen: 'Wall' });
+  });
+
   it('rejeita tela fora da allowlist', async () => {
     const bad = await applyAuthSessionResponse({
       data: {
@@ -54,6 +66,17 @@ describe('applyAuthSessionResponse', () => {
       },
     });
     expect(bad.ok).toBe(true);
+    expect(bad.postAuthRoute).toBeNull();
+    expect(getCachedPostAuthRoute()).toBeNull();
+  });
+
+  it('não aceita Register nem onboarding em postAuthRoute', async () => {
+    const bad = await applyAuthSessionResponse({
+      data: {
+        token: 'jwt',
+        postAuthRoute: { screen: 'Register', params: { userName: 'Camilla' } },
+      },
+    });
     expect(bad.postAuthRoute).toBeNull();
     expect(getCachedPostAuthRoute()).toBeNull();
   });

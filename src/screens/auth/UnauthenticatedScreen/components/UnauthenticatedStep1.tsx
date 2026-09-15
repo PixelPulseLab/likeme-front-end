@@ -1,5 +1,5 @@
 import React from 'react';
-import { Image, Text, View } from 'react-native';
+import { Image, Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LandingPhotosBottom, LandingPhotosTop, LogoFullSvg } from '@/assets/auth';
 import { PrimaryButton } from '@/components/ui';
@@ -9,6 +9,7 @@ import { LANDING_LOGO_HEIGHT, LANDING_LOGO_WIDTH, styles } from './Unauthenticat
 
 interface UnauthenticatedStep1Props {
   onStart: () => void;
+  onHaveAccount: () => void;
   isLoading?: boolean;
   isStartDisabled?: boolean;
   onE2eContinue?: () => void;
@@ -17,6 +18,7 @@ interface UnauthenticatedStep1Props {
 
 const UnauthenticatedStep1: React.FC<UnauthenticatedStep1Props> = ({
   onStart,
+  onHaveAccount,
   isLoading = false,
   isStartDisabled = false,
   onE2eContinue,
@@ -28,6 +30,15 @@ const UnauthenticatedStep1: React.FC<UnauthenticatedStep1Props> = ({
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
       <View style={styles.root}>
+        <View style={styles.header}>
+          <Pressable
+            onPress={onHaveAccount}
+            disabled={isLoading || e2eLoading}
+            testID={E2E_TEST_IDS.UNAUTH_HAVE_ACCOUNT}
+          >
+            <Text style={styles.haveAccount}>{t('auth.haveAccount')}</Text>
+          </Pressable>
+        </View>
         <Image source={LandingPhotosTop} style={styles.photosTop} resizeMode='cover' accessible={false} />
         <View style={styles.copy}>
           <View style={styles.logoWrap} accessible accessibilityRole='image' accessibilityLabel='LIKE:ME'>
