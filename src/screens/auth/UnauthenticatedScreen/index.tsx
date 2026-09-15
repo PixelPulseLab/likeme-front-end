@@ -41,7 +41,7 @@ const UnauthenticatedScreen: React.FC<Props> = ({ navigation, route }) => {
       destination_screen: 'authenticated',
       action_name: 'login_auto_on_mount',
     });
-    void authLogin();
+    void authLogin({ discardPendingInvitation: true });
   }, [authLogin, skipAutoLogin, startLogin, e2eBypass]);
 
   const handleStart = () => {
@@ -74,7 +74,7 @@ const UnauthenticatedScreen: React.FC<Props> = ({ navigation, route }) => {
       destination_screen: 'authenticated',
       action_name: 'start',
     });
-    authLogin();
+    void authLogin({ discardPendingInvitation: true });
   };
 
   const handleHaveAccount = () => {
@@ -88,7 +88,7 @@ const UnauthenticatedScreen: React.FC<Props> = ({ navigation, route }) => {
       destination_screen: 'authenticated',
       action_name: 'have_account',
     });
-    authLogin();
+    void authLogin({ discardPendingInvitation: true });
   };
 
   const handleE2eContinue = async () => {

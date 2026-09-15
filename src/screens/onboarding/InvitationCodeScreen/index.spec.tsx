@@ -158,7 +158,7 @@ describe('InvitationCodeScreen', () => {
     fireEvent.press(getByText('invitation.interestAreas'));
 
     await waitFor(() => {
-      expect(mockHandleLogin).toHaveBeenCalled();
+      expect(mockHandleLogin).toHaveBeenCalledWith({ discardPendingInvitation: true });
     });
     expect(navigation.navigate).not.toHaveBeenCalled();
     expect(mockValidateCode).not.toHaveBeenCalled();

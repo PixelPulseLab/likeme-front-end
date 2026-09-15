@@ -63,7 +63,7 @@ describe('UnauthenticatedScreen', () => {
 
     fireEvent.press(getByText('invitation.start'));
 
-    expect(mockAuthLogin).toHaveBeenCalled();
+    expect(mockAuthLogin).toHaveBeenCalledWith({ discardPendingInvitation: true });
     expect(mockNavigation.navigate).not.toHaveBeenCalled();
   });
 
@@ -83,7 +83,7 @@ describe('UnauthenticatedScreen', () => {
 
     fireEvent.press(getByText('auth.haveAccount'));
 
-    expect(mockAuthLogin).toHaveBeenCalled();
+    expect(mockAuthLogin).toHaveBeenCalledWith({ discardPendingInvitation: true });
     expect(mockNavigation.navigate).not.toHaveBeenCalled();
   });
 
@@ -93,7 +93,7 @@ describe('UnauthenticatedScreen', () => {
     );
 
     await waitFor(() => {
-      expect(mockAuthLogin).toHaveBeenCalled();
+      expect(mockAuthLogin).toHaveBeenCalledWith({ discardPendingInvitation: true });
     });
   });
 });
