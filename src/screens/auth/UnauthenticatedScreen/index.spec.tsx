@@ -29,9 +29,12 @@ jest.mock('@/analytics', () => ({
 jest.mock('./components', () => {
   const { View, Text, TouchableOpacity } = require('react-native');
   return {
-    UnauthenticatedStep1: ({ onStart }: any) => (
+    UnauthenticatedStep1: ({ onStart, onHaveAccount }: any) => (
       <View>
         <Text>invitation.headline</Text>
+        <TouchableOpacity onPress={onHaveAccount}>
+          <Text>auth.haveAccount</Text>
+        </TouchableOpacity>
         <TouchableOpacity onPress={onStart}>
           <Text>invitation.start</Text>
         </TouchableOpacity>
@@ -72,6 +75,16 @@ describe('UnauthenticatedScreen', () => {
 
     expect(mockNavigation.navigate).toHaveBeenCalledWith('InvitationCode');
     expect(mockAuthLogin).not.toHaveBeenCalled();
+  });
+
+  it('Já tenho cadastro abre o login mesmo com a flag de convite ligada', () => {
+    mockUseFeatureFlag.mockReturnValue({ isEnabled: true, isLoading: false });
+    const { getByText } = render(<UnauthenticatedScreen navigation={mockNavigation} route={mockRoute} />);
+
+    fireEvent.press(getByText('auth.haveAccount'));
+
+    expect(mockAuthLogin).toHaveBeenCalled();
+    expect(mockNavigation.navigate).not.toHaveBeenCalled();
   });
 
   it('dispara login ao chegar com startLogin', async () => {

@@ -10,6 +10,7 @@ export const E2E_TEST_IDS = {
   WALL_ROOT: 'e2e.wall.root',
   INVITATION_CONTEXT_CONTINUE: 'e2e.invitation.contextContinue',
   UNAUTH_LOGIN: 'e2e.unauth.login',
+  UNAUTH_HAVE_ACCOUNT: 'e2e.unauth.haveAccount',
   UNAUTH_E2E_CONTINUE: 'e2e.unauth.e2eContinue',
   WELCOME_NAME_INPUT: 'e2e.welcome.nameInput',
   WELCOME_NEXT: 'e2e.welcome.next',
