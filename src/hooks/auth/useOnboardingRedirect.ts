@@ -8,7 +8,7 @@ import { invalidateApiClientAuthTokenMemoryCache } from '@/services/infrastructu
 import { useTranslation } from '@/hooks/i18n';
 import { isE2eAuthBypassEnabled } from '@/utils/e2e/e2eAuthBypass';
 import { logger } from '@/utils/logger';
-import { resetRootStack, type NavWithParent } from '@/utils/navigation/rootStackNavigation';
+import { resetRootStack, rootStackNavigationFrom, type NavWithParent } from '@/utils/navigation/rootStackNavigation';
 
 async function syncAuthSessionFromBackend(): Promise<void> {
   if (FORCE_START_ONBOARDING_LOCALLY || isE2eAuthBypassEnabled()) {
@@ -34,6 +34,15 @@ function homeOrWallFromSession(
     return postAuthRoute;
   }
   return undefined;
+}
+
+function currentRootRouteName(navigation: NavWithParent): string | undefined {
+  const state = rootStackNavigationFrom(navigation)?.getState?.();
+  return state?.routes[state.index]?.name;
+}
+
+function shouldStayOnInvitationRedeem(currentRoute: string | undefined, destinationScreen: string): boolean {
+  return destinationScreen === 'Wall' && (currentRoute === 'InvitationCode' || currentRoute === 'InvitationContext');
 }
 
 export function useOnboardingRedirect(navigation: NavWithParent): void {
@@ -67,6 +76,9 @@ export function useOnboardingRedirect(navigation: NavWithParent): void {
         await syncAuthSessionFromBackend();
         const sessionRoute = homeOrWallFromSession(getCachedPostAuthRoute());
         const destination = await invitationHomeRoute(sessionRoute?.screen, sessionRoute?.params);
+        if (shouldStayOnInvitationRedeem(currentRootRouteName(navigation), destination.screen)) {
+          return;
+        }
         replace(destination.screen, destination.params);
       } catch (error) {
         logger.error('Error checking onboarding status:', error);
@@ -75,5 +87,5 @@ export function useOnboardingRedirect(navigation: NavWithParent): void {
     };
 
     redirect();
-  }, [replace, t]);
+  }, [navigation, replace, t]);
 }

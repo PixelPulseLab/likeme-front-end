@@ -4,6 +4,7 @@ type RootStackAction = ReturnType<typeof CommonActions.navigate> | ReturnType<ty
 
 export type NavWithParent = {
   getParent?: () => NavWithParent | undefined;
+  getState?: () => { index: number; routes: Array<{ name: string }> } | undefined;
   navigate?: (screen: string, params?: unknown) => void;
   dispatch?: (action: RootStackAction) => void;
   canGoBack?: () => boolean;

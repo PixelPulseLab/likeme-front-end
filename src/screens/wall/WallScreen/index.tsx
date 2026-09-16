@@ -50,8 +50,8 @@ const WallScreen: React.FC<Props> = ({ navigation }) => {
             <Text style={styles.link}>www.likeme.global</Text>
           </Pressable>
         </View>
-        <Pressable onPress={() => navigation.navigate('InvitationCode')}>
-          <Text style={styles.accessCode}>{t('wall.accessCode')}</Text>
+        <Pressable style={styles.accessCode} onPress={() => navigation.navigate('InvitationCode')}>
+          <Text style={styles.accessCodeLabel}>{t('wall.accessCode')}</Text>
         </Pressable>
       </View>
     </ScreenWithHeader>
