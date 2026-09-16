@@ -28,8 +28,11 @@ export const useAuthLogin = (navigation: any) => {
           await storageService.removePendingInvitationCode();
         }
 
-        const authResult = await AuthService.login();
-        await AuthService.validateToken(authResult);
+        const existingToken = await storageService.getToken();
+        if (!existingToken?.trim()) {
+          const authResult = await AuthService.login();
+          await AuthService.validateToken(authResult);
+        }
 
         const activation = await invitationService.activatePendingStoredCode();
         if (activation.outcome === 'mismatch') {

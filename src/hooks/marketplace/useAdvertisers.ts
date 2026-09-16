@@ -169,6 +169,11 @@ export const useAdvertisers = (params: UseAdvertisersParams = {}): UseAdvertiser
     ],
   );
   const listCacheKey = shouldLoadList ? advertisersListCacheKey(query) : null;
+  const requestIdentityKey = [
+    shouldLoadList ? 'list' : 'detail',
+    communityId?.trim() ?? '',
+    advertiserId?.trim() ?? '',
+  ].join('::');
   const [advertisers, setAdvertisers] = useState<Advertiser[]>(() =>
     listCacheKey != null ? getCachedAdvertisersList(listCacheKey) ?? [] : [],
   );
@@ -177,6 +182,7 @@ export const useAdvertisers = (params: UseAdvertisersParams = {}): UseAdvertiser
   );
   const [error, setError] = useState<Error | null>(null);
   const visibleCountRef = useRef(0);
+  const previousRequestIdentityKeyRef = useRef(requestIdentityKey);
   visibleCountRef.current = advertisers.length;
 
   useEffect(() => {
@@ -187,6 +193,9 @@ export const useAdvertisers = (params: UseAdvertisersParams = {}): UseAdvertiser
 
     if (listCacheKey != null) {
       const cached = getCachedAdvertisersList(listCacheKey);
+      const identityChanged = previousRequestIdentityKeyRef.current !== requestIdentityKey;
+      previousRequestIdentityKeyRef.current = requestIdentityKey;
+
       if (cached) {
         setAdvertisers(cached);
         setLoading(false);
@@ -196,7 +205,10 @@ export const useAdvertisers = (params: UseAdvertisersParams = {}): UseAdvertiser
       }
 
       let cancelled = false;
-      if (visibleCountRef.current === 0) {
+      if (identityChanged) {
+        setAdvertisers([]);
+      }
+      if (visibleCountRef.current === 0 || identityChanged) {
         setLoading(true);
       }
       setError(null);
@@ -215,7 +227,7 @@ export const useAdvertisers = (params: UseAdvertisersParams = {}): UseAdvertiser
           }
           logger.error('Error loading advertisers list:', err);
           setError(err instanceof Error ? err : new Error('Failed to load advertisers'));
-          if (visibleCountRef.current === 0) {
+          if (visibleCountRef.current === 0 || identityChanged) {
             setAdvertisers([]);
           }
         })
@@ -231,6 +243,7 @@ export const useAdvertisers = (params: UseAdvertisersParams = {}): UseAdvertiser
     }
 
     if (!advertiserId) {
+      previousRequestIdentityKeyRef.current = requestIdentityKey;
       setAdvertisers([]);
       setError(null);
       setLoading(false);
@@ -238,7 +251,13 @@ export const useAdvertisers = (params: UseAdvertisersParams = {}): UseAdvertiser
     }
 
     let cancelled = false;
-    if (visibleCountRef.current === 0) {
+    const identityChanged = previousRequestIdentityKeyRef.current !== requestIdentityKey;
+    previousRequestIdentityKeyRef.current = requestIdentityKey;
+
+    if (identityChanged) {
+      setAdvertisers([]);
+    }
+    if (visibleCountRef.current === 0 || identityChanged) {
       setLoading(true);
     }
     setError(null);
@@ -252,7 +271,7 @@ export const useAdvertisers = (params: UseAdvertisersParams = {}): UseAdvertiser
         if (response.success && response.data) {
           const next = [response.data];
           setAdvertisers(communityId ? next.filter((item) => item.communityId === communityId) : next);
-        } else if (visibleCountRef.current === 0) {
+        } else if (visibleCountRef.current === 0 || identityChanged) {
           setAdvertisers([]);
         }
       })
@@ -262,7 +281,7 @@ export const useAdvertisers = (params: UseAdvertisersParams = {}): UseAdvertiser
         }
         logger.error('Error loading advertiser:', err);
         setError(err instanceof Error ? err : new Error('Failed to load advertiser'));
-        if (visibleCountRef.current === 0) {
+        if (visibleCountRef.current === 0 || identityChanged) {
           setAdvertisers([]);
         }
       })
@@ -275,7 +294,7 @@ export const useAdvertisers = (params: UseAdvertisersParams = {}): UseAdvertiser
     return () => {
       cancelled = true;
     };
-  }, [advertiserId, communityId, enabled, listCacheKey, query]);
+  }, [advertiserId, communityId, enabled, listCacheKey, query, requestIdentityKey]);
 
   const refresh = useCallback(async () => {
     if (!enabled) {

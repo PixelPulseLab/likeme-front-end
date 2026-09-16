@@ -49,7 +49,10 @@ jest.mock('@/services', () => ({
 }));
 
 describe('useOnboardingRedirect', () => {
-  const navigation = { reset: jest.fn() } as NavWithParent & { reset: jest.Mock };
+  const navigation = {
+    reset: jest.fn(),
+    getState: jest.fn(() => ({ index: 0, routes: [{ name: 'Authenticated' }] })),
+  } as NavWithParent & { reset: jest.Mock; getState: jest.Mock };
 
   const expectResetTo = (screen: string, params?: object) => {
     expect(navigation.reset).toHaveBeenCalledWith({
@@ -60,6 +63,7 @@ describe('useOnboardingRedirect', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    navigation.getState.mockReturnValue({ index: 0, routes: [{ name: 'Authenticated' }] });
     mockGetToken.mockResolvedValue('session-token');
     mockActivatePendingStoredCode.mockResolvedValue({ outcome: 'none' });
     mockInvitationHomeRoute.mockImplementation(async (screen?: string, params?: object) => ({
@@ -140,6 +144,19 @@ describe('useOnboardingRedirect', () => {
       expect(mockInvitationHomeRoute).toHaveBeenCalledWith('Home', undefined);
       expectResetTo('Home');
     });
+  });
+
+  it('não volta ao tapume quando a sessão ainda é Wall e o usuário está no código', async () => {
+    mockGetCachedPostAuthRoute.mockReturnValue({ screen: 'Wall' });
+    navigation.getState.mockReturnValue({ index: 0, routes: [{ name: 'InvitationCode' }] });
+
+    renderHook(() => useOnboardingRedirect(navigation));
+
+    await waitFor(() => {
+      expect(mockActivatePendingStoredCode).toHaveBeenCalled();
+      expect(mockInvitationHomeRoute).toHaveBeenCalledWith('Wall', undefined);
+    });
+    expect(navigation.reset).not.toHaveBeenCalled();
   });
 
   it('vai à home quando o fallback do convite substitui rota inválida', async () => {

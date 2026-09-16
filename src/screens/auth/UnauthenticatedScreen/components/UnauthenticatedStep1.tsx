@@ -1,8 +1,9 @@
 import React from 'react';
 import { Image, Pressable, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LandingPhotosBottom, LandingPhotosTop, LogoFullSvg } from '@/assets/auth';
 import { PrimaryButton } from '@/components/ui';
+import { SPACING } from '@/constants';
 import { E2E_TEST_IDS } from '@/constants/e2eTestIds';
 import { useTranslation } from '@/hooks/i18n';
 import { LANDING_LOGO_HEIGHT, LANDING_LOGO_WIDTH, styles } from './UnauthenticatedStep1.styles';
@@ -25,10 +26,12 @@ const UnauthenticatedStep1: React.FC<UnauthenticatedStep1Props> = ({
   e2eLoading = false,
 }) => {
   const { t } = useTranslation();
+  const { bottom: bottomInset } = useSafeAreaInsets();
+  const footerPaddingBottom = Math.max(bottomInset, SPACING.MD);
   const startBusy = isLoading || e2eLoading || isStartDisabled;
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
+    <SafeAreaView style={styles.safe} edges={['top']}>
       <View style={styles.root}>
         <View style={styles.header}>
           <Pressable
@@ -50,7 +53,7 @@ const UnauthenticatedStep1: React.FC<UnauthenticatedStep1Props> = ({
           </View>
         </View>
         <Image source={LandingPhotosBottom} style={styles.photosBottom} resizeMode='cover' accessible={false} />
-        <View style={styles.footer}>
+        <View style={[styles.footer, { paddingBottom: footerPaddingBottom }]}>
           <PrimaryButton
             label={t('invitation.start')}
             onPress={onStart}

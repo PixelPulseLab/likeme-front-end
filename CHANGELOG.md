@@ -346,3 +346,13 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 ### Corrigido
 - Espaço do botão Logar na celebração do convite no Android
 - Login sem convite não tenta mais vincular um código antigo à conta
+
+## [1.16.2] - 2026-09-16
+
+### Corrigido
+- Já tenho código de acesso no tapume abre a tela de convite
+
+## [1.16.3] - 2026-09-16
+
+### Corrigido
+- Botão Começar não fica colado no rodapé no Android

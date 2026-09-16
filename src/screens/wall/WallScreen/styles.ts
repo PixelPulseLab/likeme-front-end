@@ -65,6 +65,8 @@ export const styles = StyleSheet.create({
     top: 604,
     left: '64%',
     width: 90,
+  },
+  accessCodeLabel: {
     fontFamily: FONT_FAMILY.DM_SANS_MEDIUM,
     fontSize: 14,
     lineHeight: 18,
