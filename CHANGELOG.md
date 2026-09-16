@@ -351,3 +351,8 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 
 ### Corrigido
 - Já tenho código de acesso no tapume abre a tela de convite
+
+## [1.16.3] - 2026-09-16
+
+### Corrigido
+- Botão Começar não fica colado no rodapé no Android
