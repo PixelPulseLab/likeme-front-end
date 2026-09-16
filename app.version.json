@@ -1,24 +1,15 @@
 {
-  "version": "1.16.1",
-  "releasedAt": "2026-09-15",
+  "version": "1.16.2",
+  "releasedAt": "2026-09-16",
   "android": {
-    "versionCode": 261
+    "versionCode": 262
   },
   "ios": {
-    "buildNumber": 37
+    "buildNumber": 38
   },
   "changelog": {
-    "added": [
-      "Já tenho cadastro na tela inicial para entrar direto na conta",
-      "Tapume depois do login para quem ainda não tem convite",
-      "Mapa de categorias no onboarding, com toque no avatar"
-    ],
-    "changed": [
-      "Depois de ativar o convite, abre a home sem passar pelo cadastro"
-    ],
     "fixed": [
-      "Espaço do botão Logar na celebração do convite no Android",
-      "Login sem convite não tenta mais vincular um código antigo à conta"
+      "Já tenho código de acesso no tapume abre a tela de convite"
     ]
   }
 }
