@@ -1,15 +1,36 @@
 import { StyleSheet } from 'react-native';
-import { COLORS, SPACING, BORDER_RADIUS } from '@/constants';
+import { COLORS, FONT_FAMILY, SPACING, BORDER_RADIUS } from '@/constants';
 
 export const styles = StyleSheet.create({
-  welcomeCtaWrap: {
-    paddingHorizontal: SPACING.MD,
+  promptOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    paddingHorizontal: SPACING.LG,
   },
   welcomeCtaCard: {
-    marginHorizontal: -SPACING.MD,
+    marginBottom: 0,
   },
-  welcomeCtaTitle: {
+  promptTitle: {
+    fontFamily: FONT_FAMILY.DM_SANS_BOLD,
+    fontSize: 32,
+    lineHeight: 36,
+    color: COLORS.TEXT,
+  },
+  promptIntro: {
+    marginTop: SPACING.LG,
+    fontFamily: FONT_FAMILY.DM_SANS_MEDIUM,
     fontSize: 20,
+    lineHeight: 26,
+    letterSpacing: 0.2,
+    color: COLORS.TEXT,
+  },
+  promptBody: {
+    marginTop: SPACING.SM,
+    fontFamily: FONT_FAMILY.DM_SANS_REGULAR,
+    fontSize: 14,
+    lineHeight: 18,
+    letterSpacing: 0.2,
+    color: COLORS.TEXT,
   },
   shoppingTipContainer: {},
   shoppingTip: {

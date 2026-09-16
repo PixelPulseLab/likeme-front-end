@@ -52,6 +52,7 @@ import { useSetFloatingMenu } from '@/contexts/FloatingMenuContext';
 import { useTranslation } from '@/hooks/i18n';
 import { useAnalyticsScreen, logTabSelect } from '@/analytics';
 import { storageService } from '@/services';
+import { notificationPreferenceService } from '@/services/notification/notificationPreferenceService';
 import { logger } from '@/utils/logger';
 import { resolveCommunityHeroImageUri } from '@/utils/community/mappers';
 import { navigateToProviderProfile } from '@/utils/navigation/marketplaceNavigation';
@@ -101,7 +102,7 @@ const CommunityScreen: React.FC<Props> = ({ navigation }) => {
   const isProgramCommunityFeed = route.params?.programType === PROGRAM_TYPE.COMMUNITY;
   const viewMode: CommunityViewId = isProgramCommunityFeed ? COMMUNITY_VIEW.FEED : selectedMode;
   const [activeInfoTab, setActiveInfoTab] = useState<CommunityInfoTabId>('posts');
-  const [welcomeDismissed, setWelcomeDismissed] = useState(true);
+  const [showNotificationPrompt, setShowNotificationPrompt] = useState(false);
   const [shoppingTipDismissed, setShoppingTipDismissed] = useState(true);
   const [isCommunityFavorite, setIsCommunityFavorite] = useState(false);
 
@@ -125,17 +126,36 @@ const CommunityScreen: React.FC<Props> = ({ navigation }) => {
   }, [focusCommunityId]);
 
   useEffect(() => {
-    storageService.getCommunityWelcomeDismissed().then(setWelcomeDismissed);
-  }, []);
-
-  useEffect(() => {
     storageService.getCommunityShoppingTipDismissed().then(setShoppingTipDismissed);
   }, []);
 
-  const handleWelcomeClose = useCallback(() => {
-    setWelcomeDismissed(true);
-    storageService.setCommunityWelcomeDismissed(true);
+  useFocusEffect(
+    useCallback(() => {
+      let cancelled = false;
+      notificationPreferenceService
+        .werePreferencesEditedByUser()
+        .then((editedByUser) => {
+          if (!cancelled) {
+            setShowNotificationPrompt(!editedByUser);
+          }
+        })
+        .catch((error) => {
+          logger.error('[CommunityScreen] Falha ao ler se as preferências foram editadas', error);
+        });
+      return () => {
+        cancelled = true;
+      };
+    }, []),
+  );
+
+  const handleNotificationPromptClose = useCallback(() => {
+    setShowNotificationPrompt(false);
   }, []);
+
+  const handleDefineNotifications = useCallback(() => {
+    setShowNotificationPrompt(false);
+    navigateRootStack(rootNavigation, 'NotificationPreferences');
+  }, [rootNavigation]);
 
   const handleShoppingTipClose = useCallback(() => {
     setShoppingTipDismissed(true);
@@ -716,8 +736,9 @@ const CommunityScreen: React.FC<Props> = ({ navigation }) => {
         <CommunityDescriptionSection
           variant='feed'
           specialist={specialistData}
-          welcomeDismissed={welcomeDismissed}
-          onWelcomeClose={handleWelcomeClose}
+          showNotificationPrompt={showNotificationPrompt}
+          onNotificationPromptClose={handleNotificationPromptClose}
+          onDefineNotifications={handleDefineNotifications}
         />
         {feedInformationSlot}
       </>
@@ -727,8 +748,9 @@ const CommunityScreen: React.FC<Props> = ({ navigation }) => {
       handleEventBannerPress,
       handleEventBannerCtaPress,
       specialistData,
-      welcomeDismissed,
-      handleWelcomeClose,
+      showNotificationPrompt,
+      handleNotificationPromptClose,
+      handleDefineNotifications,
       feedInformationSlot,
     ],
   );

@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text } from 'react-native';
+import { Modal, Text, View } from 'react-native';
 import { CTACard } from '@/components/ui/cards';
 import { PartnerSection } from '@/components/sections/advertiser';
 import { COLORS } from '@/constants';
@@ -19,8 +19,9 @@ export type CommunityDescriptionSpecialist = {
 export type CommunityDescriptionSectionProps = {
   variant: CommunityDescriptionVariant;
   specialist?: CommunityDescriptionSpecialist | null;
-  welcomeDismissed?: boolean;
-  onWelcomeClose?: () => void;
+  showNotificationPrompt?: boolean;
+  onNotificationPromptClose?: () => void;
+  onDefineNotifications?: () => void;
   shoppingTipDismissed?: boolean;
   onShoppingTipClose?: () => void;
 };
@@ -28,8 +29,9 @@ export type CommunityDescriptionSectionProps = {
 const CommunityDescriptionSection: React.FC<CommunityDescriptionSectionProps> = ({
   variant,
   specialist,
-  welcomeDismissed = true,
-  onWelcomeClose,
+  showNotificationPrompt = false,
+  onNotificationPromptClose,
+  onDefineNotifications,
   shoppingTipDismissed = true,
   onShoppingTipClose,
 }) => {
@@ -49,18 +51,39 @@ const CommunityDescriptionSection: React.FC<CommunityDescriptionSectionProps> = 
   if (variant === 'feed') {
     return (
       <>
-        {!welcomeDismissed ? (
-          <View style={styles.welcomeCtaWrap}>
+        <Modal
+          visible={showNotificationPrompt}
+          transparent
+          animationType='fade'
+          onRequestClose={onNotificationPromptClose}
+        >
+          <View style={styles.promptOverlay}>
             <CTACard
-              title={t('community.ctaCardTitle')}
-              description={t('community.ctaCardDescription')}
               backgroundColor='#F6CFFB'
-              titleStyle={styles.welcomeCtaTitle}
               style={styles.welcomeCtaCard}
-              onClose={onWelcomeClose}
-            />
+              onClose={onNotificationPromptClose}
+              primaryButtonLabel={t('profile.notifications.defineNow', { defaultValue: 'Definir agora' })}
+              primaryButtonOnPress={onDefineNotifications ?? onNotificationPromptClose}
+              primaryButtonIcon='chevron-right'
+              primaryButtonIconPosition='right'
+            >
+              <Text style={styles.promptTitle}>
+                {t('profile.notifications.lead', { defaultValue: 'Suas notificações, do seu jeito.' })}
+              </Text>
+              <Text style={styles.promptIntro}>
+                {t('profile.notifications.promptIntro', {
+                  defaultValue: 'Você ainda não definiu as suas preferências de notificação.',
+                })}
+              </Text>
+              <Text style={styles.promptBody}>
+                {t('profile.notifications.promptBody', {
+                  defaultValue:
+                    'No Like:me você escolhe por onde e em que horário quer receber novidades, ofertas e aviso das suas atividades.',
+                })}
+              </Text>
+            </CTACard>
           </View>
-        ) : null}
+        </Modal>
         {specialistBlock}
       </>
     );

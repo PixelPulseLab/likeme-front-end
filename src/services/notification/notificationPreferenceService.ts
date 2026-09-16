@@ -20,7 +20,10 @@ export const NOTIFICATION_REQUIRED_CHANNEL: Record<NotificationPreferenceCategor
     transactions: 'email',
   };
 
-type ListPreferencesResponse = ApiResponse<{ preferences: NotificationPreferenceRow[] }>;
+type ListPreferencesResponse = ApiResponse<{
+  preferences: NotificationPreferenceRow[];
+  editedByUser?: boolean;
+}>;
 
 function emptyChannels(required: NotificationPreferenceChannelId) {
   return {
@@ -129,6 +132,11 @@ export const notificationPreferenceService = {
   async listPreferences(): Promise<NotificationPreferenceRow[]> {
     const response = await apiClient.get<ListPreferencesResponse>(ENDPOINT);
     return response.data?.preferences ?? [];
+  },
+
+  async werePreferencesEditedByUser(): Promise<boolean> {
+    const response = await apiClient.get<ListPreferencesResponse>(ENDPOINT);
+    return response.data?.editedByUser === true;
   },
 
   async saveCategory(category: NotificationCategoryForm): Promise<void> {
