@@ -13,11 +13,12 @@ import type {
 const ENDPOINT = '/api/notifications/preferences';
 const CATEGORIES: NotificationPreferenceCategoryId[] = ['offers', 'activities', 'transactions'];
 const CHANNELS: NotificationPreferenceChannelId[] = ['email', 'whatsapp', 'push'];
-const REQUIRED_CHANNEL: Record<NotificationPreferenceCategoryId, NotificationPreferenceChannelId> = {
-  offers: 'email',
-  activities: 'push',
-  transactions: 'email',
-};
+export const NOTIFICATION_REQUIRED_CHANNEL: Record<NotificationPreferenceCategoryId, NotificationPreferenceChannelId> =
+  {
+    offers: 'email',
+    activities: 'push',
+    transactions: 'email',
+  };
 
 type ListPreferencesResponse = ApiResponse<{ preferences: NotificationPreferenceRow[] }>;
 
@@ -33,9 +34,9 @@ function emptyCategory(id: NotificationPreferenceCategoryId): NotificationCatego
   return {
     id,
     enabled: true,
-    channels: emptyChannels(REQUIRED_CHANNEL[id]),
+    channels: emptyChannels(NOTIFICATION_REQUIRED_CHANNEL[id]),
     preferredTime: 'no_preferred',
-    leadTimeMinutes: 30,
+    leadTimeMinutes: 60,
   };
 }
 
@@ -58,11 +59,11 @@ export function preferencesFormFromRows(rows: NotificationPreferenceRow[]): Noti
       continue;
     }
 
-    const required = REQUIRED_CHANNEL[categoryId];
+    const required = NOTIFICATION_REQUIRED_CHANNEL[categoryId];
     const channels = emptyChannels(required);
     let enabled = false;
     let preferredTime: NotificationPreferredTimeId = 'no_preferred';
-    let leadTimeMinutes: ActivityLeadTimeMinutes = 30;
+    let leadTimeMinutes: ActivityLeadTimeMinutes = 60;
 
     for (const row of categoryRows) {
       const channel = row.channel as NotificationPreferenceChannelId;
@@ -84,7 +85,12 @@ export function preferencesFormFromRows(rows: NotificationPreferenceRow[]): Noti
       }
     }
 
-    channels[required] = true;
+    if (categoryId === 'transactions') {
+      enabled = true;
+      channels.email = true;
+    } else if (enabled) {
+      channels[required] = true;
+    }
     form[categoryId] = { id: categoryId, enabled, channels, preferredTime, leadTimeMinutes };
   }
 
@@ -92,16 +98,30 @@ export function preferencesFormFromRows(rows: NotificationPreferenceRow[]): Noti
 }
 
 export function upsertPayloadsForCategory(category: NotificationCategoryForm) {
-  const required = REQUIRED_CHANNEL[category.id];
+  const required = NOTIFICATION_REQUIRED_CHANNEL[category.id];
   const preferredTime = category.id === 'offers' ? category.preferredTime : 'no_preferred';
   const leadTimeMinutes = category.id === 'activities' ? category.leadTimeMinutes : null;
-
-  return CHANNELS.map((channel) => ({
+  const payloadBase = {
     category: category.id,
-    channel,
-    status: category.enabled && (channel === required || category.channels[channel]) ? 'active' : 'inactive',
     preferredTime,
     leadTimeMinutes,
+  };
+
+  const enabled = category.id === 'transactions' || category.enabled;
+  if (!enabled) {
+    return [
+      {
+        ...payloadBase,
+        channel: required,
+        status: 'inactive',
+      },
+    ];
+  }
+
+  return CHANNELS.map((channel) => ({
+    ...payloadBase,
+    channel,
+    status: channel === required || category.channels[channel] ? 'active' : 'inactive',
   }));
 }
 

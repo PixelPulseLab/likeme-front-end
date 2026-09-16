@@ -86,7 +86,7 @@ export function NotificationPreferenceCategoryCard({
         <Switch
           value={category.enabled}
           onValueChange={onEnabledChange}
-          disabled={disabled}
+          disabled={disabled || category.id === 'transactions'}
           trackColor={{ false: COLORS.NEUTRAL.LOW.LIGHT, true: COLORS.PRIMARY.PURE }}
           thumbColor={COLORS.WHITE}
           ios_backgroundColor={COLORS.NEUTRAL.LOW.LIGHT}
@@ -124,21 +124,32 @@ export function NotificationPreferenceCategoryCard({
               })}
             </Text>
             {CHANNELS.map((channel) => {
-              const locked = channel.id === copy.requiredChannel;
-              const checked = locked || category.channels[channel.id];
+              const requiredLocked = channel.id === copy.requiredChannel && category.enabled;
+              const checked = category.enabled && (requiredLocked || category.channels[channel.id]);
+              const rowDisabled = disabled || !category.enabled || requiredLocked;
               return (
                 <TouchableOpacity
                   key={channel.id}
                   style={styles.optionRow}
                   onPress={() => onChannelChange(channel.id, !category.channels[channel.id])}
-                  disabled={disabled || locked}
+                  disabled={rowDisabled}
                   activeOpacity={0.7}
                   accessibilityRole='checkbox'
-                  accessibilityState={{ checked, disabled: locked }}
+                  accessibilityState={{ checked, disabled: rowDisabled }}
                 >
-                  <View style={[styles.checkbox, checked && styles.checkboxChecked, locked && styles.checkboxLocked]}>
+                  <View
+                    style={[
+                      styles.checkbox,
+                      checked && styles.checkboxChecked,
+                      requiredLocked && styles.checkboxLocked,
+                    ]}
+                  >
                     {checked ? (
-                      <Icon name='check' size={12} color={locked ? COLORS.NEUTRAL.LOW.MEDIUM : COLORS.PRIMARY.PURE} />
+                      <Icon
+                        name='check'
+                        size={12}
+                        color={requiredLocked ? COLORS.NEUTRAL.LOW.MEDIUM : COLORS.PRIMARY.PURE}
+                      />
                     ) : null}
                   </View>
                   <Text style={styles.optionName}>
@@ -165,7 +176,7 @@ export function NotificationPreferenceCategoryCard({
                       key={option.id}
                       style={styles.optionRow}
                       onPress={() => onPreferredTimeChange(option.id)}
-                      disabled={disabled}
+                      disabled={disabled || !category.enabled}
                       activeOpacity={0.7}
                       accessibilityRole='radio'
                       accessibilityState={{ selected }}
@@ -211,7 +222,7 @@ export function NotificationPreferenceCategoryCard({
                       key={option.minutes}
                       style={styles.optionRow}
                       onPress={() => onLeadTimeChange(option.minutes)}
-                      disabled={disabled}
+                      disabled={disabled || !category.enabled}
                       activeOpacity={0.7}
                       accessibilityRole='radio'
                       accessibilityState={{ selected }}

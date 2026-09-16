@@ -9,6 +9,7 @@ import { useTranslation } from '@/hooks/i18n';
 import { useAnalyticsScreen } from '@/analytics';
 import {
   emptyPreferencesForm,
+  NOTIFICATION_REQUIRED_CHANNEL,
   notificationPreferenceService,
   preferencesFormFromRows,
 } from '@/services/notification/notificationPreferenceService';
@@ -157,13 +158,29 @@ const NotificationPreferencesScreen: React.FC<Props> = ({ navigation }) => {
                           return next;
                         });
                       }}
-                      onEnabledChange={(enabled) => void saveCategory({ ...category, enabled })}
-                      onChannelChange={(channel, selected) =>
+                      onEnabledChange={(enabled) => {
+                        if (category.id === 'transactions') {
+                          return;
+                        }
+                        const required = NOTIFICATION_REQUIRED_CHANNEL[category.id];
+                        void saveCategory({
+                          ...category,
+                          enabled,
+                          channels: enabled
+                            ? { ...category.channels, [required]: true }
+                            : { email: false, whatsapp: false, push: false },
+                        });
+                      }}
+                      onChannelChange={(channel, selected) => {
+                        const required = NOTIFICATION_REQUIRED_CHANNEL[category.id];
+                        if (channel === required && !selected) {
+                          return;
+                        }
                         void saveCategory({
                           ...category,
                           channels: { ...category.channels, [channel]: selected },
-                        })
-                      }
+                        });
+                      }}
                       onPreferredTimeChange={(preferredTime) => void saveCategory({ ...category, preferredTime })}
                       onLeadTimeChange={(leadTimeMinutes) => void saveCategory({ ...category, leadTimeMinutes })}
                     />

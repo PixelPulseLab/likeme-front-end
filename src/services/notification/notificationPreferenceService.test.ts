@@ -12,7 +12,7 @@ describe('notificationPreferenceService form', () => {
     expect(form.offers.channels.email).toBe(true);
     expect(form.offers.channels.whatsapp).toBe(false);
     expect(form.activities.channels.push).toBe(true);
-    expect(form.activities.leadTimeMinutes).toBe(30);
+    expect(form.activities.leadTimeMinutes).toBe(60);
     expect(form.transactions.preferredTime).toBe('no_preferred');
   });
 
@@ -35,29 +35,15 @@ describe('notificationPreferenceService form', () => {
     ]);
 
     expect(form.activities.enabled).toBe(false);
-    expect(form.activities.channels.push).toBe(true);
+    expect(form.activities.channels.push).toBe(false);
     expect(form.activities.leadTimeMinutes).toBe(10);
   });
 
-  it('gera upserts inativos para todos os canais quando a categoria está desligada', () => {
+  it('gera upsert só do canal mínimo inativo quando a categoria está desligada', () => {
     expect(upsertPayloadsForCategory({ ...emptyPreferencesForm().offers, enabled: false })).toEqual([
       {
         category: 'offers',
         channel: 'email',
-        status: 'inactive',
-        preferredTime: 'no_preferred',
-        leadTimeMinutes: null,
-      },
-      {
-        category: 'offers',
-        channel: 'whatsapp',
-        status: 'inactive',
-        preferredTime: 'no_preferred',
-        leadTimeMinutes: null,
-      },
-      {
-        category: 'offers',
-        channel: 'push',
         status: 'inactive',
         preferredTime: 'no_preferred',
         leadTimeMinutes: null,
@@ -73,5 +59,27 @@ describe('notificationPreferenceService form', () => {
 
     expect(payloads.find((payload) => payload.channel === 'email')?.status).toBe('active');
     expect(payloads.find((payload) => payload.channel === 'whatsapp')?.status).toBe('active');
+  });
+
+  it('em transações mantém pelo menos e-mail mesmo com a categoria marcada como desligada', () => {
+    const payloads = upsertPayloadsForCategory({
+      ...emptyPreferencesForm().transactions,
+      enabled: false,
+      channels: { email: false, whatsapp: true, push: false },
+    });
+
+    expect(payloads.find((payload) => payload.channel === 'email')?.status).toBe('active');
+    expect(payloads.find((payload) => payload.channel === 'whatsapp')?.status).toBe('active');
+    expect(payloads.find((payload) => payload.channel === 'push')?.status).toBe('inactive');
+  });
+
+  it('em transações liga a categoria e o e-mail mesmo se só houver outro canal ativo', () => {
+    const form = preferencesFormFromRows([
+      { category: 'transactions', channel: 'email', status: 'inactive' },
+      { category: 'transactions', channel: 'whatsapp', status: 'active' },
+    ]);
+
+    expect(form.transactions.enabled).toBe(true);
+    expect(form.transactions.channels).toEqual({ email: true, whatsapp: true, push: false });
   });
 });
