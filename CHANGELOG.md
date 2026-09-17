@@ -356,3 +356,10 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 
 ### Corrigido
 - Botão Começar não fica colado no rodapé no Android
+
+## [1.17.0] - 2026-09-17
+
+### Adicionado
+- Tela de preferências para escolher canal e horário das notificações
+- Popup na home e na comunidade até você salvar as preferências
+- Sino no header com bolinha de não lidas e lista de notificações em Atividades
