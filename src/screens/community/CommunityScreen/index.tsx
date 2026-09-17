@@ -19,6 +19,7 @@ import {
   PostCard,
   NextEventsSection,
   CommunityDescriptionSection,
+  NotificationPreferencesPrompt,
   FeaturedPostsSection,
   type CommunityDescriptionSpecialist,
 } from '@/components/sections/community';
@@ -133,14 +134,14 @@ const CommunityScreen: React.FC<Props> = ({ navigation }) => {
     useCallback(() => {
       let cancelled = false;
       notificationPreferenceService
-        .werePreferencesEditedByUser()
-        .then((editedByUser) => {
+        .shouldShowNotificationPrompt()
+        .then((show) => {
           if (!cancelled) {
-            setShowNotificationPrompt(!editedByUser);
+            setShowNotificationPrompt(show);
           }
         })
         .catch((error) => {
-          logger.error('[CommunityScreen] Falha ao ler se as preferências foram editadas', error);
+          logger.error('[CommunityScreen] Falha ao ler se o popup de notificações deve aparecer', error);
         });
       return () => {
         cancelled = true;
@@ -150,6 +151,9 @@ const CommunityScreen: React.FC<Props> = ({ navigation }) => {
 
   const handleNotificationPromptClose = useCallback(() => {
     setShowNotificationPrompt(false);
+    notificationPreferenceService.dismissPrompt().catch((error) => {
+      logger.error('[CommunityScreen] Falha ao dispensar o popup de notificações', error);
+    });
   }, []);
 
   const handleDefineNotifications = useCallback(() => {
@@ -733,26 +737,11 @@ const CommunityScreen: React.FC<Props> = ({ navigation }) => {
             <EventBanner event={eventBanner} onPress={handleEventBannerPress} onCtaPress={handleEventBannerCtaPress} />
           </View>
         ) : null}
-        <CommunityDescriptionSection
-          variant='feed'
-          specialist={specialistData}
-          showNotificationPrompt={showNotificationPrompt}
-          onNotificationPromptClose={handleNotificationPromptClose}
-          onDefineNotifications={handleDefineNotifications}
-        />
+        <CommunityDescriptionSection variant='feed' specialist={specialistData} />
         {feedInformationSlot}
       </>
     ),
-    [
-      eventBanner,
-      handleEventBannerPress,
-      handleEventBannerCtaPress,
-      specialistData,
-      showNotificationPrompt,
-      handleNotificationPromptClose,
-      handleDefineNotifications,
-      feedInformationSlot,
-    ],
+    [eventBanner, handleEventBannerPress, handleEventBannerCtaPress, specialistData, feedInformationSlot],
   );
 
   const feedRecommendationsBlock = useMemo(
@@ -982,6 +971,11 @@ const CommunityScreen: React.FC<Props> = ({ navigation }) => {
           <Loading ref={loadingRef} accessibilityLabel={t('common.loading')} fullScreen />
         </View>
       ) : null}
+      <NotificationPreferencesPrompt
+        visible={showNotificationPrompt}
+        onClose={handleNotificationPromptClose}
+        onDefine={handleDefineNotifications}
+      />
     </View>
   );
 };

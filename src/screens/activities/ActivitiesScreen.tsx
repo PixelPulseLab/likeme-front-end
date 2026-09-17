@@ -27,6 +27,7 @@ import type { RootStackParamList } from '@/types/navigation';
 import { useAnalyticsScreen } from '@/analytics';
 import { logger } from '@/utils/logger';
 import { formatOrderDisplayId } from '@/utils/marketplace/orderDisplayId';
+import notificationApiService, { type InboxNotification } from '@/services/notification/notificationApiService';
 import { navigateToOrderDetail } from '@/utils/navigation/activitiesNavigation';
 import { navigateRootStack, rootStackNavigationFrom } from '@/utils/navigation/rootStackNavigation';
 import { orderCardStatusPresentation, orderCardTitle } from '@/utils/marketplace/orderStatusDisplay';
@@ -57,6 +58,12 @@ type FilterType = 'all' | 'activities' | 'appointments' | 'orders';
 
 import type { ActivityItem } from '@/types/activity/hooks';
 
+const INBOX_CATEGORY_TITLE_KEY = {
+  offers: 'profile.notifications.offers.title',
+  activities: 'profile.notifications.activities.title',
+  transactions: 'profile.notifications.transactions.title',
+} as const;
+
 const ActivitiesScreen: React.FC<ActivitiesScreenProps> = ({ navigation, route }) => {
   useAnalyticsScreen({ screenName: 'Activities', screenClass: 'ActivitiesScreen' });
   const { t } = useTranslation();
@@ -76,7 +83,9 @@ const ActivitiesScreen: React.FC<ActivitiesScreenProps> = ({ navigation, route }
   const [_hasCompletedAnamnesis, setHasCompletedAnamnesis] = useState<boolean>(false);
   const [isProfileMenuVisible, setIsProfileMenuVisible] = useState(false);
   const [userAvatarUri, setUserAvatarUri] = useState<string | null>(null);
+  const [inboxNotifications, setInboxNotifications] = useState<InboxNotification[]>([]);
   const hasFocusedOnceRef = useRef(false);
+  const scrollViewRef = useRef<ScrollView>(null);
 
   // Usar o hook useActivities
   const {
@@ -188,11 +197,19 @@ const ActivitiesScreen: React.FC<ActivitiesScreenProps> = ({ navigation, route }
   useFocusEffect(
     useCallback(() => {
       const p = route?.params;
-      if (p?.initialTab == null && p?.initialFilter == null && p?.focusActivityId == null) {
+      if (
+        p?.initialTab == null &&
+        p?.initialFilter == null &&
+        p?.focusActivityId == null &&
+        p?.focusNotifications == null
+      ) {
         return;
       }
 
-      if (p?.initialFilter === 'orders') {
+      if (p?.focusNotifications) {
+        setActiveTab('actives');
+        scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+      } else if (p?.initialFilter === 'orders') {
         setActiveTab('history');
         setSelectedFilter('orders');
       } else {
@@ -208,8 +225,34 @@ const ActivitiesScreen: React.FC<ActivitiesScreenProps> = ({ navigation, route }
         initialTab: undefined,
         initialFilter: undefined,
         focusActivityId: p?.focusActivityId,
+        focusNotifications: undefined,
       } as never);
-    }, [navigation, route?.params?.initialTab, route?.params?.initialFilter, route?.params?.focusActivityId]),
+    }, [
+      navigation,
+      route?.params?.initialTab,
+      route?.params?.initialFilter,
+      route?.params?.focusActivityId,
+      route?.params?.focusNotifications,
+    ]),
+  );
+
+  useFocusEffect(
+    useCallback(() => {
+      let cancelled = false;
+      notificationApiService
+        .listInbox()
+        .then((notifications) => {
+          if (!cancelled) {
+            setInboxNotifications(notifications);
+          }
+        })
+        .catch((error) => {
+          logger.error('[ActivitiesScreen] Falha ao listar inbox de notificações', error);
+        });
+      return () => {
+        cancelled = true;
+      };
+    }, []),
   );
 
   useEffect(() => {
@@ -521,6 +564,42 @@ const ActivitiesScreen: React.FC<ActivitiesScreenProps> = ({ navigation, route }
 
   const handleViewActivity = (activity: ActivityItem) => {
     void openActivityEditor(activity.id);
+  };
+
+  const handleInboxNotificationPress = (notification: InboxNotification) => {
+    void (async () => {
+      try {
+        if (notification.readAt == null) {
+          await notificationApiService.markRead(notification.id);
+          setInboxNotifications((current) =>
+            current.map((item) => (item.id === notification.id ? { ...item, readAt: new Date().toISOString() } : item)),
+          );
+        }
+        if (!notification.entityId) {
+          return;
+        }
+        if (
+          notification.category === 'activities' &&
+          (notification.template === 'activity_reminder' || notification.template === 'activity_created')
+        ) {
+          await openActivityEditor(notification.entityId);
+          return;
+        }
+        if (
+          notification.category === 'transactions' &&
+          (notification.template === 'created' ||
+            notification.template === 'payment_approved' ||
+            notification.template === 'payment_failed')
+        ) {
+          navigateToOrderDetail(rootNavigation, notification.entityId);
+        }
+      } catch (error) {
+        logger.error('[ActivitiesScreen] Falha ao abrir notificação do inbox', {
+          notificationId: notification.id,
+          error,
+        });
+      }
+    })();
   };
 
   const handleDeleteActivity = async (activityId: string) => {
@@ -957,7 +1036,31 @@ const ActivitiesScreen: React.FC<ActivitiesScreenProps> = ({ navigation, route }
           <Text style={styles.sectionLabel}>{t('activities.markAsDoneLabel')}</Text>
         )}
 
-        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <ScrollView
+          ref={scrollViewRef}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {inboxNotifications.length > 0 ? (
+            <View style={styles.inboxSection}>
+              {inboxNotifications.map((notification) => {
+                const isRead = notification.readAt != null;
+                return (
+                  <TouchableOpacity
+                    key={notification.id}
+                    style={[styles.inboxCard, isRead && styles.inboxCardRead]}
+                    activeOpacity={0.7}
+                    onPress={() => handleInboxNotificationPress(notification)}
+                  >
+                    {!isRead ? <View style={styles.inboxUnreadDot} /> : null}
+                    <Text style={[styles.inboxTitle, isRead && styles.inboxTitleRead]}>
+                      {t(INBOX_CATEGORY_TITLE_KEY[notification.category])}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          ) : null}
           {activeTab === 'history' ? (
             <>
               {selectedFilter === 'all' && (

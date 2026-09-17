@@ -53,7 +53,13 @@ function BellHeaderButton({ onPress }: { onPress: () => void }) {
         void refreshUnread();
       }
     });
-    return () => sub.remove();
+    const unsubscribeInbox = notificationApiService.subscribeInboxChange(() => {
+      void refreshUnread();
+    });
+    return () => {
+      sub.remove();
+      unsubscribeInbox();
+    };
   }, [refreshUnread]);
 
   return (

@@ -241,6 +241,16 @@ jest.mock('@/services', () => ({
   },
 }));
 
+jest.mock('@/services/notification/notificationApiService', () => ({
+  __esModule: true,
+  default: {
+    listInbox: jest.fn().mockResolvedValue([]),
+    markRead: jest.fn().mockResolvedValue(undefined),
+    hasUnread: jest.fn().mockResolvedValue(false),
+    subscribeInboxChange: () => () => undefined,
+  },
+}));
+
 jest.mock('@/utils', () => ({
   formatPrice: (price: number) => `$${price.toFixed(2)}`,
   getDateFromDatetime: jest.fn((dt: string) => dt),

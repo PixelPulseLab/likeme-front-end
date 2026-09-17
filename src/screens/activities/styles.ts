@@ -392,4 +392,36 @@ export const styles = StyleSheet.create({
   menuItemTextDanger: {
     color: '#F44336',
   },
+  inboxSection: {
+    marginBottom: SPACING.MD,
+  },
+  inboxCard: {
+    backgroundColor: COLORS.WHITE,
+    borderRadius: BORDER_RADIUS.MD,
+    paddingHorizontal: SPACING.MD,
+    paddingVertical: SPACING.SM,
+    marginBottom: SPACING.SM,
+    marginHorizontal: SPACING.MD,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.SM,
+  },
+  inboxCardRead: {
+    opacity: 0.6,
+  },
+  inboxUnreadDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: COLORS.ERROR,
+  },
+  inboxTitle: {
+    flex: 1,
+    fontSize: FONT_SIZES.SM,
+    color: COLORS.TEXT,
+    fontWeight: '600',
+  },
+  inboxTitleRead: {
+    fontWeight: '400',
+  },
 });

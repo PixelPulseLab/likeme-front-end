@@ -23,6 +23,7 @@ const SESSION_OWNER_EMAIL_KEY = '@likeme:session_owner_email';
 const PRIVACY_POLICY_ACCEPTED_AT_KEY = '@likeme:privacy_policy_accepted_at';
 const COMMUNITY_WELCOME_DISMISSED_KEY = '@likeme:community_welcome_dismissed';
 const COMMUNITY_SHOPPING_TIP_DISMISSED_KEY = '@likeme:community_shopping_tip_dismissed';
+const NOTIFICATION_PROMPT_DISMISSED_AT_KEY = '@likeme:notification_prompt_dismissed_at';
 const COMMUNITY_FAVORITE_IDS_KEY = '@likeme:community_favorite_ids';
 const PROGRAM_MODULE_COMPLETED_IDS_KEY = '@likeme:program_module_completed_ids';
 const PENDING_INVITATION_CODE_KEY = '@likeme:pending_invitation_code';
@@ -42,6 +43,11 @@ const ONBOARDING_STORAGE_KEYS = [
 function normalizeStorageOwnerEmail(email: string | null | undefined): string | null {
   const normalized = email?.trim().toLowerCase();
   return normalized || null;
+}
+
+function notificationPromptDismissedAtKey(email?: string | null): string {
+  const owner = normalizeStorageOwnerEmail(email);
+  return owner ? `${NOTIFICATION_PROMPT_DISMISSED_AT_KEY}:${owner}` : NOTIFICATION_PROMPT_DISMISSED_AT_KEY;
 }
 
 class StorageService {
@@ -405,6 +411,30 @@ class StorageService {
       }
     } catch (error) {
       logger.error('Error saving community shopping tip dismissed:', error);
+    }
+  }
+
+  async getNotificationPromptDismissedAt(): Promise<number | null> {
+    try {
+      const user = await this.getUser();
+      const raw = await AsyncStorage.getItem(notificationPromptDismissedAtKey(user?.email));
+      if (!raw) {
+        return null;
+      }
+      const parsed = Number(raw);
+      return Number.isFinite(parsed) ? parsed : null;
+    } catch (error) {
+      logger.error('Error getting notification prompt dismissed at:', error);
+      return null;
+    }
+  }
+
+  async setNotificationPromptDismissedAt(dismissedAt: number): Promise<void> {
+    try {
+      const user = await this.getUser();
+      await AsyncStorage.setItem(notificationPromptDismissedAtKey(user?.email), String(dismissedAt));
+    } catch (error) {
+      logger.error('Error saving notification prompt dismissed at:', error);
     }
   }
 

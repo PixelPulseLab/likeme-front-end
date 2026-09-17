@@ -11,6 +11,7 @@ export { default as PollCard } from './PollCard';
 export { default as CommentReactions } from './CommentReactions';
 export {
   default as CommunityDescriptionSection,
+  NotificationPreferencesPrompt,
   type CommunityDescriptionSectionProps,
   type CommunityDescriptionSpecialist,
   type CommunityDescriptionVariant,

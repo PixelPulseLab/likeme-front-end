@@ -1,5 +1,7 @@
 import apiClient from '../infrastructure/apiClient';
+import storageService from '@/services/auth/storageService';
 import type { ApiResponse } from '@/types/infrastructure';
+import { logger } from '@/utils/logger';
 import type {
   ActivityLeadTimeMinutes,
   NotificationCategoryForm,
@@ -11,6 +13,7 @@ import type {
 } from '@/types/notification/notificationPreferences';
 
 const ENDPOINT = '/api/notifications/preferences';
+const NOTIFICATION_PROMPT_RECURRENCE_MS = 7 * 24 * 60 * 60 * 1000;
 const CATEGORIES: NotificationPreferenceCategoryId[] = ['offers', 'activities', 'transactions'];
 const CHANNELS: NotificationPreferenceChannelId[] = ['email', 'whatsapp', 'push'];
 export const NOTIFICATION_REQUIRED_CHANNEL: Record<NotificationPreferenceCategoryId, NotificationPreferenceChannelId> =
@@ -134,9 +137,21 @@ export const notificationPreferenceService = {
     return response.data?.preferences ?? [];
   },
 
-  async werePreferencesEditedByUser(): Promise<boolean> {
+  async shouldShowNotificationPrompt(): Promise<boolean> {
     const response = await apiClient.get<ListPreferencesResponse>(ENDPOINT);
-    return response.data?.editedByUser === true;
+    const editedByUser = response.data?.editedByUser === true;
+    if (editedByUser) {
+      logger.debug('[notifications] prompt oculto: preferências já salvas na tela');
+      return false;
+    }
+    const dismissedAt = await storageService.getNotificationPromptDismissedAt();
+    const show = dismissedAt == null || Date.now() - dismissedAt >= NOTIFICATION_PROMPT_RECURRENCE_MS;
+    logger.debug('[notifications] prompt gate', { editedByUser, dismissedAt, show });
+    return show;
+  },
+
+  async dismissPrompt(): Promise<void> {
+    await storageService.setNotificationPromptDismissedAt(Date.now());
   },
 
   async saveCategory(category: NotificationCategoryForm): Promise<void> {

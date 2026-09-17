@@ -20,7 +20,8 @@ import {
   HOME_SUMMARY_COMMUNITIES_PAGE_SIZE,
   HOME_SUMMARY_SUGGESTED_PROGRAMS_QUERY,
 } from '@/constants/home/summaryHomeData';
-import { EventBanner } from '@/components/sections/community';
+import { EventBanner, NotificationPreferencesPrompt } from '@/components/sections/community';
+import { notificationPreferenceService } from '@/services/notification/notificationPreferenceService';
 import { EventWebViewSession } from '@/components/infrastructure/webview/EventWebViewSession';
 import { styles as socialListStyles } from '@/components/sections/community/SocialList/styles';
 import { FilterCategoryModal, type FilterCategoryResult } from '@/components/ui/modals';
@@ -67,6 +68,7 @@ const SummaryScreen: React.FC<Props> = ({ navigation }) => {
   const [isProfileMenuVisible, setIsProfileMenuVisible] = useState(false);
   const [homeSearchQuery, setHomeSearchQuery] = useState('');
   const [isHomeFilterModalVisible, setIsHomeFilterModalVisible] = useState(false);
+  const [showNotificationPrompt, setShowNotificationPrompt] = useState(false);
   const { categories } = useCategories({ enabled: hasSessionToken });
   // TODO: Temporariamente desabilitados
   // const [hasCompletedAnamnesis, setHasCompletedAnamnesis] = useState<boolean>(false);
@@ -242,6 +244,40 @@ const SummaryScreen: React.FC<Props> = ({ navigation }) => {
     }, [menuItems, setMenu]),
   );
 
+  useFocusEffect(
+    useCallback(() => {
+      if (!hasSessionToken) {
+        return;
+      }
+      let cancelled = false;
+      notificationPreferenceService
+        .shouldShowNotificationPrompt()
+        .then((show) => {
+          if (!cancelled) {
+            setShowNotificationPrompt(show);
+          }
+        })
+        .catch((error) => {
+          logger.error('[SummaryScreen] Falha ao ler se o popup de notificações deve aparecer', error);
+        });
+      return () => {
+        cancelled = true;
+      };
+    }, [hasSessionToken]),
+  );
+
+  const handleNotificationPromptClose = useCallback(() => {
+    setShowNotificationPrompt(false);
+    notificationPreferenceService.dismissPrompt().catch((error) => {
+      logger.error('[SummaryScreen] Falha ao dispensar o popup de notificações', error);
+    });
+  }, []);
+
+  const handleDefineNotifications = useCallback(() => {
+    setShowNotificationPrompt(false);
+    navigateRootStack(rootNavigation, 'NotificationPreferences');
+  }, [rootNavigation]);
+
   const handleProviderPress = (provider: Provider) => {
     navigateToProviderProfile(rootNavigation, {
       providerId: provider.id,
@@ -273,73 +309,74 @@ const SummaryScreen: React.FC<Props> = ({ navigation }) => {
   );
 
   return (
-    <ScreenWithHeader
-      navigation={navigation}
-      testID='e2e.summary.root'
-      headerProps={{
-        showBackButton: false,
-        showMenuWithAvatar: true,
-        onMenuPress: handleMenuPress,
-        userAvatarUri,
-        showCartButton: true,
-        onCartPress: handleCartPress,
-      }}
-      contentContainerStyle={styles.content}
-    >
-      <View pointerEvents='none' style={styles.gradientBackground}>
-        <GradientBackground />
-      </View>
-      <View style={styles.content}>
-        <ScrollView showsVerticalScrollIndicator={false} style={styles.scrollView}>
-          <View style={styles.searchAndFilters}>
-            <SearchBar
-              placeholder={t('marketplace.searchPlaceholder')}
-              value={homeSearchQuery}
-              onChangeText={setHomeSearchQuery}
-              onSearchPress={handleHomeSearchPress}
-              showFilterButton={false}
-            />
-            <StickyFilterCarouselRow<MarketplaceSolutionTab>
-              filterButtonLabel={categoryFilterButtonLabel}
-              onFilterButtonPress={handleHomeFilterPress}
-              carouselOptions={marketplaceCarouselOptions}
-              selectedCarouselId={SOLUTION_TAB_ALL}
-              onCarouselSelect={handleHomeCarouselSelect}
-            />
-          </View>
-
-          {eventBanner ? (
-            <View style={socialListStyles.eventBannerContainer}>
-              <EventBanner
-                event={eventBanner}
-                onPress={handleEventBannerPress}
-                onCtaPress={handleEventBannerCtaPress}
+    <>
+      <ScreenWithHeader
+        navigation={navigation}
+        testID='e2e.summary.root'
+        headerProps={{
+          showBackButton: false,
+          showMenuWithAvatar: true,
+          onMenuPress: handleMenuPress,
+          userAvatarUri,
+          showCartButton: true,
+          onCartPress: handleCartPress,
+        }}
+        contentContainerStyle={styles.content}
+      >
+        <View pointerEvents='none' style={styles.gradientBackground}>
+          <GradientBackground />
+        </View>
+        <View style={styles.content}>
+          <ScrollView showsVerticalScrollIndicator={false} style={styles.scrollView}>
+            <View style={styles.searchAndFilters}>
+              <SearchBar
+                placeholder={t('marketplace.searchPlaceholder')}
+                value={homeSearchQuery}
+                onChangeText={setHomeSearchQuery}
+                onSearchPress={handleHomeSearchPress}
+                showFilterButton={false}
+              />
+              <StickyFilterCarouselRow<MarketplaceSolutionTab>
+                filterButtonLabel={categoryFilterButtonLabel}
+                onFilterButtonPress={handleHomeFilterPress}
+                carouselOptions={marketplaceCarouselOptions}
+                selectedCarouselId={SOLUTION_TAB_ALL}
+                onCarouselSelect={handleHomeCarouselSelect}
               />
             </View>
-          ) : null}
 
-          {filteredJoinCommunities.length > 0 && (
-            <View style={styles.sectionDivider}>
-              <Text style={styles.sectionTitle}>{t('home.recommendedCommunitySectionTitle')}</Text>
-              <View style={styles.sectionContainer}>
-                <JoinCardList
-                  items={filteredJoinCommunities}
-                  onItemPress={handleJoinCommunity}
-                  layout={filteredJoinCommunities.length > 1 ? 'list' : 'carousel'}
+            {eventBanner ? (
+              <View style={socialListStyles.eventBannerContainer}>
+                <EventBanner
+                  event={eventBanner}
+                  onPress={handleEventBannerPress}
+                  onCtaPress={handleEventBannerCtaPress}
                 />
               </View>
-            </View>
-          )}
+            ) : null}
 
-          {recommendedProgramCards.length > 0 && (
-            <View style={styles.sectionDivider}>
-              <Text style={styles.sectionTitle}>{t('home.recommendedProgramSectionTitle')}</Text>
-              <View style={styles.sectionContainer}>
-                <JoinCardList items={recommendedProgramCards} onItemPress={handleProgramPress} />
+            {filteredJoinCommunities.length > 0 && (
+              <View style={styles.sectionDivider}>
+                <Text style={styles.sectionTitle}>{t('home.recommendedCommunitySectionTitle')}</Text>
+                <View style={styles.sectionContainer}>
+                  <JoinCardList
+                    items={filteredJoinCommunities}
+                    onItemPress={handleJoinCommunity}
+                    layout={filteredJoinCommunities.length > 1 ? 'list' : 'carousel'}
+                  />
+                </View>
               </View>
-            </View>
-          )}
-          {/* TODO: Avatar e Anamnese temporariamente desabilitados
+            )}
+
+            {recommendedProgramCards.length > 0 && (
+              <View style={styles.sectionDivider}>
+                <Text style={styles.sectionTitle}>{t('home.recommendedProgramSectionTitle')}</Text>
+                <View style={styles.sectionContainer}>
+                  <JoinCardList items={recommendedProgramCards} onItemPress={handleProgramPress} />
+                </View>
+              </View>
+            )}
+            {/* TODO: Avatar e Anamnese temporariamente desabilitados
           {(hasAnyAnamnesisAnswers || hasCompletedAnamnesis) && (
             <View style={styles.avatarContainer}>
               <AvatarSection
@@ -367,42 +404,48 @@ const SummaryScreen: React.FC<Props> = ({ navigation }) => {
             </View>
           )}
           */}
-          {popularProviders.length > 0 && (
-            <View style={[styles.sectionDivider]}>
-              <PopularProvidersSection providers={popularProviders} onProviderPress={handleProviderPress} />
-            </View>
-          )}
-          <RecommendedProductsSection
-            navigation={rootNavigation as StackNavigationProp<RootStackParamList, keyof RootStackParamList>}
-            analyticsScreenName='summary'
-            enabled={hasSessionToken}
-            style={[
-              styles.productsContainer,
-              styles.sectionDivider,
-              styles.sectionContainer,
-              styles.sectionRetreatedContainer,
-            ]}
-          />
-        </ScrollView>
-      </View>
-      <ProfileFloatingMenu
-        visible={isProfileMenuVisible}
-        navigation={rootNavigation}
-        onClose={() => setIsProfileMenuVisible(false)}
+            {popularProviders.length > 0 && (
+              <View style={[styles.sectionDivider]}>
+                <PopularProvidersSection providers={popularProviders} onProviderPress={handleProviderPress} />
+              </View>
+            )}
+            <RecommendedProductsSection
+              navigation={rootNavigation as StackNavigationProp<RootStackParamList, keyof RootStackParamList>}
+              analyticsScreenName='summary'
+              enabled={hasSessionToken}
+              style={[
+                styles.productsContainer,
+                styles.sectionDivider,
+                styles.sectionContainer,
+                styles.sectionRetreatedContainer,
+              ]}
+            />
+          </ScrollView>
+        </View>
+        <ProfileFloatingMenu
+          visible={isProfileMenuVisible}
+          navigation={rootNavigation}
+          onClose={() => setIsProfileMenuVisible(false)}
+        />
+        <FilterCategoryModal
+          visible={isHomeFilterModalVisible}
+          onClose={() => setIsHomeFilterModalVisible(false)}
+          categories={categories}
+          selectedCategoryId={undefined}
+          onSelectCategory={() => {}}
+          selectedSolutionIds={[]}
+          solutionOptions={marketplaceSolutionOptions}
+          onFilter={handleHomeFilterApply}
+          onClear={handleHomeFilterClear}
+        />
+        {eventJoinUrl ? <EventWebViewSession url={eventJoinUrl} onClose={closeEventSession} /> : null}
+      </ScreenWithHeader>
+      <NotificationPreferencesPrompt
+        visible={showNotificationPrompt}
+        onClose={handleNotificationPromptClose}
+        onDefine={handleDefineNotifications}
       />
-      <FilterCategoryModal
-        visible={isHomeFilterModalVisible}
-        onClose={() => setIsHomeFilterModalVisible(false)}
-        categories={categories}
-        selectedCategoryId={undefined}
-        onSelectCategory={() => {}}
-        selectedSolutionIds={[]}
-        solutionOptions={marketplaceSolutionOptions}
-        onFilter={handleHomeFilterApply}
-        onClear={handleHomeFilterClear}
-      />
-      {eventJoinUrl ? <EventWebViewSession url={eventJoinUrl} onClose={closeEventSession} /> : null}
-    </ScreenWithHeader>
+    </>
   );
 };
 

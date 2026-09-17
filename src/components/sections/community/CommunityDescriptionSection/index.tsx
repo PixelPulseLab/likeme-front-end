@@ -19,19 +19,55 @@ export type CommunityDescriptionSpecialist = {
 export type CommunityDescriptionSectionProps = {
   variant: CommunityDescriptionVariant;
   specialist?: CommunityDescriptionSpecialist | null;
-  showNotificationPrompt?: boolean;
-  onNotificationPromptClose?: () => void;
-  onDefineNotifications?: () => void;
   shoppingTipDismissed?: boolean;
   onShoppingTipClose?: () => void;
 };
 
+export function NotificationPreferencesPrompt({
+  visible,
+  onClose,
+  onDefine,
+}: {
+  visible: boolean;
+  onClose?: () => void;
+  onDefine?: () => void;
+}) {
+  const { t } = useTranslation();
+  return (
+    <Modal visible={visible} transparent animationType='fade' onRequestClose={onClose}>
+      <View style={styles.promptOverlay}>
+        <CTACard
+          backgroundColor='#F6CFFB'
+          style={styles.welcomeCtaCard}
+          onClose={onClose}
+          primaryButtonLabel={t('profile.notifications.defineNow', { defaultValue: 'Definir agora' })}
+          primaryButtonOnPress={onDefine ?? onClose}
+          primaryButtonIcon='chevron-right'
+          primaryButtonIconPosition='right'
+        >
+          <Text style={styles.promptTitle}>
+            {t('profile.notifications.lead', { defaultValue: 'Suas notificações, do seu jeito.' })}
+          </Text>
+          <Text style={styles.promptIntro}>
+            {t('profile.notifications.promptIntro', {
+              defaultValue: 'Você ainda não definiu as suas preferências de notificação.',
+            })}
+          </Text>
+          <Text style={styles.promptBody}>
+            {t('profile.notifications.promptBody', {
+              defaultValue:
+                'No Like:me você escolhe por onde e em que horário quer receber novidades, ofertas e aviso das suas atividades.',
+            })}
+          </Text>
+        </CTACard>
+      </View>
+    </Modal>
+  );
+}
+
 const CommunityDescriptionSection: React.FC<CommunityDescriptionSectionProps> = ({
   variant,
   specialist,
-  showNotificationPrompt = false,
-  onNotificationPromptClose,
-  onDefineNotifications,
   shoppingTipDismissed = true,
   onShoppingTipClose,
 }) => {
@@ -49,44 +85,7 @@ const CommunityDescriptionSection: React.FC<CommunityDescriptionSectionProps> = 
     ) : null;
 
   if (variant === 'feed') {
-    return (
-      <>
-        <Modal
-          visible={showNotificationPrompt}
-          transparent
-          animationType='fade'
-          onRequestClose={onNotificationPromptClose}
-        >
-          <View style={styles.promptOverlay}>
-            <CTACard
-              backgroundColor='#F6CFFB'
-              style={styles.welcomeCtaCard}
-              onClose={onNotificationPromptClose}
-              primaryButtonLabel={t('profile.notifications.defineNow', { defaultValue: 'Definir agora' })}
-              primaryButtonOnPress={onDefineNotifications ?? onNotificationPromptClose}
-              primaryButtonIcon='chevron-right'
-              primaryButtonIconPosition='right'
-            >
-              <Text style={styles.promptTitle}>
-                {t('profile.notifications.lead', { defaultValue: 'Suas notificações, do seu jeito.' })}
-              </Text>
-              <Text style={styles.promptIntro}>
-                {t('profile.notifications.promptIntro', {
-                  defaultValue: 'Você ainda não definiu as suas preferências de notificação.',
-                })}
-              </Text>
-              <Text style={styles.promptBody}>
-                {t('profile.notifications.promptBody', {
-                  defaultValue:
-                    'No Like:me você escolhe por onde e em que horário quer receber novidades, ofertas e aviso das suas atividades.',
-                })}
-              </Text>
-            </CTACard>
-          </View>
-        </Modal>
-        {specialistBlock}
-      </>
-    );
+    return specialistBlock;
   }
 
   return (

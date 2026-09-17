@@ -6,6 +6,7 @@ export const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     paddingHorizontal: SPACING.LG,
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
   },
   welcomeCtaCard: {
     marginBottom: 0,
