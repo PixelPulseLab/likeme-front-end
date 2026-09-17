@@ -4,21 +4,20 @@ import { COLORS, FONT_FAMILY, SPACING, BORDER_RADIUS } from '@/constants';
 export const styles = StyleSheet.create({
   promptOverlay: {
     flex: 1,
-    justifyContent: 'center',
-    paddingHorizontal: SPACING.LG,
-    backgroundColor: 'rgba(0, 0, 0, 0.4)',
   },
   welcomeCtaCard: {
+    flex: 1,
     marginBottom: 0,
+    justifyContent: 'center',
   },
   promptTitle: {
     fontFamily: FONT_FAMILY.DM_SANS_BOLD,
     fontSize: 32,
-    lineHeight: 36,
+    lineHeight: 32,
     color: COLORS.TEXT,
   },
   promptIntro: {
-    marginTop: SPACING.LG,
+    marginTop: SPACING.XL,
     fontFamily: FONT_FAMILY.DM_SANS_MEDIUM,
     fontSize: 20,
     lineHeight: 26,
@@ -27,6 +26,7 @@ export const styles = StyleSheet.create({
   },
   promptBody: {
     marginTop: SPACING.SM,
+    marginBottom: SPACING.SECTION,
     fontFamily: FONT_FAMILY.DM_SANS_REGULAR,
     fontSize: 14,
     lineHeight: 18,

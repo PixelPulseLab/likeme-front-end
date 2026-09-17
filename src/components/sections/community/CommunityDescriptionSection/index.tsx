@@ -1,8 +1,9 @@
 import React from 'react';
 import { Modal, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CTACard } from '@/components/ui/cards';
 import { PartnerSection } from '@/components/sections/advertiser';
-import { COLORS } from '@/constants';
+import { COLORS, SPACING } from '@/constants';
 import { useTranslation } from '@/hooks/i18n';
 import { styles } from './styles';
 
@@ -23,6 +24,10 @@ export type CommunityDescriptionSectionProps = {
   onShoppingTipClose?: () => void;
 };
 
+// Reserva header e FloatingMenu: o card cobre a área de conteúdo, como no Figma.
+const PROMPT_TOP_CHROME = SPACING.XXL + SPACING.MD;
+const PROMPT_BOTTOM_CHROME = SPACING.XXL + SPACING.SM;
+
 export function NotificationPreferencesPrompt({
   visible,
   onClose,
@@ -33,9 +38,18 @@ export function NotificationPreferencesPrompt({
   onDefine?: () => void;
 }) {
   const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
   return (
     <Modal visible={visible} transparent animationType='fade' onRequestClose={onClose}>
-      <View style={styles.promptOverlay}>
+      <View
+        style={[
+          styles.promptOverlay,
+          {
+            paddingTop: insets.top + PROMPT_TOP_CHROME,
+            paddingBottom: insets.bottom + PROMPT_BOTTOM_CHROME,
+          },
+        ]}
+      >
         <CTACard
           backgroundColor='#F6CFFB'
           style={styles.welcomeCtaCard}
