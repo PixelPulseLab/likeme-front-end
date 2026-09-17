@@ -27,11 +27,19 @@ const ScreenWithHeader: React.FC<Props> = ({
   testID,
 }) => {
   const defaultOnLogoPress = navigation != null ? () => navigateRootStack(navigation, 'Summary') : undefined;
+  const defaultOnBellPress =
+    navigation != null ? () => navigateRootStack(navigation, 'Activities', { focusNotifications: true }) : undefined;
   const headerBackgroundColor = headerProps?.backgroundColor ?? COLORS.BACKGROUND_SECONDARY;
+  const showCartButton = headerProps?.showCartButton === true;
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: headerBackgroundColor }} edges={['top']} testID={testID}>
-      <Header {...headerProps} onLogoPress={headerProps?.onLogoPress ?? defaultOnLogoPress} />
+      <Header
+        {...headerProps}
+        onLogoPress={headerProps?.onLogoPress ?? defaultOnLogoPress}
+        showBellButton={headerProps?.showBellButton ?? showCartButton}
+        onBellPress={headerProps?.onBellPress ?? defaultOnBellPress}
+      />
       <View
         style={[
           {

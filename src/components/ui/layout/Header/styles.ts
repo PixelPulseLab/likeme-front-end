@@ -86,6 +86,15 @@ export const styles = StyleSheet.create({
     fontFamily: 'DM Sans',
     fontWeight: '700',
   },
+  bellUnreadDot: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: COLORS.FEEDBACK.WARNING,
+  },
   rightLabelButton: {
     position: 'absolute',
     right: SPACING.MD,

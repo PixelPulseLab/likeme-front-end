@@ -1,22 +1,23 @@
 import apiClient from '../infrastructure/apiClient';
-
-interface ApiResponse {
-  success: boolean;
-  message: string;
-}
+import type { ApiResponse } from '@/types/infrastructure';
 
 const notificationApiService = {
-  registerToken: async (token: string, platform: string): Promise<ApiResponse> => {
-    return apiClient.post<ApiResponse>('/api/notifications/register-token', {
+  registerToken: async (token: string, platform: string): Promise<ApiResponse<unknown>> => {
+    return apiClient.post<ApiResponse<unknown>>('/api/notifications/register-token', {
       token,
       platform,
     });
   },
 
-  unregisterToken: async (token: string): Promise<ApiResponse> => {
-    return apiClient.post<ApiResponse>('/api/notifications/unregister-token', {
+  unregisterToken: async (token: string): Promise<ApiResponse<unknown>> => {
+    return apiClient.post<ApiResponse<unknown>>('/api/notifications/unregister-token', {
       token,
     });
+  },
+
+  async hasUnread(): Promise<boolean> {
+    const response = await apiClient.get<ApiResponse<{ hasUnread: boolean }>>('/api/notifications/inbox/unread');
+    return response.data?.hasUnread === true;
   },
 };
 

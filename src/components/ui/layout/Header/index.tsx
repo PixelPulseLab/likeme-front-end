@@ -1,5 +1,6 @@
-import React, { ReactNode } from 'react';
-import { View, Text, TouchableOpacity, type ImageSourcePropType } from 'react-native';
+import React, { ReactNode, useCallback, useEffect, useState } from 'react';
+import { AppState, View, Text, TouchableOpacity, type AppStateStatus, type ImageSourcePropType } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { HOME_MVP_ASSETS } from '@/assets/homeMvp';
 import { LogoMini } from '@/assets/ui';
 import Icon from 'react-native-vector-icons/MaterialIcons';
@@ -7,6 +8,8 @@ import { IconButton } from '@/components/ui/buttons';
 import { CachedImage } from '@/components/ui/media/CachedImage';
 import { useCartItemCount } from '@/hooks/marketplace/useCartItemCount';
 import { IMAGE_PRIORITY_HIGH } from '@/constants';
+import notificationApiService from '@/services/notification/notificationApiService';
+import { logger } from '@/utils/logger';
 import { styles } from './styles';
 
 const noop = () => undefined;
@@ -22,6 +25,41 @@ function CartHeaderButton({ onPress }: { onPress: () => void }) {
           <Text style={styles.cartBadgeText}>{label}</Text>
         </View>
       ) : null}
+    </View>
+  );
+}
+
+function BellHeaderButton({ onPress }: { onPress: () => void }) {
+  const [hasUnread, setHasUnread] = useState(false);
+
+  const refreshUnread = useCallback(async () => {
+    try {
+      setHasUnread(await notificationApiService.hasUnread());
+    } catch (error) {
+      logger.error('[Header] Falha ao ler não lidas do inbox', error);
+      setHasUnread(false);
+    }
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      void refreshUnread();
+    }, [refreshUnread]),
+  );
+
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (next: AppStateStatus) => {
+      if (next === 'active') {
+        void refreshUnread();
+      }
+    });
+    return () => sub.remove();
+  }, [refreshUnread]);
+
+  return (
+    <View style={styles.cartButtonWrapper} testID='e2e.header.bell'>
+      <IconButton iconImageSource={HOME_MVP_ASSETS.bell} iconSize={22} onPress={onPress} backgroundSize='medium' />
+      {hasUnread ? <View style={styles.bellUnreadDot} /> : null}
     </View>
   );
 }
@@ -141,14 +179,7 @@ const Header: React.FC<HeaderProps> = ({
         )}
         {!hasRightLabel && (
           <View style={styles.rightButtons}>
-            {showBellButton && (
-              <IconButton
-                iconImageSource={HOME_MVP_ASSETS.bell}
-                iconSize={22}
-                onPress={onBellPress ?? noop}
-                backgroundSize='medium'
-              />
-            )}
+            {showBellButton && <BellHeaderButton onPress={onBellPress ?? noop} />}
             {showCartButton && onCartPress && <CartHeaderButton onPress={onCartPress} />}
             {showShareButton && onSharePress ? (
               <IconButton icon='share' onPress={onSharePress} backgroundSize='medium' />

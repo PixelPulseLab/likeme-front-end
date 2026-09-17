@@ -43,6 +43,7 @@ type ActivitiesScreenProps = {
       initialTab?: 'actives' | 'history';
       initialFilter?: 'all' | 'activities' | 'appointments' | 'orders';
       focusActivityId?: string;
+      focusNotifications?: boolean;
     };
   };
 };
