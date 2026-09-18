@@ -41,8 +41,12 @@ function currentRootRouteName(navigation: NavWithParent): string | undefined {
   return state?.routes[state.index]?.name;
 }
 
+function isInvitationRedeemRoute(currentRoute: string | undefined): boolean {
+  return currentRoute === 'InvitationCode' || currentRoute === 'InvitationContext';
+}
+
 function shouldStayOnInvitationRedeem(currentRoute: string | undefined, destinationScreen: string): boolean {
-  return destinationScreen === 'Wall' && (currentRoute === 'InvitationCode' || currentRoute === 'InvitationContext');
+  return destinationScreen === 'Wall' && isInvitationRedeemRoute(currentRoute);
 }
 
 export function useOnboardingRedirect(navigation: NavWithParent): void {
@@ -67,16 +71,19 @@ export function useOnboardingRedirect(navigation: NavWithParent): void {
           }
         }
 
-        const activation = await invitationService.activatePendingStoredCode();
-        if (activation.outcome === 'mismatch') {
-          Alert.alert(t('invitation.identityMismatch'));
+        const currentRoute = currentRootRouteName(navigation);
+        if (!isInvitationRedeemRoute(currentRoute)) {
+          const activation = await invitationService.activatePendingStoredCode();
+          if (activation.outcome === 'mismatch') {
+            Alert.alert(t('invitation.identityMismatch'));
+          }
         }
 
         clearCachedPostAuthRoute();
         await syncAuthSessionFromBackend();
         const sessionRoute = homeOrWallFromSession(getCachedPostAuthRoute());
         const destination = await invitationHomeRoute(sessionRoute?.screen, sessionRoute?.params);
-        if (shouldStayOnInvitationRedeem(currentRootRouteName(navigation), destination.screen)) {
+        if (shouldStayOnInvitationRedeem(currentRoute, destination.screen)) {
           return;
         }
         replace(destination.screen, destination.params);

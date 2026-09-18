@@ -150,9 +150,22 @@ describe('useOnboardingRedirect', () => {
     renderHook(() => useOnboardingRedirect(navigation));
 
     await waitFor(() => {
-      expect(mockActivatePendingStoredCode).toHaveBeenCalled();
       expect(mockInvitationHomeRoute).toHaveBeenCalledWith('Wall', undefined);
     });
+    expect(mockActivatePendingStoredCode).not.toHaveBeenCalled();
+    expect(navigation.reset).not.toHaveBeenCalled();
+  });
+
+  it('não ativa convite pendente com a sessão atual na tela de contexto', async () => {
+    mockGetCachedPostAuthRoute.mockReturnValue({ screen: 'Wall' });
+    navigation.getState.mockReturnValue({ index: 0, routes: [{ name: 'InvitationContext' }] });
+
+    renderHook(() => useOnboardingRedirect(navigation));
+
+    await waitFor(() => {
+      expect(mockInvitationHomeRoute).toHaveBeenCalledWith('Wall', undefined);
+    });
+    expect(mockActivatePendingStoredCode).not.toHaveBeenCalled();
     expect(navigation.reset).not.toHaveBeenCalled();
   });
 

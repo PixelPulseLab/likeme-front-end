@@ -28,8 +28,9 @@ export const useAuthLogin = (navigation: any) => {
           await storageService.removePendingInvitationCode();
         }
 
+        const pendingInvitationCode = await storageService.getPendingInvitationCode();
         const existingToken = await storageService.getToken();
-        if (!existingToken?.trim()) {
+        if (!existingToken?.trim() || pendingInvitationCode) {
           const authResult = await AuthService.login();
           await AuthService.validateToken(authResult);
         }
