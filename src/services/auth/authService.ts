@@ -8,6 +8,7 @@ import { clearSuggestedProductsCache } from '@/services/product/suggestedProduct
 import { clearCommunitiesListCache } from '@/utils/community/communitiesListCache';
 import { clearPublicUserCache } from '@/services/user/publicUserCache';
 import { fetchWithTimeout } from '@/utils/network/fetchWithTimeout';
+import { AppState } from 'react-native';
 import { setOnboardingStep } from './setOnboardingStep';
 import {
   applyAuthSessionResponse,
@@ -21,9 +22,98 @@ import { LoginUserAbortError, isLoginUserAbortError } from '@/utils/auth/loginUs
 
 const AUTH0_DISCOVERY_TIMEOUT_MS = 15_000;
 const AUTH0_TOKEN_EXCHANGE_TIMEOUT_MS = 20_000;
+const AUTH0_TOKEN_EXCHANGE_FOREGROUND_DELAY_MS = 400;
+const AUTH0_TOKEN_EXCHANGE_MAX_ATTEMPTS = 3;
 const AUTH0_USERINFO_TIMEOUT_MS = 15_000;
 const AUTH_BACKEND_LOGIN_TIMEOUT_MS = 25_000;
 const AUTH0_REFRESH_TOKEN_TIMEOUT_MS = 20_000;
+
+function isNetworkRequestFailedError(error: unknown): boolean {
+  return error instanceof Error && error.message.toLowerCase().includes('network request failed');
+}
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function waitUntilAppIsActive(): Promise<void> {
+  if (AppState.currentState !== 'active') {
+    await Promise.race([
+      new Promise<void>((resolve) => {
+        const subscription = AppState.addEventListener('change', (nextState) => {
+          if (nextState === 'active') {
+            subscription.remove();
+            resolve();
+          }
+        });
+      }),
+      delay(5_000),
+    ]);
+  }
+  await delay(AUTH0_TOKEN_EXCHANGE_FOREGROUND_DELAY_MS);
+}
+
+type Auth0TokenExchangeResult = {
+  accessToken: string;
+  idToken?: string;
+  refreshToken?: string;
+};
+
+function auth0TokenExchangeErrorMessage(payload: Record<string, unknown> | null, status: number): string {
+  const description = payload?.error_description;
+  if (typeof description === 'string' && description.trim()) {
+    return description.trim();
+  }
+  const error = payload?.error;
+  if (typeof error === 'string' && error.trim()) {
+    return error.trim();
+  }
+  return `HTTP ${status}`;
+}
+
+async function exchangeAuth0AuthorizationCode(params: {
+  tokenEndpoint: string;
+  code: string;
+  redirectUri: string;
+  codeVerifier: string;
+}): Promise<Auth0TokenExchangeResult> {
+  const body = new URLSearchParams({
+    grant_type: 'authorization_code',
+    client_id: AUTH0_CONFIG.clientId,
+    code: params.code,
+    redirect_uri: params.redirectUri,
+    code_verifier: params.codeVerifier,
+  }).toString();
+
+  const response = await fetchWithTimeout(
+    params.tokenEndpoint,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        Accept: 'application/json',
+      },
+      body,
+    },
+    AUTH0_TOKEN_EXCHANGE_TIMEOUT_MS,
+  );
+
+  const payload = (await response.json().catch(() => null)) as Record<string, unknown> | null;
+  if (!response.ok) {
+    throw new Error(auth0TokenExchangeErrorMessage(payload, response.status));
+  }
+
+  const accessToken = typeof payload?.access_token === 'string' ? payload.access_token : '';
+  if (!accessToken) {
+    throw new Error('Auth0 não retornou access_token');
+  }
+
+  return {
+    accessToken,
+    idToken: typeof payload?.id_token === 'string' ? payload.id_token : undefined,
+    refreshToken: typeof payload?.refresh_token === 'string' ? payload.refresh_token : undefined,
+  };
+}
 
 async function withTimeout<T>(promise: Promise<T>, timeoutMs: number, label: string): Promise<T> {
   let timeoutId: ReturnType<typeof setTimeout> | undefined;
@@ -158,34 +248,49 @@ class AuthService {
         throw new Error(`Falha na autenticação. Tipo: ${result.type}`);
       }
 
-      let tokenResponse;
+      let tokenResponse: Auth0TokenExchangeResult | undefined;
       try {
         logger.debug('[AuthService] exchanging authorization code for tokens', {
           hasCode: typeof result.params.code === 'string' && result.params.code.length > 0,
           hasState: typeof result.params.state === 'string' && result.params.state.length > 0,
         });
 
-        const codeVerifier = (request as any).codeVerifier;
+        const codeVerifier = request.codeVerifier;
+        const authorizationCode = result.params.code;
         if (!codeVerifier) {
           throw new Error('code_verifier não encontrado no request. O PKCE pode não ter sido gerado corretamente.');
         }
+        if (!authorizationCode) {
+          throw new Error('Auth0 não retornou o código de autorização.');
+        }
         logger.debug('[AuthService] PKCE code_verifier disponível');
 
-        tokenResponse = await withTimeout(
-          AuthSession.exchangeCodeAsync(
-            {
-              clientId: AUTH0_CONFIG.clientId,
-              code: result.params.code,
-              redirectUri: this.getRedirectUri(),
-              extraParams: {
-                code_verifier: codeVerifier,
-              },
-            },
-            discovery,
-          ),
-          AUTH0_TOKEN_EXCHANGE_TIMEOUT_MS,
-          'Auth0 token exchange',
-        );
+        const tokenEndpoint = discovery.tokenEndpoint || this.getTokenUrl();
+        const redirectUri = request.redirectUri || this.getRedirectUri();
+        let lastExchangeError: unknown;
+        for (let attempt = 1; attempt <= AUTH0_TOKEN_EXCHANGE_MAX_ATTEMPTS; attempt += 1) {
+          // iOS: o fetch logo após o ASWebAuthenticationSession cai com Network request failed.
+          await waitUntilAppIsActive();
+          try {
+            tokenResponse = await exchangeAuth0AuthorizationCode({
+              tokenEndpoint,
+              code: authorizationCode,
+              redirectUri,
+              codeVerifier,
+            });
+            lastExchangeError = undefined;
+            break;
+          } catch (error) {
+            lastExchangeError = error;
+            if (!isNetworkRequestFailedError(error) || attempt === AUTH0_TOKEN_EXCHANGE_MAX_ATTEMPTS) {
+              throw error;
+            }
+            logger.warn('[AuthService] token exchange falhou por rede; nova tentativa', { attempt, tokenEndpoint });
+          }
+        }
+        if (!tokenResponse) {
+          throw lastExchangeError instanceof Error ? lastExchangeError : new Error('Erro ao trocar código por token');
+        }
         logger.debug('[AuthService] token exchange concluído');
       } catch (error) {
         logger.error('Token exchange error:', error);
@@ -194,6 +299,9 @@ class AuthService {
             throw new Error(
               'Erro PKCE: O code_verifier não foi encontrado. Isso pode acontecer se a sessão foi perdida. Tente fazer login novamente.',
             );
+          }
+          if (isNetworkRequestFailedError(error)) {
+            throw new Error('Não foi possível concluir o login após o Auth0. Verifique a conexão e tente novamente.');
           }
           if (error.message.includes('JSON')) {
             throw new Error('Erro ao processar resposta do Auth0. Verifique a configuração do cliente e do audience.');
