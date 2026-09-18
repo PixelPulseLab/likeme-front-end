@@ -44,6 +44,8 @@
         <data android:scheme="https" android:host="app.likeme.global" android:pathPrefix="/protocol"/>
         <data android:scheme="https" android:host="app.likeme.global" android:pathPrefix="/affiliate"/>
         <data android:scheme="https" android:host="app.likeme.global" android:pathPrefix="/provider"/>
+        <data android:scheme="https" android:host="app.likeme.global" android:pathPrefix="/subscription"/>
+        <data android:scheme="https" android:host="app.likeme.global" android:pathPrefix="/invite"/>
         <category android:name="android.intent.category.BROWSABLE"/>
         <category android:name="android.intent.category.DEFAULT"/>
       </intent-filter>
