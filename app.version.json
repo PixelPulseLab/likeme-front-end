@@ -1,17 +1,15 @@
 {
-  "version": "1.17.0",
-  "releasedAt": "2026-09-17",
+  "version": "1.17.1",
+  "releasedAt": "2026-09-18",
   "android": {
-    "versionCode": 264
+    "versionCode": 265
   },
   "ios": {
-    "buildNumber": 40
+    "buildNumber": 41
   },
   "changelog": {
-    "added": [
-      "Tela de preferências para escolher canal e horário das notificações",
-      "Popup na home e na comunidade até você salvar as preferências",
-      "Sino no header com bolinha de não lidas e lista de notificações em Atividades"
+    "fixed": [
+      "No Logar do convite, pede a conta de novo mesmo se outra já estava no app"
     ]
   }
 }

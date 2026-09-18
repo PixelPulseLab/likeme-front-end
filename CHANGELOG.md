@@ -363,3 +363,8 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 - Tela de preferências para escolher canal e horário das notificações
 - Popup na home e na comunidade até você salvar as preferências
 - Sino no header com bolinha de não lidas e lista de notificações em Atividades
+
+## [1.17.1] - 2026-09-18
+
+### Corrigido
+- No Logar do convite, pede a conta de novo mesmo se outra já estava no app
