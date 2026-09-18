@@ -8,7 +8,6 @@ Legenda: OK = flow assertivo · DL = deep link · UI = só abertura de tela · S
 | Unauthenticated | OK | smoke / bootstrap |
 | Authenticated | OK | bootstrap |
 | Welcome | OK | welcome-screen, onboarding-flow |
-| AppPresentation | UI (pós Welcome) | onboarding-flow |
 | PrivacyPolicies | UI | onboarding-flow |
 | Register | UI | onboarding-flow |
 | Plans | SKIP (fora do fluxo ativo) | — |

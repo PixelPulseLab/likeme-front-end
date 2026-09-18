@@ -114,7 +114,6 @@ export const SCREEN_NAMES = {
   InvitationContext: 'invitation_context',
   Authenticated: 'authenticated',
   Welcome: 'welcome',
-  AppPresentation: 'app_presentation',
   Register: 'register',
   Anamnesis: 'anamnesis_start',
   AnamnesisHome: 'anamnesis_home',

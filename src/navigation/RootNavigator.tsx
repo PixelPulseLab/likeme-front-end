@@ -21,7 +21,6 @@ import {
   getWallScreen,
   getAuthenticatedScreen,
   getWelcomeScreen,
-  getAppPresentationScreen,
   getRegisterScreen,
   getPlansScreen,
   getAnamnesisStartScreen,
@@ -155,11 +154,6 @@ const RootNavigator: React.FC = () => {
                   options={{ title: 'Tela Autenticada' }}
                 />
                 <Stack.Screen name='Welcome' getComponent={getWelcomeScreen} options={{ title: 'Boas-vindas' }} />
-                <Stack.Screen
-                  name='AppPresentation'
-                  getComponent={getAppPresentationScreen}
-                  options={{ title: 'Apresentação' }}
-                />
                 <Stack.Screen name='Register' getComponent={getRegisterScreen} options={{ title: 'Cadastro' }} />
                 <Stack.Screen name='Plans' getComponent={getPlansScreen} options={{ title: 'Planos' }} />
                 <Stack.Screen

@@ -59,7 +59,6 @@ type RootStackParamListCore = {
   Wall: undefined;
   Authenticated: undefined;
   Welcome: undefined;
-  AppPresentation: { userName?: string };
   Register: { userName?: string };
   Plans: { userName?: string };
   InterestCategories: { firstName?: string };

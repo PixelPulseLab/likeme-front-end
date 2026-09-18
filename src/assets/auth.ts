@@ -22,11 +22,7 @@ import GradientSplash7Png from '../../assets/auth/GradientSplash7.png';
 import GradientSplash8Png from '../../assets/auth/GradientSplash8.png';
 import GradientSplash9Png from '../../assets/auth/GradientSplash9.png';
 
-// Telas de apresentação / onboarding
-import Presentation2Jpg from '../../assets/onboarding/presentation-2.jpg';
-import Presentation3Jpg from '../../assets/onboarding/presentation-3.jpg';
-import Presentation4Jpg from '../../assets/onboarding/presentation-4.jpg';
-import FirstStepBackgroundPng from '../../assets/onboarding/FirstStepBackground.png';
+// Avatares do onboarding de convite
 import OnboardingMindAvatarPng from '../../assets/onboarding/MindAvatar.png';
 import OnboardingBodyAvatarPng from '../../assets/onboarding/BodyAvatar.png';
 import OnboardingLikeMeAvatarPng from '../../assets/onboarding/LikeMeAvatar.png';
@@ -53,10 +49,6 @@ export const GradientSplash7 = GradientSplash7Png;
 export const GradientSplash8 = GradientSplash8Png;
 export const GradientSplash9 = GradientSplash9Png;
 
-export const Presentation2 = Presentation2Jpg;
-export const Presentation3 = Presentation3Jpg;
-export const Presentation4 = Presentation4Jpg;
-export const FirstStepBackground = FirstStepBackgroundPng;
 export const OnboardingMindAvatar = OnboardingMindAvatarPng;
 export const OnboardingBodyAvatar = OnboardingBodyAvatarPng;
 export const OnboardingLikeMeAvatar = OnboardingLikeMeAvatarPng;

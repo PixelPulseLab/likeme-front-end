@@ -39,20 +39,4 @@ appId: app.likeme.com
     text: "Yes, sure"
     optional: true
 
-# AppPresentation - página 1
-- waitForAnimationToEnd
-- takeScreenshot: screens/04-AppPresentation-1
-
-# AppPresentation - página 2
-- tapOn: "›"
-- waitForAnimationToEnd
-- takeScreenshot: screens/05-AppPresentation-2
-
-# AppPresentation - página 3
-- tapOn: "›"
-- waitForAnimationToEnd
-- takeScreenshot: screens/06-AppPresentation-3
-
-# Nota: Após a última página, o tap em "›" aciona login (Auth0).
-# Para capturar as telas do app autenticado, execute export-screenshots-app.yaml
-# após fazer login manualmente e completar o onboarding.
+# Para capturar as telas do app autenticado, execute export-screenshots-app.yaml após login.

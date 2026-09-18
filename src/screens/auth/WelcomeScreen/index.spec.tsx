@@ -58,7 +58,7 @@ jest.mock('@/analytics', () => ({
 }));
 
 jest.mock('@/utils', () => ({
-  getNextOnboardingScreen: () => 'AppPresentation',
+  getNextOnboardingScreen: () => 'PrivacyPolicies',
 }));
 
 jest.mock('@/services', () => ({
@@ -92,7 +92,7 @@ describe('WelcomeScreen', () => {
     expect(getByPlaceholderText('auth.yourNamePlaceholder')).toBeTruthy();
   });
 
-  it('navega para AppPresentation ao pressionar Enter em qualquer teclado', async () => {
+  it('navega para PrivacyPolicies ao pressionar Enter em qualquer teclado', async () => {
     const mockNavigation = {
       navigate: jest.fn(),
       goBack: jest.fn(),
@@ -105,7 +105,7 @@ describe('WelcomeScreen', () => {
     fireEvent(input, 'submitEditing');
 
     await waitFor(() => {
-      expect(mockNavigation.navigate).toHaveBeenCalledWith('AppPresentation', { userName: 'John' });
+      expect(mockNavigation.navigate).toHaveBeenCalledWith('PrivacyPolicies', { userName: 'John' });
     });
   });
 

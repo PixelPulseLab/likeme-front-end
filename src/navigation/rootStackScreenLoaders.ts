@@ -32,8 +32,6 @@ export const getAuthenticatedScreen = (): RootStackScreen =>
   asScreen(require('../screens/auth/AuthenticatedScreen') as { default: RootStackScreen });
 export const getWelcomeScreen = (): RootStackScreen =>
   asScreen(require('../screens/auth/WelcomeScreen') as { default: RootStackScreen });
-export const getAppPresentationScreen = (): RootStackScreen =>
-  asScreen(require('../screens/auth/AppPresentationScreen') as { default: RootStackScreen });
 export const getRegisterScreen = (): RootStackScreen =>
   asScreen(require('../screens/auth/RegisterScreen') as { default: RootStackScreen });
 export const getPlansScreen = (): RootStackScreen =>
