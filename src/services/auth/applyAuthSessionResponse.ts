@@ -1,7 +1,5 @@
-import type { AppReleasePolicy } from '@/types/app/appReleasePolicy';
 import type { Product } from '@/types/product';
 import type { ListCommunitiesApiResponse } from '@/types/community';
-import { parseAppReleasePolicyPayload } from '@/services/app/appReleasePolicyService';
 import { invalidateApiClientAuthTokenMemoryCache } from '@/services/infrastructure/apiClient';
 import { setCachedSuggestedProducts, suggestedProductsCacheKey } from '@/services/product/suggestedProductsCache';
 import {
@@ -28,9 +26,6 @@ export type AuthSessionPostAuthRoute = {
 
 export type AuthSessionApplyResult = {
   ok: boolean;
-  releasePolicy: AppReleasePolicy | null;
-  serverMustUpdate: boolean | null;
-  serverRecommendUpdate: boolean | null;
   postAuthRoute: AuthSessionPostAuthRoute | null;
 };
 
@@ -140,16 +135,13 @@ function seedHomeSummaryCaches(payload: Record<string, unknown>): void {
 
 /**
  * Aplica resposta de GET /api/auth/token ou /api/auth/session.
- * Home summary / release policy só existem em /session.
+ * Home summary só existe em /session.
  */
 export async function applyAuthSessionResponse(envelope: unknown): Promise<AuthSessionApplyResult> {
   const payload = readSessionPayload(envelope);
   if (!payload) {
     return {
       ok: false,
-      releasePolicy: null,
-      serverMustUpdate: null,
-      serverRecommendUpdate: null,
       postAuthRoute: null,
     };
   }
@@ -160,16 +152,8 @@ export async function applyAuthSessionResponse(envelope: unknown): Promise<AuthS
   cachedPostAuthRoute = readPostAuthRoute(payload);
   seedHomeSummaryCaches(payload);
 
-  const releasePolicyParsed =
-    payload.releasePolicy != null
-      ? parseAppReleasePolicyPayload(payload.releasePolicy)
-      : { policy: null, serverMustUpdate: null, serverRecommendUpdate: null };
-
   return {
     ok: tokenPersisted,
-    releasePolicy: releasePolicyParsed.policy,
-    serverMustUpdate: releasePolicyParsed.serverMustUpdate,
-    serverRecommendUpdate: releasePolicyParsed.serverRecommendUpdate,
     postAuthRoute: cachedPostAuthRoute,
   };
 }

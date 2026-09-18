@@ -6,6 +6,7 @@ import { PartialLogo3, GradientSplash7, GradientSplash8, GradientSplash9 } from 
 import { AppOpenLogoAnimation, type AppOpenLogoAnimationHandle } from '@/components/ui/feedback/AppOpenLogoAnimation';
 import { styles, GRADIENT_STRIP_HEIGHT, GRADIENT_STRIP_WIDTH } from './styles';
 import { invalidateApiClientAuthTokenMemoryCache, storageService } from '@/services';
+import { fetchAppReleasePolicy, type AppReleasePolicyFetchResult } from '@/services/app/appReleasePolicyService';
 import { useTranslation } from '@/hooks/i18n';
 import { useAnalyticsScreen } from '@/analytics';
 import { STORE_URL_CONFIG } from '@/config';
@@ -195,47 +196,71 @@ const LoadingScreen: React.FC<Props> = ({ navigation }) => {
       replaceOnce('Unauthenticated');
     };
 
-    const runReturningUserBootstrapFlow = async (storedToken: string) => {
+    const navigateToForcedUpdateIfNeeded = async (
+      releasePolicy: AppReleasePolicy | null,
+      serverMustUpdate: boolean | null,
+      installedVersion: string,
+    ): Promise<boolean> => {
+      if (!releasePolicy || serverMustUpdate !== true) {
+        return false;
+      }
+
+      logger.warn('[LoadingScreen] mustUpdate: versão instalada abaixo do mínimo do backend', {
+        platform: Platform.OS,
+        installedVersion,
+        minIos: releasePolicy.minVersionIos,
+        minAndroid: releasePolicy.minVersionAndroid,
+      });
+      const storeUrl = resolveStoreUrlForPlatform(releasePolicy, STORE_URL_CONFIG);
+      await dismissReturningUserLogo();
+      replaceOnce('ForcedUpdate', {
+        storeUrl,
+        message: releasePolicy.message ?? undefined,
+      });
+      return true;
+    };
+
+    const loadPublicReleasePolicy = async (
+      publicPolicyPromise: Promise<AppReleasePolicyFetchResult>,
+      installedVersion: string,
+    ): Promise<AppReleasePolicyFetchResult> => {
+      const publicPolicy = await publicPolicyPromise;
+      if (__DEV__) {
+        logger.info('[LoadingScreen] Política de versão (release-policy)', {
+          platform: Platform.OS,
+          installedVersion,
+          serverMustUpdate: publicPolicy.serverMustUpdate,
+          serverRecommendUpdate: publicPolicy.serverRecommendUpdate,
+          minIos: publicPolicy.policy?.minVersionIos,
+          minAndroid: publicPolicy.policy?.minVersionAndroid,
+        });
+      }
+      return publicPolicy;
+    };
+
+    const runReturningUserBootstrapFlow = async (
+      storedToken: string,
+      installedVersion: string,
+      publicPolicyPromise: Promise<AppReleasePolicyFetchResult>,
+    ) => {
       if (isScreenActive) {
         setBootstrapMode('returning');
       }
 
+      const bootstrapPromise = runReturningUserBootstrap(storedToken);
+      const publicPolicy = await loadPublicReleasePolicy(publicPolicyPromise, installedVersion);
+      if (await navigateToForcedUpdateIfNeeded(publicPolicy.policy, publicPolicy.serverMustUpdate, installedVersion)) {
+        return;
+      }
+
       try {
-        const installedVersion = getInstalledAppVersion();
-        const bootstrap = await runReturningUserBootstrap(storedToken, installedVersion);
-
-        if (__DEV__) {
-          logger.info('[LoadingScreen] Política de versão (release-policy)', {
-            platform: Platform.OS,
-            installedVersion,
-            serverMustUpdate: bootstrap.serverMustUpdate,
-            serverRecommendUpdate: bootstrap.serverRecommendUpdate,
-            minIos: bootstrap.releasePolicy?.minVersionIos,
-            minAndroid: bootstrap.releasePolicy?.minVersionAndroid,
-          });
-        }
-
-        if (bootstrap.releasePolicy && bootstrap.serverMustUpdate === true) {
-          logger.warn('[LoadingScreen] mustUpdate: versão instalada abaixo do mínimo do backend', {
-            platform: Platform.OS,
-            installedVersion,
-            minIos: bootstrap.releasePolicy.minVersionIos,
-            minAndroid: bootstrap.releasePolicy.minVersionAndroid,
-          });
-          const storeUrl = resolveStoreUrlForPlatform(bootstrap.releasePolicy, STORE_URL_CONFIG);
-          await dismissReturningUserLogo();
-          replaceOnce('ForcedUpdate', {
-            storeUrl,
-            message: bootstrap.releasePolicy.message ?? undefined,
-          });
-          return;
-        }
+        const bootstrap = await bootstrapPromise;
 
         if (bootstrap.shouldAuthenticate) {
           await dismissReturningUserLogo();
           replaceOnce('Authenticated');
-          if (bootstrap.releasePolicy && bootstrap.serverRecommendUpdate === true) {
-            showRecommendedUpdateAlert(bootstrap.releasePolicy);
+          if (publicPolicy.policy && publicPolicy.serverRecommendUpdate === true) {
+            showRecommendedUpdateAlert(publicPolicy.policy);
           }
           return;
         }
@@ -259,6 +284,12 @@ const LoadingScreen: React.FC<Props> = ({ navigation }) => {
     };
 
     const run = async () => {
+      const installedVersion = getInstalledAppVersion();
+      const publicPolicyPromise: Promise<AppReleasePolicyFetchResult> =
+        Platform.OS === 'ios' || Platform.OS === 'android'
+          ? fetchAppReleasePolicy(installedVersion)
+          : Promise.resolve({ policy: null, serverMustUpdate: null, serverRecommendUpdate: null });
+
       let storedToken: string | null = null;
       try {
         storedToken = await storageService.getToken();
@@ -267,7 +298,13 @@ const LoadingScreen: React.FC<Props> = ({ navigation }) => {
       }
 
       if (storedToken) {
-        await runReturningUserBootstrapFlow(storedToken);
+        await runReturningUserBootstrapFlow(storedToken, installedVersion, publicPolicyPromise);
+        return;
+      }
+
+      void startI18nHydration('pt-BR');
+      const publicPolicy = await loadPublicReleasePolicy(publicPolicyPromise, installedVersion);
+      if (await navigateToForcedUpdateIfNeeded(publicPolicy.policy, publicPolicy.serverMustUpdate, installedVersion)) {
         return;
       }
 

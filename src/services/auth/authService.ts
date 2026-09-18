@@ -8,7 +8,6 @@ import { clearSuggestedProductsCache } from '@/services/product/suggestedProduct
 import { clearCommunitiesListCache } from '@/utils/community/communitiesListCache';
 import { clearPublicUserCache } from '@/services/user/publicUserCache';
 import { fetchWithTimeout } from '@/utils/network/fetchWithTimeout';
-import { Platform } from 'react-native';
 import { setOnboardingStep } from './setOnboardingStep';
 import {
   applyAuthSessionResponse,
@@ -454,21 +453,10 @@ class AuthService {
   }
 
   /**
-   * GET /api/auth/session — bootstrap returning user (token + release policy + home summary).
+   * GET /api/auth/session — bootstrap returning user (token + home summary).
    */
-  async bootstrapBackendSession(options?: {
-    installedVersion?: string;
-  }): Promise<AuthSessionApplyResult & { responseBody: Record<string, unknown> | null }> {
-    const qs = new URLSearchParams();
-    const installedVersion = typeof options?.installedVersion === 'string' ? options.installedVersion.trim() : '';
-    if (installedVersion !== '') {
-      qs.set('currentVersion', installedVersion);
-    }
-    if (Platform.OS === 'ios' || Platform.OS === 'android') {
-      qs.set('platform', Platform.OS);
-    }
-    const path = qs.toString() ? `/api/auth/session?${qs.toString()}` : '/api/auth/session';
-    return this.fetchAndApplyAuthEndpoint(path);
+  async bootstrapBackendSession(): Promise<AuthSessionApplyResult & { responseBody: Record<string, unknown> | null }> {
+    return this.fetchAndApplyAuthEndpoint('/api/auth/session');
   }
 
   private async fetchAndApplyAuthEndpoint(
@@ -477,9 +465,6 @@ class AuthService {
     const empty = {
       ok: false as const,
       responseBody: null,
-      releasePolicy: null,
-      serverMustUpdate: null,
-      serverRecommendUpdate: null,
       postAuthRoute: null,
     };
     try {

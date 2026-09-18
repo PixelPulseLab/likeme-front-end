@@ -73,9 +73,6 @@ describe('useOnboardingRedirect', () => {
     mockRefreshBackendSession.mockResolvedValue({
       ok: true,
       postAuthRoute: { screen: 'Home' },
-      releasePolicy: null,
-      serverMustUpdate: null,
-      serverRecommendUpdate: null,
       responseBody: {},
     });
   });

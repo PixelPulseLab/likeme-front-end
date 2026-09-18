@@ -36,11 +36,28 @@ jest.mock('@/utils/auth/returningUserBootstrap', () => ({
   runReturningUserBootstrap: jest.fn(),
 }));
 
+jest.mock('@/services/app/appReleasePolicyService', () => ({
+  fetchAppReleasePolicy: jest.fn(),
+}));
+
 import { runReturningUserBootstrap } from '@/utils/auth/returningUserBootstrap';
+import { fetchAppReleasePolicy } from '@/services/app/appReleasePolicyService';
 
 const mockRunReturningUserBootstrap = runReturningUserBootstrap as jest.MockedFunction<
   typeof runReturningUserBootstrap
 >;
+const mockFetchAppReleasePolicy = fetchAppReleasePolicy as jest.MockedFunction<typeof fetchAppReleasePolicy>;
+
+const FORCE_UPDATE_POLICY = {
+  forceUpdateEnabled: true,
+  minVersionIos: '1.16.3',
+  minVersionAndroid: '1.16.3',
+  recommendedVersionIos: null,
+  recommendedVersionAndroid: null,
+  storeUrlIos: 'https://apps.apple.com/br/app/like-me/id6757706434',
+  storeUrlAndroid: 'https://play.google.com/store/apps/details?id=com.likeme.app',
+  message: null,
+};
 
 const mockDismissReturningUserLogo = jest.fn().mockResolvedValue(undefined);
 
@@ -81,7 +98,9 @@ describe('LoadingScreen', () => {
     mockRunReturningUserBootstrap.mockResolvedValue({
       hadStoredToken: true,
       shouldAuthenticate: true,
-      releasePolicy: null,
+    });
+    mockFetchAppReleasePolicy.mockResolvedValue({
+      policy: null,
       serverMustUpdate: null,
       serverRecommendUpdate: null,
     });
@@ -143,7 +162,7 @@ describe('LoadingScreen', () => {
       { timeout: 12_000 },
     );
 
-    expect(mockRunReturningUserBootstrap).toHaveBeenCalledWith('valid-token', expect.any(String));
+    expect(mockRunReturningUserBootstrap).toHaveBeenCalledWith('valid-token');
     expect(mockDismissReturningUserLogo).toHaveBeenCalledTimes(1);
     expect(mockRemoveToken).not.toHaveBeenCalled();
     expect(mockEnsureI18nHydrated).not.toHaveBeenCalled();
@@ -183,9 +202,6 @@ describe('LoadingScreen', () => {
     mockRunReturningUserBootstrap.mockResolvedValue({
       hadStoredToken: true,
       shouldAuthenticate: false,
-      releasePolicy: null,
-      serverMustUpdate: null,
-      serverRecommendUpdate: null,
     });
 
     const replace = jest.fn();
@@ -226,9 +242,6 @@ describe('LoadingScreen', () => {
     mockRunReturningUserBootstrap.mockResolvedValue({
       hadStoredToken: true,
       shouldAuthenticate: false,
-      releasePolicy: null,
-      serverMustUpdate: null,
-      serverRecommendUpdate: null,
     });
 
     const replace = jest.fn();
@@ -244,6 +257,46 @@ describe('LoadingScreen', () => {
       { timeout: 12_000 },
     );
     expect(mockRemoveToken).toHaveBeenCalled();
+  });
+
+  it('no first launch navega para ForcedUpdate quando a policy pública exige mustUpdate', async () => {
+    mockFetchAppReleasePolicy.mockResolvedValue({
+      policy: FORCE_UPDATE_POLICY,
+      serverMustUpdate: true,
+      serverRecommendUpdate: false,
+    });
+    const replace = jest.fn();
+
+    render(<LoadingScreen navigation={{ replace, navigate: jest.fn() }} />);
+    await act(async () => {
+      await jest.runAllTimersAsync();
+    });
+
+    await waitFor(() => {
+      expect(replace).toHaveBeenCalledWith('ForcedUpdate', expect.objectContaining({ storeUrl: expect.any(String) }));
+    });
+    expect(replace).not.toHaveBeenCalledWith('Unauthenticated');
+    expect(mockRunReturningUserBootstrap).not.toHaveBeenCalled();
+  });
+
+  it('com token navega para ForcedUpdate quando a policy pública exige mustUpdate', async () => {
+    mockGetToken.mockResolvedValue('valid-token');
+    mockFetchAppReleasePolicy.mockResolvedValue({
+      policy: FORCE_UPDATE_POLICY,
+      serverMustUpdate: true,
+      serverRecommendUpdate: false,
+    });
+    const replace = jest.fn();
+
+    render(<LoadingScreen navigation={{ replace, navigate: jest.fn() }} />);
+    await act(async () => {
+      await jest.runAllTimersAsync();
+    });
+
+    await waitFor(() => {
+      expect(replace).toHaveBeenCalledWith('ForcedUpdate', expect.objectContaining({ storeUrl: expect.any(String) }));
+    });
+    expect(replace).not.toHaveBeenCalledWith('Authenticated');
   });
 
   it('aguarda retentativas do watchdog antes de exibir erro de internet', async () => {
