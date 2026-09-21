@@ -6,6 +6,10 @@ export const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.PRIMARY.LIGHT,
   },
+  listWrap: {
+    flex: 1,
+    position: 'relative',
+  },
   scrollContent: {
     paddingBottom: SPACING.XL + FLOATING_NAV_MENU_BAR_OFFSET,
   },

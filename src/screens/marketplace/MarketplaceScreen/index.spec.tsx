@@ -150,6 +150,13 @@ jest.mock('@/components/ui/feedback', () => {
         <Text>{title}</Text>
       </View>
     ),
+    PullToRefreshIndicator: () => null,
+    usePullToRefresh: () => ({
+      refreshing: false,
+      showIndicator: false,
+      onScroll: jest.fn(),
+      refreshControl: undefined,
+    }),
   };
 });
 
@@ -305,15 +312,18 @@ describe('MarketplaceScreen', () => {
       loading: false,
       hasMore: false,
       loadAds: mockLoadAds,
+      refresh: jest.fn(),
     });
     mockUseProducts.mockReturnValue({
       ads: [],
       loading: false,
       hasMore: false,
       loadProducts: mockLoadProducts,
+      refresh: jest.fn(),
     });
     mockUseMarketplaceScreenListings.mockReturnValue({
       resetPages: jest.fn(),
+      refresh: jest.fn(),
       handleLoadMore: jest.fn(),
       showCategoryBlocks: false,
       showAllTabGroupedLayout: true,
@@ -432,6 +442,7 @@ describe('MarketplaceScreen', () => {
   it('shows category curation title and intro when category filter is active on another tab block', async () => {
     mockUseMarketplaceScreenListings.mockReturnValue({
       resetPages: jest.fn(),
+      refresh: jest.fn(),
       handleLoadMore: jest.fn(),
       showCategoryBlocks: false,
       showAllTabGroupedLayout: false,
@@ -474,6 +485,7 @@ describe('MarketplaceScreen', () => {
   it('exibe blocos por categoria quando filtro de categoria está ativo na aba Todos', async () => {
     mockUseMarketplaceScreenListings.mockReturnValue({
       resetPages: jest.fn(),
+      refresh: jest.fn(),
       handleLoadMore: jest.fn(),
       showCategoryBlocks: true,
       showAllTabGroupedLayout: false,

@@ -10,6 +10,11 @@ export const styles = StyleSheet.create({
   contentFloatingMenuReserve: {
     paddingBottom: SPACING.XXL * 1.5,
   },
+  listWrap: {
+    flex: 1,
+    position: 'relative',
+    zIndex: 1,
+  },
   backgroundLayer: {
     position: 'absolute',
     top: 0,

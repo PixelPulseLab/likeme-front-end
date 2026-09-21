@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl, Alert } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { CachedImage } from '@/components/ui/media/CachedImage';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { LinearGradient } from 'expo-linear-gradient';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { SearchBar } from '@/components/ui';
+import { PullToRefreshIndicator, usePullToRefresh } from '@/components/ui/feedback/PullToRefresh';
 import { GradientBackground, ScreenWithHeader } from '@/components/ui/layout';
 import { useTranslation } from '@/hooks/i18n';
 import { useChat, useFeatureFlag, useMenuItems } from '@/hooks';
@@ -16,6 +17,7 @@ import { COLORS, FEATURE_FLAGS } from '@/constants';
 import { storageService } from '@/services';
 import type { ChatStackParamList } from '@/types/navigation';
 import { useAnalyticsScreen } from '@/analytics';
+import { logger } from '@/utils/logger';
 import { navigateToCommunity } from '@/utils/navigation/communityNavigation';
 import { navigateRootStack, rootStackNavigationFrom } from '@/utils/navigation/rootStackNavigation';
 import { styles } from './styles';
@@ -46,13 +48,19 @@ const ChatListScreen: React.FC<Props> = () => {
     }, [menuItems, setMenu]),
   );
 
-  const [refreshing, setRefreshing] = useState(false);
+  const refreshConversations = useCallback(async () => {
+    try {
+      await refresh();
+    } catch (cause) {
+      logger.error('[ChatListScreen] Falha ao atualizar conversas', { cause });
+    }
+  }, [refresh]);
 
-  const handleRefresh = async () => {
-    setRefreshing(true);
-    await refresh();
-    setRefreshing(false);
-  };
+  const {
+    showIndicator: showPullIndicator,
+    onScroll: onPullScroll,
+    refreshControl: pullRefreshControl,
+  } = usePullToRefresh(refreshConversations);
 
   useEffect(() => {
     if (!isChatFlagLoading && !isChatEnabled) {
@@ -164,79 +172,84 @@ const ChatListScreen: React.FC<Props> = () => {
       </View>
 
       {/* Conversations List */}
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
-      >
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>{t('chat.yourConversations')}</Text>
-        </View>
-
-        {loading && (
-          <View style={styles.centerContainer}>
-            <ActivityIndicator size='large' color={COLORS.PRIMARY.PURE} />
+      <View style={styles.listWrap}>
+        <PullToRefreshIndicator visible={showPullIndicator} accessibilityLabel={t('common.loading')} />
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          scrollEventThrottle={16}
+          onScroll={onPullScroll}
+          refreshControl={pullRefreshControl}
+        >
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>{t('chat.yourConversations')}</Text>
           </View>
-        )}
 
-        {!loading && conversations.length === 0 && (
-          <View style={styles.centerContainer}>
-            <Icon name='chat-bubble-outline' size={48} color={COLORS.TEXT_LIGHT} />
-            <Text style={styles.emptyText}>{t('chat.noConversations')}</Text>
-          </View>
-        )}
+          {loading && (
+            <View style={styles.centerContainer}>
+              <ActivityIndicator size='large' color={COLORS.PRIMARY.PURE} />
+            </View>
+          )}
 
-        {conversations.length > 0 && (
-          <View style={styles.conversationsContainer}>
-            {conversations.map((conversation, index) => (
-              <TouchableOpacity
-                key={conversation.id}
-                style={[styles.conversationItem, index < conversations.length - 1 && styles.conversationItemBorder]}
-                onPress={() => handleConversationPress(conversation)}
-                activeOpacity={0.7}
-              >
-                {renderAvatar(conversation)}
+          {!loading && conversations.length === 0 && (
+            <View style={styles.centerContainer}>
+              <Icon name='chat-bubble-outline' size={48} color={COLORS.TEXT_LIGHT} />
+              <Text style={styles.emptyText}>{t('chat.noConversations')}</Text>
+            </View>
+          )}
 
-                <View style={styles.conversationInfo}>
-                  <View style={styles.conversationHeader}>
-                    <View style={styles.conversationNameContainer}>
-                      {conversation.showLogo && (
-                        <View style={styles.likemeLogoContainer}>
-                          <LogoMini width={83} height={15} />
+          {conversations.length > 0 && (
+            <View style={styles.conversationsContainer}>
+              {conversations.map((conversation, index) => (
+                <TouchableOpacity
+                  key={conversation.id}
+                  style={[styles.conversationItem, index < conversations.length - 1 && styles.conversationItemBorder]}
+                  onPress={() => handleConversationPress(conversation)}
+                  activeOpacity={0.7}
+                >
+                  {renderAvatar(conversation)}
+
+                  <View style={styles.conversationInfo}>
+                    <View style={styles.conversationHeader}>
+                      <View style={styles.conversationNameContainer}>
+                        {conversation.showLogo && (
+                          <View style={styles.likemeLogoContainer}>
+                            <LogoMini width={83} height={15} />
+                          </View>
+                        )}
+                        <Text style={styles.conversationName} numberOfLines={1}>
+                          {getConversationDisplayName(conversation.name)}
+                        </Text>
+                      </View>
+                      <Text style={styles.conversationTimestamp}>{conversation.timestamp}</Text>
+                    </View>
+
+                    <View style={styles.conversationMessageRow}>
+                      <View style={styles.conversationMessageContainer}>
+                        <Text
+                          style={[
+                            styles.conversationMessage,
+                            conversation.unreadCount > 0 && styles.conversationMessageUnread,
+                          ]}
+                          numberOfLines={2}
+                        >
+                          {conversation.lastMessage}
+                        </Text>
+                      </View>
+                      {conversation.unreadCount > 0 && (
+                        <View style={styles.notificationBadge}>
+                          <Text style={styles.notificationText}>{conversation.unreadCount}</Text>
                         </View>
                       )}
-                      <Text style={styles.conversationName} numberOfLines={1}>
-                        {getConversationDisplayName(conversation.name)}
-                      </Text>
                     </View>
-                    <Text style={styles.conversationTimestamp}>{conversation.timestamp}</Text>
                   </View>
-
-                  <View style={styles.conversationMessageRow}>
-                    <View style={styles.conversationMessageContainer}>
-                      <Text
-                        style={[
-                          styles.conversationMessage,
-                          conversation.unreadCount > 0 && styles.conversationMessageUnread,
-                        ]}
-                        numberOfLines={2}
-                      >
-                        {conversation.lastMessage}
-                      </Text>
-                    </View>
-                    {conversation.unreadCount > 0 && (
-                      <View style={styles.notificationBadge}>
-                        <Text style={styles.notificationText}>{conversation.unreadCount}</Text>
-                      </View>
-                    )}
-                  </View>
-                </View>
-              </TouchableOpacity>
-            ))}
-          </View>
-        )}
-      </ScrollView>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
+        </ScrollView>
+      </View>
     </ScreenWithHeader>
   );
 };

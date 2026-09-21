@@ -26,6 +26,7 @@ interface UseProviderAdsReturn {
   loading: boolean;
   hasMore: boolean;
   loadAds: () => Promise<void>;
+  refresh: () => Promise<void>;
 }
 
 export const useProviderAds = ({
@@ -89,92 +90,104 @@ export const useProviderAds = ({
     [listingsCache, cacheKey],
   );
 
-  const loadAds = useCallback(async () => {
-    if (!enabled) {
-      return;
-    }
-
-    if (!advertiserId) {
-      setAds([]);
-      setHasMore(false);
-      return;
-    }
-
-    const cachedEntry = listingsCache.read(cacheKey);
-    const cachedFresh = cachedEntry != null && isMarketplaceListingsCacheEntryFresh(cachedEntry);
-
-    if (page === 1 && cachedFresh) {
-      const cachedAds = cachedEntry.ads;
-      if (adsRef.current.length === 0 && cachedAds.length > 0) {
-        setAds(cachedAds);
-        setHasMore(cachedEntry.hasMore);
-      }
-      if (cachedAds.length > 0 || adsRef.current.length > 0) {
-        setLoading(false);
+  const loadAdsAtPage = useCallback(
+    async (requestPage: number) => {
+      if (!enabled) {
         return;
       }
-    }
 
-    try {
-      if (page === 1 && adsRef.current.length > 0) {
-        setLoading(false);
-      } else {
-        setLoading(true);
-      }
-
-      const params: ListAdsParams = {
-        advertiserId,
-        page,
-        limit,
-        activeOnly: true,
-      };
-      const apiCategory = selectedCategory ? mapUICategoryToApiCategory(selectedCategory) : undefined;
-      if (apiCategory) {
-        params.type = apiCategory;
-      }
-
-      const response = await adService.listAds(params);
-
-      if (!response.success || !response.data) {
-        if (page === 1) {
-          setAds([]);
-          persistCache([], false);
-        }
+      if (!advertiserId) {
+        setAds([]);
         setHasMore(false);
         return;
       }
 
-      const adsArray = response.data.ads || [];
-      void prefetchImageUris(adsArray.slice(0, PROVIDER_ADS_PREFETCH_FIRST_N).map((ad) => ad.product?.image));
+      const cachedEntry = listingsCache.read(cacheKey);
+      const cachedFresh = cachedEntry != null && isMarketplaceListingsCacheEntryFresh(cachedEntry);
 
-      const nextAds = page === 1 ? adsArray : [...adsRef.current, ...adsArray];
-      setAds(nextAds);
+      if (requestPage === 1 && cachedFresh) {
+        const cachedAds = cachedEntry.ads;
+        if (adsRef.current.length === 0 && cachedAds.length > 0) {
+          setAds(cachedAds);
+          setHasMore(cachedEntry.hasMore);
+        }
+        if (cachedAds.length > 0 || adsRef.current.length > 0) {
+          setLoading(false);
+          return;
+        }
+      }
 
-      let nextHasMore = false;
-      const pagination = response.data.pagination;
-      if (pagination) {
-        nextHasMore = pagination.page < pagination.totalPages;
-      } else {
-        nextHasMore = adsArray.length >= limit;
+      try {
+        if (requestPage === 1 && adsRef.current.length > 0) {
+          setLoading(false);
+        } else {
+          setLoading(true);
+        }
+
+        const params: ListAdsParams = {
+          advertiserId,
+          page: requestPage,
+          limit,
+          activeOnly: true,
+        };
+        const apiCategory = selectedCategory ? mapUICategoryToApiCategory(selectedCategory) : undefined;
+        if (apiCategory) {
+          params.type = apiCategory;
+        }
+
+        const response = await adService.listAds(params);
+
+        if (!response.success || !response.data) {
+          if (requestPage === 1) {
+            setAds([]);
+            persistCache([], false);
+          }
+          setHasMore(false);
+          return;
+        }
+
+        const adsArray = response.data.ads || [];
+        void prefetchImageUris(adsArray.slice(0, PROVIDER_ADS_PREFETCH_FIRST_N).map((ad) => ad.product?.image));
+
+        const nextAds = requestPage === 1 ? adsArray : [...adsRef.current, ...adsArray];
+        setAds(nextAds);
+
+        let nextHasMore = false;
+        const pagination = response.data.pagination;
+        if (pagination) {
+          nextHasMore = pagination.page < pagination.totalPages;
+        } else {
+          nextHasMore = adsArray.length >= limit;
+        }
+        setHasMore(nextHasMore);
+        persistCache(nextAds, nextHasMore);
+      } catch (error) {
+        logger.error('useProviderAds: falha ao listar anúncios do provider', {
+          error,
+          advertiserId,
+          page: requestPage,
+          selectedCategory,
+        });
+        if (requestPage === 1) {
+          setAds([]);
+          persistCache([], false);
+        }
+        setHasMore(false);
+      } finally {
+        setLoading(false);
       }
-      setHasMore(nextHasMore);
-      persistCache(nextAds, nextHasMore);
-    } catch (error) {
-      logger.error('useProviderAds: falha ao listar anúncios do provider', {
-        error,
-        advertiserId,
-        page,
-        selectedCategory,
-      });
-      if (page === 1) {
-        setAds([]);
-        persistCache([], false);
-      }
-      setHasMore(false);
-    } finally {
-      setLoading(false);
-    }
-  }, [advertiserId, cacheKey, enabled, limit, listingsCache, page, persistCache, selectedCategory]);
+    },
+    [advertiserId, cacheKey, enabled, limit, listingsCache, persistCache, selectedCategory],
+  );
+
+  const loadAds = useCallback(async () => {
+    await loadAdsAtPage(page);
+  }, [loadAdsAtPage, page]);
+
+  const refresh = useCallback(async () => {
+    listingsCache.invalidate(cacheKey);
+    await loadAdsAtPage(1);
+  }, [cacheKey, listingsCache, loadAdsAtPage]);
 
   useEffect(() => {
     if (!enabled || !initialCacheIsFresh || backgroundRefreshStartedRef.current) {
@@ -189,5 +202,6 @@ export const useProviderAds = ({
     loading,
     hasMore,
     loadAds,
+    refresh,
   };
 };

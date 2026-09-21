@@ -1,8 +1,9 @@
-import React, { useCallback, useMemo, useState, useEffect } from 'react';
+import React, { useCallback, useMemo, useState, useEffect, useRef } from 'react';
 import { View, ScrollView, Text } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
 import { GradientBackground, ScreenWithHeader } from '@/components/ui/layout';
+import { PullToRefreshIndicator, usePullToRefresh } from '@/components/ui/feedback/PullToRefresh';
 import { SearchBar } from '@/components/ui/inputs';
 import { StickyFilterCarouselRow } from '@/components/ui/menu';
 import {
@@ -200,7 +201,7 @@ const SummaryScreen: React.FC<Props> = ({ navigation }) => {
       navigation: rootNavigation as StackNavigationProp<RootStackParamList>,
     });
 
-  const { advertisers: popularAdvertisers } = useAdvertisers({
+  const { advertisers: popularAdvertisers, refresh: refreshPopularAdvertisers } = useAdvertisers({
     listOptions: {
       page: 1,
       limit: 10,
@@ -219,7 +220,7 @@ const SummaryScreen: React.FC<Props> = ({ navigation }) => {
     [popularAdvertisers],
   );
 
-  const { products: suggestedPrograms } = useSuggestedProducts({
+  const { products: suggestedPrograms, refresh: refreshSuggestedPrograms } = useSuggestedProducts({
     ...HOME_SUMMARY_SUGGESTED_PROGRAMS_QUERY,
     enabled: hasSessionToken,
   });
@@ -234,6 +235,27 @@ const SummaryScreen: React.FC<Props> = ({ navigation }) => {
       })),
     [suggestedPrograms],
   );
+
+  const recommendedProductsRefreshRef = useRef<(() => Promise<void>) | null>(null);
+
+  const refreshHome = useCallback(async () => {
+    try {
+      await Promise.all([
+        refreshCommunities(),
+        refreshSuggestedPrograms(),
+        refreshPopularAdvertisers(),
+        recommendedProductsRefreshRef.current?.() ?? Promise.resolve(),
+      ]);
+    } catch (cause) {
+      logger.error('[SummaryScreen] Falha ao atualizar a home', { cause });
+    }
+  }, [refreshCommunities, refreshSuggestedPrograms, refreshPopularAdvertisers]);
+
+  const {
+    showIndicator: showPullIndicator,
+    onScroll: onPullScroll,
+    refreshControl: pullRefreshControl,
+  } = usePullToRefresh(refreshHome);
 
   const menuItems = useMenuItems(navigation);
   const { setMenu } = useFloatingMenuActions();
@@ -327,7 +349,14 @@ const SummaryScreen: React.FC<Props> = ({ navigation }) => {
           <GradientBackground />
         </View>
         <View style={styles.content}>
-          <ScrollView showsVerticalScrollIndicator={false} style={styles.scrollView}>
+          <PullToRefreshIndicator visible={showPullIndicator} accessibilityLabel={t('common.loading')} />
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            style={styles.scrollView}
+            scrollEventThrottle={16}
+            onScroll={onPullScroll}
+            refreshControl={pullRefreshControl}
+          >
             <View style={styles.searchAndFilters}>
               <SearchBar
                 placeholder={t('marketplace.searchPlaceholder')}
@@ -413,6 +442,7 @@ const SummaryScreen: React.FC<Props> = ({ navigation }) => {
               navigation={rootNavigation as StackNavigationProp<RootStackParamList, keyof RootStackParamList>}
               analyticsScreenName='summary'
               enabled={hasSessionToken}
+              refreshRef={recommendedProductsRefreshRef}
               style={[
                 styles.productsContainer,
                 styles.sectionDivider,

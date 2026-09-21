@@ -38,6 +38,11 @@ export function deleteInflightAdvertisersList(key: string): void {
   inflight.delete(key);
 }
 
+export function deleteAdvertisersListCache(key: string): void {
+  cache.delete(key);
+  inflight.delete(key);
+}
+
 export function clearAdvertisersListCache(): void {
   cache.clear();
   inflight.clear();

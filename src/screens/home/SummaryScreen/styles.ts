@@ -12,6 +12,7 @@ export const styles = StyleSheet.create({
     zIndex: 1,
     backgroundColor: 'transparent',
     paddingVertical: SPACING.MD_PLUS,
+    position: 'relative',
   },
   gradientBackground: {
     ...StyleSheet.absoluteFillObject,

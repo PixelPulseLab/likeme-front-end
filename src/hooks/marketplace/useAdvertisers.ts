@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { advertiserService } from '@/services';
 import { advertisersListCacheKey } from '@/utils/marketplace/advertisersCacheKey';
 import {
+  deleteAdvertisersListCache,
   deleteInflightAdvertisersList,
   getCachedAdvertisersList,
   getInflightAdvertisersList,
@@ -68,21 +69,16 @@ async function requestAdvertisersPage(query: AdvertisersListQuery, page: number)
   return response.data?.advertisers ?? [];
 }
 
-async function fetchAdvertisersList(
-  query: AdvertisersListQuery,
-  options: { bypassCache?: boolean } = {},
-): Promise<Advertiser[]> {
+async function fetchAdvertisersList(query: AdvertisersListQuery): Promise<Advertiser[]> {
   const key = advertisersListCacheKey(query);
 
-  if (!options.bypassCache) {
-    const cached = getCachedAdvertisersList(key);
-    if (cached) {
-      return cached;
-    }
-    const pending = getInflightAdvertisersList(key);
-    if (pending) {
-      return pending;
-    }
+  const cached = getCachedAdvertisersList(key);
+  if (cached) {
+    return cached;
+  }
+  const pending = getInflightAdvertisersList(key);
+  if (pending) {
+    return pending;
   }
 
   const request = (async () => {
@@ -306,7 +302,8 @@ export const useAdvertisers = (params: UseAdvertisersParams = {}): UseAdvertiser
     setError(null);
     try {
       if (listCacheKey != null) {
-        const nextAdvertisers = await fetchAdvertisersList(query, { bypassCache: true });
+        deleteAdvertisersListCache(listCacheKey);
+        const nextAdvertisers = await fetchAdvertisersList(query);
         setAdvertisers(nextAdvertisers);
         void prefetchImageUris(nextAdvertisers.slice(0, ADVERTISERS_PREFETCH_FIRST_N).map((item) => item.logo));
         return;

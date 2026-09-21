@@ -14,6 +14,10 @@ export const styles = StyleSheet.create({
     paddingHorizontal: SPACING.MD,
     paddingVertical: SPACING.LG,
   },
+  listWrap: {
+    flex: 1,
+    position: 'relative',
+  },
   scrollView: {
     flex: 1,
   },

@@ -16,6 +16,10 @@ export const styles = StyleSheet.create({
     backgroundColor: 'transparent',
     paddingVertical: SPACING.SM,
   },
+  listWrap: {
+    flex: 1,
+    position: 'relative',
+  },
   backgroundGradient: {
     ...StyleSheet.absoluteFillObject,
     zIndex: 0,

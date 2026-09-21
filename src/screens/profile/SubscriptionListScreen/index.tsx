@@ -5,6 +5,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { ScreenWithHeader } from '@/components/ui/layout';
 import { SearchBar } from '@/components/ui/inputs';
 import { EmptyState } from '@/components/ui/feedback';
+import { PullToRefreshIndicator, usePullToRefresh } from '@/components/ui/feedback/PullToRefresh';
 import { JoinCardList } from '@/components/ui/lists/JoinCardList';
 import ProtocolList from '@/components/sections/subscription/ProtocolList';
 import { useSubscriptionList } from '@/hooks/subscription/useSubscriptionList';
@@ -19,6 +20,7 @@ import { useAnalyticsScreen } from '@/analytics';
 import type { SubscriptionListItem } from '@/types/subscription/subscription';
 import type { RootStackParamList } from '@/types/navigation';
 import { COLORS } from '@/constants';
+import { logger } from '@/utils/logger';
 import { navigateToSubscribedProgram } from '@/utils/navigation/productNavigation';
 import { styles } from './styles';
 
@@ -54,6 +56,7 @@ const SubscriptionListScreen: React.FC<Props> = ({ navigation }) => {
     loading: communityLoading,
     protocols: communityProtocols,
     hasContent: hasCommunityContent,
+    reload: reloadMemberProtocols,
   } = useMemberProtocolCommunities(appliedSearchQuery);
 
   useFocusEffect(
@@ -62,6 +65,20 @@ const SubscriptionListScreen: React.FC<Props> = ({ navigation }) => {
       void reloadSubscriptions();
     }, [menuItems, reloadSubscriptions, setMenu]),
   );
+
+  const refreshPrograms = useCallback(async () => {
+    try {
+      await Promise.all([reloadSubscriptions(), reloadMemberProtocols()]);
+    } catch (cause) {
+      logger.error('[SubscriptionListScreen] Falha ao atualizar programas', { cause });
+    }
+  }, [reloadSubscriptions, reloadMemberProtocols]);
+
+  const {
+    showIndicator: showPullIndicator,
+    onScroll: onPullScroll,
+    refreshControl: pullRefreshControl,
+  } = usePullToRefresh(refreshPrograms);
 
   const handleBack = useCallback(() => {
     navigation.goBack();
@@ -150,99 +167,105 @@ const SubscriptionListScreen: React.FC<Props> = ({ navigation }) => {
       headerProps={{ showBackButton: true, onBackPress: handleBack }}
       contentContainerStyle={styles.screenContent}
     >
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps='handled'
-      >
-        <Text style={styles.screenTitle}>
-          {t('profile.acquisitionList.title', { defaultValue: 'Meus Programas e Serviços' })}
-        </Text>
+      <View style={styles.listWrap}>
+        <PullToRefreshIndicator visible={showPullIndicator} accessibilityLabel={t('common.loading')} />
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps='handled'
+          scrollEventThrottle={16}
+          onScroll={onPullScroll}
+          refreshControl={pullRefreshControl}
+        >
+          <Text style={styles.screenTitle}>
+            {t('profile.acquisitionList.title', { defaultValue: 'Meus Programas e Serviços' })}
+          </Text>
 
-        {!isFullyEmpty && (
-          <View style={styles.searchWrap}>
-            <SearchBar
-              placeholder={t('profile.memberProtocols.searchPlaceholder', { defaultValue: 'Buscar' })}
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              showFilterButton={false}
-            />
-          </View>
-        )}
+          {!isFullyEmpty && (
+            <View style={styles.searchWrap}>
+              <SearchBar
+                placeholder={t('profile.memberProtocols.searchPlaceholder', { defaultValue: 'Buscar' })}
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                showFilterButton={false}
+              />
+            </View>
+          )}
 
-        {loading ? (
-          <View style={styles.centered}>
-            <ActivityIndicator size='large' color={COLORS.PRIMARY.PURE} />
-          </View>
-        ) : isFullyEmpty ? (
-          <View style={styles.emptyWrap}>
-            <ProtocolList
-              subscriptions={[]}
-              onSubscriptionPress={() => undefined}
-              onExplorePress={handleExploreMarketplace}
-            />
-          </View>
-        ) : !hasSearchResults ? (
-          <View style={styles.searchEmptyWrap}>
-            <EmptyState
-              title={t('marketplace.noAdsFound')}
-              description={t('marketplace.noAdsFoundDescription')}
-              iconName='storefront'
-              actionLabel={t('home.clearFilters')}
-              onActionPress={handleClearSearch}
-            />
-          </View>
-        ) : (
-          <>
-            {subscriptionProtocols.length > 0 && (
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Protocolos</Text>
-                <View style={styles.cardsList}>
-                  <JoinCardList layout='list' items={subscriptionProtocols} onItemPress={openSubscriptionItem} />
+          {loading ? (
+            <View style={styles.centered}>
+              <ActivityIndicator size='large' color={COLORS.PRIMARY.PURE} />
+            </View>
+          ) : isFullyEmpty ? (
+            <View style={styles.emptyWrap}>
+              <ProtocolList
+                subscriptions={[]}
+                onSubscriptionPress={() => undefined}
+                onExplorePress={handleExploreMarketplace}
+              />
+            </View>
+          ) : !hasSearchResults ? (
+            <View style={styles.searchEmptyWrap}>
+              <EmptyState
+                title={t('marketplace.noAdsFound')}
+                description={t('marketplace.noAdsFoundDescription')}
+                iconName='storefront'
+                actionLabel={t('home.clearFilters')}
+                onActionPress={handleClearSearch}
+              />
+            </View>
+          ) : (
+            <>
+              {subscriptionProtocols.length > 0 && (
+                <View style={styles.section}>
+                  <Text style={styles.sectionTitle}>Protocolos</Text>
+                  <View style={styles.cardsList}>
+                    <JoinCardList layout='list' items={subscriptionProtocols} onItemPress={openSubscriptionItem} />
+                  </View>
                 </View>
-              </View>
-            )}
+              )}
 
-            {services.length > 0 && (
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Serviços</Text>
-                <View style={styles.cardsList}>
-                  <JoinCardList layout='list' items={services} onItemPress={openSubscriptionItem} />
+              {services.length > 0 && (
+                <View style={styles.section}>
+                  <Text style={styles.sectionTitle}>Serviços</Text>
+                  <View style={styles.cardsList}>
+                    <JoinCardList layout='list' items={services} onItemPress={openSubscriptionItem} />
+                  </View>
                 </View>
-              </View>
-            )}
+              )}
 
-            {hasCommunityProtocols && (
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>
-                  {t('profile.memberProtocols.communitySectionTitle', {
-                    defaultValue: 'Protocolos na comunidade',
-                  })}
-                </Text>
-                <View style={styles.cardsList}>
-                  <JoinCardList
-                    layout='list'
-                    items={communityProtocolsWithoutSubscription.map((item) => ({
-                      id: item.communityId,
-                      title: item.title,
-                      badges: item.badges,
-                      image: item.image,
-                    }))}
-                    onItemPress={(card) => {
-                      const item = communityProtocolsWithoutSubscription.find(
-                        (protocol) => protocol.communityId === card.id,
-                      );
-                      if (item) {
-                        openCommunityProtocol(item);
-                      }
-                    }}
-                  />
+              {hasCommunityProtocols && (
+                <View style={styles.section}>
+                  <Text style={styles.sectionTitle}>
+                    {t('profile.memberProtocols.communitySectionTitle', {
+                      defaultValue: 'Protocolos na comunidade',
+                    })}
+                  </Text>
+                  <View style={styles.cardsList}>
+                    <JoinCardList
+                      layout='list'
+                      items={communityProtocolsWithoutSubscription.map((item) => ({
+                        id: item.communityId,
+                        title: item.title,
+                        badges: item.badges,
+                        image: item.image,
+                      }))}
+                      onItemPress={(card) => {
+                        const item = communityProtocolsWithoutSubscription.find(
+                          (protocol) => protocol.communityId === card.id,
+                        );
+                        if (item) {
+                          openCommunityProtocol(item);
+                        }
+                      }}
+                    />
+                  </View>
                 </View>
-              </View>
-            )}
-          </>
-        )}
-      </ScrollView>
+              )}
+            </>
+          )}
+        </ScrollView>
+      </View>
     </ScreenWithHeader>
   );
 };

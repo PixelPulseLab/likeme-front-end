@@ -18,7 +18,7 @@ import { IconButton } from '@/components/ui/buttons';
 import { StickyFilterCarouselRow } from '@/components/ui/menu';
 import { adToJoinCardItem } from '@/utils/marketplace/adToJoinCardItem';
 import { ScreenWithHeader } from '@/components/ui/layout';
-import { EmptyState } from '@/components/ui/feedback';
+import { EmptyState, PullToRefreshIndicator, usePullToRefresh } from '@/components/ui/feedback';
 import { GradientBackgroundByCategory } from '@/components/sections';
 import { FilterCategoryModal, type FilterCategoryResult } from '@/components/ui/modals';
 import {
@@ -42,6 +42,7 @@ import { getMarkerIdForCategory } from '@/hooks/category/markerId';
 import { useSetFloatingMenu } from '@/contexts/FloatingMenuContext';
 import { useTranslation } from '@/hooks/i18n';
 import { handleAdNavigation } from '@/utils';
+import { logger } from '@/utils/logger';
 import { navigateToProviderProfile } from '@/utils/navigation/marketplaceNavigation';
 import { navigateRootStack, rootStackNavigationFrom } from '@/utils/navigation/rootStackNavigation';
 import type { Ad, Advertiser } from '@/types/ad';
@@ -99,7 +100,7 @@ const MarketplaceScreen: React.FC<MarketplaceScreenProps> = ({ navigation, route
     [listScrollBottomPadding],
   );
 
-  const { advertisers: professionals } = useAdvertisers({
+  const { advertisers: professionals, refresh: refreshProfessionals } = useAdvertisers({
     listOptions: {
       status: 'active',
       type: ADVERTISER_TYPE.PERSON,
@@ -117,6 +118,21 @@ const MarketplaceScreen: React.FC<MarketplaceScreenProps> = ({ navigation, route
   });
 
   resetPagesRef.current = listings.resetPages;
+
+  const refreshMarketplace = useCallback(async () => {
+    try {
+      await Promise.all([listings.refresh(), refreshProfessionals()]);
+    } catch (cause) {
+      logger.error('[MarketplaceScreen] Falha ao atualizar o shop', { cause });
+    }
+  }, [listings.refresh, refreshProfessionals]);
+
+  const {
+    refreshing: pullRefreshing,
+    showIndicator: showPullIndicator,
+    onScroll: onPullScroll,
+    refreshControl: pullRefreshControl,
+  } = usePullToRefresh(refreshMarketplace);
 
   useFocusEffect(
     useCallback(() => {
@@ -493,12 +509,12 @@ const MarketplaceScreen: React.FC<MarketplaceScreenProps> = ({ navigation, route
   );
 
   const handleProductListEndReached = useCallback(() => {
-    if (flatListLoadMoreLockedRef.current || listings.loading || !listings.hasMore) {
+    if (pullRefreshing || flatListLoadMoreLockedRef.current || listings.loading || !listings.hasMore) {
       return;
     }
     flatListLoadMoreLockedRef.current = true;
     listings.handleLoadMore();
-  }, [listings.loading, listings.hasMore, listings.handleLoadMore]);
+  }, [pullRefreshing, listings.loading, listings.hasMore, listings.handleLoadMore]);
 
   const handleGroupedScrollEndReached = useCallback(
     (event: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -513,6 +529,7 @@ const MarketplaceScreen: React.FC<MarketplaceScreenProps> = ({ navigation, route
       }
       if (
         scrollNearBottomRef.current ||
+        pullRefreshing ||
         !listChrome.groupedScrollPagination.hasMore ||
         listChrome.groupedScrollPagination.loading
       ) {
@@ -521,7 +538,20 @@ const MarketplaceScreen: React.FC<MarketplaceScreenProps> = ({ navigation, route
       scrollNearBottomRef.current = true;
       listings.handleLoadMore();
     },
-    [listChrome.groupedScrollPagination.hasMore, listChrome.groupedScrollPagination.loading, listings.handleLoadMore],
+    [
+      pullRefreshing,
+      listChrome.groupedScrollPagination.hasMore,
+      listChrome.groupedScrollPagination.loading,
+      listings.handleLoadMore,
+    ],
+  );
+
+  const handleGroupedScroll = useCallback(
+    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+      onPullScroll(event);
+      handleGroupedScrollEndReached(event);
+    },
+    [onPullScroll, handleGroupedScrollEndReached],
   );
 
   const renderGroupedContent = () => (
@@ -531,7 +561,8 @@ const MarketplaceScreen: React.FC<MarketplaceScreenProps> = ({ navigation, route
       contentContainerStyle={listContentContainerStyle}
       showsVerticalScrollIndicator={false}
       scrollEventThrottle={16}
-      onScroll={handleGroupedScrollEndReached}
+      onScroll={handleGroupedScroll}
+      refreshControl={pullRefreshControl}
     >
       {weekHighlights}
       {categoryCurationHeader}
@@ -564,8 +595,11 @@ const MarketplaceScreen: React.FC<MarketplaceScreenProps> = ({ navigation, route
       ListHeaderComponent={productListHeader}
       ListFooterComponent={listFooter}
       ListEmptyComponent={productListEmpty}
-      onEndReached={handleProductListEndReached}
+      onEndReached={pullRefreshing ? undefined : handleProductListEndReached}
       onEndReachedThreshold={MARKETPLACE_LIST_END_REACHED_THRESHOLD}
+      onScroll={onPullScroll}
+      scrollEventThrottle={16}
+      refreshControl={pullRefreshControl}
       onMomentumScrollBegin={() => {
         flatListLoadMoreLockedRef.current = false;
       }}
@@ -650,10 +684,11 @@ const MarketplaceScreen: React.FC<MarketplaceScreenProps> = ({ navigation, route
             <ActivityIndicator size='large' color='#2196F3' />
             <Text style={styles.listLoadingText}>{t('common.loading')}</Text>
           </View>
-        ) : showSolutionKindLayout ? (
-          renderGroupedContent()
         ) : (
-          renderProductList()
+          <View style={styles.listWrap}>
+            <PullToRefreshIndicator visible={showPullIndicator} accessibilityLabel={t('common.loading')} />
+            {showSolutionKindLayout ? renderGroupedContent() : renderProductList()}
+          </View>
         )}
       </View>
     </ScreenWithHeader>

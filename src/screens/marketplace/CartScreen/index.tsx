@@ -3,6 +3,7 @@ import { View, Text, FlatList, type ListRenderItem, TouchableOpacity, TextInput,
 import type { StackNavigationProp } from '@react-navigation/stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { GradientBackground, ScreenWithHeader } from '@/components/ui/layout';
+import { PullToRefreshIndicator, usePullToRefresh } from '@/components/ui/feedback/PullToRefresh';
 import type { RootStackParamList } from '@/types/navigation';
 import { formatPrice } from '@/utils';
 import { navigateToMarketplace } from '@/utils/navigation/marketplaceNavigation';
@@ -16,6 +17,7 @@ import { useSetFloatingMenu } from '@/contexts/FloatingMenuContext';
 import { useAnalyticsScreen } from '@/analytics';
 import { isValidZipCodeFormat, formatZipCodeDisplay } from '@/services/address/cepService';
 import { getShippingQuote } from '@/services/shipping/shippingService';
+import { logger } from '@/utils/logger';
 import { styles } from './styles';
 import type { CartItem } from '@/types/cart';
 import { E2E_TEST_IDS } from '@/constants/e2eTestIds';
@@ -70,6 +72,24 @@ const CartScreen: React.FC<CartScreenProps> = ({ navigation }) => {
 
     return unsubscribe;
   }, [navigation]);
+
+  const refreshCart = useCallback(async () => {
+    try {
+      await loadAndValidateCartItems((removedNames) => {
+        if (removedNames.length > 0) {
+          Alert.alert(t('cart.cartUpdated'), `${t('cart.productsRemoved')}\n\n${removedNames.join('\n')}`);
+        }
+      });
+    } catch (cause) {
+      logger.error('[CartScreen] Falha ao atualizar o carrinho', { cause });
+    }
+  }, [loadAndValidateCartItems, t]);
+
+  const {
+    showIndicator: showPullIndicator,
+    onScroll: onPullScroll,
+    refreshControl: pullRefreshControl,
+  } = usePullToRefresh(refreshCart);
 
   const handleBackPress = () => {
     navigation.goBack();
@@ -274,22 +294,28 @@ const CartScreen: React.FC<CartScreenProps> = ({ navigation }) => {
       contentBackgroundColor='transparent'
     >
       {renderBackground()}
-      <FlatList
-        testID={E2E_TEST_IDS.CART_SCREEN}
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-        data={cartItems}
-        keyExtractor={cartItemKeyExtractor}
-        renderItem={renderCartItem}
-        ListHeaderComponent={listHeader}
-        ListFooterComponent={listFooter}
-        ListEmptyComponent={listEmpty}
-        initialNumToRender={6}
-        maxToRenderPerBatch={6}
-        windowSize={7}
-        removeClippedSubviews
-      />
+      <View style={styles.listWrap}>
+        <PullToRefreshIndicator visible={showPullIndicator} accessibilityLabel={t('common.loading')} />
+        <FlatList
+          testID={E2E_TEST_IDS.CART_SCREEN}
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          data={cartItems}
+          keyExtractor={cartItemKeyExtractor}
+          renderItem={renderCartItem}
+          ListHeaderComponent={listHeader}
+          ListFooterComponent={listFooter}
+          ListEmptyComponent={listEmpty}
+          onScroll={onPullScroll}
+          scrollEventThrottle={16}
+          refreshControl={pullRefreshControl}
+          initialNumToRender={6}
+          maxToRenderPerBatch={6}
+          windowSize={7}
+          removeClippedSubviews
+        />
+      </View>
     </ScreenWithHeader>
   );
 };

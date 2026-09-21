@@ -46,15 +46,6 @@ export const styles = StyleSheet.create({
   feedList: {
     flex: 1,
   },
-  feedRefreshIndicator: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    zIndex: 2,
-    alignItems: 'center',
-    paddingTop: SPACING.SM,
-  },
   feedContentContainer: {
     paddingBottom: SPACING.XL,
   },

@@ -1,15 +1,5 @@
 import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
-import {
-  View,
-  ScrollView,
-  FlatList,
-  Text,
-  RefreshControl,
-  type ListRenderItem,
-  type NativeScrollEvent,
-  type NativeSyntheticEvent,
-  type ViewToken,
-} from 'react-native';
+import { View, ScrollView, FlatList, Text, type ListRenderItem, type ViewToken } from 'react-native';
 import type { RouteProp } from '@react-navigation/native';
 import { useFocusEffect, useRoute } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
@@ -26,6 +16,11 @@ import {
 import { styles as socialListStyles } from '@/components/sections/community/SocialList/styles';
 import { RecommendedProductsSection } from '@/components/sections/marketplace/RecommendedProductsSection';
 import { EmptyState, Loading, ShareContentUnavailable, TwoDotsLoading, type LoadingHandle } from '@/components/ui';
+import {
+  PullToRefreshIndicator,
+  usePullToRefresh,
+  PULL_TO_REFRESH_INDICATOR_SIZE,
+} from '@/components/ui/feedback/PullToRefresh';
 import { SHARE_CONTENT_TYPES } from '@/constants/share';
 import type { Post } from '@/types';
 import { type ButtonCarouselOption } from '@/components/ui/carousel';
@@ -82,7 +77,6 @@ type NavigationProp = StackNavigationProp<CommunityStackParamList, 'CommunityLis
 type Props = { navigation: NavigationProp };
 
 const DEFAULT_COMMUNITY_IMAGE = 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=400';
-const FEED_TWO_DOTS_SIZE = 20;
 
 const CommunityScreen: React.FC<Props> = ({ navigation }) => {
   useAnalyticsScreen({ screenName: 'CommunityList', screenClass: 'CommunityScreen' });
@@ -242,8 +236,6 @@ const CommunityScreen: React.FC<Props> = ({ navigation }) => {
     pageSize: COMMUNITY_FEED_POSTS_PAGE_SIZE,
     params: feedParams,
   });
-  const [feedRefreshing, setFeedRefreshing] = useState(false);
-  const [isPullingFeed, setIsPullingFeed] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -266,7 +258,11 @@ const CommunityScreen: React.FC<Props> = ({ navigation }) => {
 
   const communityAdvertiserFetchEnabled = !!selectedCommunityId && (solutionsMode || !feedLoading || posts.length > 0);
 
-  const { advertisers: communityAdvertisers, loading: communityAdvertisersLoading } = useAdvertisers({
+  const {
+    advertisers: communityAdvertisers,
+    loading: communityAdvertisersLoading,
+    refresh: refreshCommunityAdvertisers,
+  } = useAdvertisers({
     communityId: selectedCommunityId,
     listOptions: { page: 1, limit: 20, status: ADVERTISER_STATUS.ACTIVE },
     fetchAllPages: false,
@@ -302,7 +298,11 @@ const CommunityScreen: React.FC<Props> = ({ navigation }) => {
   const communityShopTabsEnabled = solutionsMode && !!communityProviderId;
   const shopTabsPrefetchForProviderRef = useRef<string | null>(null);
 
-  const { advertisers: shopProfessionals, loading: shopProfessionalsLoading } = useAdvertisers({
+  const {
+    advertisers: shopProfessionals,
+    loading: shopProfessionalsLoading,
+    refresh: refreshShopProfessionals,
+  } = useAdvertisers({
     listOptions: { page: 1, limit: 50, status: ADVERTISER_STATUS.ACTIVE, type: ADVERTISER_TYPE.PERSON },
     fetchAllPages: true,
     enabled: communityShopSolutionsActive,
@@ -313,6 +313,7 @@ const CommunityScreen: React.FC<Props> = ({ navigation }) => {
     loading: shopProductsLoading,
     hasMore: shopProductsHasMore,
     loadAds: loadShopProductsAds,
+    refresh: refreshShopProductsAds,
   } = useProviderAds({
     advertiserId: communityProviderId,
     selectedCategory: 'products',
@@ -324,6 +325,7 @@ const CommunityScreen: React.FC<Props> = ({ navigation }) => {
     loading: shopServicesLoading,
     hasMore: shopServicesHasMore,
     loadAds: loadShopServicesAds,
+    refresh: refreshShopServicesAds,
   } = useProviderAds({
     advertiserId: communityProviderId,
     selectedCategory: 'services',
@@ -335,6 +337,7 @@ const CommunityScreen: React.FC<Props> = ({ navigation }) => {
     loading: shopProgramsLoading,
     hasMore: shopProgramsHasMore,
     loadAds: loadShopProgramsAds,
+    refresh: refreshShopProgramsAds,
   } = useProviderAds({
     advertiserId: communityProviderId,
     selectedCategory: 'programs',
@@ -481,12 +484,54 @@ const CommunityScreen: React.FC<Props> = ({ navigation }) => {
     logger.debug('[CommunityScreen] event save (stub)', { eventId: event.id });
   }, []);
 
+  const refreshCurrentView = useCallback(async () => {
+    try {
+      if (viewMode === COMMUNITY_VIEW.FEED) {
+        await refreshFeed();
+        return;
+      }
+      shopTabsPrefetchForProviderRef.current = null;
+      await Promise.all([
+        refreshShopProductsAds(),
+        refreshShopServicesAds(),
+        refreshShopProgramsAds(),
+        refreshShopProfessionals(),
+        refreshCommunityAdvertisers(),
+      ]);
+      setShopProductsPage(1);
+      setShopServicesPage(1);
+      setShopProgramsPage(1);
+    } catch (cause) {
+      logger.error('[CommunityScreen] Falha ao atualizar a comunidade', {
+        communityId: selectedCommunityId,
+        viewMode,
+        cause,
+      });
+    }
+  }, [
+    viewMode,
+    refreshFeed,
+    refreshShopProductsAds,
+    refreshShopServicesAds,
+    refreshShopProgramsAds,
+    refreshShopProfessionals,
+    refreshCommunityAdvertisers,
+    selectedCommunityId,
+  ]);
+
+  const {
+    refreshing: pullRefreshing,
+    showIndicator: showPullIndicator,
+    onScroll: onPullScroll,
+    refreshControl: pullRefreshControl,
+  } = usePullToRefresh(refreshCurrentView);
+
   const tryLoadMoreFeed = useCallback(() => {
     if (viewMode !== COMMUNITY_VIEW.FEED) {
       return;
     }
     if (
-      feedRefreshing ||
+      pullRefreshing ||
       feedLoadMoreLockedRef.current ||
       feedLoadingRef.current ||
       feedLoadingMoreRef.current ||
@@ -496,7 +541,7 @@ const CommunityScreen: React.FC<Props> = ({ navigation }) => {
     }
     feedLoadMoreLockedRef.current = true;
     loadMore();
-  }, [feedRefreshing, loadMore, viewMode]);
+  }, [pullRefreshing, loadMore, viewMode]);
 
   useEffect(() => {
     if (!feedLoading && !loadingMore) {
@@ -524,26 +569,6 @@ const CommunityScreen: React.FC<Props> = ({ navigation }) => {
   const handleLoadMore = useCallback(() => {
     tryLoadMoreFeed();
   }, [tryLoadMoreFeed]);
-
-  const handleFeedRefresh = useCallback(async () => {
-    setFeedRefreshing(true);
-    try {
-      await refreshFeed();
-    } catch (cause) {
-      logger.error('[CommunityScreen] Falha ao atualizar o feed', {
-        communityId: selectedCommunityId,
-        cause,
-      });
-    } finally {
-      setFeedRefreshing(false);
-      setIsPullingFeed(false);
-    }
-  }, [refreshFeed, selectedCommunityId]);
-
-  const handleFeedScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const pulling = event.nativeEvent.contentOffset.y < -SPACING.LG;
-    setIsPullingFeed((current) => (current === pulling ? current : pulling));
-  }, []);
 
   const handlePostCardPress = useCallback(
     (selectedPost: Post) => {
@@ -796,7 +821,10 @@ const CommunityScreen: React.FC<Props> = ({ navigation }) => {
             accessibilityRole='progressbar'
             accessibilityLabel={t('community.loadingMorePosts')}
           >
-            <TwoDotsLoading size={FEED_TWO_DOTS_SIZE} accessibilityLabel={t('community.loadingMorePosts')} />
+            <TwoDotsLoading
+              size={PULL_TO_REFRESH_INDICATOR_SIZE}
+              accessibilityLabel={t('community.loadingMorePosts')}
+            />
             <Text style={styles.feedLoadingFooterLabel}>{t('community.loadingMorePosts')}</Text>
           </View>
         ) : null}
@@ -860,14 +888,10 @@ const CommunityScreen: React.FC<Props> = ({ navigation }) => {
       />
     );
   } else if (showVirtualizedFeed) {
-    const showFeedRefreshIndicator = !holdsLoading && (feedRefreshing || isPullingFeed);
+    const showFeedRefreshIndicator = !holdsLoading && showPullIndicator;
     communityBody = (
       <View style={styles.feedListWrap}>
-        {showFeedRefreshIndicator ? (
-          <View style={styles.feedRefreshIndicator} pointerEvents='none'>
-            <TwoDotsLoading size={FEED_TWO_DOTS_SIZE} accessibilityLabel={t('common.loading')} />
-          </View>
-        ) : null}
+        <PullToRefreshIndicator visible={showFeedRefreshIndicator} accessibilityLabel={t('common.loading')} />
         <FlatList
           style={styles.feedList}
           contentContainerStyle={styles.feedContentContainer}
@@ -879,20 +903,11 @@ const CommunityScreen: React.FC<Props> = ({ navigation }) => {
           ListHeaderComponent={feedListHeader}
           ListFooterComponent={feedListFooter}
           ListEmptyComponent={holdsLoading ? null : feedListEmpty}
-          onEndReached={holdsLoading || feedRefreshing ? undefined : handleLoadMore}
+          onEndReached={holdsLoading || pullRefreshing ? undefined : handleLoadMore}
           onEndReachedThreshold={0.5}
-          onScroll={holdsLoading ? undefined : handleFeedScroll}
+          onScroll={holdsLoading ? undefined : onPullScroll}
           scrollEventThrottle={16}
-          refreshControl={
-            holdsLoading ? undefined : (
-              <RefreshControl
-                refreshing={feedRefreshing}
-                onRefresh={handleFeedRefresh}
-                tintColor='transparent'
-                colors={['transparent']}
-              />
-            )
-          }
+          refreshControl={holdsLoading ? undefined : pullRefreshControl}
           viewabilityConfig={feedViewabilityConfig}
           onViewableItemsChanged={onFeedViewableItemsChanged}
           onMomentumScrollBegin={() => {
@@ -907,44 +922,50 @@ const CommunityScreen: React.FC<Props> = ({ navigation }) => {
     );
   } else {
     communityBody = (
-      <ScrollView
-        style={[{ flex: 1 }, { zIndex: 1 }]}
-        contentContainerStyle={{ paddingBottom: SPACING.XL }}
-        showsVerticalScrollIndicator={false}
-      >
-        {heroBlock}
-        <View>
-          {toggleBlock}
-          {isFeedMode ? (
-            <>
-              {feedAuxiliaryBlock}
-              {feedRecommendationsBlock}
-            </>
-          ) : (
-            <>
-              <CommunityDescriptionSection
-                variant='solutions'
-                specialist={specialistData}
-                shoppingTipDismissed={shoppingTipDismissed}
-                onShoppingTipClose={handleShoppingTipClose}
-              />
-              <ShoppingList
-                selectedTabId={selectedShopTabId}
-                onTabChange={setSelectedShopTabId}
-                ads={shopTabState.ads}
-                loading={shopListLoading}
-                hasMore={shopTabState.hasMore}
-                onLoadMore={handleShopLoadMore}
-                navigation={shopNavigation}
-                professionals={shopProfessionals}
-                onProfessionalPress={handleProfessionalPress}
-                providerName={communityProviderName}
-                embedInParentScroll
-              />
-            </>
-          )}
-        </View>
-      </ScrollView>
+      <View style={styles.feedListWrap}>
+        <PullToRefreshIndicator visible={!holdsLoading && showPullIndicator} accessibilityLabel={t('common.loading')} />
+        <ScrollView
+          style={[{ flex: 1 }, { zIndex: 1 }]}
+          contentContainerStyle={{ paddingBottom: SPACING.XL }}
+          showsVerticalScrollIndicator={false}
+          scrollEventThrottle={16}
+          onScroll={holdsLoading ? undefined : onPullScroll}
+          refreshControl={holdsLoading ? undefined : pullRefreshControl}
+        >
+          {heroBlock}
+          <View>
+            {toggleBlock}
+            {isFeedMode ? (
+              <>
+                {feedAuxiliaryBlock}
+                {feedRecommendationsBlock}
+              </>
+            ) : (
+              <>
+                <CommunityDescriptionSection
+                  variant='solutions'
+                  specialist={specialistData}
+                  shoppingTipDismissed={shoppingTipDismissed}
+                  onShoppingTipClose={handleShoppingTipClose}
+                />
+                <ShoppingList
+                  selectedTabId={selectedShopTabId}
+                  onTabChange={setSelectedShopTabId}
+                  ads={shopTabState.ads}
+                  loading={shopListLoading}
+                  hasMore={shopTabState.hasMore}
+                  onLoadMore={handleShopLoadMore}
+                  navigation={shopNavigation}
+                  professionals={shopProfessionals}
+                  onProfessionalPress={handleProfessionalPress}
+                  providerName={communityProviderName}
+                  embedInParentScroll
+                />
+              </>
+            )}
+          </View>
+        </ScrollView>
+      </View>
     );
   }
 

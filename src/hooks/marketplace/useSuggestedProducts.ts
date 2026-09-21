@@ -9,6 +9,7 @@ import {
   fetchSuggestedProducts,
   getCachedSuggestedProducts,
   suggestedProductsCacheKey,
+  deleteSuggestedProductsCache,
   type SuggestedProductsCacheQuery,
 } from '@/services/product/suggestedProductsCache';
 
@@ -152,7 +153,8 @@ export const useSuggestedProducts = (options: UseSuggestedProductsOptions = {}):
     }
     setError(null);
     try {
-      const nextProducts = await fetchSuggestedProducts(query, { bypassCache: true });
+      deleteSuggestedProductsCache(cacheKey);
+      const nextProducts = await fetchSuggestedProducts(query);
       setApiProducts(nextProducts);
     } catch (err) {
       logger.error('[useSuggestedProducts] Erro ao carregar produtos sugeridos', err);
@@ -163,7 +165,7 @@ export const useSuggestedProducts = (options: UseSuggestedProductsOptions = {}):
     } finally {
       setLoading(false);
     }
-  }, [enabled, query]);
+  }, [cacheKey, enabled, query]);
 
   return {
     products,

@@ -60,30 +60,26 @@ export function deleteInflightSuggestedProducts(key: string): void {
   inflight.delete(key);
 }
 
+export function deleteSuggestedProductsCache(key: string): void {
+  cache.delete(key);
+  inflight.delete(key);
+}
+
 export function clearSuggestedProductsCache(): void {
   cache.clear();
   inflight.clear();
 }
 
-type FetchSuggestedProductsOptions = {
-  bypassCache?: boolean;
-};
-
-export async function fetchSuggestedProducts(
-  query: SuggestedProductsCacheQuery,
-  options: FetchSuggestedProductsOptions = {},
-): Promise<Product[]> {
+export async function fetchSuggestedProducts(query: SuggestedProductsCacheQuery): Promise<Product[]> {
   const key = suggestedProductsCacheKey(query);
 
-  if (!options.bypassCache) {
-    const cached = getCachedSuggestedProducts(key);
-    if (cached) {
-      return cached;
-    }
-    const pending = getInflightSuggestedProducts(key);
-    if (pending) {
-      return pending;
-    }
+  const cached = getCachedSuggestedProducts(key);
+  if (cached) {
+    return cached;
+  }
+  const pending = getInflightSuggestedProducts(key);
+  if (pending) {
+    return pending;
   }
 
   const request = (async () => {

@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, type MutableRefObject } from 'react';
 import { View, type StyleProp, type ViewStyle } from 'react-native';
 import type { StackNavigationProp } from '@react-navigation/stack';
 import { ProductsCarousel } from '@/components/sections/product';
@@ -23,6 +23,7 @@ type RecommendedProductsSectionProps = {
   providerName?: string;
   limit?: number;
   style?: StyleProp<ViewStyle>;
+  refreshRef?: MutableRefObject<(() => Promise<void>) | null>;
 };
 
 export function RecommendedProductsSection({
@@ -33,14 +34,31 @@ export function RecommendedProductsSection({
   providerName = '',
   limit = SUGGESTED_PRODUCTS_HOME_ACTIVITIES_DEFAULTS.limit,
   style,
+  refreshRef,
 }: RecommendedProductsSectionProps) {
   const { t } = useTranslation();
-  const { products: suggestedProducts, loading } = useSuggestedProducts({
+  const {
+    products: suggestedProducts,
+    loading,
+    refresh,
+  } = useSuggestedProducts({
     ...SUGGESTED_PRODUCTS_HOME_ACTIVITIES_DEFAULTS,
     limit,
     excludeProductId,
     enabled,
   });
+
+  useEffect(() => {
+    if (!refreshRef) {
+      return;
+    }
+    refreshRef.current = refresh;
+    return () => {
+      if (refreshRef.current === refresh) {
+        refreshRef.current = null;
+      }
+    };
+  }, [refresh, refreshRef]);
 
   const recommendedProducts = useMemo(() => {
     const withoutCurrent = excludeProductId

@@ -73,7 +73,7 @@ interface UseCommunitiesReturn {
   } | null;
   loadCommunities: (page: number, append?: boolean) => Promise<void>;
   loadMore: () => void;
-  refresh: () => void;
+  refresh: () => Promise<void>;
   /** Mantido vazio; slot legado para SocialList (cards de canal) */
   feedEvents: FeedEvent[];
   /** Metadados de arquivo da última resposta de listagem (avatars, etc.). */
@@ -267,12 +267,12 @@ export const useCommunities = (options: UseCommunitiesOptions = {}): UseCommunit
     }
   }, [currentPage, hasMore, loadingMore, loading, enabled, loadCommunities]);
 
-  const refresh = useCallback(() => {
+  const refresh = useCallback(async () => {
     hasLoadedInitially.current = false;
     previousParamsKey.current = '';
     setCurrentPage(1);
     setHasMore(true);
-    loadCommunities(1);
+    await loadCommunities(1);
   }, [loadCommunities]);
 
   useEffect(() => {

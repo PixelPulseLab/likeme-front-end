@@ -27,6 +27,7 @@ interface UseMarketplaceAdsReturn {
   loading: boolean;
   hasMore: boolean;
   loadAds: () => Promise<void>;
+  refresh: () => Promise<void>;
 }
 
 export const useMarketplaceAds = ({
@@ -107,87 +108,89 @@ export const useMarketplaceAds = ({
     [listingsCache, cacheKey],
   );
 
-  const loadAds = useCallback(async () => {
-    if (!enabled) {
-      return;
-    }
-
-    const cachedEntry = listingsCache.read(cacheKey);
-    const cachedFresh = cachedEntry != null && isMarketplaceListingsCacheEntryFresh(cachedEntry);
-
-    if (page === 1 && cachedFresh) {
-      const cachedAds = cachedEntry.ads;
-      if (adsRef.current.length === 0 && cachedAds.length > 0) {
-        setAds(cachedAds);
-        setHasMore(cachedEntry.hasMore);
-      }
-      if (cachedAds.length > 0 || adsRef.current.length > 0) {
-        setLoading(false);
+  const loadAdsAtPage = useCallback(
+    async (requestPage: number) => {
+      if (!enabled) {
         return;
       }
-    }
 
-    try {
-      if (page === 1 && adsRef.current.length > 0) {
-        setLoading(false);
-      } else {
-        setLoading(true);
+      const cachedEntry = listingsCache.read(cacheKey);
+      const cachedFresh = cachedEntry != null && isMarketplaceListingsCacheEntryFresh(cachedEntry);
+
+      if (requestPage === 1 && cachedFresh) {
+        const cachedAds = cachedEntry.ads;
+        if (adsRef.current.length === 0 && cachedAds.length > 0) {
+          setAds(cachedAds);
+          setHasMore(cachedEntry.hasMore);
+        }
+        if (cachedAds.length > 0 || adsRef.current.length > 0) {
+          setLoading(false);
+          return;
+        }
       }
 
-      const params = buildParams();
-      const response = await adService.listAds(params);
+      try {
+        if (requestPage === 1 && adsRef.current.length > 0) {
+          setLoading(false);
+        } else {
+          setLoading(true);
+        }
 
-      if (!response.success || !response.data) {
-        if (page === 1) {
+        const params = { ...buildParams(), page: requestPage };
+        const response = await adService.listAds(params);
+
+        if (!response.success || !response.data) {
+          if (requestPage === 1) {
+            setAds([]);
+            persistCache([], false);
+          }
+          setHasMore(false);
+          return;
+        }
+
+        const adsArray = response.data.ads || [];
+        void prefetchImageUris(adsArray.slice(0, MARKETPLACE_ADS_PREFETCH_FIRST_N).map((ad) => ad.product?.image));
+
+        const nextAds = requestPage === 1 ? uniqueAdsById(adsArray) : appendUniqueAdsById(adsRef.current, adsArray);
+        setAds(nextAds);
+
+        let nextHasMore = false;
+        const pagination = response.data.pagination;
+        if (pagination) {
+          nextHasMore = pagination.page < pagination.totalPages;
+        } else {
+          nextHasMore = adsArray.length >= LIST_LIMIT;
+        }
+        setHasMore(nextHasMore);
+        persistCache(nextAds, nextHasMore);
+      } catch (error) {
+        logger.error('useMarketplaceAds: falha ao listar anúncios', {
+          error,
+          page: requestPage,
+          search: searchQuery,
+          categoryId: selectedCategoryId,
+          selectedCategory,
+        });
+        if (requestPage === 1) {
           setAds([]);
           persistCache([], false);
         }
         setHasMore(false);
-        return;
+      } finally {
+        setLoading(false);
       }
+    },
+    [buildParams, cacheKey, enabled, listingsCache, persistCache, searchQuery, selectedCategory, selectedCategoryId],
+  );
 
-      const adsArray = response.data.ads || [];
-      void prefetchImageUris(adsArray.slice(0, MARKETPLACE_ADS_PREFETCH_FIRST_N).map((ad) => ad.product?.image));
+  const loadAds = useCallback(async () => {
+    await loadAdsAtPage(page);
+  }, [loadAdsAtPage, page]);
 
-      const nextAds = page === 1 ? uniqueAdsById(adsArray) : appendUniqueAdsById(adsRef.current, adsArray);
-      setAds(nextAds);
-
-      let nextHasMore = false;
-      const pagination = response.data.pagination;
-      if (pagination) {
-        nextHasMore = pagination.page < pagination.totalPages;
-      } else {
-        nextHasMore = adsArray.length >= LIST_LIMIT;
-      }
-      setHasMore(nextHasMore);
-      persistCache(nextAds, nextHasMore);
-    } catch (error) {
-      logger.error('useMarketplaceAds: falha ao listar anúncios', {
-        error,
-        page,
-        search: searchQuery,
-        categoryId: selectedCategoryId,
-        selectedCategory,
-      });
-      if (page === 1) {
-        setAds([]);
-        persistCache([], false);
-      }
-      setHasMore(false);
-    } finally {
-      setLoading(false);
-    }
-  }, [
-    buildParams,
-    cacheKey,
-    enabled,
-    listingsCache,
-    page,
-    persistCache,
-    searchQuery,
-    selectedCategory,
-    selectedCategoryId,
-  ]);
+  const refresh = useCallback(async () => {
+    listingsCache.invalidate(cacheKey);
+    await loadAdsAtPage(1);
+  }, [cacheKey, listingsCache, loadAdsAtPage]);
 
   useEffect(() => {
     if (!enabled || !initialCacheIsFresh || backgroundRefreshStartedRef.current) {
@@ -202,5 +205,6 @@ export const useMarketplaceAds = ({
     loading,
     hasMore,
     loadAds,
+    refresh,
   };
 };

@@ -170,6 +170,10 @@ export function useMarketplaceScreenListings({
   const loadProductsTabAds = productsTab.loadAds;
   const loadServicesTabAds = servicesTab.loadAds;
   const loadProgramsTabProducts = programsTab.loadProducts;
+  const refreshAllTabAds = allTab.refresh;
+  const refreshProductsTabAds = productsTab.refresh;
+  const refreshServicesTabAds = servicesTab.refresh;
+  const refreshProgramsTabProducts = programsTab.refresh;
 
   const activeSource = useMemo(() => {
     switch (selectedSolutionTab) {
@@ -477,8 +481,24 @@ export function useMarketplaceScreenListings({
     ],
   );
 
+  const refresh = useCallback(async () => {
+    prefetchKeyRef.current = null;
+    loadMoreInFlightRef.current = false;
+    await Promise.all([
+      refreshAllTabAds(),
+      refreshProductsTabAds(),
+      refreshServicesTabAds(),
+      refreshProgramsTabProducts(),
+    ]);
+    setAllTabPage(1);
+    setProductsTabPage(1);
+    setServicesTabPage(1);
+    setProgramsTabPage(1);
+  }, [refreshAllTabAds, refreshProductsTabAds, refreshServicesTabAds, refreshProgramsTabProducts]);
+
   return {
     resetPages,
+    refresh,
     handleLoadMore,
     showCategoryBlocks,
     showAllTabGroupedLayout,
