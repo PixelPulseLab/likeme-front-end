@@ -111,6 +111,7 @@ const SHARE_BASE_URL = 'https://app.likeme.global';
 function createNavigationRef(isReady = true) {
   return {
     isReady: () => isReady,
+    getCurrentRoute: () => undefined,
     dispatch: jest.fn(),
   } as unknown as NavigationContainerRefWithCurrent<RootStackParamList>;
 }
