@@ -120,6 +120,7 @@ jest.mock('@/components/ui', () => {
         <Text>{label}</Text>
       </View>
     ),
+    IconButton: () => <View testID='icon-button' />,
   };
 });
 
@@ -685,6 +686,40 @@ describe('ActivitiesScreen', () => {
   });
 
   describe('Order Cards', () => {
+    it('displays renewal billing in history tab', async () => {
+      (activityService.getHistory as jest.Mock).mockResolvedValue({
+        success: true,
+        data: {
+          activities: historyMockActivities,
+          orders: mockOrders,
+          subscriptionEvents: [],
+          cycleBillings: [
+            {
+              id: 'billing-renewal-1',
+              orderId: 'order-1',
+              billingType: 'RENEWAL',
+              status: 'PAID',
+              cycleNumber: 2,
+              amountCents: 9900,
+              installments: 1,
+              productName: 'Programa Renovado',
+              occurredAt: '2026-03-01T12:00:00.000Z',
+              cardBrand: 'visa',
+              cardLastDigits: '1111',
+            },
+          ],
+        },
+      });
+
+      const { getByText } = renderWithProvider(<ActivitiesScreen navigation={mockNavigation} />);
+      fireEvent.press(getByText('activities.history'));
+
+      await waitFor(() => {
+        expect(getByText('activities.cycleBillingRenewal')).toBeTruthy();
+        expect(getByText('Programa Renovado')).toBeTruthy();
+      });
+    });
+
     it('displays orders in history tab', async () => {
       const { getByText } = renderWithProvider(<ActivitiesScreen navigation={mockNavigation} />);
 
