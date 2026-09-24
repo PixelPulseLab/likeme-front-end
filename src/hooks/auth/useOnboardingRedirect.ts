@@ -6,12 +6,11 @@ import { invitationHomeRoute, invitationService } from '@/services/invitation/in
 import { clearCachedPostAuthRoute, getCachedPostAuthRoute } from '@/services/auth/applyAuthSessionResponse';
 import { invalidateApiClientAuthTokenMemoryCache } from '@/services/infrastructure/apiClient';
 import { useTranslation } from '@/hooks/i18n';
-import { isE2eAuthBypassEnabled } from '@/utils/e2e/e2eAuthBypass';
 import { logger } from '@/utils/logger';
 import { resetRootStack, rootStackNavigationFrom, type NavWithParent } from '@/utils/navigation/rootStackNavigation';
 
 async function syncAuthSessionFromBackend(): Promise<void> {
-  if (FORCE_START_ONBOARDING_LOCALLY || isE2eAuthBypassEnabled()) {
+  if (FORCE_START_ONBOARDING_LOCALLY) {
     return;
   }
   const token = await storageService.getToken();

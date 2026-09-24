@@ -65,6 +65,7 @@ const OrderScreen: React.FC<OrderScreenProps> = ({ status = 'success', onViewOrd
       </Text>
       <Text style={styles.subtitle}>{t(content.subtitleKey, { defaultValue: content.subtitleDefault })}</Text>
       <PrimaryButton
+        testID={E2E_TEST_IDS.CHECKOUT_VIEW_ORDERS}
         label={t(content.buttonKey, { defaultValue: content.buttonDefault })}
         onPress={onViewOrdersPress}
         icon='chevron-right'

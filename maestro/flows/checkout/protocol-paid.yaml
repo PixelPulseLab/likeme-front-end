@@ -1,9 +1,12 @@
 appId: app.likeme.com
-name: Checkout — protocolo pago (e-mails created, payment_approved, cancel_requested, cancel_annulled)
+name: Checkout — programa no carrinho, cartão aprovado e assinatura em atividades
 tags:
   - checkout
+onFlowComplete:
+  - runFlow: ../../shared/reset-checkout-fixtures.yaml
 ---
 - runFlow: ../../shared/bootstrap-authenticated.yaml
+- runFlow: ../../shared/reset-checkout-fixtures.yaml
 - runFlow: ../../shared/start-protocol-checkout.yaml
 - runFlow: ../../shared/fill-checkout-payment.yaml
 - tapOn:
@@ -17,6 +20,24 @@ tags:
     visible:
       id: "e2e.checkout.orderSuccess"
     timeout: 120000
+- scrollUntilVisible:
+    element:
+      id: "e2e.checkout.viewOrders"
+    direction: DOWN
+    timeout: 20000
+- tapOn:
+    id: "e2e.checkout.viewOrders"
+- extendedWaitUntil:
+    visible:
+      id: "e2e.activities.root"
+    timeout: 30000
+- scrollUntilVisible:
+    element:
+      id: "e2e.activities.subscription.${E2E_CHECKOUT_PROTOCOL_PRODUCT_ID}"
+    direction: DOWN
+    timeout: 30000
+- assertVisible:
+    id: "e2e.activities.subscription.${E2E_CHECKOUT_PROTOCOL_PRODUCT_ID}"
 - runFlow: ../../shared/open-protocol-manage.yaml
 - scrollUntilVisible:
     element:

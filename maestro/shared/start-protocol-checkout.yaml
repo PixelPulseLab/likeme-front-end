@@ -28,4 +28,22 @@ appId: app.likeme.com
     timeout: 20000
 - tapOn:
     id: "product-details-add-to-cart"
+- extendedWaitUntil:
+    visible:
+      id: "e2e\\.cart\\.root"
+    timeout: 15000
+    optional: true
+- runFlow:
+    when:
+      visible: "já adicionou este programa ao carrinho"
+    commands:
+      - tapOn: "OK"
+      - tapOn:
+          id: "e2e.nav.home"
+      - extendedWaitUntil:
+          visible:
+            id: "e2e.summary.root"
+          timeout: 30000
+      - tapOn:
+          id: "e2e.header.cart"
 - runFlow: start-checkout-from-cart.yaml

@@ -45,6 +45,7 @@ import {
   cycleBillingKindLabel,
   cycleBillingStatusPresentation,
 } from '@/utils/payment/cycleBillingHistoryDisplay';
+import { E2E_TEST_IDS } from '@/constants/e2eTestIds';
 import { styles } from './styles';
 
 type ActivitiesScreenProps = {
@@ -821,6 +822,7 @@ const ActivitiesScreen: React.FC<ActivitiesScreenProps> = ({ navigation, route }
     return (
       <TouchableOpacity
         key={event.id}
+        testID={`${E2E_TEST_IDS.ACTIVITIES_SUBSCRIPTION_PREFIX}${event.productId}`}
         style={styles.activityCard}
         onPress={handlePress}
         activeOpacity={0.7}

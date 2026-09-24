@@ -2,8 +2,11 @@ appId: app.likeme.com
 name: Checkout — marketplace pago (Pagarme sandbox + e-mail)
 tags:
   - checkout
+onFlowComplete:
+  - runFlow: ../../shared/reset-checkout-fixtures.yaml
 ---
 - runFlow: ../../shared/bootstrap-authenticated.yaml
+- runFlow: ../../shared/reset-checkout-fixtures.yaml
 - openLink: likeme://product/${E2E_CHECKOUT_PRODUCT_ID}
 - scrollUntilVisible:
     element:

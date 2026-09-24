@@ -184,9 +184,11 @@ const CartScreen: React.FC<CartScreenProps> = ({ navigation }) => {
             <View style={styles.billingPeriodRow}>
               {item.priceOptions.map((option) => {
                 const isSelected = option.billingPeriod === item.billingPeriod;
+                const billingPeriodTestId = `${E2E_TEST_IDS.CART_BILLING_PERIOD_PREFIX}${option.billingPeriod}`;
                 return (
                   <TouchableOpacity
                     key={option.billingPeriod}
+                    testID={billingPeriodTestId}
                     style={[styles.billingPeriodOption, isSelected && styles.billingPeriodOptionSelected]}
                     onPress={() => selectBillingPeriod(item.id, option.billingPeriod)}
                     accessibilityRole='button'

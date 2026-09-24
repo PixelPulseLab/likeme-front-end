@@ -29,17 +29,17 @@ appId: app.likeme.com
       - inputText: "Duda E2E"
       - hideKeyboard
       - tapOn:
-          id: "e2e.checkout.streetNumber"
+          id: "e2e\\.checkout\\.streetNumber"
       - eraseText
       - inputText: "1000"
-      - hideKeyboard
       - scrollUntilVisible:
           element:
-            id: "e2e.checkout.phone"
+            id: "e2e\\.checkout\\.phone"
           direction: DOWN
+          centerElement: true
           timeout: 15000
       - tapOn:
-          id: "e2e.checkout.phone"
+          id: "e2e\\.checkout\\.phone"
       - eraseText
       - inputText: "11999999999"
       - hideKeyboard

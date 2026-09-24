@@ -2,8 +2,11 @@ appId: app.likeme.com
 name: Checkout — protocolo recusado (e-mail payment_failed)
 tags:
   - checkout
+onFlowComplete:
+  - runFlow: ../../shared/reset-checkout-fixtures.yaml
 ---
 - runFlow: ../../shared/bootstrap-authenticated.yaml
+- runFlow: ../../shared/reset-checkout-fixtures.yaml
 - runFlow: ../../shared/start-protocol-checkout.yaml
 - runFlow:
     file: ../../shared/fill-checkout-payment.yaml

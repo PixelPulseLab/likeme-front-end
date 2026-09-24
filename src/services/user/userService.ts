@@ -138,6 +138,18 @@ class UserService {
     throw new Error((response as any)?.message || 'Erro ao salvar endereço');
   }
 
+  async deleteShippingAddress(): Promise<void> {
+    const response = await apiClient.delete<ApiResponse<null>>('/api/auth/profile/shipping-address', undefined, true);
+    if (
+      !response ||
+      typeof response !== 'object' ||
+      !('success' in response) ||
+      !(response as ApiResponse<null>).success
+    ) {
+      throw new Error((response as ApiResponse<null>)?.message || 'Erro ao remover endereço');
+    }
+  }
+
   /**
    * Elimina a conta do utilizador autenticado no backend (soft delete).
    * Requer perfil com `id` (GET /api/auth/profile).

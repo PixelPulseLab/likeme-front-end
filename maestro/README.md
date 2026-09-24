@@ -72,11 +72,13 @@ E2E_PRODUCT_ID=uuid E2E_COMMUNITY_ID=uuid npm run test:e2e:staging
 
 ## Bootstrap sem Auth0
 
-- Deep link `likeme://e2e/bootstrap?completeOnboarding=1&token=…&email=…` — onboarding completo → Summary
+- Deep link `likeme://e2e/bootstrap?completeOnboarding=1&token=…&email=…` — marca o convite já resgatado na sessão local e segue para Summary. O JWT em `.env.staging` precisa estar válido; o bootstrap também consulta `GET /api/auth/token`.
 - `likeme://e2e/bootstrap` → Welcome
 - Botão **Continuar E2E** (`e2e.unauth.e2eContinue`) ainda existe na build staging, mas o bootstrap autenticado usa o deep link
 
 Conta de staging dos testes de login/checkout: `duda@pixelpulselab.dev` (user `5521d990-1b22-4ee6-af47-20cabb7aa0d8`). JWT e e-mail ficam em `.env.staging` (`EXPO_PUBLIC_E2E_STAGING_TOKEN`, `EXPO_PUBLIC_E2E_STAGING_EMAIL`). O Auth0 Management API não aceita `client_credentials` neste client — não dá para criar senha Auth0 por aqui; a sessão E2E é o JWT do backend.
+
+A conta precisa de um convite `REDEEMED` **antes** do fluxo. Sem isso o backend manda a sessão para o tapume e o bootstrap não acha `e2e.summary.root`. O convite da suíte é o código `E2EDU7`, no programa Comunidade interna Like:me (`c8aed25c-7237-43a8-8f87-92b884d03792`), provider Dr. Diogo Lara — outro programa que o checkout pago, para não criar matrícula grátis no protocolo que o cartão vai comprar.
 
 `npm run test:e2e:login` prova a sessão: entra pelo deep link, abre o menu de perfil e confere `${E2E_LOGIN_EMAIL}` na conta logada.
 
@@ -90,6 +92,7 @@ Conta de staging dos testes de login/checkout: `duda@pixelpulselab.dev` (user `5
 | `E2E_PRODUCT_ID` / `E2E_COMMUNITY_ID` / `E2E_PROTOCOL_PRODUCT_ID` | Deep links |
 | `E2E_CHECKOUT_PRODUCT_ID` | Produto físico de staging para checkout pago/recusado |
 | `E2E_CHECKOUT_PROTOCOL_PRODUCT_ID` | Protocolo de staging para assinatura no checkout |
+| `E2E_CHECKOUT_BILLING_PERIOD` | Forma de `product_price` no carrinho (`MONTHLY` se o programa tiver mais de um preço) |
 | `E2E_CARD_CVV` | `123` aprova; `651` recusa no simulador PSP |
 
 Checkout real (`maestro/flows/checkout/`) não entra em `test:e2e:staging`: cobra Pagarme sandbox e dispara e-mail transacional para `duda@pixelpulselab.dev`. Requer `EXPO_PUBLIC_E2E_STAGING_TOKEN` válido.
@@ -102,7 +105,7 @@ npm run test:e2e:checkout
 |------|--------------------|------|
 | `marketplace-paid` | `created`, `payment_approved` | pedido pago |
 | `marketplace-refused` | `created`, `payment_failed` | [APP-378](https://likeme-app.atlassian.net/browse/APP-378) |
-| `protocol-paid` | `created`, `payment_approved`, `cancel_requested`, `cancel_annulled` | [APP-389](https://likeme-app.atlassian.net/browse/APP-389), [APP-388](https://likeme-app.atlassian.net/browse/APP-388) |
+| `protocol-paid` | `created`, `payment_approved`, `cancel_requested`, `cancel_annulled` | Compra o programa pelo carrinho (preço de `product_price`), paga no cartão e confere a assinatura em Atividades antes do cancelamento. [APP-389](https://likeme-app.atlassian.net/browse/APP-389), [APP-388](https://likeme-app.atlassian.net/browse/APP-388) |
 | `protocol-refused` | `created`, `payment_failed` | [APP-378](https://likeme-app.atlassian.net/browse/APP-378) (pedido de adesão recusado) |
 
 Fora do Maestro (cron/webhook, sem jornada de UI) — cobertura no backend `transactionalEmailFlows.integration.test.ts`:

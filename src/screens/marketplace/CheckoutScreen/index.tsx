@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import { View, Text, ScrollView, Alert, KeyboardAvoidingView, Platform } from 'react-native';
 import { GradientBackground, ScreenWithHeader } from '@/components/ui/layout';
 import { SecondaryButton } from '@/components/ui/buttons';
@@ -72,6 +73,20 @@ const CheckoutScreen: React.FC<Props> = ({ navigation, route }) => {
   const [checkoutSubmitBlocked, setCheckoutSubmitBlocked] = useState(false);
   const [ownedProtocolCheckoutBlocked, setOwnedProtocolCheckoutBlocked] = useState(false);
   const [isOrderSubmitLocked, setIsOrderSubmitLocked] = useState(false);
+  const currentStepRef = useRef(currentStep);
+  currentStepRef.current = currentStep;
+
+  useFocusEffect(
+    useCallback(() => {
+      if (currentStepRef.current !== 'order') {
+        return;
+      }
+      setCurrentStep('address');
+      setCheckoutSubmitCompleted(false);
+      checkoutSubmitCompletedRef.current = false;
+      setIsOrderSubmitLocked(false);
+    }, []),
+  );
   const checkoutVoucher = useCheckoutVoucher();
   const [shipping, setShipping] = useState(0);
   const [shippingLoading, setShippingLoading] = useState(false);

@@ -6,16 +6,25 @@ appId: app.likeme.com
     visible:
       id: "e2e.cart.root"
     timeout: 30000
+- runFlow:
+    when:
+      visible:
+        id: "e2e.cart.billingPeriod.${E2E_CHECKOUT_BILLING_PERIOD}"
+    commands:
+      - tapOn:
+          id: "e2e.cart.billingPeriod.${E2E_CHECKOUT_BILLING_PERIOD}"
 - scrollUntilVisible:
     element:
       id: "e2e.cart.checkout"
     direction: DOWN
+    centerElement: true
     timeout: 20000
 - tapOn:
     id: "e2e.cart.checkout"
-- extendedWaitUntil:
-    visible:
-      id: "e2e.checkout.addressForm"
+- scrollUntilVisible:
+    element:
+      id: "e2e\\.checkout\\.addressForm"
+    direction: DOWN
     timeout: 30000
 - runFlow: fill-checkout-address.yaml
 - tapOn:

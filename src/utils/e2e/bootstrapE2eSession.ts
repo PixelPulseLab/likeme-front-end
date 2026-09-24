@@ -1,5 +1,6 @@
 import { CommonActions, type NavigationContainerRefWithCurrent } from '@react-navigation/native';
 import storageService from '@/services/auth/storageService';
+import userService from '@/services/user/userService';
 import { invalidateApiClientAuthTokenMemoryCache } from '@/services/infrastructure/apiClient';
 import type { RootStackParamList } from '@/types/navigation';
 import {
@@ -17,6 +18,7 @@ const E2E_PLACEHOLDER_TOKEN = 'e2e-staging-placeholder-token';
 export type BootstrapE2eSessionOptions = {
   /** Se true, marca onboarding completo e cai em Home/Summary. */
   completeOnboarding?: boolean;
+  clearCheckout?: boolean;
   token?: string;
   email?: string;
   name?: string;
@@ -33,6 +35,7 @@ export function bootstrapOptionsFromDeepLinkUrl(url: string): BootstrapE2eSessio
     const parsed = new URL(url.trim());
     return {
       completeOnboarding: parsed.searchParams.get('completeOnboarding') === '1',
+      clearCheckout: parsed.searchParams.get('clearCheckout') === '1',
       token: parsed.searchParams.get('token') ?? undefined,
       email: parsed.searchParams.get('email') ?? undefined,
       name: parsed.searchParams.get('name') ?? undefined,
@@ -62,6 +65,16 @@ export async function seedE2eSession(options: BootstrapE2eSessionOptions = {}): 
     await storageService.setPrivacyPolicyAcceptedAt(now);
     await storageService.setRegisterCompletedAt(now);
     await storageService.setObjectivesSelectedAt(now);
+    await storageService.setInvitationOpensHome();
+  }
+
+  if (options.clearCheckout) {
+    await storageService.clearCart();
+    try {
+      await userService.deleteShippingAddress();
+    } catch (error) {
+      logger.error('[e2e] Falha ao limpar endereço salvo', error);
+    }
   }
 
   logger.info('[e2e] Sessão E2E seedada', {
