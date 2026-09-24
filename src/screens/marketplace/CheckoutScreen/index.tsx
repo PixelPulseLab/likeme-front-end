@@ -30,7 +30,7 @@ import CheckoutVoucherSection from './voucher/CheckoutVoucherSection';
 import { ProductRowCard } from '@/components/ui/cards';
 import OrderSummary from './order/OrderSummary';
 import OrderScreen, { type OrderScreenStatus } from './order/OrderScreen';
-import type { CreateOrderData } from '@/types/order';
+import type { CreateOrderData, SubscriptionBillingPeriod } from '@/types/order';
 import { PAYMENT_METHOD, type PaymentMethod } from '@/constants/payment/paymentMethod';
 import { GooglePayCancelledError, requestGooglePayPaymentData } from '@/services/payment/googlePayService';
 import { ApplePayCancelledError, requestApplePayPaymentData } from '@/services/payment/applePayService';
@@ -423,7 +423,19 @@ const CheckoutScreen: React.FC<Props> = ({ navigation, route }) => {
 
       if (cartHasProgram) {
         const programItem = cartItems.find((item) => isProtocolCartItem(item));
-        orderData.billingPeriod = programItem?.billingPeriod ?? 'MONTHLY';
+        const selectedPeriod = programItem?.billingPeriod;
+        const billingPeriod: SubscriptionBillingPeriod =
+          selectedPeriod === 'WEEKLY' ||
+          selectedPeriod === 'BIWEEKLY' ||
+          selectedPeriod === 'MONTHLY' ||
+          selectedPeriod === 'BIMONTHLY' ||
+          selectedPeriod === 'QUARTERLY' ||
+          selectedPeriod === 'SEMIANNUAL' ||
+          selectedPeriod === 'YEARLY' ||
+          selectedPeriod === 'ONE_TIME'
+            ? selectedPeriod
+            : 'MONTHLY';
+        orderData.billingPeriod = billingPeriod;
       }
 
       const appliedVoucher = checkoutVoucher.appliedPreview;
