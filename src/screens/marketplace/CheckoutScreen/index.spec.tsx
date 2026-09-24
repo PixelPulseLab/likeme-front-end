@@ -55,8 +55,10 @@ jest.mock('@react-navigation/native', () => {
   return {
     ...actual,
     useFocusEffect: (callback: () => void) => {
-      // Chama o callback imediatamente
-      callback();
+      const React = require('react');
+      React.useEffect(() => {
+        callback();
+      }, [callback]);
       return mockUseFocusEffect;
     },
   };
