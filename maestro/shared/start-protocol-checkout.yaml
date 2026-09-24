@@ -2,6 +2,10 @@
 appId: app.likeme.com
 ---
 - openLink: likeme://product/${E2E_CHECKOUT_PROTOCOL_PRODUCT_ID}
+- extendedWaitUntil:
+    visible:
+      id: "e2e.product.root"
+    timeout: 90000
 - scrollUntilVisible:
     element:
       id: "product-details-add-to-cart"

@@ -406,6 +406,17 @@ function navigateToUnauthenticatedIfNeeded(
   );
 }
 
+let e2eBootstrapChain: Promise<void> = Promise.resolve();
+
+function enqueueE2eBootstrap(task: () => Promise<void>): Promise<void> {
+  const run = e2eBootstrapChain.then(task, task);
+  e2eBootstrapChain = run.then(
+    () => undefined,
+    () => undefined,
+  );
+  return run;
+}
+
 export async function openDeepLinkTarget(
   navigationRef: NavigationContainerRefWithCurrent<RootStackParamList>,
   url: string,
@@ -421,19 +432,24 @@ export async function openDeepLinkTarget(
   }
 
   if (isE2eBootstrapDeepLinkPath(path)) {
-    try {
-      const [{ isE2eAuthBypassEnabled }, { bootstrapE2eSessionAndNavigate, bootstrapOptionsFromDeepLinkUrl }] =
-        await Promise.all([import('@/utils/e2e/e2eAuthBypass'), import('@/utils/e2e/bootstrapE2eSession')]);
-      if (!isE2eAuthBypassEnabled()) {
-        logger.error('[deepLink] /e2e/bootstrap ignorado — bypass E2E desabilitado ou backend inválido');
-        return;
+    await enqueueE2eBootstrap(async () => {
+      try {
+        const [{ isE2eAuthBypassEnabled }, { bootstrapE2eSessionAndNavigate, bootstrapOptionsFromDeepLinkUrl }] =
+          await Promise.all([import('@/utils/e2e/e2eAuthBypass'), import('@/utils/e2e/bootstrapE2eSession')]);
+        if (!isE2eAuthBypassEnabled()) {
+          logger.error('[deepLink] /e2e/bootstrap ignorado — bypass E2E desabilitado ou backend inválido');
+          return;
+        }
+        await bootstrapE2eSessionAndNavigate(navigationRef, bootstrapOptionsFromDeepLinkUrl(url));
+      } catch (error) {
+        logger.error('[deepLink] Falha no bootstrap E2E', error);
       }
-      await bootstrapE2eSessionAndNavigate(navigationRef, bootstrapOptionsFromDeepLinkUrl(url));
-    } catch (error) {
-      logger.error('[deepLink] Falha no bootstrap E2E', error);
-    }
+    });
     return;
   }
+
+  await e2eBootstrapChain;
+  activeRouteName = navigationRef.getCurrentRoute()?.name ?? activeRouteName;
 
   const invitationTarget = invitationDeepLinkTargetFromUrl(url);
   if (invitationTarget) {

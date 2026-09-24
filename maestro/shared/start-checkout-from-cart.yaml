@@ -25,6 +25,7 @@ appId: app.likeme.com
     element:
       id: "e2e\\.checkout\\.addressForm"
     direction: DOWN
+    visibilityPercentage: 10
     timeout: 30000
 - runFlow: fill-checkout-address.yaml
 - tapOn:

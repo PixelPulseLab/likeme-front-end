@@ -426,6 +426,7 @@ const ProductDetailsScreen: React.FC<ProductDetailsScreenProps> = ({ navigation,
       >
         <ScrollView
           ref={scrollViewRef}
+          testID={E2E_TEST_IDS.PRODUCT_SCREEN}
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >

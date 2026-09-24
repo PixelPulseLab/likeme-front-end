@@ -8,6 +8,10 @@ onFlowComplete:
 - runFlow: ../../shared/bootstrap-authenticated.yaml
 - runFlow: ../../shared/reset-checkout-fixtures.yaml
 - openLink: likeme://product/${E2E_CHECKOUT_PRODUCT_ID}
+- extendedWaitUntil:
+    visible:
+      id: "e2e.product.root"
+    timeout: 90000
 - scrollUntilVisible:
     element:
       id: "product-details-add-to-cart"
@@ -20,6 +24,7 @@ onFlowComplete:
     file: ../../shared/fill-checkout-payment.yaml
     env:
       E2E_CARD_CVV: "651"
+- hideKeyboard
 - tapOn:
     id: "button-continue"
 - runFlow:

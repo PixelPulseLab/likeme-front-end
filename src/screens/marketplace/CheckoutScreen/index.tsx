@@ -640,6 +640,7 @@ const CheckoutScreen: React.FC<Props> = ({ navigation, route }) => {
         keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 0}
       >
         <ScrollView
+          style={styles.scrollView}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={[styles.scrollContent, isOrderStep && styles.scrollContentOrderStep]}
           keyboardShouldPersistTaps='handled'
@@ -658,13 +659,15 @@ const CheckoutScreen: React.FC<Props> = ({ navigation, route }) => {
 
           {currentStep === 'address' && (
             <>
-              <AddressForm
-                addressData={addressData}
-                onSaveAddress={handleSaveAddress}
-                startWithEditOpen={addressLoaded && !addressData.addressLine1?.trim()}
-                addressLoadError={addressLoadError}
-                addressSaveError={addressSaveError}
-              />
+              {addressLoaded && (
+                <AddressForm
+                  addressData={addressData}
+                  onSaveAddress={handleSaveAddress}
+                  startWithEditOpen={!addressData.addressLine1?.trim()}
+                  addressLoadError={addressLoadError}
+                  addressSaveError={addressSaveError}
+                />
+              )}
 
               <Text style={styles.deliveriesTitle}>{t('checkout.yourDeliveries')}</Text>
               <View style={styles.cartItemsList} testID='cart-items-list'>
@@ -762,20 +765,20 @@ const CheckoutScreen: React.FC<Props> = ({ navigation, route }) => {
             <OrderScreen status={orderCompletionStatus} onViewOrdersPress={handleViewOrdersPress} />
           )}
         </ScrollView>
-      </KeyboardAvoidingView>
 
-      {currentStep !== 'order' && (
-        <View style={styles.buttonContainer}>
-          <SecondaryButton
-            testID={E2E_TEST_IDS.CHECKOUT_CONTINUE}
-            label={t('common.continue')}
-            onPress={handleContinue}
-            size='large'
-            loading={isContinueLoading}
-            disabled={isContinueDisabled}
-          />
-        </View>
-      )}
+        {currentStep !== 'order' && (
+          <View style={styles.buttonContainer}>
+            <SecondaryButton
+              testID={E2E_TEST_IDS.CHECKOUT_CONTINUE}
+              label={t('common.continue')}
+              onPress={handleContinue}
+              size='large'
+              loading={isContinueLoading}
+              disabled={isContinueDisabled}
+            />
+          </View>
+        )}
+      </KeyboardAvoidingView>
     </ScreenWithHeader>
   );
 };

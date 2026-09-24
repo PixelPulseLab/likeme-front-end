@@ -9,6 +9,7 @@ onFlowComplete:
 - runFlow: ../../shared/reset-checkout-fixtures.yaml
 - runFlow: ../../shared/start-protocol-checkout.yaml
 - runFlow: ../../shared/fill-checkout-payment.yaml
+- hideKeyboard
 - tapOn:
     id: "button-continue"
 - runFlow:

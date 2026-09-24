@@ -235,8 +235,6 @@ describe('PaymentForm', () => {
     const { getByPlaceholderText } = render(<PaymentForm {...mockProps} />);
 
     const cvvInput = getByPlaceholderText('checkout.cvvPlaceholder');
-    // Note: Testing secureTextEntry prop requires checking component props
-    // This is a basic test to ensure the field exists
-    expect(cvvInput).toBeTruthy();
+    expect(cvvInput.props.secureTextEntry).toBe(true);
   });
 });

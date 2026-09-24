@@ -2,13 +2,11 @@
 # CEP 01310100 preenche rua/bairro/cidade/UF via ViaCEP — só digitamos o que a API não traz.
 appId: app.likeme.com
 ---
-- runFlow:
-    when:
-      visible:
-        id: "e2e.checkout.addressView"
-    commands:
-      - assertVisible:
-          id: "e2e.checkout.addressView"
+- extendedWaitUntil:
+    visible:
+      id: "e2e.checkout.zip"
+    timeout: 15000
+    optional: true
 - runFlow:
     when:
       visible:

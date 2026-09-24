@@ -11,6 +11,7 @@ import { styles } from '../styles';
 import AddressForm from '../address/AddressForm';
 import type { AddressData } from '../address/AddressForm';
 import { E2E_TEST_IDS } from '@/constants/e2eTestIds';
+import { isE2eAuthBypassEnabled } from '@/utils/e2e/e2eAuthBypass';
 
 const WALLET_PAY_WORDMARK = 'Pay';
 
@@ -233,7 +234,7 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
                   value={cvv}
                   onChangeText={onCvvChange}
                   keyboardType='numeric'
-                  secureTextEntry
+                  secureTextEntry={!isE2eAuthBypassEnabled()}
                   errorText={paymentFieldErrors.cvv}
                   required
                   testID={E2E_TEST_IDS.CHECKOUT_CVV}

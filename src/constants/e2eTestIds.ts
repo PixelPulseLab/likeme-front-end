@@ -27,6 +27,7 @@ export const E2E_TEST_IDS = {
   MARKETPLACE_SCREEN: 'e2e.marketplace.root',
   PRODUCT_CARD_PREFIX: 'e2e.marketplace.product.',
   POST_CARD_PREFIX: 'e2e.community.post.',
+  PRODUCT_SCREEN: 'e2e.product.root',
   PRODUCT_ADD_TO_CART: 'product-details-add-to-cart',
   PRODUCT_TAB_PREFIX: 'e2e.product.tab.',
   PRODUCT_PROGRAM_TERMS: 'e2e.product.programTerms',

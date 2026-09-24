@@ -62,7 +62,7 @@ const AddressForm: React.FC<AddressFormProps> = ({
   addressLoadError = null,
   addressSaveError = null,
 }) => {
-  const [isEditing, setIsEditing] = useState(false);
+  const [isEditing, setIsEditing] = useState(startWithEditOpen);
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
