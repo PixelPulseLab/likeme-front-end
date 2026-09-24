@@ -35,6 +35,7 @@ import {
   getCommunityStackNavigator,
   getChatStackNavigator,
   getActivitiesScreen,
+  getCycleBillingDetailScreen,
   getOrderDetailScreen,
   getMarketplaceScreen,
   getProductDetailsScreen,
@@ -201,6 +202,11 @@ const RootNavigator: React.FC = () => {
                 <Stack.Screen name='Chat' getComponent={getChatStackNavigator} options={{ title: 'Chat' }} />
                 <Stack.Screen name='Activities' getComponent={getActivitiesScreen} options={{ title: 'Atividades' }} />
                 <Stack.Screen name='OrderDetail' getComponent={getOrderDetailScreen} options={{ title: 'Pedido' }} />
+                <Stack.Screen
+                  name='CycleBillingDetail'
+                  getComponent={getCycleBillingDetailScreen}
+                  options={{ title: 'Renovação' }}
+                />
                 <Stack.Screen
                   name='Marketplace'
                   getComponent={getMarketplaceScreen}

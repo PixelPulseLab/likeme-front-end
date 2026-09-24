@@ -78,6 +78,7 @@ type RootStackParamListCore = {
       }
     | undefined;
   OrderDetail: { orderId: string };
+  CycleBillingDetail: { cycleBilling: import('@/types/activity').CycleBillingHistory };
   Marketplace: MarketplaceRouteParams | undefined;
   ProductDetails: {
     productId: string;

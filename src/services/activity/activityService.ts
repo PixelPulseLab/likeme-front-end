@@ -27,6 +27,7 @@ class ActivityService {
         success: response.success,
         activitiesCount: response.data?.activities?.length ?? 0,
         ordersCount: response.data?.orders?.length ?? 0,
+        cycleBillingsCount: response.data?.cycleBillings?.length ?? 0,
         subscriptionEventsCount: response.data?.subscriptionEvents?.length ?? 0,
       });
 

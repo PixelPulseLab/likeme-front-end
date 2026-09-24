@@ -28,13 +28,23 @@ import { useAnalyticsScreen } from '@/analytics';
 import { logger } from '@/utils/logger';
 import { formatOrderDisplayId } from '@/utils/marketplace/orderDisplayId';
 import notificationApiService, { type InboxNotification } from '@/services/notification/notificationApiService';
-import { navigateToOrderDetail } from '@/utils/navigation/activitiesNavigation';
+import { navigateToCycleBillingDetail, navigateToOrderDetail } from '@/utils/navigation/activitiesNavigation';
 import { navigateRootStack, rootStackNavigationFrom } from '@/utils/navigation/rootStackNavigation';
 import { orderCardStatusPresentation, orderCardTitle } from '@/utils/marketplace/orderStatusDisplay';
 import { invalidateActivityListCache, writeActivityListCache } from '@/utils/activity/activityListCache';
 import { addActivityToDeviceCalendar } from '@/utils/activity/addActivityToDeviceCalendar';
 import { formatSubscriptionManageDate } from '@/utils/subscription/subscriptionManageDisplay';
-import { SUBSCRIPTION_HISTORY_STATUS, type SubscriptionHistory, type UserActivity } from '@/types/activity';
+import {
+  SUBSCRIPTION_HISTORY_STATUS,
+  type CycleBillingHistory,
+  type SubscriptionHistory,
+  type UserActivity,
+} from '@/types/activity';
+import {
+  cycleBillingCardLabel,
+  cycleBillingKindLabel,
+  cycleBillingStatusPresentation,
+} from '@/utils/payment/cycleBillingHistoryDisplay';
 import { styles } from './styles';
 
 type ActivitiesScreenProps = {
@@ -75,6 +85,7 @@ const ActivitiesScreen: React.FC<ActivitiesScreenProps> = ({ navigation, route }
   const [editingActivityId, setEditingActivityId] = useState<string | null>(null);
   const [editingActivityData, setEditingActivityData] = useState<any>(null);
   const [orders, setOrders] = useState<Order[]>([]);
+  const [cycleBillings, setCycleBillings] = useState<CycleBillingHistory[]>([]);
   const [isLoadingOrders, setIsLoadingOrders] = useState(false);
   const [subscriptionLifecycleEvents, setSubscriptionLifecycleEvents] = useState<SubscriptionHistory[]>([]);
   const [daySortOrder, setDaySortOrder] = useState<'asc' | 'desc'>('desc');
@@ -153,16 +164,19 @@ const ActivitiesScreen: React.FC<ActivitiesScreenProps> = ({ navigation, route }
         const response = await activityService.getHistory();
         if (!response.success || !response.data) {
           setOrders([]);
+          setCycleBillings([]);
           setSubscriptionLifecycleEvents([]);
           return;
         }
 
         writeActivityListCache('history', response.data.activities);
         setOrders(response.data.orders);
+        setCycleBillings(response.data.cycleBillings ?? []);
         setSubscriptionLifecycleEvents(response.data.subscriptionEvents);
         await loadActivities('history', { silent: true });
       } catch (error) {
         logger.error('[ActivitiesScreen] Erro ao carregar histórico de atividades', error);
+        setCycleBillings([]);
         setSubscriptionLifecycleEvents([]);
       } finally {
         setIsLoadingOrders(false);
@@ -761,6 +775,10 @@ const ActivitiesScreen: React.FC<ActivitiesScreenProps> = ({ navigation, route }
     return sortByDateField(orders, 'createdAt', daySortOrder);
   }, [orders, daySortOrder]);
 
+  const sortedCycleBillings = useMemo(() => {
+    return sortByDateField(cycleBillings, 'occurredAt', daySortOrder);
+  }, [cycleBillings, daySortOrder]);
+
   const sortedSubscriptionLifecycleEvents = useMemo(() => {
     return sortByDateField(subscriptionLifecycleEvents, 'at', daySortOrder);
   }, [subscriptionLifecycleEvents, daySortOrder]);
@@ -823,6 +841,72 @@ const ActivitiesScreen: React.FC<ActivitiesScreenProps> = ({ navigation, route }
               })}
               : {formatSubscriptionManageDate(event.at)}
             </Text>
+          </View>
+        </View>
+      </TouchableOpacity>
+    );
+  };
+
+  const renderCycleBillingCard = (cycleBilling: CycleBillingHistory) => {
+    const kindLabel = cycleBillingKindLabel(cycleBilling.billingType);
+    const statusPresentation = cycleBillingStatusPresentation(cycleBilling.status);
+    const cardLabel = cycleBillingCardLabel(cycleBilling);
+    const kindText = t(kindLabel.labelKey, { defaultValue: kindLabel.labelDefault });
+    const openDetail = () => navigateToCycleBillingDetail(rootNavigation, cycleBilling);
+
+    return (
+      <TouchableOpacity
+        key={`cycle-billing-${cycleBilling.id}`}
+        style={styles.activityCard}
+        onPress={openDetail}
+        activeOpacity={0.7}
+        accessibilityRole='button'
+        accessibilityLabel={`${kindText} ${formatOrderDisplayId(cycleBilling.id)}`}
+      >
+        <View style={styles.cardContent}>
+          <View style={styles.cardHeader}>
+            <Badge label={kindText} color='orange' />
+          </View>
+          <View style={styles.orderCardTitleRow}>
+            <CachedImage source={HOME_MVP_ASSETS.cart} style={styles.orderCardCartIcon} contentFit='contain' />
+            <Text style={styles.orderCardTitle} numberOfLines={2}>
+              {cycleBilling.productName || t('activities.order')}
+            </Text>
+          </View>
+          <View style={styles.orderCardDetails}>
+            <Text style={styles.orderCardDetailLine}>
+              {t('activities.orderNumberShort', { defaultValue: 'Pedido' })}: {formatOrderDisplayId(cycleBilling.id)}
+            </Text>
+            {cycleBilling.cycleNumber != null ? (
+              <Text style={styles.orderCardDetailLine}>
+                {t('activities.cycleBillingCycle', { defaultValue: 'Ciclo' })} {String(cycleBilling.cycleNumber)}
+              </Text>
+            ) : null}
+            <Text style={styles.orderCardDetailLine}>
+              {t('activities.orderTotal', { defaultValue: 'Total' })} {formatPrice(cycleBilling.amountCents / 100)}
+            </Text>
+            {cycleBilling.installments != null ? (
+              <Text style={styles.orderCardDetailLine}>
+                {t('activities.cycleBillingInstallments', { defaultValue: 'Parcelas' })}: {cycleBilling.installments}x
+              </Text>
+            ) : null}
+            {cardLabel ? <Text style={styles.orderCardDetailLine}>{cardLabel}</Text> : null}
+            <Text style={styles.orderCardDetailLine}>
+              {t(statusPresentation.deliveryLabelKey, {
+                defaultValue: statusPresentation.deliveryLabelDefault,
+              })}
+            </Text>
+          </View>
+          <View style={[styles.cardActions, styles.orderCardStatusAction]}>
+            <IconButton
+              icon={statusPresentation.icon}
+              variant={statusPresentation.variant}
+              backgroundTintColor={statusPresentation.backgroundTintColor}
+              iconColor={statusPresentation.iconColor}
+              backgroundSize='medium'
+              iconSize={24}
+              onPress={openDetail}
+            />
           </View>
         </View>
       </TouchableOpacity>
@@ -1068,6 +1152,7 @@ const ActivitiesScreen: React.FC<ActivitiesScreenProps> = ({ navigation, route }
                   {filteredActivities.map(renderActivityCard)}
                   {sortedSubscriptionLifecycleEvents.map(renderSubscriptionLifecycleCard)}
                   {sortedOrders.map(renderOrderCard)}
+                  {sortedCycleBillings.map(renderCycleBillingCard)}
                 </>
               )}
               {selectedFilter === 'activities' && filteredActivities.map(renderActivityCard)}
@@ -1076,12 +1161,14 @@ const ActivitiesScreen: React.FC<ActivitiesScreenProps> = ({ navigation, route }
                 <>
                   {sortedSubscriptionLifecycleEvents.map(renderSubscriptionLifecycleCard)}
                   {sortedOrders.map(renderOrderCard)}
+                  {sortedCycleBillings.map(renderCycleBillingCard)}
                 </>
               )}
               {selectedFilter === 'all' &&
                 filteredActivities.length === 0 &&
                 sortedSubscriptionLifecycleEvents.length === 0 &&
                 sortedOrders.length === 0 &&
+                sortedCycleBillings.length === 0 &&
                 !isLoadingOrders && (
                   <View style={styles.emptyContainer}>
                     <Text style={styles.emptyText}>{t('activities.noHistoryFound')}</Text>
@@ -1100,6 +1187,7 @@ const ActivitiesScreen: React.FC<ActivitiesScreenProps> = ({ navigation, route }
               {selectedFilter === 'orders' &&
                 sortedOrders.length === 0 &&
                 sortedSubscriptionLifecycleEvents.length === 0 &&
+                sortedCycleBillings.length === 0 &&
                 !isLoadingOrders && (
                   <View style={styles.emptyContainer}>
                     <Text style={styles.emptyText}>{t('activities.noOrdersFound')}</Text>

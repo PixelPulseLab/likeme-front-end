@@ -65,10 +65,25 @@ export type SubscriptionHistory = {
   orderId: string | null;
 };
 
+export type CycleBillingHistory = {
+  id: string;
+  orderId: string;
+  billingType: 'RENEWAL' | 'RETRY';
+  status: 'PENDING' | 'PAID' | 'FAILED' | 'REFUNDED';
+  cycleNumber: number | null;
+  amountCents: number;
+  installments: number | null;
+  productName: string;
+  occurredAt: string;
+  cardBrand: string | null;
+  cardLastDigits: string | null;
+};
+
 export type ActivityHistoryPayload = {
   activities: UserActivity[];
   orders: Order[];
   subscriptionEvents: SubscriptionHistory[];
+  cycleBillings?: CycleBillingHistory[];
 };
 
 export type ActivityHistoryApiResponse = ApiResponse<ActivityHistoryPayload>;

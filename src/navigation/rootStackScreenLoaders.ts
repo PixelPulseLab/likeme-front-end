@@ -62,6 +62,8 @@ export const getActivitiesScreen = (): RootStackScreen =>
   asScreen(require('../screens/activities/ActivitiesScreen') as { default: RootStackScreen });
 export const getOrderDetailScreen = (): RootStackScreen =>
   asScreen(require('../screens/activities/OrderDetailScreen') as { default: RootStackScreen });
+export const getCycleBillingDetailScreen = (): RootStackScreen =>
+  asScreen(require('../screens/activities/CycleBillingDetailScreen') as { default: RootStackScreen });
 export const getMarketplaceScreen = (): RootStackScreen =>
   asScreen(require('../screens/marketplace/MarketplaceScreen') as { default: RootStackScreen });
 export const getProductDetailsScreen = (): RootStackScreen =>

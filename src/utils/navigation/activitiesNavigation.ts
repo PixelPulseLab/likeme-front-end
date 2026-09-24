@@ -1,3 +1,4 @@
+import type { CycleBillingHistory } from '@/types/activity';
 import { navigateRootStack, rootStackNavigationFrom } from '@/utils/navigation/rootStackNavigation';
 
 type Navigation = {
@@ -15,4 +16,8 @@ export function navigateToActivitiesOrders(navigation: Navigation): void {
 
 export function navigateToOrderDetail(navigation: Navigation, orderId: string): void {
   navigateRootStack(navigation, 'OrderDetail', { orderId });
+}
+
+export function navigateToCycleBillingDetail(navigation: Navigation, cycleBilling: CycleBillingHistory): void {
+  navigateRootStack(navigation, 'CycleBillingDetail', { cycleBilling });
 }
