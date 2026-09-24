@@ -167,6 +167,17 @@ class SubscriptionService {
     );
   }
 
+  async deleteSubscription(subscriptionId: string): Promise<void> {
+    const response = await apiClient.delete<ApiResponse<unknown>>(
+      `/api/payment/subscriptions/${encodeURIComponent(subscriptionId)}`,
+      undefined,
+      true,
+    );
+    if (!response?.success) {
+      throw new Error(response?.message || 'Erro ao remover a assinatura');
+    }
+  }
+
   async scheduleSubscriptionCancel(
     subscriptionId: string,
     reason: string,

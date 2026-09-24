@@ -1,6 +1,7 @@
 import { CommonActions, type NavigationContainerRefWithCurrent } from '@react-navigation/native';
 import storageService from '@/services/auth/storageService';
 import userService from '@/services/user/userService';
+import { subscriptionService } from '@/services/payment/subscriptionService';
 import { invalidateApiClientAuthTokenMemoryCache } from '@/services/infrastructure/apiClient';
 import type { RootStackParamList } from '@/types/navigation';
 import {
@@ -19,6 +20,7 @@ export type BootstrapE2eSessionOptions = {
   /** Se true, marca onboarding completo e cai em Home/Summary. */
   completeOnboarding?: boolean;
   clearCheckout?: boolean;
+  protocolProductId?: string;
   token?: string;
   email?: string;
   name?: string;
@@ -36,6 +38,7 @@ export function bootstrapOptionsFromDeepLinkUrl(url: string): BootstrapE2eSessio
     return {
       completeOnboarding: parsed.searchParams.get('completeOnboarding') === '1',
       clearCheckout: parsed.searchParams.get('clearCheckout') === '1',
+      protocolProductId: parsed.searchParams.get('protocolProductId') ?? undefined,
       token: parsed.searchParams.get('token') ?? undefined,
       email: parsed.searchParams.get('email') ?? undefined,
       name: parsed.searchParams.get('name') ?? undefined,
@@ -74,6 +77,20 @@ export async function seedE2eSession(options: BootstrapE2eSessionOptions = {}): 
       await userService.deleteShippingAddress();
     } catch (error) {
       logger.error('[e2e] Falha ao limpar endereço salvo', error);
+    }
+    const protocolProductId = options.protocolProductId?.trim();
+    if (protocolProductId) {
+      try {
+        const listed = await subscriptionService.listUserSubscriptions();
+        const subscriptionId = listed.data?.subscriptions.find(
+          (subscription) => subscription.productId === protocolProductId && subscription.status !== 'CANCELED',
+        )?.id;
+        if (subscriptionId) {
+          await subscriptionService.deleteSubscription(subscriptionId);
+        }
+      } catch (error) {
+        logger.error('[e2e] Falha ao remover a assinatura do checkout', error);
+      }
     }
   }
 

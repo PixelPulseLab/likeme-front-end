@@ -1,7 +1,7 @@
 # Carrinho (periodicidade escolhida) e endereço do perfil. Roda no onFlowComplete.
 appId: app.likeme.com
 ---
-- openLink: likeme://e2e/bootstrap?completeOnboarding=1&clearCheckout=1&token=${E2E_STAGING_TOKEN}&email=${E2E_LOGIN_EMAIL}
+- openLink: likeme://e2e/bootstrap?completeOnboarding=1&clearCheckout=1&protocolProductId=${E2E_CHECKOUT_PROTOCOL_PRODUCT_ID}&token=${E2E_STAGING_TOKEN}&email=${E2E_LOGIN_EMAIL}
 - extendedWaitUntil:
     visible:
       id: "e2e.summary.root"

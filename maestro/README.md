@@ -105,7 +105,7 @@ npm run test:e2e:checkout
 |------|--------------------|------|
 | `marketplace-paid` | `created`, `payment_approved` | pedido pago |
 | `marketplace-refused` | `created`, `payment_failed` | [APP-378](https://likeme-app.atlassian.net/browse/APP-378) |
-| `protocol-paid` | `created`, `payment_approved`, `cancel_requested`, `cancel_annulled` | Compra o programa pelo carrinho (preço de `product_price`), paga no cartão e confere a assinatura em Atividades antes do cancelamento. [APP-389](https://likeme-app.atlassian.net/browse/APP-389), [APP-388](https://likeme-app.atlassian.net/browse/APP-388) |
+| `protocol-paid` | `created`, `payment_approved`, `cancel_requested` | Compra o programa, confere a assinatura em Atividades e cancela em seguida para a próxima execução poder comprar de novo. [APP-389](https://likeme-app.atlassian.net/browse/APP-389) |
 | `protocol-refused` | `created`, `payment_failed` | [APP-378](https://likeme-app.atlassian.net/browse/APP-378) (pedido de adesão recusado) |
 
 Fora do Maestro (cron/webhook, sem jornada de UI) — cobertura no backend `transactionalEmailFlows.integration.test.ts`:
