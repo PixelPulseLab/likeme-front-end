@@ -422,7 +422,8 @@ const CheckoutScreen: React.FC<Props> = ({ navigation, route }) => {
       }
 
       if (cartHasProgram) {
-        orderData.billingPeriod = 'MONTHLY';
+        const programItem = cartItems.find((item) => isProtocolCartItem(item));
+        orderData.billingPeriod = programItem?.billingPeriod ?? 'MONTHLY';
       }
 
       const appliedVoucher = checkoutVoucher.appliedPreview;

@@ -87,7 +87,8 @@ export type SubscriptionBillingPeriod =
   | 'BIMONTHLY'
   | 'QUARTERLY'
   | 'SEMIANNUAL'
-  | 'YEARLY';
+  | 'YEARLY'
+  | 'ONE_TIME';
 
 export interface SubscriptionEnrollmentSummary {
   orderId: string;

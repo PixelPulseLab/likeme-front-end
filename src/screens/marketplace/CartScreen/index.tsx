@@ -29,14 +29,33 @@ type CartScreenProps = {
 
 const CORREIOS_CEP_URL = 'https://buscacepinter.correios.com.br/app/endereco/index.php';
 
+const BILLING_PERIOD_LABEL: Record<string, string> = {
+  WEEKLY: 'Semanal',
+  BIWEEKLY: 'Quinzenal',
+  MONTHLY: 'Mensal',
+  BIMONTHLY: 'Bimestral',
+  QUARTERLY: 'Trimestral',
+  SEMIANNUAL: 'Semestral',
+  YEARLY: 'Anual',
+  ONE_TIME: 'Única',
+};
+
 const CartScreen: React.FC<CartScreenProps> = ({ navigation }) => {
   useAnalyticsScreen({ screenName: 'Cart', screenClass: 'CartScreen' });
   const { bottom: bottomInset } = useSafeAreaInsets();
   const { t } = useTranslation();
   const menuItems = useMenuItems(navigation);
   useSetFloatingMenu(menuItems, 'marketplace');
-  const { cartItems, loading, loadAndValidateCartItems, increaseQuantity, decreaseQuantity, removeItem, subtotal } =
-    useCart();
+  const {
+    cartItems,
+    loading,
+    loadAndValidateCartItems,
+    increaseQuantity,
+    decreaseQuantity,
+    removeItem,
+    selectBillingPeriod,
+    subtotal,
+  } = useCart();
 
   const [zipCode, setZipCode] = useState('');
   const [shipping, setShipping] = useState(0.0);
@@ -161,10 +180,33 @@ const CartScreen: React.FC<CartScreenProps> = ({ navigation }) => {
             increaseQuantityTestID={`increase-quantity-${item.id}`}
             decreaseQuantityTestID={`decrease-quantity-${item.id}`}
           />
+          {isProgram && item.priceOptions && item.priceOptions.length > 1 ? (
+            <View style={styles.billingPeriodRow}>
+              {item.priceOptions.map((option) => {
+                const isSelected = option.billingPeriod === item.billingPeriod;
+                return (
+                  <TouchableOpacity
+                    key={option.billingPeriod}
+                    style={[styles.billingPeriodOption, isSelected && styles.billingPeriodOptionSelected]}
+                    onPress={() => selectBillingPeriod(item.id, option.billingPeriod)}
+                    accessibilityRole='button'
+                    accessibilityState={{ selected: isSelected }}
+                  >
+                    <Text style={[styles.billingPeriodLabel, isSelected && styles.billingPeriodLabelSelected]}>
+                      {t(`cart.billingPeriod.${option.billingPeriod}`, {
+                        defaultValue: BILLING_PERIOD_LABEL[option.billingPeriod] ?? option.billingPeriod,
+                      })}
+                    </Text>
+                    <Text style={styles.billingPeriodPrice}>{formatPrice(option.price)}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          ) : null}
         </View>
       );
     },
-    [t, noop, removeItem, increaseQuantity, decreaseQuantity],
+    [t, noop, removeItem, increaseQuantity, decreaseQuantity, selectBillingPeriod],
   );
 
   const cartItemKeyExtractor = useCallback((item: CartItem) => item.id, []);

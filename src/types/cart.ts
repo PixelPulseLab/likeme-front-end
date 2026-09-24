@@ -32,4 +32,6 @@ export interface CartItem {
   date?: string;
   /** Previsão de entrega (ex.: tela de pedido) */
   deliveryForecast?: string;
+  billingPeriod?: string;
+  priceOptions?: Array<{ billingPeriod: string; price: number }>;
 }

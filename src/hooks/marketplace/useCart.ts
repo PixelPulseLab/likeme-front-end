@@ -19,6 +19,31 @@ function stripLegacyCartFields(item: StoredCartItem): CartItem {
   return { ...rest, type, subtitle };
 }
 
+function programPriceOptions(product: {
+  prices?: Array<{ billingPeriod?: string; priceCents?: number }>;
+}): Array<{ billingPeriod: string; price: number }> {
+  return (product.prices ?? [])
+    .filter((row) => typeof row.billingPeriod === 'string' && typeof row.priceCents === 'number')
+    .map((row) => ({
+      billingPeriod: row.billingPeriod as string,
+      price: (row.priceCents as number) / 100,
+    }));
+}
+
+function selectedProgramPrice(
+  options: Array<{ billingPeriod: string; price: number }>,
+  billingPeriod?: string,
+): { billingPeriod: string; price: number } | null {
+  if (options.length === 0) {
+    return null;
+  }
+  const current = options.find((option) => option.billingPeriod === billingPeriod);
+  if (current) {
+    return current;
+  }
+  return options.reduce((lowest, option) => (option.price < lowest.price ? option : lowest));
+}
+
 function cartItemsFromStorage(items: StoredCartItem[]): CartItem[] {
   return items.map((item) => stripLegacyCartFields(item));
 }
@@ -38,6 +63,7 @@ export type UseCartReturn = {
   increaseQuantity: (id: string) => Promise<void>;
   decreaseQuantity: (id: string) => Promise<void>;
   removeItem: (id: string) => Promise<void>;
+  selectBillingPeriod: (id: string, billingPeriod: string) => Promise<void>;
   subtotal: number;
 };
 
@@ -96,10 +122,15 @@ export function useCart(options: UseCartOptions = {}): UseCartReturn {
           const cleaned = stripLegacyCartFields(item as StoredCartItem);
           const subtitle =
             (product.description && product.description.trim()) || (cleaned.subtitle && cleaned.subtitle.trim()) || '';
+          const priceOptions = isProtocolProductCatalogType(product.type) ? programPriceOptions(product) : [];
+          const selectedPrice = selectedProgramPrice(priceOptions, cleaned.billingPeriod);
+          const catalogPrice = selectedPrice?.price ?? (Number(product.price) || Number(item.price) || 0);
 
           validatedItems.push({
             ...cleaned,
-            price: Number(product.price) || Number(item.price) || 0,
+            price: catalogPrice,
+            billingPeriod: selectedPrice?.billingPeriod,
+            priceOptions: priceOptions.length > 0 ? priceOptions : undefined,
             quantity: Number(item.quantity) || 1,
             rating: Number(item.rating) || 0,
             type: product.type ?? cleaned.type,
@@ -110,8 +141,8 @@ export function useCart(options: UseCartOptions = {}): UseCartReturn {
         }
       }
 
-      if (validatedItems.length !== items.length || removedItems.length > 0) {
-        await storageService.setCartItems(validatedItems);
+      await storageService.setCartItems(validatedItems);
+      if (removedItems.length > 0) {
         onRemoved?.(removedItems);
       }
 
@@ -170,6 +201,24 @@ export function useCart(options: UseCartOptions = {}): UseCartReturn {
     [onEmpty],
   );
 
+  const selectBillingPeriod = useCallback(async (id: string, billingPeriod: string) => {
+    const items = await storageService.getCartItems();
+    const updated = cartItemsFromStorage(
+      items.map((item: CartItem) => {
+        if (item.id !== id) {
+          return item;
+        }
+        const selected = item.priceOptions?.find((option) => option.billingPeriod === billingPeriod);
+        if (!selected) {
+          return item;
+        }
+        return { ...item, billingPeriod: selected.billingPeriod, price: selected.price };
+      }) as StoredCartItem[],
+    );
+    await storageService.setCartItems(updated);
+    setCartItems(updated);
+  }, []);
+
   const subtotal = useMemo(
     () =>
       cartItems.reduce((sum, item) => {
@@ -188,6 +237,7 @@ export function useCart(options: UseCartOptions = {}): UseCartReturn {
     increaseQuantity,
     decreaseQuantity,
     removeItem,
+    selectBillingPeriod,
     subtotal,
   };
 }

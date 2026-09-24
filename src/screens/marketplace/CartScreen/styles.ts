@@ -70,6 +70,36 @@ export const styles = StyleSheet.create({
     paddingHorizontal: SPACING.MD,
     gap: SPACING.MD,
   },
+  billingPeriodRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: SPACING.SM,
+    marginTop: SPACING.SM,
+  },
+  billingPeriodOption: {
+    borderWidth: 1,
+    borderColor: '#E1DFCF',
+    borderRadius: 12,
+    paddingHorizontal: SPACING.SM,
+    paddingVertical: SPACING.XS,
+    backgroundColor: '#FFFFFF',
+  },
+  billingPeriodOptionSelected: {
+    borderColor: '#0154F8',
+    backgroundColor: '#F3F7FF',
+  },
+  billingPeriodLabel: {
+    fontSize: FONT_SIZES.XS,
+    color: '#001137',
+  },
+  billingPeriodLabelSelected: {
+    color: '#0154F8',
+    fontWeight: '600',
+  },
+  billingPeriodPrice: {
+    fontSize: FONT_SIZES.XS,
+    color: '#6e6a6a',
+  },
   cartItemWrapper: {
     marginHorizontal: SPACING.MD,
     marginBottom: SPACING.MD,

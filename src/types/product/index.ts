@@ -91,6 +91,13 @@ export interface Product {
     socialPlusCommunityId?: string | null;
   } | null;
   programType?: ProgramType | null;
+  prices?: ProductPriceOption[];
+}
+
+export interface ProductPriceOption {
+  id: string;
+  billingPeriod: string;
+  priceCents: number;
 }
 
 export interface ListProductsParams {
