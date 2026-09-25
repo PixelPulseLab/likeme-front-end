@@ -54,9 +54,10 @@ onFlowComplete:
     timeout: 20000
 - tapOn:
     id: "e2e.subscription.cancelConfirm"
-- extendedWaitUntil:
-    visible:
+- scrollUntilVisible:
+    element:
       id: "e2e.subscription.cancelDone"
-    timeout: 60000
+    direction: DOWN
+    timeout: 20000
 - tapOn:
     id: "e2e.subscription.cancelDone"
