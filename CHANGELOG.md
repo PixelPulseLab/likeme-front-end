@@ -368,3 +368,11 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 
 ### Corrigido
 - No Logar do convite, pede a conta de novo mesmo se outra já estava no app
+
+## [1.18.0] - 2026-09-25
+
+### Adicionado
+- No carrinho, escolhe como pagar o programa
+- Em Meus Pedidos, mostra renovação e retentativa de cobrança
+- Troca de cartão enquanto a adesão ainda está pendente
+- Puxar para atualizar nas telas de conteúdo

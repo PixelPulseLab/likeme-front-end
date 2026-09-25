@@ -1,15 +1,18 @@
 {
-  "version": "1.17.1",
-  "releasedAt": "2026-09-18",
+  "version": "1.18.0",
+  "releasedAt": "2026-09-25",
   "android": {
-    "versionCode": 265
+    "versionCode": 266
   },
   "ios": {
-    "buildNumber": 41
+    "buildNumber": 42
   },
   "changelog": {
-    "fixed": [
-      "No Logar do convite, pede a conta de novo mesmo se outra já estava no app"
+    "added": [
+      "No carrinho, escolhe como pagar o programa",
+      "Em Meus Pedidos, mostra renovação e retentativa de cobrança",
+      "Troca de cartão enquanto a adesão ainda está pendente",
+      "Puxar para atualizar nas telas de conteúdo"
     ]
   }
 }
