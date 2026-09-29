@@ -365,8 +365,14 @@ export const styles = StyleSheet.create({
   useAnotherCardButton: {
     alignSelf: 'stretch',
   },
+  cardSheetRoot: {
+    flex: 1,
+  },
   cardSheetBackdrop: {
+    ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(0, 0, 0, 0.7)',
+  },
+  cardSheetAlign: {
     flex: 1,
     justifyContent: 'flex-end',
   },
