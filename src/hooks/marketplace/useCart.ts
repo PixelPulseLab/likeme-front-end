@@ -29,10 +29,16 @@ function programPriceOptions(product: {
   }>;
 }): CartProgramPriceOption[] {
   return (product.prices ?? []).flatMap((row) => {
-    if (typeof row.billingPeriod !== 'string' || typeof row.priceCents !== 'number') {
+    const priceCents = row.priceCents;
+    if (typeof row.billingPeriod !== 'string' || typeof priceCents !== 'number') {
       return [];
     }
-    const charged = chargedProgramPrice(row);
+    const charged = chargedProgramPrice({
+      priceCents,
+      installmentsEnabled: row.installmentsEnabled,
+      defaultInstallments: row.defaultInstallments,
+      installmentSurchargePercent: row.installmentSurchargePercent,
+    });
     return [
       {
         billingPeriod: row.billingPeriod,
