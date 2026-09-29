@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Modal, Pressable, Text, TouchableOpacity, View } from 'react-native';
+import { Image, KeyboardAvoidingView, Modal, Platform, Pressable, Text, TouchableOpacity, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { SecondaryButton } from '@/components/ui/buttons';
 import Checkbox from '@/components/ui/inputs/Checkbox';
@@ -16,6 +16,11 @@ import { E2E_TEST_IDS } from '@/constants/e2eTestIds';
 import { isE2eAuthBypassEnabled } from '@/utils/e2e/e2eAuthBypass';
 import { formatPrice } from '@/utils';
 import type { CartProgramPriceOption } from '@/types/cart';
+import type { SavedPaymentCard } from '@/services/user/userService';
+import CloseIcon from '../../../../assets/payment/close.svg';
+import PlusIcon from '../../../../assets/payment/plus.svg';
+import visaMark from '../../../../assets/payment/visa.png';
+import amexMark from '../../../../assets/payment/amex.png';
 
 const WALLET_PAY_WORDMARK = 'Pay';
 
@@ -84,11 +89,94 @@ interface PaymentFormProps {
   onPurchaseMethodChange?: (billingPeriod: string) => void;
   saveCard?: boolean;
   onSaveCardChange?: (saveCard: boolean) => void;
+  savedCard?: SavedPaymentCard | null;
+  savedCards?: SavedPaymentCard[];
+  pickerSelectedCardId?: string | null;
+  onSelectSavedCard?: (cardId: string) => void;
+  onConfirmNewCard?: () => boolean;
 }
 
 function purchaseMethodOptionLabel(option: CartProgramPriceOption): string {
   const count = option.installments > 0 ? option.installments : 1;
   return `${count}x ${formatPrice(option.price / count)}`;
+}
+
+function savedCardNumberLabel(digit: string | null): string {
+  const lastFour = (digit ?? '').replace(/\D/g, '').slice(-4);
+  if (lastFour.length !== 4) {
+    return '••••••••••••';
+  }
+  return `••••••••••••${lastFour}`;
+}
+
+function CardBrandMark({ brand }: { brand: string | null }) {
+  const normalized = brand?.trim().toLowerCase() ?? '';
+  const isVisa = normalized === 'visa';
+  const isAmex = normalized === 'amex' || normalized.includes('american');
+  if (isVisa) {
+    return <Image source={visaMark} style={styles.savedCardBrand} resizeMode='contain' />;
+  }
+  if (isAmex) {
+    return <Image source={amexMark} style={styles.savedCardBrandAmex} resizeMode='contain' />;
+  }
+  return (
+    <View style={styles.savedCardBrandFallback}>
+      <Text style={styles.savedCardBrandFallbackText}>{brand ?? ''}</Text>
+    </View>
+  );
+}
+
+function SavedCardSummary({
+  card,
+  selected,
+  onPress,
+}: {
+  card: SavedPaymentCard;
+  selected: boolean;
+  onPress?: () => void;
+}) {
+  const { t } = useTranslation();
+  const validityPrefix = t('checkout.savedCardValidityPrefix', { defaultValue: 'Validade' });
+  const validityLabel = card.validityDate ? `${validityPrefix} ${card.validityDate}` : '';
+  const cardStyle = selected ? styles.savedCardSelected : styles.savedCardIdle;
+  const body = (
+    <>
+      <View style={styles.savedCardBrandRow}>
+        <View style={[styles.radioButton, selected && styles.radioButtonSelected]}>
+          {selected ? <View style={styles.radioButtonInner} /> : null}
+        </View>
+        <CardBrandMark brand={card.brand} />
+      </View>
+      <View style={styles.savedCardBody}>
+        <Text style={styles.savedCardNumber}>{savedCardNumberLabel(card.digit)}</Text>
+        <Text style={styles.savedCardName}>{card.holderName}</Text>
+        <Text style={styles.savedCardValidity}>{validityLabel}</Text>
+      </View>
+      {selected && card.isDefault ? (
+        <View style={styles.savedCardBadge}>
+          <Text style={styles.savedCardBadgeText}>{t('checkout.savedCardDefault', { defaultValue: 'Padrão' })}</Text>
+        </View>
+      ) : null}
+    </>
+  );
+  if (!onPress) {
+    return (
+      <View style={[styles.savedCard, cardStyle]} testID={E2E_TEST_IDS.CHECKOUT_SAVED_CARD}>
+        {body}
+      </View>
+    );
+  }
+  return (
+    <TouchableOpacity
+      accessibilityRole='button'
+      accessibilityState={{ selected }}
+      style={[styles.savedCard, cardStyle]}
+      testID={E2E_TEST_IDS.CHECKOUT_SAVED_CARD}
+      onPress={onPress}
+    >
+      {body}
+    </TouchableOpacity>
+  );
 }
 
 function ChevronDown() {
@@ -154,9 +242,15 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
   onPurchaseMethodChange,
   saveCard = true,
   onSaveCardChange,
+  savedCard = null,
+  savedCards = [],
+  pickerSelectedCardId = null,
+  onSelectSavedCard,
+  onConfirmNewCard,
 }) => {
   const { t } = useTranslation();
   const [purchaseMethodsOpen, setPurchaseMethodsOpen] = useState(false);
+  const [cardSheet, setCardSheet] = useState<'pick' | 'add' | null>(null);
   const selectedPurchaseMethod = purchaseMethods.find((option) => option.billingPeriod === selectedBillingPeriod);
   const purchaseMethodLabel = selectedPurchaseMethod
     ? purchaseMethodOptionLabel(selectedPurchaseMethod)
@@ -172,7 +266,12 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
   });
 
   const showCardFields = selectedPaymentMethod === PAYMENT_METHOD.CREDIT_CARD;
-  const showPurchaseMethods = showCardFields && purchaseMethods.length > 0;
+  const hasSavedCards = savedCards.length > 0;
+  const showSavedCard = showCardFields && Boolean(savedCard);
+  const showTypedNewCard = showCardFields && !savedCard && hasSavedCards;
+  const showNewCardFields = showCardFields && !savedCard && !hasSavedCards;
+  const showPurchaseMethods = showCardFields && purchaseMethods.length > 0 && !cardSheet;
+  const closeCardSheet = () => setCardSheet(null);
   const showApplePayButton = applePayVisible || applePayAvailable;
   const showGooglePayButton = googlePayVisible || googlePayAvailable;
   const showWalletOptions = showApplePayButton || showGooglePayButton;
@@ -233,7 +332,21 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
       ) : null}
 
       <View style={styles.cardForm}>
-        {showCardFields ? (
+        {showSavedCard && savedCard ? <SavedCardSummary card={savedCard} selected /> : null}
+        {showTypedNewCard ? (
+          <View style={[styles.savedCard, styles.savedCardSelected]}>
+            <View style={styles.savedCardBody}>
+              <Text style={styles.savedCardNumber}>{savedCardNumberLabel(cardNumber)}</Text>
+              <Text style={styles.savedCardName}>{cardholderName}</Text>
+              <Text style={styles.savedCardValidity}>
+                {expiryDate
+                  ? `${t('checkout.savedCardValidityPrefix', { defaultValue: 'Validade' })} ${expiryDate}`
+                  : ''}
+              </Text>
+            </View>
+          </View>
+        ) : null}
+        {showNewCardFields ? (
           <>
             <TextInput
               label={t('checkout.cardholderName')}
@@ -281,31 +394,40 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
                 />
               </View>
             </View>
-            {showPurchaseMethods ? (
-              <View style={textInputStyles.container}>
-                <View style={textInputStyles.inputSection}>
-                  <Text style={textInputStyles.label}>
-                    {t('checkout.installments', { defaultValue: 'Parcelamento' })}
-                  </Text>
-                  <TouchableOpacity
-                    accessibilityRole='button'
-                    style={[textInputStyles.inputWrapperRow, styles.purchaseMethodField]}
-                    testID={E2E_TEST_IDS.CHECKOUT_INSTALLMENTS}
-                    onPress={() => setPurchaseMethodsOpen(true)}
-                  >
-                    <Text style={styles.purchaseMethodValue}>{purchaseMethodLabel}</Text>
-                    <ChevronDown />
-                  </TouchableOpacity>
-                </View>
-              </View>
-            ) : null}
-            <Checkbox
-              checked={saveCard}
-              label={t('checkout.saveCard', { defaultValue: 'Salvar cartão para próximas compras' })}
-              testID={E2E_TEST_IDS.CHECKOUT_SAVE_CARD}
-              onPress={() => onSaveCardChange?.(!saveCard)}
-            />
           </>
+        ) : null}
+        {showPurchaseMethods ? (
+          <View style={textInputStyles.container}>
+            <View style={textInputStyles.inputSection}>
+              <Text style={textInputStyles.label}>{t('checkout.installments', { defaultValue: 'Parcelamento' })}</Text>
+              <TouchableOpacity
+                accessibilityRole='button'
+                style={[textInputStyles.inputWrapperRow, styles.purchaseMethodField]}
+                testID={E2E_TEST_IDS.CHECKOUT_INSTALLMENTS}
+                onPress={() => setPurchaseMethodsOpen(true)}
+              >
+                <Text style={styles.purchaseMethodValue}>{purchaseMethodLabel}</Text>
+                <ChevronDown />
+              </TouchableOpacity>
+            </View>
+          </View>
+        ) : null}
+        {showNewCardFields ? (
+          <Checkbox
+            checked={saveCard}
+            label={t('checkout.saveCard', { defaultValue: 'Salvar cartão para próximas compras' })}
+            testID={E2E_TEST_IDS.CHECKOUT_SAVE_CARD}
+            onPress={() => onSaveCardChange?.(!saveCard)}
+          />
+        ) : null}
+        {showSavedCard || showTypedNewCard ? (
+          <SecondaryButton
+            label={t('checkout.useAnotherCard', { defaultValue: 'Usar outro cartão' })}
+            onPress={() => setCardSheet('pick')}
+            size='large'
+            style={styles.useAnotherCardButton}
+            testID={E2E_TEST_IDS.CHECKOUT_USE_ANOTHER_CARD}
+          />
         ) : null}
         <TextInput
           label={t('checkout.cpf')}
@@ -319,6 +441,141 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
         />
       </View>
 
+      <Modal animationType='slide' transparent visible={cardSheet !== null} onRequestClose={closeCardSheet}>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.cardSheetBackdrop}>
+          <Pressable style={styles.cardSheetDismiss} onPress={closeCardSheet} />
+          <View style={styles.cardSheet}>
+            {cardSheet === 'pick' ? (
+              <>
+                <View style={styles.cardSheetHeader}>
+                  <Text style={styles.cardSheetTitle}>
+                    {t('checkout.chooseSavedCard', { defaultValue: 'Escolha um cartão salvo' })}
+                  </Text>
+                  <Pressable accessibilityRole='button' onPress={closeCardSheet}>
+                    <CloseIcon width={40} height={40} />
+                  </Pressable>
+                </View>
+                <View style={styles.cardSheetList}>
+                  {savedCards.map((card) => (
+                    <SavedCardSummary
+                      key={card.id}
+                      card={card}
+                      selected={card.id === (savedCard?.id ?? pickerSelectedCardId)}
+                      onPress={() => {
+                        onSelectSavedCard?.(card.id);
+                        closeCardSheet();
+                      }}
+                    />
+                  ))}
+                </View>
+                <SecondaryButton
+                  iconElement={<PlusIcon width={24} height={24} />}
+                  iconPosition='left'
+                  label={t('checkout.registerNewCard', { defaultValue: 'Cadastrar novo cartão' })}
+                  size='large'
+                  onPress={() => setCardSheet('add')}
+                  testID={E2E_TEST_IDS.CHECKOUT_USE_ANOTHER_CARD}
+                />
+              </>
+            ) : (
+              <>
+                <View style={styles.cardSheetHeader}>
+                  <Text style={styles.cardSheetTitle}>
+                    {t('checkout.registerNewCard', { defaultValue: 'Cadastrar novo cartão' })}
+                  </Text>
+                  <Pressable accessibilityRole='button' onPress={closeCardSheet}>
+                    <CloseIcon width={40} height={40} />
+                  </Pressable>
+                </View>
+                <View style={styles.cardSheetForm}>
+                  <TextInput
+                    label={t('checkout.cardNumber')}
+                    placeholder={t('checkout.cardNumberPlaceholder', { defaultValue: '1234 5678 9101 1121' })}
+                    value={cardNumber}
+                    onChangeText={handleCardNumberChange}
+                    keyboardType='numeric'
+                    errorText={paymentFieldErrors.cardNumber}
+                    required
+                    testID={E2E_TEST_IDS.CHECKOUT_CARD_NUMBER}
+                  />
+                  <TextInput
+                    label={t('checkout.cardholderName', { defaultValue: 'Nome impresso no cartão' })}
+                    placeholder={t('checkout.cardholderNamePlaceholder', {
+                      defaultValue: 'Digite o nome completo no cartão',
+                    })}
+                    value={cardholderName}
+                    onChangeText={onCardholderNameChange}
+                    errorText={paymentFieldErrors.cardholderName}
+                    required
+                    testID={E2E_TEST_IDS.CHECKOUT_CARDHOLDER}
+                  />
+                  <View style={styles.cardRow}>
+                    <View style={styles.cardFieldHalf}>
+                      <TextInput
+                        label={t('checkout.expiryDate', { defaultValue: 'Validade' })}
+                        placeholder={t('checkout.expiryDatePlaceholder', { defaultValue: 'mm/yy' })}
+                        value={expiryDate}
+                        onChangeText={handleExpiryDateChange}
+                        keyboardType='numeric'
+                        errorText={paymentFieldErrors.expiryDate}
+                        required
+                        testID={E2E_TEST_IDS.CHECKOUT_EXPIRY}
+                      />
+                    </View>
+                    <View style={styles.cardFieldHalf}>
+                      <TextInput
+                        label={t('checkout.cvv', { defaultValue: 'CVV' })}
+                        placeholder={t('checkout.cvvPlaceholder', { defaultValue: '123' })}
+                        value={cvv}
+                        onChangeText={onCvvChange}
+                        keyboardType='numeric'
+                        secureTextEntry={!isE2eAuthBypassEnabled()}
+                        errorText={paymentFieldErrors.cvv}
+                        required
+                        testID={E2E_TEST_IDS.CHECKOUT_CVV}
+                      />
+                    </View>
+                  </View>
+                  {purchaseMethods.length > 0 ? (
+                    <View style={textInputStyles.container}>
+                      <View style={textInputStyles.inputSection}>
+                        <Text style={textInputStyles.label}>
+                          {t('checkout.installments', { defaultValue: 'Parcelamento' })}
+                        </Text>
+                        <TouchableOpacity
+                          accessibilityRole='button'
+                          style={[textInputStyles.inputWrapperRow, styles.purchaseMethodField]}
+                          testID={E2E_TEST_IDS.CHECKOUT_INSTALLMENTS}
+                          onPress={() => setPurchaseMethodsOpen(true)}
+                        >
+                          <Text style={styles.purchaseMethodValue}>{purchaseMethodLabel}</Text>
+                          <ChevronDown />
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+                  ) : null}
+                  <Checkbox
+                    checked={saveCard}
+                    label={t('checkout.saveCard', { defaultValue: 'Salvar cartão para próximas compras' })}
+                    testID={E2E_TEST_IDS.CHECKOUT_SAVE_CARD}
+                    onPress={() => onSaveCardChange?.(!saveCard)}
+                  />
+                </View>
+                <SecondaryButton
+                  label={t('checkout.saveNewCard', { defaultValue: 'Salvar' })}
+                  size='large'
+                  onPress={() => {
+                    const saved = onConfirmNewCard?.() ?? false;
+                    if (saved) {
+                      closeCardSheet();
+                    }
+                  }}
+                />
+              </>
+            )}
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
       <AddressForm
         addressData={billingAddressData}
         onSaveAddress={onSaveBillingAddress}

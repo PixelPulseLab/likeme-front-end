@@ -5,6 +5,7 @@ import { GradientBackground, ScreenWithHeader } from '@/components/ui/layout';
 import { SecondaryButton } from '@/components/ui/buttons';
 import { Stepper } from '@/components/ui/tabs';
 import { storageService, orderService, userService } from '@/services';
+import type { SavedPaymentCard } from '@/services/user/userService';
 import { isHttpRequestTimeoutError } from '@/utils/network/isHttpRequestTimeoutError';
 import { getShippingQuote } from '@/services/shipping/shippingService';
 import { formatZipCodeDisplay } from '@/services/address/cepService';
@@ -31,7 +32,6 @@ import CheckoutVoucherSection from './voucher/CheckoutVoucherSection';
 import { ProductRowCard } from '@/components/ui/cards';
 import OrderSummary from './order/OrderSummary';
 import OrderScreen, { type OrderScreenStatus } from './order/OrderScreen';
-import type { CartProgramPriceOption } from '@/types/cart';
 import type { CreateOrderData, SubscriptionBillingPeriod } from '@/types/order';
 import { PAYMENT_METHOD, type PaymentMethod } from '@/constants/payment/paymentMethod';
 import { GooglePayCancelledError, requestGooglePayPaymentData } from '@/services/payment/googlePayService';
@@ -54,27 +54,6 @@ const SUBSCRIPTION_BILLING_PERIODS: SubscriptionBillingPeriod[] = [
   'YEARLY',
   'ONE_TIME',
 ];
-
-const CARD_INSTALLMENT_MAX = 12;
-const CARD_INSTALLMENT_MIN_PARCEL = 5;
-
-function productCardInstallmentOptions(total: number): CartProgramPriceOption[] {
-  if (!(total > 0)) {
-    return [];
-  }
-  let maxCount = 1;
-  while (maxCount < CARD_INSTALLMENT_MAX && total / (maxCount + 1) >= CARD_INSTALLMENT_MIN_PARCEL) {
-    maxCount += 1;
-  }
-  return Array.from({ length: maxCount }, (_, index) => {
-    const installments = index + 1;
-    return {
-      billingPeriod: String(installments),
-      installments,
-      price: total,
-    };
-  });
-}
 
 function asSubscriptionBillingPeriod(value: string | undefined): SubscriptionBillingPeriod | null {
   if (!value) {
@@ -117,7 +96,9 @@ const CheckoutScreen: React.FC<Props> = ({ navigation, route }) => {
   const payment = usePayment();
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<PaymentMethod>(PAYMENT_METHOD.CREDIT_CARD);
   const [saveCard, setSaveCard] = useState(true);
-  const [cardInstallments, setCardInstallments] = useState(1);
+  const [savedCards, setSavedCards] = useState<SavedPaymentCard[]>([]);
+  const [selectedSavedCardId, setSelectedSavedCardId] = useState<string | null>(null);
+  const [useAnotherCard, setUseAnotherCard] = useState(false);
   const checkoutSubmitInFlightRef = useRef(false);
   const checkoutSubmitCompletedRef = useRef(false);
   const checkoutSubmitBlockedRef = useRef(false);
@@ -127,6 +108,31 @@ const CheckoutScreen: React.FC<Props> = ({ navigation, route }) => {
   const [isOrderSubmitLocked, setIsOrderSubmitLocked] = useState(false);
   const currentStepRef = useRef(currentStep);
   currentStepRef.current = currentStep;
+  const selectedSavedCard = savedCards.find((card) => card.id === selectedSavedCardId) ?? savedCards[0] ?? null;
+  const activeSavedCard = useAnotherCard ? null : selectedSavedCard;
+
+  useEffect(() => {
+    let cancelled = false;
+    userService
+      .listMyCards()
+      .then((cards) => {
+        if (!cancelled) {
+          setSavedCards(cards);
+          setSelectedSavedCardId((current) =>
+            current && cards.some((card) => card.id === current) ? current : cards[0]?.id ?? null,
+          );
+        }
+      })
+      .catch((error: unknown) => {
+        logger.error('Falha ao carregar cartões salvos no checkout', error);
+        if (!cancelled) {
+          setSavedCards([]);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useFocusEffect(
     useCallback(() => {
@@ -323,13 +329,8 @@ const CheckoutScreen: React.FC<Props> = ({ navigation, route }) => {
     [subtotal, effectiveShipping, isShippingDisabled, checkoutVoucher.appliedPreview],
   );
 
-  const productPurchaseMethods =
-    programPurchaseMethods.length > 0 || !cartHasProduct ? [] : productCardInstallmentOptions(summaryAmounts.total);
-  const checkoutPurchaseMethods = programPurchaseMethods.length > 0 ? programPurchaseMethods : productPurchaseMethods;
-  const listedProductInstallment = productPurchaseMethods.find((option) => option.installments === cardInstallments);
-  const selectedProductInstallments = listedProductInstallment?.installments ?? 1;
-  const selectedPurchaseMethodId =
-    programPurchaseMethods.length > 0 ? programCartItem?.billingPeriod : String(selectedProductInstallments);
+  const checkoutPurchaseMethods = programPurchaseMethods;
+  const selectedPurchaseMethodId = programCartItem?.billingPeriod;
 
   const handleContinue = async () => {
     if (currentStep === 'address' && !canProceedFromAddress) {
@@ -396,7 +397,8 @@ const CheckoutScreen: React.FC<Props> = ({ navigation, route }) => {
         return;
       }
 
-      if (selectedPaymentMethod === PAYMENT_METHOD.CREDIT_CARD) {
+      const payingWithSavedCard = selectedPaymentMethod === PAYMENT_METHOD.CREDIT_CARD && Boolean(activeSavedCard);
+      if (selectedPaymentMethod === PAYMENT_METHOD.CREDIT_CARD && !payingWithSavedCard) {
         const errors = payment.validatePaymentFields(t);
         if (errors) {
           payment.setPaymentFieldErrors(errors);
@@ -453,11 +455,8 @@ const CheckoutScreen: React.FC<Props> = ({ navigation, route }) => {
         paymentMethod: selectedPaymentMethod,
       };
 
-      if (selectedPaymentMethod === PAYMENT_METHOD.CREDIT_CARD) {
+      if (selectedPaymentMethod === PAYMENT_METHOD.CREDIT_CARD && !activeSavedCard) {
         orderData.saveCard = saveCard;
-        if (productPurchaseMethods.length > 0) {
-          orderData.installments = selectedProductInstallments;
-        }
       }
 
       const checkoutPhoneDigits = billingAddressData.phone.replace(/\D/g, '');
@@ -466,7 +465,13 @@ const CheckoutScreen: React.FC<Props> = ({ navigation, route }) => {
         orderData.phone = checkoutPhone;
       }
 
-      if (selectedPaymentMethod === PAYMENT_METHOD.CREDIT_CARD) {
+      if (selectedPaymentMethod === PAYMENT_METHOD.CREDIT_CARD && activeSavedCard) {
+        orderData.savedCardId = activeSavedCard.id;
+        const cpfDigits = payment.getCpfDigits();
+        if (cpfDigits.length === 11) {
+          orderData.cpf = cpfDigits;
+        }
+      } else if (selectedPaymentMethod === PAYMENT_METHOD.CREDIT_CARD) {
         if (!cardDataObj) {
           Alert.alert(t('errors.error'), t('checkout.orderError'));
           releaseCheckoutSubmitLock();
@@ -828,20 +833,31 @@ const CheckoutScreen: React.FC<Props> = ({ navigation, route }) => {
                 purchaseMethods={checkoutPurchaseMethods}
                 selectedBillingPeriod={selectedPurchaseMethodId}
                 onPurchaseMethodChange={(billingPeriod) => {
-                  if (programPurchaseMethods.length > 0) {
-                    if (!programCartItem) {
-                      return;
-                    }
-                    void selectBillingPeriod(programCartItem.id, billingPeriod);
+                  if (!programCartItem) {
                     return;
                   }
-                  const count = Number(billingPeriod);
-                  if (Number.isInteger(count) && count >= 1) {
-                    setCardInstallments(count);
-                  }
+                  void selectBillingPeriod(programCartItem.id, billingPeriod);
                 }}
                 saveCard={saveCard}
                 onSaveCardChange={setSaveCard}
+                savedCard={activeSavedCard}
+                savedCards={savedCards}
+                pickerSelectedCardId={selectedSavedCard?.id ?? null}
+                onSelectSavedCard={(cardId) => {
+                  setSelectedSavedCardId(cardId);
+                  setUseAnotherCard(false);
+                }}
+                onConfirmNewCard={() => {
+                  const errors = payment.validatePaymentFields(t);
+                  if (errors) {
+                    payment.setPaymentFieldErrors(errors);
+                    payment.setPaymentError(null);
+                    return false;
+                  }
+                  payment.setPaymentFieldErrors({});
+                  setUseAnotherCard(true);
+                  return true;
+                }}
               />
               {payment.paymentError ? (
                 <Text style={styles.fieldError} testID={E2E_TEST_IDS.CHECKOUT_PAYMENT_ERROR}>

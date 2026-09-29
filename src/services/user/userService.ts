@@ -42,6 +42,17 @@ export interface UserProfile extends User {
 
 export type GetProfileResponse = ApiResponse<UserProfile>;
 
+export type SavedPaymentCard = {
+  id: string;
+  brand: string | null;
+  digit: string | null;
+  validityDate: string | null;
+  holderName: string;
+  isDefault: boolean;
+};
+
+type ListMyCardsResponse = ApiResponse<{ cards: SavedPaymentCard[] }>;
+
 type UploadProfileImageResponse = ApiResponse<{ url: string; path: string }>;
 
 export interface ShippingAddressFromProfile {
@@ -205,6 +216,11 @@ class UserService {
     } catch (error) {
       logger.warn('[userService] Falha ao sincronizar avatar no storage local', { cause: error });
     }
+  }
+
+  async listMyCards(): Promise<SavedPaymentCard[]> {
+    const response = await apiClient.get<ListMyCardsResponse>('/api/users/me/cards', undefined, true, false);
+    return response.data?.cards ?? [];
   }
 
   async syncStoredUserName(displayName: string): Promise<void> {

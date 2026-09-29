@@ -112,6 +112,8 @@ export interface CreateOrderData {
   voucherCode?: string;
   billingPeriod?: SubscriptionBillingPeriod;
   saveCard?: boolean;
+  savedCardId?: string;
+  cpf?: string;
   installments?: number;
   trackingNumber?: string;
 }

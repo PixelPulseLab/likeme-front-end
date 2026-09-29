@@ -56,6 +56,8 @@ export const E2E_TEST_IDS = {
   CHECKOUT_INSTALLMENTS: 'e2e.checkout.installments',
   CHECKOUT_INSTALLMENT_PREFIX: 'e2e.checkout.installment.',
   CHECKOUT_SAVE_CARD: 'e2e.checkout.saveCard',
+  CHECKOUT_SAVED_CARD: 'e2e.checkout.savedCard',
+  CHECKOUT_USE_ANOTHER_CARD: 'e2e.checkout.useAnotherCard',
   CHECKOUT_CPF: 'e2e.checkout.cpf',
   CHECKOUT_CONTINUE: 'button-continue',
   CHECKOUT_PAYMENT_ERROR: 'e2e.checkout.paymentError',
