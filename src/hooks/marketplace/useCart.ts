@@ -1,7 +1,7 @@
 import { useState, useCallback, useMemo } from 'react';
 import storageService from '@/services/auth/storageService';
 import productService from '@/services/product/productService';
-import type { CartItem } from '@/types/cart';
+import type { CartItem, CartProgramPriceOption } from '@/types/cart';
 import { isProductCatalogType, resolveCartItemCatalogType } from '@/types/product';
 import { isProtocolCartItem, isProtocolProductCatalogType } from '@/utils/profile/protocolProduct';
 import { logger } from '@/utils/logger';
@@ -20,20 +20,50 @@ function stripLegacyCartFields(item: StoredCartItem): CartItem {
 }
 
 function programPriceOptions(product: {
-  prices?: Array<{ billingPeriod?: string; priceCents?: number }>;
-}): Array<{ billingPeriod: string; price: number }> {
-  return (product.prices ?? [])
-    .filter((row) => typeof row.billingPeriod === 'string' && typeof row.priceCents === 'number')
-    .map((row) => ({
-      billingPeriod: row.billingPeriod as string,
-      price: (row.priceCents as number) / 100,
-    }));
+  prices?: Array<{
+    billingPeriod?: string;
+    priceCents?: number;
+    installmentsEnabled?: boolean;
+    defaultInstallments?: number;
+    installmentSurchargePercent?: number | null;
+  }>;
+}): CartProgramPriceOption[] {
+  return (product.prices ?? []).flatMap((row) => {
+    if (typeof row.billingPeriod !== 'string' || typeof row.priceCents !== 'number') {
+      return [];
+    }
+    const charged = chargedProgramPrice(row);
+    return [
+      {
+        billingPeriod: row.billingPeriod,
+        price: charged.price,
+        installments: charged.installments,
+      },
+    ];
+  });
+}
+
+export function chargedProgramPrice(row: {
+  priceCents: number;
+  installmentsEnabled?: boolean;
+  defaultInstallments?: number;
+  installmentSurchargePercent?: number | null;
+}): { price: number; installments: number } {
+  const surcharge = row.installmentSurchargePercent == null ? 0 : Number(row.installmentSurchargePercent);
+  let installments = 1;
+  if (row.installmentsEnabled) {
+    const configured = row.defaultInstallments ?? 1;
+    installments = Math.max(1, configured);
+  }
+  const hasSurcharge = installments > 1 && surcharge > 0;
+  const amountCents = hasSurcharge ? Math.round(row.priceCents * (1 + surcharge / 100)) : row.priceCents;
+  return { price: amountCents / 100, installments };
 }
 
 function selectedProgramPrice(
-  options: Array<{ billingPeriod: string; price: number }>,
+  options: CartProgramPriceOption[],
   billingPeriod?: string,
-): { billingPeriod: string; price: number } | null {
+): CartProgramPriceOption | null {
   if (options.length === 0) {
     return null;
   }

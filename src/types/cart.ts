@@ -9,6 +9,12 @@ export type ProductType = Product['type'];
  */
 export type CartItemCategory = 'Programs' | 'Product' | 'Service' | 'Sport';
 
+export type CartProgramPriceOption = {
+  billingPeriod: string;
+  price: number;
+  installments: number;
+};
+
 /**
  * Item do carrinho: dados do produto (type, categoryId) + quantidade e campos de exibição.
  * Alinhado ao tipo Product para categories e type.
@@ -33,5 +39,5 @@ export interface CartItem {
   /** Previsão de entrega (ex.: tela de pedido) */
   deliveryForecast?: string;
   billingPeriod?: string;
-  priceOptions?: Array<{ billingPeriod: string; price: number }>;
+  priceOptions?: CartProgramPriceOption[];
 }

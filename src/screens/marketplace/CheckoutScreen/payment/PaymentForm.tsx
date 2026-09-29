@@ -1,8 +1,10 @@
-import React from 'react';
-import { Text, TouchableOpacity, View } from 'react-native';
+import React, { useState } from 'react';
+import { Modal, Pressable, Text, TouchableOpacity, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { SecondaryButton } from '@/components/ui/buttons';
+import Checkbox from '@/components/ui/inputs/Checkbox';
 import TextInput from '@/components/ui/inputs/TextInput';
+import { styles as textInputStyles } from '@/components/ui/inputs/TextInput/styles';
 import { PAYMENT_METHOD, type PaymentMethod } from '@/constants/payment/paymentMethod';
 import { COLORS } from '@/constants';
 import { useFormattedInput } from '@/hooks';
@@ -12,6 +14,8 @@ import AddressForm from '../address/AddressForm';
 import type { AddressData } from '../address/AddressForm';
 import { E2E_TEST_IDS } from '@/constants/e2eTestIds';
 import { isE2eAuthBypassEnabled } from '@/utils/e2e/e2eAuthBypass';
+import { formatPrice } from '@/utils';
+import type { CartProgramPriceOption } from '@/types/cart';
 
 const WALLET_PAY_WORDMARK = 'Pay';
 
@@ -75,6 +79,31 @@ interface PaymentFormProps {
   onCpfChange: (text: string) => void;
   onSaveBillingAddress: (address: AddressData) => void | Promise<void>;
   onDeliverySameAsBillingChange?: (value: boolean) => void;
+  purchaseMethods?: CartProgramPriceOption[];
+  selectedBillingPeriod?: string;
+  onPurchaseMethodChange?: (billingPeriod: string) => void;
+  saveCard?: boolean;
+  onSaveCardChange?: (saveCard: boolean) => void;
+}
+
+function purchaseMethodOptionLabel(option: CartProgramPriceOption): string {
+  const count = option.installments > 0 ? option.installments : 1;
+  return `${count}x ${formatPrice(option.price / count)}`;
+}
+
+function ChevronDown() {
+  return (
+    <Svg width={24} height={24} viewBox='0 0 24 24'>
+      <Path
+        d='M6 9l6 6 6-6'
+        fill='none'
+        stroke={COLORS.TEXT_LIGHT}
+        strokeWidth={1.5}
+        strokeLinecap='round'
+        strokeLinejoin='round'
+      />
+    </Svg>
+  );
 }
 
 function PaymentMethodRadio({
@@ -120,8 +149,18 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
   onCpfChange,
   onSaveBillingAddress,
   onDeliverySameAsBillingChange,
+  purchaseMethods = [],
+  selectedBillingPeriod,
+  onPurchaseMethodChange,
+  saveCard = true,
+  onSaveCardChange,
 }) => {
   const { t } = useTranslation();
+  const [purchaseMethodsOpen, setPurchaseMethodsOpen] = useState(false);
+  const selectedPurchaseMethod = purchaseMethods.find((option) => option.billingPeriod === selectedBillingPeriod);
+  const purchaseMethodLabel = selectedPurchaseMethod
+    ? purchaseMethodOptionLabel(selectedPurchaseMethod)
+    : t('checkout.selectInstallment', { defaultValue: 'Selecione' });
   const handleCardNumberChange = useFormattedInput({
     type: 'cardNumber',
     onChangeText: onCardNumberChange,
@@ -133,6 +172,7 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
   });
 
   const showCardFields = selectedPaymentMethod === PAYMENT_METHOD.CREDIT_CARD;
+  const showPurchaseMethods = showCardFields && purchaseMethods.length > 0;
   const showApplePayButton = applePayVisible || applePayAvailable;
   const showGooglePayButton = googlePayVisible || googlePayAvailable;
   const showWalletOptions = showApplePayButton || showGooglePayButton;
@@ -241,6 +281,30 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
                 />
               </View>
             </View>
+            {showPurchaseMethods ? (
+              <View style={textInputStyles.container}>
+                <View style={textInputStyles.inputSection}>
+                  <Text style={textInputStyles.label}>
+                    {t('checkout.installments', { defaultValue: 'Parcelamento' })}
+                  </Text>
+                  <TouchableOpacity
+                    accessibilityRole='button'
+                    style={[textInputStyles.inputWrapperRow, styles.purchaseMethodField]}
+                    testID={E2E_TEST_IDS.CHECKOUT_INSTALLMENTS}
+                    onPress={() => setPurchaseMethodsOpen(true)}
+                  >
+                    <Text style={styles.purchaseMethodValue}>{purchaseMethodLabel}</Text>
+                    <ChevronDown />
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ) : null}
+            <Checkbox
+              checked={saveCard}
+              label={t('checkout.saveCard', { defaultValue: 'Salvar cartão para próximas compras' })}
+              testID={E2E_TEST_IDS.CHECKOUT_SAVE_CARD}
+              onPress={() => onSaveCardChange?.(!saveCard)}
+            />
           </>
         ) : null}
         <TextInput
@@ -263,6 +327,36 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
         onDeliverySameAsBillingChange={onDeliverySameAsBillingChange}
         startWithEditOpen={deliverySameAsBilling === undefined ? true : !deliverySameAsBilling}
       />
+      <Modal
+        animationType='fade'
+        transparent
+        visible={purchaseMethodsOpen}
+        onRequestClose={() => setPurchaseMethodsOpen(false)}
+      >
+        <Pressable style={styles.purchaseMethodModalBackdrop} onPress={() => setPurchaseMethodsOpen(false)}>
+          <Pressable style={styles.purchaseMethodSheet}>
+            {purchaseMethods.map((option) => {
+              const isSelected = option.billingPeriod === selectedBillingPeriod;
+              const optionStyle = isSelected ? styles.purchaseMethodOptionSelected : undefined;
+              return (
+                <TouchableOpacity
+                  key={option.billingPeriod}
+                  accessibilityRole='button'
+                  accessibilityState={{ selected: isSelected }}
+                  style={[styles.purchaseMethodOption, optionStyle]}
+                  testID={`${E2E_TEST_IDS.CHECKOUT_INSTALLMENT_PREFIX}${option.billingPeriod}`}
+                  onPress={() => {
+                    onPurchaseMethodChange?.(option.billingPeriod);
+                    setPurchaseMethodsOpen(false);
+                  }}
+                >
+                  <Text style={styles.purchaseMethodOptionLabel}>{purchaseMethodOptionLabel(option)}</Text>
+                </TouchableOpacity>
+              );
+            })}
+          </Pressable>
+        </Pressable>
+      </Modal>
     </View>
   );
 };

@@ -1,5 +1,5 @@
 import { StyleSheet } from 'react-native';
-import { COLORS, FONT_SIZES, SPACING } from '@/constants';
+import { BORDER_RADIUS, COLORS, FONT_SIZES, SPACING, TYPOGRAPHY } from '@/constants';
 
 export const styles = StyleSheet.create({
   container: {
@@ -215,6 +215,40 @@ export const styles = StyleSheet.create({
   },
   cardFieldHalf: {
     flex: 1,
+  },
+  purchaseMethodField: {
+    width: '100%',
+    alignSelf: 'stretch',
+  },
+  purchaseMethodValue: {
+    flex: 1,
+    ...TYPOGRAPHY.bodyMd,
+    color: COLORS.TEXT_LIGHT,
+  },
+  purchaseMethodModalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 17, 55, 0.4)',
+    justifyContent: 'flex-end',
+  },
+  purchaseMethodSheet: {
+    backgroundColor: COLORS.SECONDARY.LIGHT,
+    borderTopLeftRadius: BORDER_RADIUS.XL,
+    borderTopRightRadius: BORDER_RADIUS.XL,
+    padding: SPACING.MD,
+    paddingBottom: SPACING.LG,
+    gap: SPACING.SM,
+  },
+  purchaseMethodOption: {
+    paddingVertical: SPACING.MD_PLUS,
+    paddingHorizontal: SPACING.MD,
+    borderRadius: BORDER_RADIUS.LG,
+  },
+  purchaseMethodOptionSelected: {
+    backgroundColor: COLORS.SECONDARY.PURE,
+  },
+  purchaseMethodOptionLabel: {
+    ...TYPOGRAPHY.bodyMd,
+    color: COLORS.TEXT,
   },
   checkboxContainer: {
     flexDirection: 'row',

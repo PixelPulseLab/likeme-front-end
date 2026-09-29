@@ -31,6 +31,7 @@ import CheckoutVoucherSection from './voucher/CheckoutVoucherSection';
 import { ProductRowCard } from '@/components/ui/cards';
 import OrderSummary from './order/OrderSummary';
 import OrderScreen, { type OrderScreenStatus } from './order/OrderScreen';
+import type { CartProgramPriceOption } from '@/types/cart';
 import type { CreateOrderData, SubscriptionBillingPeriod } from '@/types/order';
 import { PAYMENT_METHOD, type PaymentMethod } from '@/constants/payment/paymentMethod';
 import { GooglePayCancelledError, requestGooglePayPaymentData } from '@/services/payment/googlePayService';
@@ -43,6 +44,46 @@ const noop = (): void => undefined;
 
 type CheckoutStep = 'address' | 'payment' | 'order';
 
+const SUBSCRIPTION_BILLING_PERIODS: SubscriptionBillingPeriod[] = [
+  'WEEKLY',
+  'BIWEEKLY',
+  'MONTHLY',
+  'BIMONTHLY',
+  'QUARTERLY',
+  'SEMIANNUAL',
+  'YEARLY',
+  'ONE_TIME',
+];
+
+const CARD_INSTALLMENT_MAX = 12;
+const CARD_INSTALLMENT_MIN_PARCEL = 5;
+
+function productCardInstallmentOptions(total: number): CartProgramPriceOption[] {
+  if (!(total > 0)) {
+    return [];
+  }
+  let maxCount = 1;
+  while (maxCount < CARD_INSTALLMENT_MAX && total / (maxCount + 1) >= CARD_INSTALLMENT_MIN_PARCEL) {
+    maxCount += 1;
+  }
+  return Array.from({ length: maxCount }, (_, index) => {
+    const installments = index + 1;
+    return {
+      billingPeriod: String(installments),
+      installments,
+      price: total,
+    };
+  });
+}
+
+function asSubscriptionBillingPeriod(value: string | undefined): SubscriptionBillingPeriod | null {
+  if (!value) {
+    return null;
+  }
+  const match = SUBSCRIPTION_BILLING_PERIODS.find((period) => period === value);
+  return match ?? null;
+}
+
 type Props = {
   navigation: any;
   route?: any;
@@ -53,7 +94,16 @@ const CheckoutScreen: React.FC<Props> = ({ navigation, route }) => {
   const { t } = useTranslation();
   const menuItems = useMenuItems(navigation);
   const { setMenu, clearMenu } = useFloatingMenuActions();
-  const { cartItems, loadCartItems, increaseQuantity, decreaseQuantity, removeItem, subtotal } = useCart({
+  const {
+    cartItems,
+    loadCartItems,
+    loadAndValidateCartItems,
+    increaseQuantity,
+    decreaseQuantity,
+    removeItem,
+    selectBillingPeriod,
+    subtotal,
+  } = useCart({
     onEmpty: () => navigation.navigate('Cart'),
   });
 
@@ -66,6 +116,8 @@ const CheckoutScreen: React.FC<Props> = ({ navigation, route }) => {
   const [addressSaveError, setAddressSaveError] = useState<string | null>(null);
   const payment = usePayment();
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<PaymentMethod>(PAYMENT_METHOD.CREDIT_CARD);
+  const [saveCard, setSaveCard] = useState(true);
+  const [cardInstallments, setCardInstallments] = useState(1);
   const checkoutSubmitInFlightRef = useRef(false);
   const checkoutSubmitCompletedRef = useRef(false);
   const checkoutSubmitBlockedRef = useRef(false);
@@ -116,7 +168,10 @@ const CheckoutScreen: React.FC<Props> = ({ navigation, route }) => {
   const zipCodeForShipping = deliveryZipCode.length === 8 ? deliveryZipCode : fallbackZipCode;
 
   useEffect(() => {
-    loadCartItems();
+    void (async () => {
+      await loadCartItems();
+      await loadAndValidateCartItems();
+    })();
     loadUserAddress();
   }, []);
 
@@ -237,12 +292,24 @@ const CheckoutScreen: React.FC<Props> = ({ navigation, route }) => {
 
   const canProceedFromAddress = isAddressValid && (deliverySameAsBilling || isAddressFilled(billingAddressData));
 
+  const programCartItem = cartItems.find((item) => isProtocolCartItem(item));
+  const programPurchaseMethods = programCartItem?.priceOptions ?? [];
+  const cartHasProduct = cartItems.some((item) => !isProtocolCartItem(item));
+  const hasSelectedPurchaseMethod = programPurchaseMethods.some(
+    (option) => option.billingPeriod === programCartItem?.billingPeriod,
+  );
+  const installmentSelectionMissing = programPurchaseMethods.length > 1 && !hasSelectedPurchaseMethod;
+
   const isShippingBlocking = !isShippingDisabled && (shipping === 0 || shippingLoading || shippingPolicyLoading);
   const isPaymentSubmitBlocked = checkoutSubmitCompleted || isOrderSubmitLocked || checkoutSubmitBlocked;
   const isContinueDisabled =
     (currentStep === 'address' && (!canProceedFromAddress || isShippingBlocking)) ||
     (currentStep === 'payment' &&
-      (isShippingBlocking || payment.isProcessing || isPaymentSubmitBlocked || ownedProtocolCheckoutBlocked));
+      (isShippingBlocking ||
+        payment.isProcessing ||
+        isPaymentSubmitBlocked ||
+        ownedProtocolCheckoutBlocked ||
+        installmentSelectionMissing));
   const isContinueLoading = currentStep === 'payment' && payment.isProcessing;
 
   const summaryAmounts = useMemo(
@@ -255,6 +322,14 @@ const CheckoutScreen: React.FC<Props> = ({ navigation, route }) => {
       }),
     [subtotal, effectiveShipping, isShippingDisabled, checkoutVoucher.appliedPreview],
   );
+
+  const productPurchaseMethods =
+    programPurchaseMethods.length > 0 || !cartHasProduct ? [] : productCardInstallmentOptions(summaryAmounts.total);
+  const checkoutPurchaseMethods = programPurchaseMethods.length > 0 ? programPurchaseMethods : productPurchaseMethods;
+  const listedProductInstallment = productPurchaseMethods.find((option) => option.installments === cardInstallments);
+  const selectedProductInstallments = listedProductInstallment?.installments ?? 1;
+  const selectedPurchaseMethodId =
+    programPurchaseMethods.length > 0 ? programCartItem?.billingPeriod : String(selectedProductInstallments);
 
   const handleContinue = async () => {
     if (currentStep === 'address' && !canProceedFromAddress) {
@@ -378,6 +453,13 @@ const CheckoutScreen: React.FC<Props> = ({ navigation, route }) => {
         paymentMethod: selectedPaymentMethod,
       };
 
+      if (selectedPaymentMethod === PAYMENT_METHOD.CREDIT_CARD) {
+        orderData.saveCard = saveCard;
+        if (productPurchaseMethods.length > 0) {
+          orderData.installments = selectedProductInstallments;
+        }
+      }
+
       const checkoutPhoneDigits = billingAddressData.phone.replace(/\D/g, '');
       const checkoutPhone = checkoutPhoneDigits.length >= 10 ? checkoutPhoneDigits : undefined;
       if (checkoutPhone) {
@@ -437,20 +519,24 @@ const CheckoutScreen: React.FC<Props> = ({ navigation, route }) => {
       }
 
       if (cartHasProgram) {
-        const programItem = cartItems.find((item) => isProtocolCartItem(item));
-        const selectedPeriod = programItem?.billingPeriod;
-        const billingPeriod: SubscriptionBillingPeriod =
-          selectedPeriod === 'WEEKLY' ||
-          selectedPeriod === 'BIWEEKLY' ||
-          selectedPeriod === 'MONTHLY' ||
-          selectedPeriod === 'BIMONTHLY' ||
-          selectedPeriod === 'QUARTERLY' ||
-          selectedPeriod === 'SEMIANNUAL' ||
-          selectedPeriod === 'YEARLY' ||
-          selectedPeriod === 'ONE_TIME'
-            ? selectedPeriod
-            : 'MONTHLY';
-        orderData.billingPeriod = billingPeriod;
+        const purchaseMethods = programCartItem?.priceOptions ?? [];
+        const selectedListed = purchaseMethods.find(
+          (option) => option.billingPeriod === programCartItem?.billingPeriod,
+        );
+        const onlyMethod = purchaseMethods.length === 1 ? purchaseMethods[0] : undefined;
+        if (purchaseMethods.length > 1 && !selectedListed) {
+          Alert.alert(
+            t('errors.error'),
+            t('checkout.installmentRequired', {
+              defaultValue: 'Selecione o parcelamento do programa.',
+            }),
+          );
+          releaseCheckoutSubmitLock();
+          return;
+        }
+        const periodSource =
+          selectedListed?.billingPeriod ?? onlyMethod?.billingPeriod ?? programCartItem?.billingPeriod;
+        orderData.billingPeriod = asSubscriptionBillingPeriod(periodSource) ?? 'MONTHLY';
       }
 
       const appliedVoucher = checkoutVoucher.appliedPreview;
@@ -739,6 +825,23 @@ const CheckoutScreen: React.FC<Props> = ({ navigation, route }) => {
                 onCpfChange={payment.onCpfChange}
                 onSaveBillingAddress={handleSaveBillingAddress}
                 onDeliverySameAsBillingChange={handleDeliverySameAsBillingChange}
+                purchaseMethods={checkoutPurchaseMethods}
+                selectedBillingPeriod={selectedPurchaseMethodId}
+                onPurchaseMethodChange={(billingPeriod) => {
+                  if (programPurchaseMethods.length > 0) {
+                    if (!programCartItem) {
+                      return;
+                    }
+                    void selectBillingPeriod(programCartItem.id, billingPeriod);
+                    return;
+                  }
+                  const count = Number(billingPeriod);
+                  if (Number.isInteger(count) && count >= 1) {
+                    setCardInstallments(count);
+                  }
+                }}
+                saveCard={saveCard}
+                onSaveCardChange={setSaveCard}
               />
               {payment.paymentError ? (
                 <Text style={styles.fieldError} testID={E2E_TEST_IDS.CHECKOUT_PAYMENT_ERROR}>

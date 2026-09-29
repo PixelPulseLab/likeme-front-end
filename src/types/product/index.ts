@@ -98,6 +98,9 @@ export interface ProductPriceOption {
   id: string;
   billingPeriod: string;
   priceCents: number;
+  installmentsEnabled?: boolean;
+  defaultInstallments?: number;
+  installmentSurchargePercent?: number | null;
 }
 
 export interface ListProductsParams {
