@@ -1,60 +1,48 @@
 import { StyleSheet } from 'react-native';
-import { COLORS, SPACING, FONT_SIZES, FLOATING_NAV_MENU_BAR_OFFSET } from '@/constants';
+import { COLORS, FLOATING_NAV_MENU_BAR_OFFSET, FONT_FAMILY, FONT_SIZES, SPACING } from '@/constants';
 
 export const styles = StyleSheet.create({
+  screenRoot: {
+    flex: 1,
+    position: 'relative',
+  },
+  loadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 20,
+  },
   screenContent: {
     flex: 1,
-    backgroundColor: COLORS.PRIMARY.LIGHT,
+    backgroundColor: COLORS.BACKGROUND,
   },
   listWrap: {
     flex: 1,
     position: 'relative',
   },
   scrollContent: {
+    position: 'relative',
     paddingBottom: SPACING.XL + FLOATING_NAV_MENU_BAR_OFFSET,
   },
+  glow: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    zIndex: 0,
+    width: 118,
+    height: 306,
+  },
+  glowImage: {
+    width: 118,
+    height: 306,
+  },
   screenTitle: {
-    fontSize: FONT_SIZES.XL,
-    fontFamily: 'DM Sans',
-    fontWeight: '700',
-    color: COLORS.BLACK,
-    paddingHorizontal: SPACING.MD,
-    paddingTop: SPACING.MD,
-    paddingBottom: SPACING.SM,
-  },
-  searchWrap: {
-    paddingHorizontal: SPACING.MD,
-    paddingBottom: SPACING.MD,
-  },
-  centered: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: SPACING.XXL,
-  },
-  searchEmptyWrap: {
-    paddingHorizontal: SPACING.MD,
-    paddingVertical: SPACING.LG,
-  },
-  section: {
-    paddingTop: SPACING.SM,
-  },
-  sectionTitle: {
-    fontSize: FONT_SIZES.SM,
-    fontFamily: 'DM Sans',
-    fontWeight: '500',
+    fontFamily: FONT_FAMILY.DM_SANS_BOLD,
+    fontSize: FONT_SIZES.XXL,
+    lineHeight: 40,
     color: COLORS.NEUTRAL.LOW.PURE,
     paddingHorizontal: SPACING.MD,
-    marginBottom: SPACING.SM,
-  },
-  cardsList: {
-    paddingHorizontal: SPACING.MD,
-    gap: SPACING.MD,
-  },
-  emptyWrap: {
-    flex: 1,
-    justifyContent: 'center',
-    paddingTop: SPACING.XXL * 2,
-    gap: SPACING.XL,
+    paddingTop: SPACING.MD,
+    paddingBottom: SPACING.LG,
+    maxWidth: 334,
+    zIndex: 1,
   },
 });

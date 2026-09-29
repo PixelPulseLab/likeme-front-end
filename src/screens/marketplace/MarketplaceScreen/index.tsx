@@ -28,6 +28,7 @@ import {
   MarketplaceServiceCardsList,
 } from '@/components/sections/marketplace';
 import { JoinCard } from '@/components/ui/cards';
+import { JOIN_CARD_VARIANT } from '@/components/ui/cards/JoinCard/types';
 import { ProductListItem } from '@/components/sections/product/ProductList';
 import {
   useMarketplaceScreenListings,
@@ -359,7 +360,7 @@ const MarketplaceScreen: React.FC<MarketplaceScreenProps> = ({ navigation, route
           badges={item.badges}
           image={item.image}
           price={item.price}
-          square
+          variant={JOIN_CARD_VARIANT.SQUARE}
           onPress={() => handleAdPress(highlight)}
         />
       </View>

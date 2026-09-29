@@ -1,6 +1,6 @@
 import { View, ScrollView } from 'react-native';
 import { JoinCard } from '@/components/ui/cards/JoinCard';
-import type { JoinCardItem } from '@/components/ui/cards/JoinCard/types';
+import { JOIN_CARD_VARIANT, type JoinCardItem } from '@/components/ui/cards/JoinCard/types';
 import { styles } from './styles';
 
 export type { JoinCardItem } from '@/components/ui/cards/JoinCard/types';
@@ -26,6 +26,7 @@ export function JoinCardList<T extends JoinCardItem>({
 
   const renderItem = (item: T) => {
     const handlePress = () => onItemPress?.(item);
+    const variant = square ? JOIN_CARD_VARIANT.SQUARE : JOIN_CARD_VARIANT.DEFAULT;
 
     return (
       <JoinCard
@@ -36,7 +37,7 @@ export function JoinCardList<T extends JoinCardItem>({
         price={item.price}
         desaturated={item.desaturated}
         onPress={handlePress}
-        square={square}
+        variant={variant}
         fullWidth={layout === 'list'}
         testID={item.testID ?? `join-card-${item.id}`}
       />

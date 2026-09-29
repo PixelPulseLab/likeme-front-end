@@ -16,6 +16,7 @@ export type RegisterScheduledCommunityEventReminderPayload = {
 
 class EventService {
   private readonly eventsEndpoint = '/api/community-events';
+  private readonly listEventsInflight = new Map<string, Promise<ListEventsApiResponse>>();
 
   async listScheduledCommunityEventReminderIds(): Promise<string[]> {
     try {
@@ -54,10 +55,25 @@ class EventService {
   }
 
   async listEvents(communityId?: string): Promise<ListEventsApiResponse> {
-    const params =
-      typeof communityId === 'string' && communityId.trim().length > 0
-        ? { communityId: communityId.trim() }
-        : undefined;
+    const normalizedId = typeof communityId === 'string' ? communityId.trim() : '';
+    const pending = this.listEventsInflight.get(normalizedId);
+    if (pending) {
+      return pending;
+    }
+
+    const request = this.fetchCommunityEvents(normalizedId);
+    this.listEventsInflight.set(normalizedId, request);
+    try {
+      return await request;
+    } finally {
+      if (this.listEventsInflight.get(normalizedId) === request) {
+        this.listEventsInflight.delete(normalizedId);
+      }
+    }
+  }
+
+  private async fetchCommunityEvents(communityId: string): Promise<ListEventsApiResponse> {
+    const params = communityId.length > 0 ? { communityId } : undefined;
     try {
       return await apiClient.get<ListEventsApiResponse>(this.eventsEndpoint, params, true, false);
     } catch (error) {
