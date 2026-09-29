@@ -100,6 +100,13 @@ jest.mock('@/components/ui/feedback', () => {
       </View>
     ),
     EmptyState: ({ title }: { title?: string }) => (title ? <Text>{title}</Text> : null),
+    PullToRefreshIndicator: () => null,
+    usePullToRefresh: () => ({
+      refreshing: false,
+      showIndicator: false,
+      onScroll: jest.fn(),
+      refreshControl: undefined,
+    }),
   };
 });
 
