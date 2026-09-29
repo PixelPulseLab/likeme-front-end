@@ -183,6 +183,7 @@ jest.mock('@/services', () => {
   mockUserService = {
     getShippingAddress: jest.fn().mockResolvedValue(null),
     saveShippingAddress: jest.fn().mockResolvedValue({ success: true }),
+    listMyCards: jest.fn().mockResolvedValue([]),
   };
 
   return {
