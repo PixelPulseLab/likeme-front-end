@@ -31,7 +31,14 @@ const Toggle = <T extends string>({
             onPress={() => onSelect(option)}
             activeOpacity={0.7}
           >
-            <Text style={[styles.optionText, isSelected && selectedTextStyle]}>{option}</Text>
+            <Text
+              style={[styles.optionText, isSelected && selectedTextStyle]}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.85}
+            >
+              {option}
+            </Text>
           </TouchableOpacity>
         );
       })}

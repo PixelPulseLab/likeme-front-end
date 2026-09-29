@@ -1,79 +1,16 @@
 import { StyleSheet } from 'react-native';
-import { BORDER_RADIUS, COLORS, FONT_FAMILY, FONT_SIZES, SPACING, TYPOGRAPHY } from '@/constants';
+import { COLORS, FONT_FAMILY, FONT_SIZES, SPACING, TYPOGRAPHY } from '@/constants';
 
 export const styles = StyleSheet.create({
   tabs: {
     marginHorizontal: SPACING.MD,
+    marginBottom: SPACING.MD,
     zIndex: 1,
   },
   filters: {
-    paddingVertical: SPACING.MD,
+    paddingHorizontal: SPACING.MD,
     zIndex: 1,
-  },
-  filtersContent: {
-    paddingHorizontal: SPACING.MD,
-    alignItems: 'center',
-    gap: SPACING.MD,
-  },
-  sortButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 2,
-    minHeight: 36,
-    paddingHorizontal: SPACING.MD,
-    paddingVertical: SPACING.SM,
-    borderWidth: 1,
-    borderColor: COLORS.PRIMARY.PURE,
-    backgroundColor: COLORS.SECONDARY.PURE,
-    borderTopLeftRadius: 18,
-    borderTopRightRadius: 18,
-    borderBottomLeftRadius: BORDER_RADIUS.LG,
-    borderBottomRightRadius: BORDER_RADIUS.LG,
-    shadowColor: COLORS.BLACK,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  sortLabel: {
-    ...TYPOGRAPHY.labelMd,
-    color: COLORS.PRIMARY.PURE,
-  },
-  sortIconOldest: {
-    transform: [{ rotate: '180deg' }],
-  },
-  filterChip: {
-    minHeight: 36,
-    paddingHorizontal: SPACING.MD,
-    paddingVertical: SPACING.SM,
-    borderWidth: 0,
-    backgroundColor: COLORS.SECONDARY.LIGHT,
-    borderTopLeftRadius: 18,
-    borderTopRightRadius: 18,
-    borderBottomLeftRadius: BORDER_RADIUS.LG,
-    borderBottomRightRadius: BORDER_RADIUS.LG,
-    shadowColor: COLORS.BLACK,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  filterChipSelected: {
-    minHeight: 36,
-    paddingHorizontal: SPACING.MD,
-    paddingVertical: SPACING.SM,
-    borderWidth: 0,
-    backgroundColor: COLORS.PRIMARY.PURE,
-    borderTopLeftRadius: 18,
-    borderTopRightRadius: 18,
-    borderBottomLeftRadius: BORDER_RADIUS.LG,
-    borderBottomRightRadius: BORDER_RADIUS.LG,
-    shadowColor: COLORS.BLACK,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 2,
+    marginBottom: SPACING.XL,
   },
   emptyWrap: {
     paddingTop: SPACING.XL,
@@ -91,7 +28,7 @@ export const styles = StyleSheet.create({
     zIndex: 1,
   },
   section: {
-    gap: SPACING.SM,
+    gap: SPACING.MD,
     zIndex: 1,
   },
   sectionTitle: {
@@ -106,6 +43,6 @@ export const styles = StyleSheet.create({
     gap: SPACING.SM,
   },
   eventsStack: {
-    gap: SPACING.LG,
+    gap: SPACING.MD,
   },
 });

@@ -55,6 +55,7 @@ const FloatingMenu: React.FC<Props> = ({ items, selectedId }) => {
             style={[styles.pillLabel, selectedId === 'home' && styles.pillLabelSelected]}
             numberOfLines={1}
             adjustsFontSizeToFit
+            minimumFontScale={0.8}
           >
             Início
           </Text>
@@ -85,6 +86,7 @@ const FloatingMenu: React.FC<Props> = ({ items, selectedId }) => {
                 style={[styles.pillLabel, isSelected && styles.pillLabelSelected]}
                 numberOfLines={1}
                 adjustsFontSizeToFit
+                minimumFontScale={0.8}
               >
                 {item.fullLabel || item.label}
               </Text>

@@ -14,12 +14,18 @@ import { styles } from './styles';
 
 const noop = () => undefined;
 
-function CartHeaderButton({ onPress }: { onPress: () => void }) {
+function CartHeaderButton({ onPress, backgroundTintColor }: { onPress: () => void; backgroundTintColor?: string }) {
   const cartItemCount = useCartItemCount();
   const label = cartItemCount > 99 ? '99+' : String(cartItemCount);
   return (
     <View style={styles.cartButtonWrapper} testID='e2e.header.cart'>
-      <IconButton iconImageSource={HOME_MVP_ASSETS.cart} iconSize={22} onPress={onPress} backgroundSize='medium' />
+      <IconButton
+        iconImageSource={HOME_MVP_ASSETS.cart}
+        iconSize={22}
+        onPress={onPress}
+        backgroundSize='medium'
+        backgroundTintColor={backgroundTintColor}
+      />
       {cartItemCount > 0 ? (
         <View style={styles.cartBadge}>
           <Text style={styles.cartBadgeText}>{label}</Text>
@@ -29,7 +35,7 @@ function CartHeaderButton({ onPress }: { onPress: () => void }) {
   );
 }
 
-function BellHeaderButton({ onPress }: { onPress: () => void }) {
+function BellHeaderButton({ onPress, backgroundTintColor }: { onPress: () => void; backgroundTintColor?: string }) {
   const [hasUnread, setHasUnread] = useState(false);
 
   const refreshUnread = useCallback(async () => {
@@ -64,7 +70,13 @@ function BellHeaderButton({ onPress }: { onPress: () => void }) {
 
   return (
     <View style={styles.cartButtonWrapper} testID='e2e.header.bell'>
-      <IconButton iconImageSource={HOME_MVP_ASSETS.bell} iconSize={22} onPress={onPress} backgroundSize='medium' />
+      <IconButton
+        iconImageSource={HOME_MVP_ASSETS.bell}
+        iconSize={22}
+        onPress={onPress}
+        backgroundSize='medium'
+        backgroundTintColor={backgroundTintColor}
+      />
       {hasUnread ? <View style={styles.bellUnreadDot} /> : null}
     </View>
   );
@@ -73,6 +85,7 @@ function BellHeaderButton({ onPress }: { onPress: () => void }) {
 interface HeaderProps {
   onBackPress?: () => void;
   showBackButton?: boolean;
+  iconBackgroundTintColor?: string;
   onSharePress?: () => void;
   showShareButton?: boolean;
   onLogoutPress?: () => void;
@@ -104,6 +117,7 @@ interface HeaderProps {
 const Header: React.FC<HeaderProps> = ({
   onBackPress,
   showBackButton = true,
+  iconBackgroundTintColor,
   onSharePress,
   showShareButton = false,
   onLogoutPress,
@@ -154,6 +168,7 @@ const Header: React.FC<HeaderProps> = ({
             icon='chevron-left'
             onPress={onBackPress ?? noop}
             backgroundSize='medium'
+            backgroundTintColor={iconBackgroundTintColor}
             containerStyle={styles.leftButton}
           />
         )}
@@ -185,15 +200,36 @@ const Header: React.FC<HeaderProps> = ({
         )}
         {!hasRightLabel && (
           <View style={styles.rightButtons}>
-            {showBellButton && <BellHeaderButton onPress={onBellPress ?? noop} />}
-            {showCartButton && onCartPress && <CartHeaderButton onPress={onCartPress} />}
+            {showBellButton && (
+              <BellHeaderButton onPress={onBellPress ?? noop} backgroundTintColor={iconBackgroundTintColor} />
+            )}
+            {showCartButton && onCartPress && (
+              <CartHeaderButton onPress={onCartPress} backgroundTintColor={iconBackgroundTintColor} />
+            )}
             {showShareButton && onSharePress ? (
-              <IconButton icon='share' onPress={onSharePress} backgroundSize='medium' />
+              <IconButton
+                icon='share'
+                onPress={onSharePress}
+                backgroundSize='medium'
+                backgroundTintColor={iconBackgroundTintColor}
+              />
             ) : null}
             {showLogoutButton && onLogoutPress && (
-              <IconButton icon='logout' onPress={onLogoutPress} backgroundSize='medium' />
+              <IconButton
+                icon='logout'
+                onPress={onLogoutPress}
+                backgroundSize='medium'
+                backgroundTintColor={iconBackgroundTintColor}
+              />
             )}
-            {showRating && <IconButton icon={ratingIconName} onPress={onRatingPress ?? noop} backgroundSize='medium' />}
+            {showRating && (
+              <IconButton
+                icon={ratingIconName}
+                onPress={onRatingPress ?? noop}
+                backgroundSize='medium'
+                backgroundTintColor={iconBackgroundTintColor}
+              />
+            )}
           </View>
         )}
       </View>

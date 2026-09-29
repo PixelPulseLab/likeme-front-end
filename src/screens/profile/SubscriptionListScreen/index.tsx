@@ -105,11 +105,16 @@ const SubscriptionListScreen: React.FC<Props> = ({ navigation }) => {
           onBackPress: handleBack,
           showCartButton: true,
           onCartPress: () => navigateRootStack(navigation, 'Cart'),
+          backgroundColor: COLORS.SECONDARY.LIGHT,
+          iconBackgroundTintColor: COLORS.SECONDARY.LIGHT,
         }}
         contentBackgroundColor={COLORS.BACKGROUND}
         contentContainerStyle={styles.screenContent}
       >
         <View style={styles.listWrap}>
+          <View pointerEvents='none' style={styles.glow}>
+            <Image source={acquisitionGlow} style={styles.glowImage} />
+          </View>
           <PullToRefreshIndicator visible={showPullRefresh} accessibilityLabel={t('common.loading')} />
           <ScrollView
             contentContainerStyle={styles.scrollContent}
@@ -118,9 +123,6 @@ const SubscriptionListScreen: React.FC<Props> = ({ navigation }) => {
             onScroll={holdsLoading ? undefined : onPullScroll}
             refreshControl={holdsLoading ? undefined : pullRefreshControl}
           >
-            <View pointerEvents='none' style={styles.glow}>
-              <Image source={acquisitionGlow} style={styles.glowImage} />
-            </View>
             <Text style={styles.screenTitle}>
               {t('profile.acquisitionList.headline', {
                 defaultValue: 'Tudo o que você escolheu para cuidar de você está aqui.',

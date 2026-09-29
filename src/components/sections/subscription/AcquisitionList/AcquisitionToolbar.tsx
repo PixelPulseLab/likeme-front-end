@@ -1,9 +1,7 @@
 import React from 'react';
-import { Pressable, ScrollView, Text } from 'react-native';
-import Icon from 'react-native-vector-icons/MaterialIcons';
-import Chip from '@/components/ui/feedback/Chip';
+import { View, type ImageStyle } from 'react-native';
+import { StickyFilterCarouselRow } from '@/components/ui/menu';
 import { ToggleTabs } from '@/components/ui/tabs';
-import { COLORS } from '@/constants';
 import { useTranslation } from '@/hooks/i18n';
 import {
   ACQUISITION_CATEGORY,
@@ -22,6 +20,8 @@ type AcquisitionToolbarProps = {
   onToggleDateSort: () => void;
 };
 
+const SORT_ICON_OLDEST = { transform: [{ rotate: '180deg' }] } as ImageStyle;
+
 export function AcquisitionToolbar({
   category,
   onCategoryChange,
@@ -31,10 +31,6 @@ export function AcquisitionToolbar({
   onToggleDateSort,
 }: AcquisitionToolbarProps) {
   const { t } = useTranslation();
-  const sortAccessibilityLabel = isNewestFirst
-    ? t('profile.acquisitionList.sortNewest', { defaultValue: 'Ordenar por data, mais recentes primeiro' })
-    : t('profile.acquisitionList.sortOldest', { defaultValue: 'Ordenar por data, mais antigos primeiro' });
-  const sortIconStyle = isNewestFirst ? undefined : styles.sortIconOldest;
   const categories = [
     {
       id: ACQUISITION_CATEGORY.PROGRAMS,
@@ -49,7 +45,7 @@ export function AcquisitionToolbar({
       label: t('profile.acquisitionList.categoryEvents', { defaultValue: 'Eventos' }),
     },
   ];
-  const filters: { id: AcquisitionFilter; label: string }[] = [
+  const filters = [
     { id: ACQUISITION_FILTER.ALL, label: t('profile.acquisitionList.filterAll', { defaultValue: 'Todos' }) },
     {
       id: ACQUISITION_FILTER.IN_PROGRESS,
@@ -57,6 +53,7 @@ export function AcquisitionToolbar({
     },
     { id: ACQUISITION_FILTER.TASKS, label: t('profile.acquisitionList.filterTasks', { defaultValue: 'Tarefas' }) },
   ];
+  const sortIconStyle = isNewestFirst ? undefined : SORT_ICON_OLDEST;
 
   const handleCategoryChange = (id: string) => {
     onCategoryChange(id as AcquisitionCategory);
@@ -64,47 +61,19 @@ export function AcquisitionToolbar({
 
   return (
     <>
-      <ToggleTabs
-        tabs={categories}
-        selectedId={category}
-        onSelect={handleCategoryChange}
-        containerStyle={styles.tabs}
+      <View style={styles.tabs}>
+        <ToggleTabs tabs={categories} selectedId={category} onSelect={handleCategoryChange} />
+      </View>
+      <StickyFilterCarouselRow
+        filterButtonLabel={t('profile.acquisitionList.sortByDate', { defaultValue: 'Ordenar por data' })}
+        filterButtonSelected
+        filterButtonIconImageStyle={sortIconStyle}
+        onFilterButtonPress={onToggleDateSort}
+        carouselOptions={filters}
+        selectedCarouselId={filter}
+        onCarouselSelect={onFilterChange}
+        containerStyle={styles.filters}
       />
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={styles.filters}
-        contentContainerStyle={styles.filtersContent}
-      >
-        <Pressable
-          accessibilityRole='button'
-          accessibilityLabel={sortAccessibilityLabel}
-          onPress={onToggleDateSort}
-          style={styles.sortButton}
-        >
-          <Text style={styles.sortLabel}>
-            {t('profile.acquisitionList.sortByDate', { defaultValue: 'Ordenar por data' })}
-          </Text>
-          <Icon name='keyboard-arrow-down' size={18} color={COLORS.PRIMARY.PURE} style={sortIconStyle} />
-        </Pressable>
-        {filters.map((item) => {
-          const isSelected = item.id === filter;
-          const chipStyle = isSelected ? styles.filterChipSelected : styles.filterChip;
-          return (
-            <Chip
-              key={item.id}
-              label={item.label}
-              selected={isSelected}
-              selectedBackgroundColor={COLORS.PRIMARY.PURE}
-              selectedTextColor={COLORS.SECONDARY.PURE}
-              accessibilityRole='button'
-              accessibilityState={{ selected: isSelected }}
-              onPress={() => onFilterChange(item.id)}
-              style={chipStyle}
-            />
-          );
-        })}
-      </ScrollView>
     </>
   );
 }

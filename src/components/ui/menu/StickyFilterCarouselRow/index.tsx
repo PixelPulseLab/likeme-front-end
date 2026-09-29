@@ -32,6 +32,7 @@ const HOME_FILTER_ICON_SELECTED_COLOR = COLORS.PRIMARY.PURE;
 
 const StickyFilterCarouselRow = <T extends string | number = string>({
   filterButtonLabel,
+  filterButtonIconImageStyle,
   filterButtonSelected = false,
   filterModalTitle,
   filterModalContent,
@@ -57,6 +58,7 @@ const StickyFilterCarouselRow = <T extends string | number = string>({
 
   const homeFilterButtonIconStyle = {
     tintColor: filterButtonSelected ? HOME_FILTER_ICON_SELECTED_COLOR : HOME_FILTER_ICON_DEFAULT_COLOR,
+    ...filterButtonIconImageStyle,
   } as ImageStyle;
 
   return (

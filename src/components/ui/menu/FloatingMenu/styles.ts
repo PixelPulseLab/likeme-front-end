@@ -3,6 +3,7 @@ import { StyleSheet } from 'react-native';
 
 const ACCENT_BLUE = '#0154F8';
 const MENU_BACKGROUND = 'rgba(253, 251, 238, 0.6)';
+const MENU_PILL_PADDING = 2;
 
 export const styles = StyleSheet.create({
   container: {
@@ -35,10 +36,10 @@ export const styles = StyleSheet.create({
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: SPACING.XS,
+    paddingHorizontal: MENU_PILL_PADDING,
     backgroundColor: 'transparent',
     borderRadius: 20,
-    minWidth: 44,
+    minWidth: 0,
   },
   pillSelected: {
     backgroundColor: COLORS.WHITE,
