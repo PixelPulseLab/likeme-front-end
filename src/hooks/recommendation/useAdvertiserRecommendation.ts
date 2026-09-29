@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { AdvertiserRecommendationTargetType } from '@/constants/recommendation/advertiserRecommendationTargetType';
 import advertiserService from '@/services/advertiser/advertiserService';
 import advertiserRecommendationService from '@/services/recommendation/advertiserRecommendationService';
@@ -108,25 +108,25 @@ export function useAdvertiserRecommendation({ targetId, advertiserId, targetType
   const listBySourceAdvertiser = Boolean(resolvedAdvertiserId) && !resolvedTargetId;
   const queryId = listBySourceAdvertiser ? resolvedAdvertiserId : resolvedTargetId;
 
-  useEffect(() => {
-    if (!enabled || !queryId) {
-      setRecommendations([]);
-      setProfilesByAdvertiserId(new Map());
-      setLoading(false);
-      return;
-    }
+  const loadRecommendations = useCallback(
+    async (isCancelled: () => boolean = () => false) => {
+      if (!enabled || !queryId) {
+        if (!isCancelled()) {
+          setRecommendations([]);
+          setProfilesByAdvertiserId(new Map());
+          setLoading(false);
+        }
+        return;
+      }
 
-    let cancelled = false;
-    setLoading(true);
-
-    void (async () => {
+      setLoading(true);
       try {
         const rows = await listAllActiveRecommendations(
           listBySourceAdvertiser
             ? { targetType, advertiserId: resolvedAdvertiserId }
             : { targetType, targetId: resolvedTargetId },
         );
-        if (cancelled) {
+        if (isCancelled()) {
           return;
         }
 
@@ -140,11 +140,11 @@ export function useAdvertiserRecommendation({ targetId, advertiserId, targetType
           : sorted.map((row) => row.advertiserId?.trim()).filter((id): id is string => Boolean(id));
 
         const profiles = await loadAdvertiserProfilesById(profileIds);
-        if (!cancelled) {
+        if (!isCancelled()) {
           setProfilesByAdvertiserId(profiles);
         }
       } catch (error) {
-        if (!cancelled) {
+        if (!isCancelled()) {
           logger.error('[useAdvertiserRecommendation] Falha ao carregar recomendações', {
             targetType,
             targetId: resolvedTargetId || undefined,
@@ -155,16 +155,23 @@ export function useAdvertiserRecommendation({ targetId, advertiserId, targetType
           setProfilesByAdvertiserId(new Map());
         }
       } finally {
-        if (!cancelled) {
+        if (!isCancelled()) {
           setLoading(false);
         }
       }
-    })();
+    },
+    [enabled, listBySourceAdvertiser, queryId, resolvedAdvertiserId, resolvedTargetId, targetType],
+  );
 
+  useEffect(() => {
+    let cancelled = false;
+    void loadRecommendations(() => cancelled);
     return () => {
       cancelled = true;
     };
-  }, [enabled, listBySourceAdvertiser, queryId, resolvedAdvertiserId, resolvedTargetId, targetType]);
+  }, [loadRecommendations]);
+
+  const reload = useCallback(() => loadRecommendations(), [loadRecommendations]);
 
   const recommenders = useMemo((): AdvertiserRecommenderPreview[] => {
     const seen = new Set<string>();
@@ -203,5 +210,6 @@ export function useAdvertiserRecommendation({ targetId, advertiserId, targetType
     recommendersCount: recommenders.length,
     hasMultipleRecommenders: recommenders.length > 1,
     loading,
+    reload,
   };
 }

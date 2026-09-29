@@ -4,7 +4,7 @@ import type { ScrollView as ScrollViewType } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { StackNavigationProp } from '@react-navigation/stack';
 import { HeroImage, ScreenWithHeader } from '@/components/ui/layout';
-import { ShareContentUnavailable } from '@/components/ui/feedback';
+import { PullToRefreshIndicator, ShareContentUnavailable, usePullToRefresh } from '@/components/ui/feedback';
 import { Toggle } from '@/components/ui';
 import { SecondaryButton } from '@/components/ui/buttons';
 import {
@@ -78,7 +78,14 @@ const ProductDetailsScreen: React.FC<ProductDetailsScreenProps> = ({ navigation,
   const scrollContentRef = useRef<View>(null);
   const programTermsCheckboxRef = useRef<View>(null);
 
-  const { product, ad, advertiserId, loading, handleAddToCart } = useProductDetails({
+  const {
+    product,
+    ad,
+    advertiserId,
+    loading,
+    handleAddToCart,
+    reload: reloadProduct,
+  } = useProductDetails({
     productId: route.params?.productId,
     fallbackProduct: route.params?.product,
     navigation,
@@ -92,11 +99,25 @@ const ProductDetailsScreen: React.FC<ProductDetailsScreenProps> = ({ navigation,
     productIdFallback: route.params?.productId,
   });
 
-  const { recommenders, loading: recommendationsLoading } = useAdvertiserRecommendation({
+  const {
+    recommenders,
+    loading: recommendationsLoading,
+    reload: reloadRecommendations,
+  } = useAdvertiserRecommendation({
     targetId: product?.id ?? route.params?.productId,
     targetType: ADVERTISER_RECOMMENDATION_TARGET_TYPE.product,
     enabled: Boolean(product?.id ?? route.params?.productId),
   });
+
+  const refreshProductDetails = useCallback(async () => {
+    await Promise.all([reloadProduct(), reloadRecommendations()]);
+  }, [reloadProduct, reloadRecommendations]);
+
+  const {
+    showIndicator: showPullIndicator,
+    onScroll: onPullScroll,
+    refreshControl: pullRefreshControl,
+  } = usePullToRefresh(refreshProductDetails);
 
   const displayData = useMemo(() => {
     if (!product) {
@@ -424,11 +445,15 @@ const ProductDetailsScreen: React.FC<ProductDetailsScreenProps> = ({ navigation,
         }}
         contentContainerStyle={styles.container}
       >
+        <PullToRefreshIndicator visible={showPullIndicator} accessibilityLabel={t('common.loading')} />
         <ScrollView
           ref={scrollViewRef}
           testID={E2E_TEST_IDS.PRODUCT_SCREEN}
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
+          scrollEventThrottle={16}
+          onScroll={onPullScroll}
+          refreshControl={pullRefreshControl}
         >
           <View ref={scrollContentRef} collapsable={false}>
             {/* Hero Section with Image */}

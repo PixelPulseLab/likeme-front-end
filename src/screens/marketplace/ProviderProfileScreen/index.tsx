@@ -6,7 +6,12 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import { HeroImage, ScreenWithHeader } from '@/components/ui/layout';
 import { ToggleTabs } from '@/components/ui/tabs';
 import { IconButton, SecondaryButton } from '@/components/ui/buttons';
-import { EmptyState, ShareContentUnavailable } from '@/components/ui/feedback';
+import {
+  EmptyState,
+  PullToRefreshIndicator,
+  ShareContentUnavailable,
+  usePullToRefresh,
+} from '@/components/ui/feedback';
 import type { ButtonCarouselOption } from '@/components/ui/carousel';
 import { type JoinCardItem } from '@/components/ui/cards';
 import { JoinCardList } from '@/components/ui/lists/JoinCardList';
@@ -100,6 +105,7 @@ const ProviderProfileScreen: React.FC<ProviderProfileScreenProps> = ({ navigatio
     loading: loadingAds,
     hasMore: hasMoreAds,
     loadAds: loadProviderAds,
+    refresh: refreshProviderAds,
   } = useProviderAds({
     advertiserId: providerId || undefined,
     page: productsPage,
@@ -114,29 +120,35 @@ const ProviderProfileScreen: React.FC<ProviderProfileScreenProps> = ({ navigatio
     if (providerId) loadProviderAds();
   }, [providerId, productsPage, loadProviderAds]);
 
-  React.useEffect(() => {
-    const loadProfiles = async () => {
-      if (!providerId) return;
-      setLoadingProfiles(true);
-      try {
-        const response = await advertiserService.getAdvertiserProfiles(providerId, 'pt-BR');
-        if (response.success && response.data?.profiles) {
-          setProfiles(response.data.profiles);
-        } else {
-          setProfiles([]);
-        }
-      } catch (error) {
-        logger.error('[ProviderProfileScreen] Erro ao carregar perfis do anunciante', error);
+  const loadProfiles = useCallback(async () => {
+    if (!providerId) {
+      return;
+    }
+    setLoadingProfiles(true);
+    try {
+      const response = await advertiserService.getAdvertiserProfiles(providerId, 'pt-BR');
+      if (response.success && response.data?.profiles) {
+        setProfiles(response.data.profiles);
+      } else {
         setProfiles([]);
-      } finally {
-        setLoadingProfiles(false);
       }
-    };
-
-    loadProfiles();
+    } catch (error) {
+      logger.error('[ProviderProfileScreen] Erro ao carregar perfis do anunciante', error);
+      setProfiles([]);
+    } finally {
+      setLoadingProfiles(false);
+    }
   }, [providerId]);
 
-  const { advertiser, loading: loadingProvider } = useAdvertiser({
+  useEffect(() => {
+    loadProfiles();
+  }, [loadProfiles]);
+
+  const {
+    advertiser,
+    loading: loadingProvider,
+    refresh: refreshAdvertiser,
+  } = useAdvertiser({
     advertiserId: providerId || undefined,
   });
 
@@ -204,7 +216,7 @@ const ProviderProfileScreen: React.FC<ProviderProfileScreenProps> = ({ navigatio
 
   const loadCommunityShop = activeTab === 'communities';
 
-  const { recommenders: communityShopProfessionals } = useAdvertiserRecommendation({
+  const { recommenders: communityShopProfessionals, reload: reloadRecommendations } = useAdvertiserRecommendation({
     targetType: ADVERTISER_RECOMMENDATION_TARGET_TYPE.advertiser,
     advertiserId: providerId,
     enabled: loadCommunityShop,
@@ -278,10 +290,32 @@ const ProviderProfileScreen: React.FC<ProviderProfileScreenProps> = ({ navigatio
     communities: rawCommunities,
     categories,
     communityFiles,
+    refresh: refreshCommunities,
   } = useCommunities({
     enabled: activeTab === 'communities',
     pageSize: 10,
   });
+
+  const refreshProviderProfile = useCallback(async () => {
+    setProductsPage(1);
+    try {
+      await Promise.all([
+        refreshAdvertiser(),
+        refreshProviderAds(),
+        loadProfiles(),
+        reloadRecommendations(),
+        refreshCommunities(),
+      ]);
+    } catch (cause) {
+      logger.error('[ProviderProfileScreen] Falha ao atualizar o perfil', { providerId, cause });
+    }
+  }, [loadProfiles, providerId, refreshAdvertiser, refreshCommunities, refreshProviderAds, reloadRecommendations]);
+
+  const {
+    showIndicator: showPullIndicator,
+    onScroll: onPullScroll,
+    refreshControl: pullRefreshControl,
+  } = usePullToRefresh(refreshProviderProfile);
 
   const joinCommunities = useMemo((): JoinCardItem[] => {
     const targetCommunityId = advertiser?.communityId?.trim();
@@ -373,164 +407,174 @@ const ProviderProfileScreen: React.FC<ProviderProfileScreenProps> = ({ navigatio
         />
       )}
       {providerData && (
-        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-          <HeroImage imageUri={providerData.avatar} badges={[t('marketplace.specialistLabel')]}>
-            <View style={styles.heroContent}>
-              <View style={styles.heroTextGroup}>
-                {heroTitle ? <Text style={styles.heroTitle}>{heroTitle}</Text> : null}
-                <Text style={styles.heroName}>{providerData.name}</Text>
-                {documentsLine ? <Text style={styles.heroDocuments}>{documentsLine}</Text> : null}
+        <View style={styles.container}>
+          <PullToRefreshIndicator visible={showPullIndicator} accessibilityLabel={t('common.loading')} />
+          <ScrollView
+            style={styles.container}
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
+            scrollEventThrottle={16}
+            onScroll={onPullScroll}
+            refreshControl={pullRefreshControl}
+          >
+            <HeroImage imageUri={providerData.avatar} badges={[t('marketplace.specialistLabel')]}>
+              <View style={styles.heroContent}>
+                <View style={styles.heroTextGroup}>
+                  {heroTitle ? <Text style={styles.heroTitle}>{heroTitle}</Text> : null}
+                  <Text style={styles.heroName}>{providerData.name}</Text>
+                  {documentsLine ? <Text style={styles.heroDocuments}>{documentsLine}</Text> : null}
+                </View>
               </View>
-            </View>
-          </HeroImage>
-          <View style={styles.content}>
-            <View style={styles.tabsContainer}>
-              <ToggleTabs
-                tabs={[
-                  { id: 'about', label: t('marketplace.about') },
-                  { id: 'communities', label: t('marketplace.myCommunities') },
-                ]}
-                selectedId={activeTab}
-                onSelect={(id) => setActiveTab(id as 'about' | 'communities')}
-              />
-            </View>
-            {activeTab === 'about' ? (
-              <ContactButtonsRow
-                contacts={advertiser?.contacts}
-                providerId={providerId}
-                onSharePress={handleSharePress}
-                testID='provider-profile-contacts'
-              />
-            ) : null}
+            </HeroImage>
+            <View style={styles.content}>
+              <View style={styles.tabsContainer}>
+                <ToggleTabs
+                  tabs={[
+                    { id: 'about', label: t('marketplace.about') },
+                    { id: 'communities', label: t('marketplace.myCommunities') },
+                  ]}
+                  selectedId={activeTab}
+                  onSelect={(id) => setActiveTab(id as 'about' | 'communities')}
+                />
+              </View>
+              {activeTab === 'about' ? (
+                <ContactButtonsRow
+                  contacts={advertiser?.contacts}
+                  providerId={providerId}
+                  onSharePress={handleSharePress}
+                  testID='provider-profile-contacts'
+                />
+              ) : null}
 
-            {activeTab === 'about' && (
-              <>
-                <View style={styles.aboutSection}>
-                  {positioningProfile && (
-                    <View style={styles.highlightContainer}>
-                      <Text style={styles.highlightQuote}>{positioningProfile.value}</Text>
-                      <Text style={styles.highlightSubtitle}>Conheça meu impacto dentro dos pilares Like:Me</Text>
+              {activeTab === 'about' && (
+                <>
+                  <View style={styles.aboutSection}>
+                    {positioningProfile && (
+                      <View style={styles.highlightContainer}>
+                        <Text style={styles.highlightQuote}>{positioningProfile.value}</Text>
+                        <Text style={styles.highlightSubtitle}>Conheça meu impacto dentro dos pilares Like:Me</Text>
+                      </View>
+                    )}
+                    {loadingProfiles && <Text style={styles.descriptionText}>{t('common.loading')}</Text>}
+                    {!loadingProfiles && !hasProfileSections && providerData.description && (
+                      <Text style={styles.descriptionText}>{providerData.description}</Text>
+                    )}
+                    {!loadingProfiles &&
+                      visibleProfiles.map((profile) => {
+                        const isExpanded = expandedSectionIds.has(profile.id);
+                        const sectionTitle = profile.title || profile.key || '';
+                        return (
+                          <View key={profile.id} style={styles.profileSection}>
+                            <TouchableOpacity
+                              style={styles.sectionHeader}
+                              onPress={() => toggleSection(profile.id)}
+                              activeOpacity={0.7}
+                            >
+                              <Text style={styles.sectionTitle}>{sectionTitle}</Text>
+                              <Icon
+                                name={isExpanded ? 'keyboard-arrow-up' : 'keyboard-arrow-down'}
+                                size={24}
+                                color='#001137'
+                              />
+                            </TouchableOpacity>
+                            {isExpanded && <Text style={styles.descriptionText}>{profile.value}</Text>}
+                          </View>
+                        );
+                      })}
+                  </View>
+
+                  <AdsList
+                    navigation={navigation}
+                    ads={filteredProviderAds}
+                    loading={loadingAds}
+                    hasMore={hasMoreAds}
+                    onLoadMore={() => setProductsPage((p) => p + 1)}
+                    title={t('marketplace.allProducts')}
+                  />
+
+                  {isChatEnabled && (
+                    <View style={styles.talkButtonContainer}>
+                      <SecondaryButton
+                        label={t('marketplace.talkToProvider', { provider: providerData.name })}
+                        onPress={handleTalkToProvider}
+                        icon='arrow-forward'
+                        iconPosition='right'
+                        style={styles.talkButton}
+                      />
                     </View>
                   )}
-                  {loadingProfiles && <Text style={styles.descriptionText}>{t('common.loading')}</Text>}
-                  {!loadingProfiles && !hasProfileSections && providerData.description && (
-                    <Text style={styles.descriptionText}>{providerData.description}</Text>
-                  )}
-                  {!loadingProfiles &&
-                    visibleProfiles.map((profile) => {
-                      const isExpanded = expandedSectionIds.has(profile.id);
-                      const sectionTitle = profile.title || profile.key || '';
-                      return (
-                        <View key={profile.id} style={styles.profileSection}>
-                          <TouchableOpacity
-                            style={styles.sectionHeader}
-                            onPress={() => toggleSection(profile.id)}
-                            activeOpacity={0.7}
-                          >
-                            <Text style={styles.sectionTitle}>{sectionTitle}</Text>
-                            <Icon
-                              name={isExpanded ? 'keyboard-arrow-up' : 'keyboard-arrow-down'}
-                              size={24}
-                              color='#001137'
-                            />
-                          </TouchableOpacity>
-                          {isExpanded && <Text style={styles.descriptionText}>{profile.value}</Text>}
-                        </View>
-                      );
-                    })}
-                </View>
+                </>
+              )}
 
-                <AdsList
-                  navigation={navigation}
-                  ads={filteredProviderAds}
-                  loading={loadingAds}
-                  hasMore={hasMoreAds}
-                  onLoadMore={() => setProductsPage((p) => p + 1)}
-                  title={t('marketplace.allProducts')}
-                />
-
-                {isChatEnabled && (
-                  <View style={styles.talkButtonContainer}>
-                    <SecondaryButton
-                      label={t('marketplace.talkToProvider', { provider: providerData.name })}
-                      onPress={handleTalkToProvider}
-                      icon='arrow-forward'
-                      iconPosition='right'
-                      style={styles.talkButton}
+              {activeTab === 'communities' && (
+                <View style={styles.communityPreviewContainer}>
+                  <Text style={styles.communitiesSectionTitle}>{t('marketplace.curatedSpecialty')}</Text>
+                  <JoinCardList items={joinCommunities} onItemPress={handleJoinCommunity} />
+                  {communityShopCatalogSorted.length > 0 ? (
+                    <AdsList
+                      products={communityShopCatalogSorted}
+                      onProductPress={(item) => handleCommunityShopProductPress(item as Product)}
+                      orderOptions={communityShopOrderOptions}
+                      selectedOrder={communityShopSortOrder}
+                      onOrderSelect={(id) => setCommunityShopSortOrder(id as MarketplaceSortOrderId)}
                     />
-                  </View>
-                )}
-              </>
-            )}
-
-            {activeTab === 'communities' && (
-              <View style={styles.communityPreviewContainer}>
-                <Text style={styles.communitiesSectionTitle}>{t('marketplace.curatedSpecialty')}</Text>
-                <JoinCardList items={joinCommunities} onItemPress={handleJoinCommunity} />
-                {communityShopCatalogSorted.length > 0 ? (
-                  <AdsList
-                    products={communityShopCatalogSorted}
-                    onProductPress={(item) => handleCommunityShopProductPress(item as Product)}
-                    orderOptions={communityShopOrderOptions}
-                    selectedOrder={communityShopSortOrder}
-                    onOrderSelect={(id) => setCommunityShopSortOrder(id as MarketplaceSortOrderId)}
-                  />
-                ) : loadCommunityShop ? (
-                  <View style={communityShopListStyles.emptySection}>
-                    <EmptyState description={t('marketplace.providerCuratedComingSoon')} />
-                  </View>
-                ) : null}
-                {communityShopProfessionals.length > 0 ? (
-                  <View style={communityShopListStyles.list}>
-                    {communityShopProfessionals.map((prof) => (
-                      <View key={prof.advertiserId} style={communityShopListStyles.professionalCardWrapper}>
-                        <View style={communityShopListStyles.professionalCardContent}>
-                          {prof.avatar ? (
-                            <CachedImage
-                              source={{ uri: prof.avatar }}
-                              style={communityShopListStyles.professionalAvatar}
-                            />
-                          ) : (
-                            <View style={communityShopListStyles.professionalAvatarPlaceholder}>
-                              <Icon name='person' size={32} color={COLORS.NEUTRAL.LOW.MEDIUM} />
-                            </View>
-                          )}
-                          <View style={communityShopListStyles.professionalInfo}>
-                            <Text style={communityShopListStyles.professionalName} numberOfLines={1}>
-                              {prof.name}
-                            </Text>
-                            {prof.specialty ? (
-                              <Text style={communityShopListStyles.professionalProfession} numberOfLines={1}>
-                                {prof.specialty}
+                  ) : loadCommunityShop ? (
+                    <View style={communityShopListStyles.emptySection}>
+                      <EmptyState description={t('marketplace.providerCuratedComingSoon')} />
+                    </View>
+                  ) : null}
+                  {communityShopProfessionals.length > 0 ? (
+                    <View style={communityShopListStyles.list}>
+                      {communityShopProfessionals.map((prof) => (
+                        <View key={prof.advertiserId} style={communityShopListStyles.professionalCardWrapper}>
+                          <View style={communityShopListStyles.professionalCardContent}>
+                            {prof.avatar ? (
+                              <CachedImage
+                                source={{ uri: prof.avatar }}
+                                style={communityShopListStyles.professionalAvatar}
+                              />
+                            ) : (
+                              <View style={communityShopListStyles.professionalAvatarPlaceholder}>
+                                <Icon name='person' size={32} color={COLORS.NEUTRAL.LOW.MEDIUM} />
+                              </View>
+                            )}
+                            <View style={communityShopListStyles.professionalInfo}>
+                              <Text style={communityShopListStyles.professionalName} numberOfLines={1}>
+                                {prof.name}
                               </Text>
-                            ) : null}
+                              {prof.specialty ? (
+                                <Text style={communityShopListStyles.professionalProfession} numberOfLines={1}>
+                                  {prof.specialty}
+                                </Text>
+                              ) : null}
+                            </View>
+                            <SecondaryButton
+                              label={t('community.viewProfile')}
+                              onPress={() => handleCommunityShopProfessionalPress(prof.advertiserId)}
+                              size='medium'
+                              style={communityShopListStyles.professionalViewProfileButton}
+                            />
                           </View>
-                          <SecondaryButton
-                            label={t('community.viewProfile')}
-                            onPress={() => handleCommunityShopProfessionalPress(prof.advertiserId)}
-                            size='medium'
-                            style={communityShopListStyles.professionalViewProfileButton}
-                          />
                         </View>
-                      </View>
-                    ))}
-                  </View>
-                ) : null}
-                {isChatEnabled && (
-                  <View style={styles.talkButtonContainer}>
-                    <SecondaryButton
-                      label={t('marketplace.talkToProvider', { provider: providerData.name })}
-                      onPress={handleTalkToProvider}
-                      icon='arrow-forward'
-                      iconPosition='right'
-                      style={styles.talkButton}
-                    />
-                  </View>
-                )}
-              </View>
-            )}
-          </View>
-        </ScrollView>
+                      ))}
+                    </View>
+                  ) : null}
+                  {isChatEnabled && (
+                    <View style={styles.talkButtonContainer}>
+                      <SecondaryButton
+                        label={t('marketplace.talkToProvider', { provider: providerData.name })}
+                        onPress={handleTalkToProvider}
+                        icon='arrow-forward'
+                        iconPosition='right'
+                        style={styles.talkButton}
+                      />
+                    </View>
+                  )}
+                </View>
+              )}
+            </View>
+          </ScrollView>
+        </View>
       )}
     </ScreenWithHeader>
   );

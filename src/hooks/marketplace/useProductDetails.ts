@@ -75,6 +75,7 @@ interface UseProductDetailsReturn {
   setIsFavorite: (value: boolean) => void;
   handleAddToCart: (quantity?: number) => Promise<void>;
   loadAd: () => Promise<void>;
+  reload: () => Promise<void>;
 }
 
 export const useProductDetails = ({
@@ -291,6 +292,10 @@ export const useProductDetails = ({
     }
   }, [productId, adId, loadAd]);
 
+  const reload = useCallback(async () => {
+    await Promise.all([loadProduct(), loadRelatedProducts(), loadAd()]);
+  }, [loadAd, loadProduct, loadRelatedProducts]);
+
   return {
     product,
     ad,
@@ -301,5 +306,6 @@ export const useProductDetails = ({
     setIsFavorite,
     handleAddToCart,
     loadAd,
+    reload,
   };
 };

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { View, Text, ScrollView, Linking } from 'react-native';
 import { SecondaryButton } from '@/components/ui/buttons';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -7,7 +7,7 @@ import { PartnerSection } from '@/components/sections/advertiser';
 import { ProductHeroFooter } from '@/components/sections/marketplace/ProductHeroFooter';
 import { RecommendedProductsSection } from '@/components/sections/marketplace/RecommendedProductsSection';
 import { HeroImage, ScreenWithHeader } from '@/components/ui/layout';
-import { ShareContentUnavailable } from '@/components/ui/feedback';
+import { PullToRefreshIndicator, ShareContentUnavailable, usePullToRefresh } from '@/components/ui/feedback';
 import InfoSectionTabsRow from '@/components/ui/carousel/InfoSectionTabsRow';
 import { MarkdownText } from '@/components/ui/text/MarkdownText';
 import { MARKETPLACE_PRODUCT_PLACEHOLDER_IMAGE_URI } from '@/constants';
@@ -96,7 +96,13 @@ const AffiliateProductScreen: React.FC<AffiliateProductScreenProps> = ({ navigat
     route.params?.product?.description,
   ]);
 
-  const { product, ad, advertiserId, loading } = useProductDetails({
+  const {
+    product,
+    ad,
+    advertiserId,
+    loading,
+    reload: reloadProduct,
+  } = useProductDetails({
     productId: route.params?.productId,
     adId: route.params?.adId,
     fallbackProduct,
@@ -113,11 +119,25 @@ const AffiliateProductScreen: React.FC<AffiliateProductScreenProps> = ({ navigat
     productIdFallback: route.params?.productId,
   });
 
-  const { recommenders, loading: recommendationsLoading } = useAdvertiserRecommendation({
+  const {
+    recommenders,
+    loading: recommendationsLoading,
+    reload: reloadRecommendations,
+  } = useAdvertiserRecommendation({
     targetId: product?.id ?? route.params?.productId,
     targetType: ADVERTISER_RECOMMENDATION_TARGET_TYPE.product,
     enabled: Boolean(product?.id ?? route.params?.productId),
   });
+
+  const refreshAffiliateProduct = useCallback(async () => {
+    await Promise.all([reloadProduct(), reloadRecommendations()]);
+  }, [reloadProduct, reloadRecommendations]);
+
+  const {
+    showIndicator: showPullIndicator,
+    onScroll: onPullScroll,
+    refreshControl: pullRefreshControl,
+  } = usePullToRefresh(refreshAffiliateProduct);
 
   const handleBackPress = () => {
     goBackOrShareHome(navigation);
@@ -297,7 +317,14 @@ const AffiliateProductScreen: React.FC<AffiliateProductScreenProps> = ({ navigat
       }}
       contentContainerStyle={styles.container}
     >
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <PullToRefreshIndicator visible={showPullIndicator} accessibilityLabel={t('common.loading')} />
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        scrollEventThrottle={16}
+        onScroll={onPullScroll}
+        refreshControl={pullRefreshControl}
+      >
         <HeroImage
           imageUri={displayImage}
           name={displayTitle}
