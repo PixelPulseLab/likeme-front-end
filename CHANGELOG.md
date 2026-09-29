@@ -376,3 +376,12 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 - Em Meus Pedidos, mostra renovação e retentativa de cobrança
 - Troca de cartão enquanto a adesão ainda está pendente
 - Puxar para atualizar nas telas de conteúdo
+
+## [1.19.0] - 2026-09-29
+
+### Adicionado
+- No checkout, usa um cartão já salvo ou cadastra outro
+- No pagamento, escolhe o parcelamento do produto
+
+### Corrigido
+- Puxar para atualizar recarrega a página do produto e do profissional

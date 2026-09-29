@@ -1,18 +1,19 @@
 {
-  "version": "1.18.0",
-  "releasedAt": "2026-09-25",
+  "version": "1.19.0",
+  "releasedAt": "2026-09-29",
   "android": {
-    "versionCode": 266
+    "versionCode": 267
   },
   "ios": {
-    "buildNumber": 42
+    "buildNumber": 43
   },
   "changelog": {
     "added": [
-      "No carrinho, escolhe como pagar o programa",
-      "Em Meus Pedidos, mostra renovação e retentativa de cobrança",
-      "Troca de cartão enquanto a adesão ainda está pendente",
-      "Puxar para atualizar nas telas de conteúdo"
+      "No checkout, usa um cartão já salvo ou cadastra outro",
+      "No pagamento, escolhe o parcelamento do produto"
+    ],
+    "fixed": [
+      "Puxar para atualizar recarrega a página do produto e do profissional"
     ]
   }
 }
