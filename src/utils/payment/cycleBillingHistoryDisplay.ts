@@ -15,20 +15,11 @@ export function cycleBillingStatusPresentation(status: CycleBillingHistory['stat
   return ORDER_CARD_STATUS_PRESENTATION[CYCLE_BILLING_STATUS_KEY[status]];
 }
 
-export function cycleBillingKindLabel(billingType: CycleBillingHistory['billingType']): {
-  labelKey: string;
-  labelDefault: string;
-} {
+export function cycleBillingKindLabel(billingType: CycleBillingHistory['billingType']): string {
   if (billingType === 'RETRY') {
-    return {
-      labelKey: 'activities.cycleBillingRetry',
-      labelDefault: 'Nova tentativa',
-    };
+    return 'activities.cycleBillingRetry';
   }
-  return {
-    labelKey: 'activities.cycleBillingRenewal',
-    labelDefault: 'Renovação',
-  };
+  return 'activities.cycleBillingRenewal';
 }
 
 export function cycleBillingCardLabel(

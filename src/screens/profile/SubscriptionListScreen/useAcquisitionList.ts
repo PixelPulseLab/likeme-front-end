@@ -12,7 +12,6 @@ import {
   type AcquisitionFilter,
   type DateSort,
 } from '@/types/subscription/acquisitionList';
-import { SHARE_CONTENT_TYPES } from '@/constants/share';
 import { useTranslation } from '@/hooks/i18n';
 import {
   useMemberProtocolCommunities,
@@ -20,13 +19,11 @@ import {
 } from '@/hooks/community/useMemberProtocolCommunities';
 import { useSubscriptionList } from '@/hooks/subscription/useSubscriptionList';
 import { eventService } from '@/services';
-import { PRODUCT_CATALOG_TYPE } from '@/types/product';
 import type { RootStackParamList } from '@/types/navigation';
 import type { SubscriptionListItem } from '@/types/subscription/subscription';
 import { logger } from '@/utils/logger';
 import { navigateToCommunity } from '@/utils/navigation/communityNavigation';
 import { navigateToSubscribedProgram } from '@/utils/navigation/productNavigation';
-import { shareContent, shareInputForProduct } from '@/utils/share/shareContent';
 import {
   acquisitionEventCommunities,
   acquisitionListView,
@@ -39,7 +36,6 @@ import {
 } from '@/utils/mappers/acquisitionListMapper';
 
 const EVENT_COMMUNITY_FETCH_LIMIT = 8;
-const SHARE_SCREEN_NAME = 'SubscriptionList';
 
 async function listEventsForCommunities(
   communities: AcquisitionEventCommunity[],
@@ -115,23 +111,6 @@ export function useAcquisitionList(navigation: SubscriptionListNavigation) {
     () => communityProtocols.filter((item) => !subscriptionCommunityIds.has(item.communityId.trim())),
     [communityProtocols, subscriptionCommunityIds],
   );
-
-  const shareProduct = useCallback((kind: SubscriptionListItem['kind'], productId: string) => {
-    const catalogType = kind === 'service' ? PRODUCT_CATALOG_TYPE.SERVICE : PRODUCT_CATALOG_TYPE.PROGRAM;
-    shareContent(shareInputForProduct({ id: productId, type: catalogType }), { screenName: SHARE_SCREEN_NAME }).catch(
-      (cause: unknown) => {
-        logger.error('[SubscriptionListScreen] Falha ao compartilhar solução', { cause, productId });
-      },
-    );
-  }, []);
-
-  const shareCommunity = useCallback((communityId: string) => {
-    shareContent({ contentType: SHARE_CONTENT_TYPES.COMMUNITY, communityId }, { screenName: SHARE_SCREEN_NAME }).catch(
-      (cause: unknown) => {
-        logger.error('[SubscriptionListScreen] Falha ao compartilhar comunidade', { cause, communityId });
-      },
-    );
-  }, []);
 
   const openSubscriptionItem = useCallback(
     (item: SubscriptionListItem) => {
@@ -303,21 +282,6 @@ export function useAcquisitionList(navigation: SubscriptionListNavigation) {
     ],
   );
 
-  const shareCard = useCallback(
-    (card: AcquisitionCardContent) => {
-      if (card.source === ACQUISITION_SOURCE.MEMBERSHIP) {
-        shareCommunity(card.id);
-        return;
-      }
-      const items = card.source === ACQUISITION_SOURCE.SERVICE ? services : subscriptionProtocols;
-      const item = items.find((entry) => entry.id === card.id);
-      if (item) {
-        shareProduct(item.kind, item.productId);
-      }
-    },
-    [services, shareCommunity, shareProduct, subscriptionProtocols],
-  );
-
   const visiblePrograms = useMemo(
     () => filterAndSortAcquisition(programCards, filter, dateSort),
     [dateSort, filter, programCards],
@@ -355,9 +319,7 @@ export function useAcquisitionList(navigation: SubscriptionListNavigation) {
     toggleDateSort,
     listView,
     openCard,
-    shareCard,
     openEventCommunity,
-    shareCommunity,
     exploreMarketplace,
     isContentReady: eventsSettled,
     reloadOnFocus,

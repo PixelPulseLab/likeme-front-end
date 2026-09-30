@@ -75,15 +75,15 @@ function JoinCardChevron({ onPress }: { onPress: () => void }) {
   );
 }
 
-function JoinCardTop({ badges, onShare }: { badges: string[]; onShare?: () => void }) {
-  if (!onShare) {
+function JoinCardTop({ badges, onAddToCalendar }: { badges: string[]; onAddToCalendar?: () => void }) {
+  if (!onAddToCalendar) {
     return <JoinCardBadges badges={badges} />;
   }
 
   return (
     <View style={styles.topRow}>
       <JoinCardBadges badges={badges} />
-      <IconButton icon='ios-share' onPress={onShare} variant='inline' backgroundSize='medium' />
+      <IconButton icon='edit-calendar' onPress={onAddToCalendar} variant='inline' backgroundSize='medium' />
     </View>
   );
 }
@@ -115,7 +115,7 @@ function BlurJoinCard({
   caption,
   desaturated = false,
   onPress,
-  onShare,
+  onAddToCalendar,
   variant,
   fullWidth = true,
   testID,
@@ -135,7 +135,7 @@ function BlurJoinCard({
     <View style={blurCardWrapperStyle(variant, fullWidth)} testID={testID}>
       <BlurCard
         backgroundImage={image}
-        topSection={<JoinCardTop badges={labels} onShare={onShare} />}
+        topSection={<JoinCardTop badges={labels} onAddToCalendar={onAddToCalendar} />}
         footerSection={
           <View style={styles.bottom}>
             <View style={styles.footerTextBlock}>
@@ -174,7 +174,7 @@ function MediaJoinCard({
   caption,
   desaturated = false,
   onPress,
-  onShare,
+  onAddToCalendar,
   variant,
   fullWidth = true,
   testID,
@@ -197,7 +197,7 @@ function MediaJoinCard({
         <LinearGradient pointerEvents='none' colors={HERO_GRADIENT} style={styles.heroMedia} />
         <View style={styles.mediaBody}>
           <View style={styles.mediaTop}>
-            <JoinCardTop badges={labels} onShare={onShare} />
+            <JoinCardTop badges={labels} onAddToCalendar={onAddToCalendar} />
           </View>
           <View style={styles.mediaFooter}>
             <View style={styles.bottom}>
@@ -226,7 +226,16 @@ function MediaJoinCard({
   );
 }
 
-function HeroJoinCard({ title, badges, image, detail, desaturated = false, onPress, onShare, testID }: JoinCardProps) {
+function HeroJoinCard({
+  title,
+  badges,
+  image,
+  detail,
+  desaturated = false,
+  onPress,
+  onAddToCalendar,
+  testID,
+}: JoinCardProps) {
   const labels = visibleBadgeLabels(badges);
 
   return (
@@ -235,7 +244,7 @@ function HeroJoinCard({ title, badges, image, detail, desaturated = false, onPre
         <JoinCardCover image={image} desaturated={desaturated} />
         <LinearGradient pointerEvents='none' colors={HERO_GRADIENT} style={styles.heroMedia} />
         <View style={styles.heroBody}>
-          <JoinCardTop badges={labels} onShare={onShare} />
+          <JoinCardTop badges={labels} onAddToCalendar={onAddToCalendar} />
           <View style={styles.bottom}>
             <View style={styles.footerTextBlock}>
               <Text style={styles.title} numberOfLines={2}>

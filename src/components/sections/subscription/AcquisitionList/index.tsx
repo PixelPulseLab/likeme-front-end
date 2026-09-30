@@ -14,9 +14,8 @@ type AcquisitionListProps = {
   listView: AcquisitionListView;
   onExplore: () => void;
   onOpenCard: (card: AcquisitionCardContent) => void;
-  onShareCard: (card: AcquisitionCardContent) => void;
+  onAddToCalendar: (title: string) => void;
   onOpenCommunity: (communityId: string) => void;
-  onShareCommunity: (communityId: string) => void;
 };
 
 function solutionBadges(card: AcquisitionCardContent, inactiveLabel: string): string[] {
@@ -29,13 +28,13 @@ function SolutionCards({
   inactiveLabel,
   variant,
   onOpenCard,
-  onShareCard,
+  onAddToCalendar,
 }: {
   cards: AcquisitionCardContent[];
   inactiveLabel: string;
   variant: typeof JOIN_CARD_VARIANT.HERO | typeof JOIN_CARD_VARIANT.SQUARE;
   onOpenCard: (card: AcquisitionCardContent) => void;
-  onShareCard: (card: AcquisitionCardContent) => void;
+  onAddToCalendar: (title: string) => void;
 }) {
   return (
     <View style={styles.cards}>
@@ -48,7 +47,7 @@ function SolutionCards({
           detail={card.description}
           desaturated={card.inactive}
           onPress={() => onOpenCard(card)}
-          onShare={() => onShareCard(card)}
+          onAddToCalendar={() => onAddToCalendar(card.title)}
           blur={false}
           variant={variant}
           testID={card.testID}
@@ -62,16 +61,15 @@ function EventJoinCard({
   event,
   variant,
   onOpenCommunity,
-  onShareCommunity,
+  onAddToCalendar,
 }: {
   event: AcquisitionEventCard;
   variant: typeof JOIN_CARD_VARIANT.COMPACT | typeof JOIN_CARD_VARIANT.DEFAULT;
   onOpenCommunity: (communityId: string) => void;
-  onShareCommunity: (communityId: string) => void;
+  onAddToCalendar: (title: string) => void;
 }) {
   const isCompact = variant === JOIN_CARD_VARIANT.COMPACT;
   const badges = event.categoryLabel ? [event.categoryLabel] : [];
-  const onShare = isCompact ? undefined : () => onShareCommunity(event.communityId);
 
   return (
     <JoinCard
@@ -81,7 +79,7 @@ function EventJoinCard({
       detail={event.whenLabel}
       caption={event.description}
       onPress={() => onOpenCommunity(event.communityId)}
-      onShare={onShare}
+      onAddToCalendar={() => onAddToCalendar(event.title)}
       blur={false}
       variant={variant}
       fullWidth={!isCompact}
@@ -93,12 +91,12 @@ function EventCards({
   liveEvents,
   placeEvents,
   onOpenCommunity,
-  onShareCommunity,
+  onAddToCalendar,
 }: {
   liveEvents: AcquisitionEventCard[];
   placeEvents: AcquisitionEventCard[];
   onOpenCommunity: (communityId: string) => void;
-  onShareCommunity: (communityId: string) => void;
+  onAddToCalendar: (title: string) => void;
 }) {
   const { t } = useTranslation();
   const hasLives = liveEvents.length > 0;
@@ -116,7 +114,7 @@ function EventCards({
                 event={event}
                 variant={JOIN_CARD_VARIANT.COMPACT}
                 onOpenCommunity={onOpenCommunity}
-                onShareCommunity={onShareCommunity}
+                onAddToCalendar={onAddToCalendar}
               />
             ))}
           </ScrollView>
@@ -134,7 +132,7 @@ function EventCards({
                 event={event}
                 variant={JOIN_CARD_VARIANT.DEFAULT}
                 onOpenCommunity={onOpenCommunity}
-                onShareCommunity={onShareCommunity}
+                onAddToCalendar={onAddToCalendar}
               />
             ))}
           </View>
@@ -148,9 +146,8 @@ export function AcquisitionList({
   listView,
   onExplore,
   onOpenCard,
-  onShareCard,
+  onAddToCalendar,
   onOpenCommunity,
-  onShareCommunity,
 }: AcquisitionListProps) {
   if (listView.view === 'explore') {
     return (
@@ -171,7 +168,7 @@ export function AcquisitionList({
         inactiveLabel={listView.inactiveLabel}
         variant={JOIN_CARD_VARIANT.HERO}
         onOpenCard={onOpenCard}
-        onShareCard={onShareCard}
+        onAddToCalendar={onAddToCalendar}
       />
     );
   }
@@ -183,7 +180,7 @@ export function AcquisitionList({
         inactiveLabel={listView.inactiveLabel}
         variant={JOIN_CARD_VARIANT.SQUARE}
         onOpenCard={onOpenCard}
-        onShareCard={onShareCard}
+        onAddToCalendar={onAddToCalendar}
       />
     );
   }
@@ -193,7 +190,7 @@ export function AcquisitionList({
       liveEvents={listView.liveEvents}
       placeEvents={listView.placeEvents}
       onOpenCommunity={onOpenCommunity}
-      onShareCommunity={onShareCommunity}
+      onAddToCalendar={onAddToCalendar}
     />
   );
 }

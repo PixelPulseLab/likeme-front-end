@@ -10,6 +10,14 @@ export function navigateToActivitiesActives(navigation: Navigation): void {
   navigateRootStack(navigation, 'Activities', { initialTab: 'actives' });
 }
 
+export function navigateToCreateActivity(navigation: Navigation, name: string): void {
+  navigateRootStack(navigation, 'Activities', {
+    initialTab: 'actives',
+    openCreateActivity: true,
+    createActivityName: name,
+  });
+}
+
 export function navigateToActivitiesOrders(navigation: Navigation): void {
   navigateRootStack(navigation, 'Activities', { initialTab: 'history', initialFilter: 'orders' });
 }

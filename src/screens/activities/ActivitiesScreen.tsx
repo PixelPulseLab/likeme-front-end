@@ -33,6 +33,7 @@ import { navigateRootStack, rootStackNavigationFrom } from '@/utils/navigation/r
 import { orderCardStatusPresentation, orderCardTitle } from '@/utils/marketplace/orderStatusDisplay';
 import { invalidateActivityListCache, writeActivityListCache } from '@/utils/activity/activityListCache';
 import { addActivityToDeviceCalendar } from '@/utils/activity/addActivityToDeviceCalendar';
+import { activityInitialDataFromOrderProduct } from '@/utils/activity/activityInitialDataFromOrderProduct';
 import { formatSubscriptionManageDate } from '@/utils/subscription/subscriptionManageDisplay';
 import {
   SUBSCRIPTION_HISTORY_STATUS,
@@ -56,6 +57,8 @@ type ActivitiesScreenProps = {
       initialFilter?: 'all' | 'activities' | 'appointments' | 'orders';
       focusActivityId?: string;
       focusNotifications?: boolean;
+      openCreateActivity?: boolean;
+      createActivityName?: string;
     };
   };
 };
@@ -216,7 +219,8 @@ const ActivitiesScreen: React.FC<ActivitiesScreenProps> = ({ navigation, route }
         p?.initialTab == null &&
         p?.initialFilter == null &&
         p?.focusActivityId == null &&
-        p?.focusNotifications == null
+        p?.focusNotifications == null &&
+        p?.openCreateActivity == null
       ) {
         return;
       }
@@ -248,6 +252,7 @@ const ActivitiesScreen: React.FC<ActivitiesScreenProps> = ({ navigation, route }
       route?.params?.initialFilter,
       route?.params?.focusActivityId,
       route?.params?.focusNotifications,
+      route?.params?.openCreateActivity,
     ]),
   );
 
@@ -269,6 +274,20 @@ const ActivitiesScreen: React.FC<ActivitiesScreenProps> = ({ navigation, route }
       };
     }, []),
   );
+
+  useEffect(() => {
+    if (!route?.params?.openCreateActivity) {
+      return;
+    }
+
+    const activityName = route.params.createActivityName?.trim() ?? '';
+    const activityDraft = activityName ? activityInitialDataFromOrderProduct({ name: activityName }) : null;
+    setActiveTab('actives');
+    setEditingActivityId(null);
+    setEditingActivityData(activityDraft);
+    setIsCreateActivityModalVisible(true);
+    navigation.setParams({ openCreateActivity: undefined, createActivityName: undefined } as never);
+  }, [navigation, route?.params?.createActivityName, route?.params?.openCreateActivity]);
 
   useEffect(() => {
     const focusActivityId = route?.params?.focusActivityId?.trim();
@@ -788,23 +807,15 @@ const ActivitiesScreen: React.FC<ActivitiesScreenProps> = ({ navigation, route }
     (subscriptionStatus: SubscriptionHistory['subscriptionStatus']) => {
       switch (subscriptionStatus) {
         case SUBSCRIPTION_HISTORY_STATUS.CREATED:
-          return t('activities.subscriptionCreated', {
-            defaultValue: 'Assinatura iniciada',
-          });
+          return t('activities.subscriptionCreated');
         case SUBSCRIPTION_HISTORY_STATUS.CANCEL_REQUESTED:
-          return t('activities.subscriptionCancelRequested', {
-            defaultValue: 'Solicitação de cancelamento',
-          });
+          return t('activities.subscriptionCancelRequested');
         case SUBSCRIPTION_HISTORY_STATUS.CANCEL_REACTIVATED:
-          return t('activities.subscriptionCancelReactivated', {
-            defaultValue: 'Reativação da assinatura',
-          });
+          return t('activities.subscriptionCancelReactivated');
         case SUBSCRIPTION_HISTORY_STATUS.CANCEL_FINALIZED:
-          return t('activities.subscriptionCancelFinalized', {
-            defaultValue: 'Cancelamento efetivado',
-          });
+          return t('activities.subscriptionCancelFinalized');
         default:
-          return t('activities.subscriptionLifecycle', { defaultValue: 'Assinatura' });
+          return t('activities.subscriptionLifecycle');
       }
     },
     [t],
@@ -838,10 +849,7 @@ const ActivitiesScreen: React.FC<ActivitiesScreenProps> = ({ navigation, route }
           </Text>
           <View style={styles.orderCardDetails}>
             <Text style={styles.orderCardDetailLine}>
-              {t('activities.subscriptionLifecycleDate', {
-                defaultValue: 'Data',
-              })}
-              : {formatSubscriptionManageDate(event.at)}
+              {t('activities.subscriptionLifecycleDate')}: {formatSubscriptionManageDate(event.at)}
             </Text>
           </View>
         </View>
@@ -853,7 +861,7 @@ const ActivitiesScreen: React.FC<ActivitiesScreenProps> = ({ navigation, route }
     const kindLabel = cycleBillingKindLabel(cycleBilling.billingType);
     const statusPresentation = cycleBillingStatusPresentation(cycleBilling.status);
     const cardLabel = cycleBillingCardLabel(cycleBilling);
-    const kindText = t(kindLabel.labelKey, { defaultValue: kindLabel.labelDefault });
+    const kindText = t(kindLabel);
     const openDetail = () => navigateToCycleBillingDetail(rootNavigation, cycleBilling);
 
     return (
@@ -877,27 +885,23 @@ const ActivitiesScreen: React.FC<ActivitiesScreenProps> = ({ navigation, route }
           </View>
           <View style={styles.orderCardDetails}>
             <Text style={styles.orderCardDetailLine}>
-              {t('activities.orderNumberShort', { defaultValue: 'Pedido' })}: {formatOrderDisplayId(cycleBilling.id)}
+              {t('activities.orderNumberShort')}: {formatOrderDisplayId(cycleBilling.id)}
             </Text>
             {cycleBilling.cycleNumber != null ? (
               <Text style={styles.orderCardDetailLine}>
-                {t('activities.cycleBillingCycle', { defaultValue: 'Ciclo' })} {String(cycleBilling.cycleNumber)}
+                {t('activities.cycleBillingCycle')} {String(cycleBilling.cycleNumber)}
               </Text>
             ) : null}
             <Text style={styles.orderCardDetailLine}>
-              {t('activities.orderTotal', { defaultValue: 'Total' })} {formatPrice(cycleBilling.amountCents / 100)}
+              {t('activities.orderTotal')} {formatPrice(cycleBilling.amountCents / 100)}
             </Text>
             {cycleBilling.installments != null ? (
               <Text style={styles.orderCardDetailLine}>
-                {t('activities.cycleBillingInstallments', { defaultValue: 'Parcelas' })}: {cycleBilling.installments}x
+                {t('activities.cycleBillingInstallments')}: {cycleBilling.installments}x
               </Text>
             ) : null}
             {cardLabel ? <Text style={styles.orderCardDetailLine}>{cardLabel}</Text> : null}
-            <Text style={styles.orderCardDetailLine}>
-              {t(statusPresentation.deliveryLabelKey, {
-                defaultValue: statusPresentation.deliveryLabelDefault,
-              })}
-            </Text>
+            <Text style={styles.orderCardDetailLine}>{t(statusPresentation.deliveryLabelKey)}</Text>
           </View>
           <View style={[styles.cardActions, styles.orderCardStatusAction]}>
             <IconButton
@@ -942,16 +946,12 @@ const ActivitiesScreen: React.FC<ActivitiesScreenProps> = ({ navigation, route }
 
           <View style={styles.orderCardDetails}>
             <Text style={styles.orderCardDetailLine}>
-              {t('activities.orderNumberShort', { defaultValue: 'Pedido' })}: {formatOrderDisplayId(order.id)}
+              {t('activities.orderNumberShort')}: {formatOrderDisplayId(order.id)}
             </Text>
             <Text style={styles.orderCardDetailLine}>
-              {t('activities.orderTotal', { defaultValue: 'Total' })} {formatPrice(order.total)}
+              {t('activities.orderTotal')} {formatPrice(order.total)}
             </Text>
-            <Text style={styles.orderCardDetailLine}>
-              {t(statusPresentation.deliveryLabelKey, {
-                defaultValue: statusPresentation.deliveryLabelDefault,
-              })}
-            </Text>
+            <Text style={styles.orderCardDetailLine}>{t(statusPresentation.deliveryLabelKey)}</Text>
           </View>
 
           <View style={[styles.cardActions, styles.orderCardStatusAction]}>
@@ -1290,13 +1290,8 @@ const ActivitiesScreen: React.FC<ActivitiesScreenProps> = ({ navigation, route }
                     cause: calendarError,
                   });
                   Alert.alert(
-                    t('activities.createdWithoutDeviceCalendarTitle', {
-                      defaultValue: 'Atividade salva',
-                    }),
-                    t('activities.createdWithoutDeviceCalendarMessage', {
-                      defaultValue:
-                        'A atividade foi salva em Minhas Atividades, mas não foi possível adicioná-la à agenda do celular.',
-                    }),
+                    t('activities.createdWithoutDeviceCalendarTitle'),
+                    t('activities.createdWithoutDeviceCalendarMessage'),
                   );
                 }
               }

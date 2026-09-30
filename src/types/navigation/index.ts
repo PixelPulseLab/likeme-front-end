@@ -75,6 +75,8 @@ type RootStackParamListCore = {
         initialFilter?: 'all' | 'activities' | 'appointments' | 'orders';
         focusActivityId?: string;
         focusNotifications?: boolean;
+        openCreateActivity?: boolean;
+        createActivityName?: string;
       }
     | undefined;
   OrderDetail: { orderId: string };

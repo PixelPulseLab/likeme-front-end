@@ -1,5 +1,3 @@
-import type { Product } from '@/types/product';
-
 export type ActivityFormInitialData = {
   name: string;
   type: 'task' | 'event';
@@ -29,7 +27,9 @@ function localTimeAmPm(date: Date): string {
   });
 }
 
-export function activityInitialDataFromOrderProduct(product: Product | undefined | null): ActivityFormInitialData {
+export function activityInitialDataFromOrderProduct(
+  product: { name?: string | null; description?: string | null } | undefined | null,
+): ActivityFormInitialData {
   const now = new Date();
   const start = new Date(now);
   start.setMinutes(0, 0, 0);

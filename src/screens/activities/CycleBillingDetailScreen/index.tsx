@@ -41,32 +41,26 @@ const CycleBillingDetailScreen: React.FC<Props> = ({ navigation, route }) => {
         <>
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
             <View style={styles.titleSection}>
-              <Text style={styles.screenTitle}>{t(kindLabel.labelKey, { defaultValue: kindLabel.labelDefault })}</Text>
+              <Text style={styles.screenTitle}>{t(kindLabel)}</Text>
               <View style={styles.titleUnderline} />
             </View>
 
             <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>
-                {t('activities.orderNumber', { defaultValue: 'Número do pedido' })}
-              </Text>
+              <Text style={styles.summaryLabel}>{t('activities.orderNumber')}</Text>
               <Text style={styles.summaryValue}>{formatOrderDisplayId(cycleBilling.id)}</Text>
             </View>
             <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>
-                {t('activities.cycleBillingProgram', { defaultValue: 'Programa' })}
-              </Text>
+              <Text style={styles.summaryLabel}>{t('activities.cycleBillingProgram')}</Text>
               <Text style={styles.summaryValue}>{cycleBilling.productName}</Text>
             </View>
             {cycleBilling.cycleNumber != null ? (
               <View style={styles.summaryRow}>
-                <Text style={styles.summaryLabel}>{t('activities.cycleBillingCycle', { defaultValue: 'Ciclo' })}</Text>
+                <Text style={styles.summaryLabel}>{t('activities.cycleBillingCycle')}</Text>
                 <Text style={styles.summaryValue}>{String(cycleBilling.cycleNumber)}</Text>
               </View>
             ) : null}
             <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>
-                {t('activities.subscriptionLifecycleDate', { defaultValue: 'Data' })}
-              </Text>
+              <Text style={styles.summaryLabel}>{t('activities.subscriptionLifecycleDate')}</Text>
               <Text style={styles.summaryValue}>{formatSubscriptionManageDate(cycleBilling.occurredAt)}</Text>
             </View>
             <View style={styles.summaryRow}>
@@ -75,23 +69,19 @@ const CycleBillingDetailScreen: React.FC<Props> = ({ navigation, route }) => {
             </View>
             {cycleBilling.installments != null ? (
               <View style={styles.summaryRow}>
-                <Text style={styles.summaryLabel}>
-                  {t('activities.cycleBillingInstallments', { defaultValue: 'Parcelas' })}
-                </Text>
+                <Text style={styles.summaryLabel}>{t('activities.cycleBillingInstallments')}</Text>
                 <Text style={styles.summaryValue}>{`${cycleBilling.installments}x`}</Text>
               </View>
             ) : null}
             {cardLabel ? (
               <View style={styles.summaryRow}>
-                <Text style={styles.summaryLabel}>{t('activities.cycleBillingCard', { defaultValue: 'Cartão' })}</Text>
+                <Text style={styles.summaryLabel}>{t('activities.cycleBillingCard')}</Text>
                 <Text style={styles.summaryValue}>{cardLabel}</Text>
               </View>
             ) : null}
             <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>{t('activities.cycleBillingStatus', { defaultValue: 'Status' })}</Text>
-              <Text style={styles.summaryValue}>
-                {t(statusPresentation.deliveryLabelKey, { defaultValue: statusPresentation.deliveryLabelDefault })}
-              </Text>
+              <Text style={styles.summaryLabel}>{t('activities.cycleBillingStatus')}</Text>
+              <Text style={styles.summaryValue}>{t(statusPresentation.deliveryLabelKey)}</Text>
             </View>
           </ScrollView>
           <View style={styles.footer}>

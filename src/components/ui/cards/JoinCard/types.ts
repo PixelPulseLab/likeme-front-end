@@ -26,7 +26,7 @@ export type JoinCardProps = {
   caption?: string | null;
   desaturated?: boolean;
   onPress?: () => void;
-  onShare?: () => void;
+  onAddToCalendar?: () => void;
   blur?: boolean;
   variant?: JoinCardVariant;
   fullWidth?: boolean;

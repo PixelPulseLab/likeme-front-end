@@ -14,6 +14,7 @@ import { useFloatingMenuActions } from '@/contexts/FloatingMenuContext';
 import { useMenuItems } from '@/hooks';
 import { useTranslation } from '@/hooks/i18n';
 import type { RootStackParamList } from '@/types/navigation';
+import { navigateToCreateActivity } from '@/utils/navigation/activitiesNavigation';
 import { navigateRootStack } from '@/utils/navigation/rootStackNavigation';
 import { logger } from '@/utils/logger';
 import { styles } from './styles';
@@ -35,9 +36,7 @@ const SubscriptionListScreen: React.FC<Props> = ({ navigation }) => {
     toggleDateSort,
     listView,
     openCard,
-    shareCard,
     openEventCommunity,
-    shareCommunity,
     exploreMarketplace,
     isContentReady,
     reloadOnFocus,
@@ -94,6 +93,10 @@ const SubscriptionListScreen: React.FC<Props> = ({ navigation }) => {
     navigation.goBack();
   };
 
+  const openActivityForm = (title: string) => {
+    navigateToCreateActivity(navigation, title);
+  };
+
   const showPullRefresh = !holdsLoading && showPullIndicator;
 
   return (
@@ -112,9 +115,6 @@ const SubscriptionListScreen: React.FC<Props> = ({ navigation }) => {
         contentContainerStyle={styles.screenContent}
       >
         <View style={styles.listWrap}>
-          <View pointerEvents='none' style={styles.glow}>
-            <Image source={acquisitionGlow} style={styles.glowImage} />
-          </View>
           <PullToRefreshIndicator visible={showPullRefresh} accessibilityLabel={t('common.loading')} />
           <ScrollView
             contentContainerStyle={styles.scrollContent}
@@ -123,6 +123,9 @@ const SubscriptionListScreen: React.FC<Props> = ({ navigation }) => {
             onScroll={holdsLoading ? undefined : onPullScroll}
             refreshControl={holdsLoading ? undefined : pullRefreshControl}
           >
+            <View pointerEvents='none' style={styles.glow}>
+              <Image source={acquisitionGlow} style={styles.glowImage} />
+            </View>
             <Text style={styles.screenTitle}>
               {t('profile.acquisitionList.headline', {
                 defaultValue: 'Tudo o que você escolheu para cuidar de você está aqui.',
@@ -140,9 +143,8 @@ const SubscriptionListScreen: React.FC<Props> = ({ navigation }) => {
               listView={listView}
               onExplore={exploreMarketplace}
               onOpenCard={openCard}
-              onShareCard={shareCard}
+              onAddToCalendar={openActivityForm}
               onOpenCommunity={openEventCommunity}
-              onShareCommunity={shareCommunity}
             />
           </ScrollView>
         </View>
