@@ -17,6 +17,15 @@ jest.mock('expo-linear-gradient', () => {
   };
 });
 
+jest.mock('@react-native-masked-view/masked-view', () => {
+  const React = require('react');
+  const { View } = require('react-native');
+  return {
+    __esModule: true,
+    default: ({ children, style }) => React.createElement(View, { style }, children),
+  };
+});
+
 // Mock para expo-blur (ESM no Jest)
 jest.mock('expo-blur', () => {
   const React = require('react');

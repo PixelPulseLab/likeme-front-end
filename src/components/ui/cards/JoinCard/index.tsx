@@ -83,7 +83,7 @@ function JoinCardTop({ badges, onShare }: { badges: string[]; onShare?: () => vo
   return (
     <View style={styles.topRow}>
       <JoinCardBadges badges={badges} />
-      <IconButton icon='ios-share' onPress={onShare} backgroundSize='small' />
+      <IconButton icon='ios-share' onPress={onShare} variant='inline' backgroundSize='medium' />
     </View>
   );
 }
