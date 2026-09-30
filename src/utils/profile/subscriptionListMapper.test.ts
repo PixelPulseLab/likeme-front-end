@@ -32,6 +32,29 @@ describe('subscriptionListMapper', () => {
     expect(item.programType).toBe('course');
   });
 
+  it('coloca a categoria e o acordo que já vêm na listagem', () => {
+    const row: UserSubscriptionListItem = {
+      id: 'sub-1',
+      productId: 'prod-1',
+      status: 'ACTIVE',
+      nextBillingAt: null,
+      createdAt: '2026-01-01T00:00:00.000Z',
+      product: {
+        id: 'prod-1',
+        name: 'Protocolo X',
+        image: 'https://example.com/img.jpg',
+        type: 'program',
+        categoryNames: ['Sono', 'Estresse'],
+        technicalSpecifications: '  Termos do programa  ',
+      },
+    };
+
+    const item = mapSubscriptionToListItem(row, t);
+    expect(item.badges[0]).toBe('Sono');
+    expect(item.badges[1]).toBe('Estresse');
+    expect(item.agreements).toBe('Termos do programa');
+  });
+
   it('mapeia programa de comunidade com programType e communityId', () => {
     const row: UserSubscriptionListItem = {
       id: 'sub-community',

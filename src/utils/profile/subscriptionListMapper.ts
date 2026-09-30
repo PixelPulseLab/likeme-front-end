@@ -2,6 +2,7 @@ import type { SubscriptionListItem } from '@/types/subscription/subscription';
 import type { UserSubscriptionListItem } from '@/services/payment/subscriptionService';
 import type { Order } from '@/types/order';
 import { PRODUCT_CATALOG_TYPE, catalogTypeTranslatedBadgeLabels } from '@/types/product';
+import { buildMarketplaceCategoryBadgeLabels } from '@/utils/marketplace/buildMarketplaceCategoryBadgeLabels';
 import { PROGRAM_TYPE } from '@/types/product/programType';
 import {
   subscriptionIsCancelingPresentation,
@@ -32,9 +33,10 @@ function subscriptionStatusBadge(row: UserSubscriptionListItem, t: TranslateFn):
 }
 
 export function mapSubscriptionToListItem(row: UserSubscriptionListItem, t: TranslateFn): SubscriptionListItem {
+  const categoryBadges = buildMarketplaceCategoryBadgeLabels({ categoryNames: row.product.categoryNames ?? [] }, []);
   const typeBadges = catalogTypeTranslatedBadgeLabels(row.product.type, t);
   const statusBadge = subscriptionStatusBadge(row, t);
-  const badges = [...typeBadges, ...(statusBadge ? [statusBadge] : [])];
+  const badges = [...categoryBadges, ...typeBadges, ...(statusBadge ? [statusBadge] : [])];
 
   return {
     id: row.id,
@@ -48,6 +50,7 @@ export function mapSubscriptionToListItem(row: UserSubscriptionListItem, t: Tran
     communityId: row.programCommunity?.communityId,
     programType: row.programType ?? row.product.programType ?? PROGRAM_TYPE.COURSE,
     description: row.programCommunity?.description ?? row.product.description ?? null,
+    agreements: row.product.technicalSpecifications?.trim() || null,
     status: row.status,
     cancelAtPeriodEnd: Boolean(row.cancelAtPeriodEnd),
     canceledAt: row.canceledAt ?? null,

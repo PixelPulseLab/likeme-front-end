@@ -68,6 +68,8 @@ export interface UserSubscriptionListItem {
     type: string | null;
     description?: string | null;
     programType?: import('@/types/product/programType').ProgramType | null;
+    technicalSpecifications?: string | null;
+    categoryNames?: string[];
   };
   programCommunity?: {
     communityId: string;
@@ -86,6 +88,8 @@ export interface UserAcquiredServiceItem {
     image: string | null;
     type: string | null;
     description?: string | null;
+    technicalSpecifications?: string | null;
+    categoryNames?: string[];
   };
 }
 
