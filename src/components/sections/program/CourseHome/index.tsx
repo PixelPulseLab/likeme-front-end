@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Linking, Pressable, Text, View } from 'react-native';
+import { Linking, Modal, Pressable, Text, View } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { IconButton, SecondaryButton } from '@/components/ui/buttons';
 import { CachedImage } from '@/components/ui/media/CachedImage';
@@ -141,10 +141,12 @@ function CourseSubmoduleCard({
   submodule,
   locked,
   onOpenContent,
+  onLockedPress,
 }: {
   submodule: CourseSubmodule;
   locked: boolean;
   onOpenContent: (contentId: string) => void;
+  onLockedPress: () => void;
 }) {
   const { t } = useTranslation();
   const headingStyle = locked ? [styles.lessonHeading, styles.lessonHeadingLocked] : styles.lessonHeading;
@@ -171,13 +173,26 @@ function CourseSubmoduleCard({
           </View>
           {submodule.summary ? <Text style={summaryStyle}>{submodule.summary}</Text> : null}
         </View>
-        <SecondaryButton
-          label={t('profile.courseHome.seeMore', { defaultValue: 'Ver mais' })}
-          icon='chevron-right'
-          disabled={locked}
-          style={styles.seeMoreButton}
-          onPress={() => onOpenContent(submodule.content.id)}
-        />
+        {locked ? (
+          <Pressable onPress={onLockedPress} accessibilityRole='button'>
+            <View pointerEvents='none'>
+              <SecondaryButton
+                label={t('profile.courseHome.seeMore', { defaultValue: 'Ver mais' })}
+                icon='chevron-right'
+                disabled
+                style={styles.seeMoreButton}
+                onPress={() => undefined}
+              />
+            </View>
+          </Pressable>
+        ) : (
+          <SecondaryButton
+            label={t('profile.courseHome.seeMore', { defaultValue: 'Ver mais' })}
+            icon='chevron-right'
+            style={styles.seeMoreButton}
+            onPress={() => onOpenContent(submodule.content.id)}
+          />
+        )}
       </View>
     </View>
   );
@@ -203,7 +218,7 @@ function CourseContent({ submodule, onShare }: { submodule: CourseSubmodule; onS
     <View style={styles.lessonScreen}>
       <View style={styles.lessonVideo}>
         {content.video ? (
-          <VideoPlayer video={content.video} />
+          <VideoPlayer video={content.video} opensFullscreen />
         ) : content.coverUri ? (
           <CachedImage source={{ uri: content.coverUri }} style={styles.lessonPoster} />
         ) : null}
@@ -261,6 +276,37 @@ function CourseContent({ submodule, onShare }: { submodule: CourseSubmodule; onS
   );
 }
 
+function LockedContentNotice({ visible, onClose }: { visible: boolean; onClose: () => void }) {
+  const { t } = useTranslation();
+  const closeLabel = t('profile.courseLesson.lockedClose', { defaultValue: 'Fechar' });
+
+  return (
+    <Modal visible={visible} transparent animationType='fade' onRequestClose={onClose}>
+      <Pressable style={styles.lockedBackdrop} onPress={onClose} accessibilityLabel={closeLabel}>
+        <Pressable style={styles.lockedCard} onPress={() => undefined}>
+          <Icon name='lock-outline' size={40} color={COLORS.TEXT} />
+          <Text style={styles.lockedTitle}>
+            {t('profile.courseLesson.lockedTitle', { defaultValue: 'Esta aula ainda está bloqueada.' })}
+          </Text>
+          <Text style={styles.lockedBody}>
+            {t('profile.courseLesson.lockedBody', {
+              defaultValue: 'Conclua a aula anterior para continuar sua jornada.',
+            })}
+          </Text>
+          <Pressable
+            style={styles.lockedClose}
+            onPress={onClose}
+            accessibilityRole='button'
+            accessibilityLabel={closeLabel}
+          >
+            <Icon name='close' size={22} color={COLORS.TEXT} />
+          </Pressable>
+        </Pressable>
+      </Pressable>
+    </Modal>
+  );
+}
+
 function CourseSubmodules({
   courseModule,
   course,
@@ -271,6 +317,7 @@ function CourseSubmodules({
   onOpenContent: (contentId: string) => void;
 }) {
   const { t } = useTranslation();
+  const [lockedNoticeOpen, setLockedNoticeOpen] = useState(false);
   const orderLabel = String(courseModule.position).padStart(2, '0');
   const courseModuleTitle = `${orderLabel} - ${courseModule.title}`;
 
@@ -293,11 +340,17 @@ function CourseSubmodules({
           return (
             <View key={submodule.id}>
               {index > 0 ? <View style={styles.lessonSeparator} /> : null}
-              <CourseSubmoduleCard submodule={submodule} locked={isLocked} onOpenContent={onOpenContent} />
+              <CourseSubmoduleCard
+                submodule={submodule}
+                locked={isLocked}
+                onOpenContent={onOpenContent}
+                onLockedPress={() => setLockedNoticeOpen(true)}
+              />
             </View>
           );
         })}
       </View>
+      <LockedContentNotice visible={lockedNoticeOpen} onClose={() => setLockedNoticeOpen(false)} />
     </View>
   );
 }

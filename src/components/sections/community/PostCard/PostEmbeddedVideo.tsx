@@ -8,6 +8,7 @@ type Props = {
   videoUri: string;
   fillContainer?: boolean;
   onCollapse: () => void;
+  hideCollapse?: boolean;
   containerStyle?: StyleProp<ViewStyle>;
   onPlaybackError?: (error: OnVideoErrorData) => void;
 };
@@ -23,6 +24,7 @@ const PostEmbeddedVideoInner: React.FC<Props> = ({
   videoUri,
   fillContainer = false,
   onCollapse,
+  hideCollapse = false,
   containerStyle,
   onPlaybackError,
 }) => {
@@ -70,19 +72,21 @@ const PostEmbeddedVideoInner: React.FC<Props> = ({
         onLoad={onVideoLoad}
         onError={onVideoError}
       />
-      <Pressable
-        style={styles.collapseTouch}
-        onPress={(e) => {
-          e?.stopPropagation?.();
-          collapse();
-        }}
-        accessibilityRole='button'
-        accessibilityLabel='Voltar à capa do vídeo'
-      >
-        <View style={styles.collapseInner}>
-          <Icon name='keyboard-arrow-down' size={26} color='rgba(255,255,255,0.95)' />
-        </View>
-      </Pressable>
+      {hideCollapse ? null : (
+        <Pressable
+          style={styles.collapseTouch}
+          onPress={(e) => {
+            e?.stopPropagation?.();
+            collapse();
+          }}
+          accessibilityRole='button'
+          accessibilityLabel='Voltar à capa do vídeo'
+        >
+          <View style={styles.collapseInner}>
+            <Icon name='keyboard-arrow-down' size={26} color='rgba(255,255,255,0.95)' />
+          </View>
+        </Pressable>
+      )}
     </View>
   );
 };

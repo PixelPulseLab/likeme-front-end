@@ -1,17 +1,19 @@
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Linking, Pressable, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Linking, Modal, Pressable, Text, TouchableOpacity, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { CachedImage } from '@/components/ui/media/CachedImage';
 import { PostEmbeddedVideo } from '@/components/sections/community/PostCard/PostEmbeddedVideo';
 import { useTranslation } from '@/hooks/i18n';
 import type { Attachment } from '@/types/attachment';
-import { COLORS } from '@/constants';
+import { COLORS, SPACING } from '@/constants';
 import { logger } from '@/utils/logger';
 import { isRncWebViewTurboModuleLinked } from '@/utils/infrastructure/rncWebViewModule';
 import { styles } from './styles';
 
 type Props = {
   video: Attachment;
+  opensFullscreen?: boolean;
 };
 
 type WebViewComponent = React.ComponentType<{
@@ -32,8 +34,9 @@ function videoHasPlaybackUrl(video: Attachment): boolean {
   return Boolean(video.streamUrl?.trim() || video.playerUrl?.trim() || video.url?.trim());
 }
 
-export const VideoPlayer: React.FC<Props> = ({ video }) => {
+export const VideoPlayer: React.FC<Props> = ({ video, opensFullscreen = false }) => {
   const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
   const [playbackOpen, setPlaybackOpen] = useState(false);
   const [WebViewCmp, setWebViewCmp] = useState<WebViewComponent | null>(null);
   const [preferStreamFallback, setPreferStreamFallback] = useState(false);
@@ -144,16 +147,18 @@ export const VideoPlayer: React.FC<Props> = ({ video }) => {
               openPlayerExternally();
             }}
           />
-          <Pressable
-            style={styles.collapseTouch}
-            onPress={() => setPlaybackOpen(false)}
-            accessibilityRole='button'
-            accessibilityLabel={t('course.video.collapse', { defaultValue: 'Voltar à capa do vídeo' })}
-          >
-            <View style={styles.collapseInner}>
-              <Icon name='keyboard-arrow-down' size={26} color='rgba(255,255,255,0.95)' />
-            </View>
-          </Pressable>
+          {opensFullscreen ? null : (
+            <Pressable
+              style={styles.collapseTouch}
+              onPress={() => setPlaybackOpen(false)}
+              accessibilityRole='button'
+              accessibilityLabel={t('course.video.collapse', { defaultValue: 'Voltar à capa do vídeo' })}
+            >
+              <View style={styles.collapseInner}>
+                <Icon name='keyboard-arrow-down' size={26} color='rgba(255,255,255,0.95)' />
+              </View>
+            </Pressable>
+          )}
         </>
       );
     }
@@ -171,6 +176,7 @@ export const VideoPlayer: React.FC<Props> = ({ video }) => {
         <PostEmbeddedVideo
           videoUri={streamUrl}
           fillContainer
+          hideCollapse={opensFullscreen}
           onCollapse={() => setPlaybackOpen(false)}
           onPlaybackError={() => {
             logger.warn('[VideoPlayer] Falha no stream HLS; tentando embed ou URL externa', {
@@ -233,7 +239,9 @@ export const VideoPlayer: React.FC<Props> = ({ video }) => {
           <View style={styles.posterFallback} />
         )}
 
-        {!playbackOpen ? (
+        {playbackOpen && !opensFullscreen ? (
+          <View style={styles.playerOverlay}>{renderPlayer()}</View>
+        ) : (
           <TouchableOpacity
             style={styles.playOverlay}
             activeOpacity={0.9}
@@ -243,10 +251,31 @@ export const VideoPlayer: React.FC<Props> = ({ video }) => {
           >
             <Icon name='play-circle-outline' size={56} color='rgba(255,255,255,0.95)' />
           </TouchableOpacity>
-        ) : (
-          <View style={styles.playerOverlay}>{renderPlayer()}</View>
         )}
       </View>
+      {opensFullscreen && playbackOpen ? (
+        <Modal
+          visible
+          animationType='fade'
+          statusBarTranslucent
+          supportedOrientations={['portrait', 'landscape', 'landscape-left', 'landscape-right']}
+          onRequestClose={() => setPlaybackOpen(false)}
+        >
+          <View style={styles.fullscreenStage}>
+            <View style={styles.fullscreenPlayer}>{renderPlayer()}</View>
+            <Pressable
+              style={[styles.fullscreenClose, { top: insets.top + SPACING.SM }]}
+              onPress={() => setPlaybackOpen(false)}
+              accessibilityRole='button'
+              accessibilityLabel={t('course.video.collapse', { defaultValue: 'Voltar à capa do vídeo' })}
+            >
+              <View style={styles.collapseInner}>
+                <Icon name='close' size={22} color='rgba(255,255,255,0.95)' />
+              </View>
+            </Pressable>
+          </View>
+        </Modal>
+      ) : null}
     </View>
   );
 };

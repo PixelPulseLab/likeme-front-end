@@ -335,4 +335,34 @@ export const styles = StyleSheet.create({
     ...TYPOGRAPHY.bodyMdMedium,
     color: COLORS.NEUTRAL.LOW.PURE,
   },
+  lockedBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 17, 55, 0.55)',
+    justifyContent: 'center',
+    paddingHorizontal: SPACING.LG,
+  },
+  lockedCard: {
+    backgroundColor: COLORS.SECONDARY.PURE,
+    borderRadius: BORDER_RADIUS.XL,
+    alignItems: 'center',
+    gap: SPACING.MD,
+    paddingHorizontal: SPACING.XL,
+    paddingTop: SPACING.XXL + SPACING.XS,
+    paddingBottom: SPACING.XXL + SPACING.XS,
+  },
+  lockedClose: {
+    position: 'absolute',
+    top: SPACING.GAP_20,
+    right: SPACING.GAP_20,
+  },
+  lockedTitle: {
+    ...TYPOGRAPHY.title3,
+    color: COLORS.TEXT,
+    textAlign: 'center',
+  },
+  lockedBody: {
+    ...TYPOGRAPHY.bodySm,
+    color: COLORS.TEXT,
+    textAlign: 'center',
+  },
 });

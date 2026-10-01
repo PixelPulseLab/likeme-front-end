@@ -53,6 +53,18 @@ export const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 4,
   },
+  fullscreenStage: {
+    flex: 1,
+    backgroundColor: '#000',
+  },
+  fullscreenPlayer: {
+    flex: 1,
+  },
+  fullscreenClose: {
+    position: 'absolute',
+    right: SPACING.MD,
+    zIndex: 3,
+  },
   placeholder: {
     width: '100%',
     aspectRatio: 16 / 9,
