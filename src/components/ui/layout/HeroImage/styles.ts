@@ -133,4 +133,30 @@ export const styles = StyleSheet.create({
     marginTop: 16,
     width: '100%',
   },
+  compactSection: {
+    borderBottomLeftRadius: 32,
+    borderBottomRightRadius: 32,
+    overflow: 'hidden',
+  },
+  compactRadius: {
+    borderBottomLeftRadius: 32,
+    borderBottomRightRadius: 32,
+  },
+  compactOverlay: {
+    justifyContent: 'flex-end',
+    paddingHorizontal: SPACING.LG,
+    paddingBottom: SPACING.XL,
+  },
+  compactBottomBlock: {
+    paddingHorizontal: 0,
+  },
+  compactContent: {
+    paddingBottom: 0,
+  },
+  compactName: {
+    marginTop: SPACING.SM,
+  },
+  compactGradient: {
+    ...StyleSheet.absoluteFillObject,
+  },
 });

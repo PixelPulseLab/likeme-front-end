@@ -8,6 +8,8 @@ import { SecondaryButton } from '@/components/ui/buttons';
 import { type ButtonCarouselOption } from '@/components/ui/carousel';
 import InfoSectionTabsRow, { type InfoSectionMenuOption } from '@/components/ui/carousel/InfoSectionTabsRow';
 import { ModuleAccordion } from '@/components/sections/program';
+import { CourseHome } from '@/components/sections/program/CourseHome';
+import { buildCourse, formatCourseLiveWhen } from '@/components/sections/program/CourseHome/course';
 import { EventBanner } from '@/components/sections/community';
 import { EventWebViewSession } from '@/components/infrastructure/webview/EventWebViewSession';
 import { MarkdownText } from '@/components/ui/text/MarkdownText';
@@ -142,6 +144,8 @@ const ProtocolDetailScreen: React.FC<Props> = ({ navigation, route }) => {
   const [activeTab, setActiveTab] = useState<ProtocolTabId>('content');
   const [agreementsText, setAgreementsText] = useState(protocol?.agreements?.trim() ?? '');
   const [expandedModuleId, setExpandedModuleId] = useState<string | null>(null);
+  const [openCourseModuleId, setOpenCourseModuleId] = useState<string | null>(null);
+  const [openContentId, setOpenContentId] = useState<string | null>(null);
 
   const heroImageUri = protocol?.image?.trim() || (hasCommunity ? MEMBER_PROTOCOL_COMMUNITY_IMAGE_FALLBACK : '');
 
@@ -162,6 +166,8 @@ const ProtocolDetailScreen: React.FC<Props> = ({ navigation, route }) => {
     });
 
   const [protocolAccessedAt, setProtocolAccessedAt] = useState(() => Date.now());
+
+  const courseHome = useMemo(() => buildCourse(course?.steps ?? []), [course]);
 
   const courseModules: ModuleItem[] = useMemo(() => {
     if (!course?.steps?.length) {
@@ -271,6 +277,14 @@ const ProtocolDetailScreen: React.FC<Props> = ({ navigation, route }) => {
   );
 
   const handleBack = () => {
+    if (openContentId) {
+      setOpenContentId(null);
+      return;
+    }
+    if (openCourseModuleId) {
+      setOpenCourseModuleId(null);
+      return;
+    }
     goBackOrShareHome(navigation);
   };
 
@@ -401,6 +415,12 @@ const ProtocolDetailScreen: React.FC<Props> = ({ navigation, route }) => {
   });
   const pastDueBadgeLabel = t('profile.acquisitionList.statusPastDue', { defaultValue: 'Em atraso' });
   const unpaidBadgeLabel = t('profile.acquisitionList.statusUnpaid', { defaultValue: 'Inadimplente' });
+  const showsCourse = !isCanceledSubscription && !isUnpaidSubscription;
+  const openCourseModule = courseHome.modules.find((courseModule) => courseModule.id === openCourseModuleId) ?? null;
+  const contentHeaderTitle = openCourseModule?.title?.trim() || protocol.name;
+  const innerScreenTitle = openContentId ? contentHeaderTitle : protocol.name;
+  const courseHeaderTitle = openCourseModuleId ? innerScreenTitle : null;
+  const programBadge = t('profile.courseHome.programBadge', { defaultValue: 'Programa' });
   const heroBadges = (() => {
     const base = (protocol.badges ?? []).filter(Boolean);
     const statusBadge = isCanceledSubscription
@@ -418,6 +438,34 @@ const ProtocolDetailScreen: React.FC<Props> = ({ navigation, route }) => {
     const alreadyHas = base.some((badge) => badge.trim().toLowerCase() === statusBadge.toLowerCase());
     return alreadyHas ? base : [...base, statusBadge];
   })();
+  const courseHeroBadges = [
+    programBadge,
+    ...heroBadges.filter((badge) => badge.trim().toLowerCase() !== programBadge.trim().toLowerCase()),
+  ];
+  const liveImageUri = typeof eventBanner?.thumbnail === 'string' ? eventBanner.thumbnail.trim() : '';
+  const isLiveJoin = eventBanner?.variant === 'live_join';
+  const liveActionLabel = isLiveJoin
+    ? t('profile.courseHome.joinLive', { defaultValue: 'Entrar' })
+    : t('profile.courseHome.createReminder', { defaultValue: 'Criar lembrete' });
+  const liveHost = eventBanner?.host.trim() ?? '';
+  const liveMessage = liveHost
+    ? t('profile.courseHome.nextLiveMessage', {
+        host: liveHost,
+        defaultValue: 'Não perca a próxima live de {{host}}.',
+      })
+    : eventBanner?.title ?? '';
+  const liveCard =
+    eventBanner && liveImageUri
+      ? {
+          imageUri: liveImageUri,
+          message: liveMessage,
+          whenLabel: formatCourseLiveWhen(eventBanner.startTime),
+          actionLabel: liveActionLabel,
+          onAction: () => {
+            void (isLiveJoin ? handleEventBannerPress(eventBanner) : handleEventBannerCtaPress(eventBanner));
+          },
+        }
+      : null;
   const canceledOnLabel = formatSubscriptionManageDate(
     subscriptionCanceledOnDate({
       ...subscriptionFields,
@@ -602,37 +650,83 @@ const ProtocolDetailScreen: React.FC<Props> = ({ navigation, route }) => {
       headerProps={{
         showBackButton: true,
         onBackPress: handleBack,
+        customLogo: courseHeaderTitle ? (
+          <Text style={styles.headerTitle} numberOfLines={1}>
+            {courseHeaderTitle}
+          </Text>
+        ) : undefined,
       }}
       contentContainerStyle={styles.container}
       contentBackgroundColor={COLORS.BACKGROUND}
     >
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        <HeroImage
-          imageUri={heroImageUri}
-          name={protocol.name}
-          badges={heroBadges}
-          heightRatio={0.6}
-          desaturated={subscriptionIsDesaturatedPresentation(subscriptionFields)}
-          footer={
-            aboutText ? (
-              <View style={styles.heroFooter}>
-                <Text style={styles.heroDescription}>{aboutText}</Text>
+        {showsCourse ? (
+          <>
+            {courseHeaderTitle ? null : (
+              <HeroImage
+                variant='compact'
+                imageUri={heroImageUri}
+                name={protocol.name}
+                badges={courseHeroBadges}
+                desaturated={subscriptionIsDesaturatedPresentation(subscriptionFields)}
+              />
+            )}
+            {isCancelingSubscription ? renderCancelingNotice() : null}
+            {contentLoading ? (
+              <View style={styles.loaderWrap}>
+                <ActivityIndicator size='large' color={COLORS.PRIMARY.PURE} />
               </View>
-            ) : undefined
-          }
-        />
+            ) : (
+              <CourseHome
+                welcomeName={protocol.name}
+                description={aboutText}
+                course={courseHome}
+                live={liveCard}
+                openCourseModuleId={openCourseModuleId}
+                openContentId={openContentId}
+                onOpenCourseModule={(courseModuleId) => {
+                  setOpenContentId(null);
+                  setOpenCourseModuleId(courseModuleId);
+                }}
+                onOpenContent={setOpenContentId}
+                onShareContent={() => {
+                  void handleSharePress();
+                }}
+              />
+            )}
+          </>
+        ) : (
+          <>
+            <HeroImage
+              imageUri={heroImageUri}
+              name={protocol.name}
+              badges={heroBadges}
+              heightRatio={0.6}
+              desaturated={subscriptionIsDesaturatedPresentation(subscriptionFields)}
+              footer={
+                aboutText ? (
+                  <View style={styles.heroFooter}>
+                    <Text style={styles.heroDescription}>{aboutText}</Text>
+                  </View>
+                ) : undefined
+              }
+            />
 
-        <View style={styles.infoSection}>
-          <Text style={styles.sectionTitle}>{t('community.informationTitle', { defaultValue: 'Informações' })}</Text>
-          <InfoSectionTabsRow
-            options={TAB_OPTIONS}
-            selectedId={activeTab}
-            onSelect={handleTabSelect}
-            menuOptions={protocolMenuOptions}
-          />
-        </View>
+            <View style={styles.infoSection}>
+              <Text style={styles.sectionTitle}>
+                {t('community.informationTitle', { defaultValue: 'Informações' })}
+              </Text>
+              <InfoSectionTabsRow
+                options={TAB_OPTIONS}
+                selectedId={activeTab}
+                onSelect={handleTabSelect}
+                menuOptions={protocolMenuOptions}
+              />
+            </View>
 
-        {renderTabContent()}
+            {renderTabContent()}
+          </>
+        )}
       </ScrollView>
       {eventJoinUrl ? <EventWebViewSession url={eventJoinUrl} onClose={closeEventSession} /> : null}
     </ScreenWithHeader>

@@ -49,6 +49,14 @@ export const styles = StyleSheet.create({
     color: COLORS.WHITE,
     marginBottom: SPACING.SM,
   },
+  headerTitle: {
+    fontFamily: FONT_FAMILY.DM_SANS_BOLD,
+    fontSize: 16,
+    lineHeight: 20,
+    color: COLORS.TEXT,
+    maxWidth: 220,
+    textAlign: 'center',
+  },
   canceledNoticeCard: {
     marginHorizontal: SPACING.MD,
     backgroundColor: COLORS.BACKGROUND_SECONDARY,
