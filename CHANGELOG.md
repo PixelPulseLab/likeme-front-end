@@ -385,3 +385,16 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 
 ### Corrigido
 - Puxar para atualizar recarrega a página do produto e do profissional
+
+## [1.20.0] - 2026-10-01
+
+### Adicionado
+- Meus programas e serviços separa programas, serviços e eventos
+- A home do curso mostra a jornada, os módulos e o progresso
+- O vídeo da aula abre em tela cheia
+
+### Alterado
+- A atividade abre direto pelo card
+
+### Corrigido
+- Aula bloqueada avisa para concluir a anterior, sem abrir o conteúdo

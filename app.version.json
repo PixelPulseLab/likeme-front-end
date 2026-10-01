@@ -1,19 +1,23 @@
 {
-  "version": "1.19.0",
-  "releasedAt": "2026-09-29",
+  "version": "1.20.0",
+  "releasedAt": "2026-10-01",
   "android": {
-    "versionCode": 267
+    "versionCode": 268
   },
   "ios": {
-    "buildNumber": 43
+    "buildNumber": 44
   },
   "changelog": {
     "added": [
-      "No checkout, usa um cartão já salvo ou cadastra outro",
-      "No pagamento, escolhe o parcelamento do produto"
+      "Meus programas e serviços separa programas, serviços e eventos",
+      "A home do curso mostra a jornada, os módulos e o progresso",
+      "O vídeo da aula abre em tela cheia"
+    ],
+    "changed": [
+      "A atividade abre direto pelo card"
     ],
     "fixed": [
-      "Puxar para atualizar recarrega a página do produto e do profissional"
+      "Aula bloqueada avisa para concluir a anterior, sem abrir o conteúdo"
     ]
   }
 }
