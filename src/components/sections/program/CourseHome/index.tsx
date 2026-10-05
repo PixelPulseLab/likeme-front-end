@@ -1,12 +1,15 @@
 import { useState, type ReactNode } from 'react';
-import { Linking, Modal, Pressable, Text, View } from 'react-native';
+import { Image, Linking, Modal, Pressable, Text, View } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { IconButton, SecondaryButton } from '@/components/ui/buttons';
 import { CachedImage } from '@/components/ui/media/CachedImage';
 import { MarkdownText } from '@/components/ui/text/MarkdownText';
+import PostImageFullscreenModal from '@/components/sections/community/PostAttachments/PostImageFullscreenModal';
 import { VideoPlayer } from '@/components/sections/program/VideoPlayer';
 import { COLORS } from '@/constants';
 import { useTranslation } from '@/hooks/i18n';
+import type { Attachment } from '@/types/attachment';
+import { communityFileKindIconSource } from '@/utils/community/communityFileKindIconSource';
 import { logger } from '@/utils/logger';
 import {
   COURSE_MODULE_STATUS,
@@ -44,6 +47,26 @@ const CONTENT_TAB = {
 } as const;
 
 type ContentTab = (typeof CONTENT_TAB)[keyof typeof CONTENT_TAB];
+
+function materialSizeLabel(sizeBytes: number | undefined): string | null {
+  if (sizeBytes == null || !Number.isFinite(sizeBytes) || sizeBytes < 0) {
+    return null;
+  }
+  if (sizeBytes < 1024) {
+    return `${Math.round(sizeBytes)} B`;
+  }
+  const kilobytes = sizeBytes / 1024;
+  if (kilobytes < 1024) {
+    return `${Math.max(1, Math.round(kilobytes))}kb`;
+  }
+  const megabytes = kilobytes / 1024;
+  const rounded = megabytes >= 10 ? Math.round(megabytes) : Math.round(megabytes * 10) / 10;
+  return `${rounded}mb`;
+}
+
+function lessonMaterials(content: CourseContent): Attachment[] {
+  return content.attachments.filter((attachment) => attachment.type !== 'video' || !content.video);
+}
 
 function contentCountLabel(count: number, t: (key: string, options?: Record<string, unknown>) => string): string {
   if (count === 1) {
@@ -232,15 +255,20 @@ function CourseSubmoduleCard({
 function CourseContent({ content, onShare }: { content: CourseContent; onShare?: () => void }) {
   const { t } = useTranslation();
   const [tab, setTab] = useState<ContentTab>(CONTENT_TAB.ABOUT);
-  const materialAttachments = content.attachments.filter((attachment) => attachment.type !== 'video' || !content.video);
+  const [openImageUrl, setOpenImageUrl] = useState<string | null>(null);
+  const materialAttachments = lessonMaterials(content);
 
-  const openMaterial = (url: string, fileName: string) => {
-    const target = url.trim();
+  const openMaterial = (attachment: Attachment) => {
+    const target = attachment.url.trim();
     if (!target) {
       return;
     }
+    if (attachment.type === 'image') {
+      setOpenImageUrl(target);
+      return;
+    }
     void Linking.openURL(target).catch((cause) => {
-      logger.error('[CourseContent] Falha ao abrir material', { fileName, url: target, cause });
+      logger.error('[CourseContent] Falha ao abrir material', { fileName: attachment.fileName, url: target, cause });
     });
   };
 
@@ -288,13 +316,7 @@ function CourseContent({ content, onShare }: { content: CourseContent; onShare?:
       ) : null}
       {tab === CONTENT_TAB.MATERIALS
         ? materialAttachments.map((attachment) => (
-            <Pressable
-              key={attachment.id}
-              style={styles.materialRow}
-              onPress={() => openMaterial(attachment.url, attachment.fileName)}
-            >
-              <Text style={styles.materialName}>{attachment.fileName}</Text>
-            </Pressable>
+            <LessonMaterialCard key={attachment.id} attachment={attachment} onOpen={openMaterial} />
           ))
         : null}
       {tab === CONTENT_TAB.COMMENTS ? (
@@ -302,7 +324,46 @@ function CourseContent({ content, onShare }: { content: CourseContent; onShare?:
           {t('profile.courseLesson.commentsEmpty', { defaultValue: 'Nenhum comentário nesta aula.' })}
         </Text>
       ) : null}
+      <PostImageFullscreenModal
+        uris={openImageUrl ? [openImageUrl] : []}
+        initialIndex={0}
+        visible={openImageUrl != null}
+        onClose={() => setOpenImageUrl(null)}
+      />
     </View>
+  );
+}
+
+function LessonMaterialCard({
+  attachment,
+  onOpen,
+}: {
+  attachment: Attachment;
+  onOpen: (attachment: Attachment) => void;
+}) {
+  const sizeLabel = materialSizeLabel(attachment.sizeBytes);
+  const isImage = attachment.type === 'image' && Boolean(attachment.url.trim());
+  const thumb = isImage ? (
+    <CachedImage source={{ uri: attachment.url }} style={styles.materialThumb} />
+  ) : (
+    <View style={styles.materialIconWrap}>
+      <Image source={communityFileKindIconSource(attachment.type)} style={styles.materialIcon} />
+    </View>
+  );
+
+  return (
+    <Pressable
+      style={styles.materialCard}
+      onPress={() => onOpen(attachment)}
+      accessibilityRole='button'
+      accessibilityLabel={attachment.fileName}
+    >
+      {thumb}
+      <View style={styles.materialCopy}>
+        <Text style={styles.materialName}>{attachment.fileName}</Text>
+        {sizeLabel && <Text style={styles.materialSize}>{sizeLabel}</Text>}
+      </View>
+    </Pressable>
   );
 }
 

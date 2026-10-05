@@ -326,14 +326,42 @@ export const styles = StyleSheet.create({
   tabLabelSelected: {
     color: COLORS.SECONDARY.PURE,
   },
-  materialRow: {
-    paddingVertical: SPACING.MD,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: COLORS.NEUTRAL.LOW.LIGHT,
+  materialCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.MD,
+    padding: SPACING.MD,
+    borderRadius: BORDER_RADIUS.LG,
+    backgroundColor: COLORS.SECONDARY.PURE,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: COLORS.NEUTRAL.LOW.LIGHT,
+  },
+  materialThumb: {
+    width: 64,
+    height: 64,
+    borderRadius: BORDER_RADIUS.MD,
+  },
+  materialIconWrap: {
+    width: 64,
+    height: 64,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  materialIcon: {
+    width: 40,
+    height: 40,
+  },
+  materialCopy: {
+    flex: 1,
+    gap: SPACING.XS,
   },
   materialName: {
     ...TYPOGRAPHY.bodyMdMedium,
     color: COLORS.NEUTRAL.LOW.PURE,
+  },
+  materialSize: {
+    ...TYPOGRAPHY.bodySm,
+    color: COLORS.NEUTRAL.LOW.MEDIUM,
   },
   lockedBackdrop: {
     flex: 1,
