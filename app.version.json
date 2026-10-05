@@ -1,23 +1,18 @@
 {
-  "version": "1.20.0",
-  "releasedAt": "2026-10-01",
+  "version": "1.20.1",
+  "releasedAt": "2026-10-05",
   "android": {
-    "versionCode": 268
+    "versionCode": 269
   },
   "ios": {
-    "buildNumber": 44
+    "buildNumber": 45
   },
   "changelog": {
     "added": [
-      "Meus programas e serviços separa programas, serviços e eventos",
-      "A home do curso mostra a jornada, os módulos e o progresso",
-      "O vídeo da aula abre em tela cheia"
+      "A jornada do curso abre módulo, submódulo e conteúdo"
     ],
     "changed": [
-      "A atividade abre direto pelo card"
-    ],
-    "fixed": [
-      "Aula bloqueada avisa para concluir a anterior, sem abrir o conteúdo"
+      "A tela do módulo abre o conteúdo direto, sem listagem extra"
     ]
   }
 }

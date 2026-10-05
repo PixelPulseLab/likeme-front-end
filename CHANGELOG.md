@@ -398,3 +398,11 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 
 ### Corrigido
 - Aula bloqueada avisa para concluir a anterior, sem abrir o conteúdo
+
+## [1.20.1] - 2026-10-05
+
+### Adicionado
+- A jornada do curso abre módulo, submódulo e conteúdo
+
+### Alterado
+- A tela do módulo abre o conteúdo direto, sem listagem extra
