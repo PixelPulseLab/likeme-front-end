@@ -18,6 +18,10 @@ export type ProgramCourseContent = {
   body: string | null;
   attachments: Attachment[];
   video?: Attachment | null;
+  durationMinutes?: number | null;
+  level?: string | null;
+  learningOutcomes?: string[];
+  tips?: string[];
 };
 
 export type ProgramCourseSubmodule = {

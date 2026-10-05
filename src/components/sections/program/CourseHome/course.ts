@@ -17,6 +17,10 @@ export type CourseContent = {
   video: Attachment | null;
   attachments: Attachment[];
   completed: boolean;
+  durationMinutes: number | null;
+  level: string | null;
+  learningOutcomes: string[];
+  tips: string[];
 };
 
 export type CourseSubmodule = {
@@ -88,6 +92,10 @@ function contentFromStep(step: CourseStep, completedStepIds: ReadonlySet<string>
     video: step.video?.id?.trim() ? step.video : null,
     attachments: step.attachments ?? [],
     completed: completedStepIds.has(step.postId),
+    durationMinutes: null,
+    level: null,
+    learningOutcomes: [],
+    tips: [],
   };
 }
 
@@ -112,6 +120,10 @@ function contentFromOutline(content: ProgramCourseContent, completedStepIds: Rea
     video: content.video?.id?.trim() ? content.video : null,
     attachments: content.attachments ?? [],
     completed: completedStepIds.has(content.id),
+    durationMinutes: content.durationMinutes ?? null,
+    level: content.level?.trim() || null,
+    learningOutcomes: content.learningOutcomes ?? [],
+    tips: content.tips ?? [],
   };
 }
 

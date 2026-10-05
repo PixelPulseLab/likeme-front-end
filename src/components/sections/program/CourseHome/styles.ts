@@ -301,6 +301,31 @@ export const styles = StyleSheet.create({
     ...TYPOGRAPHY.bodySm,
     color: COLORS.NEUTRAL.LOW.DARK,
   },
+  lessonFacts: {
+    gap: SPACING.MD,
+  },
+  lessonFact: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: SPACING.GAP_20,
+  },
+  lessonFactCopy: {
+    flex: 1,
+    gap: SPACING.SM,
+  },
+  lessonFactTitle: {
+    fontFamily: FONT_FAMILY.DM_SANS_BOLD,
+    fontSize: FONT_SIZES.SM,
+    letterSpacing: 0.2,
+    color: COLORS.NEUTRAL.LOW.PURE,
+  },
+  lessonFactBody: {
+    ...TYPOGRAPHY.bodySm,
+    color: COLORS.NEUTRAL.LOW.PURE,
+  },
+  lessonFactList: {
+    gap: SPACING.XS,
+  },
   lessonComplete: {
     marginTop: SPACING.SM,
   },

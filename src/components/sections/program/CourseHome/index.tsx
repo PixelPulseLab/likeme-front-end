@@ -1,6 +1,11 @@
-import { useState, type ReactNode } from 'react';
+import { useState, type FC, type ReactNode } from 'react';
 import { Image, Linking, Modal, Pressable, Text, View } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import type { SvgProps } from 'react-native-svg';
+import LessonAwardIcon from '@/assets/course/lesson-award.svg';
+import LessonBookIcon from '@/assets/course/lesson-book.svg';
+import LessonCrownIcon from '@/assets/course/lesson-crown.svg';
+import LessonTimerIcon from '@/assets/course/lesson-timer.svg';
 import { IconButton, SecondaryButton } from '@/components/ui/buttons';
 import { CachedImage } from '@/components/ui/media/CachedImage';
 import { MarkdownText } from '@/components/ui/text/MarkdownText';
@@ -253,6 +258,30 @@ function CourseSubmoduleCard({
   );
 }
 
+function LessonFact({ icon: FactIcon, title, children }: { icon: FC<SvgProps>; title: string; children: ReactNode }) {
+  return (
+    <View style={styles.lessonFact}>
+      <FactIcon />
+      <View style={styles.lessonFactCopy}>
+        <Text style={styles.lessonFactTitle}>{title}</Text>
+        {children}
+      </View>
+    </View>
+  );
+}
+
+function LessonFactLines({ lines }: { lines: string[] }) {
+  return (
+    <View style={styles.lessonFactList}>
+      {lines.map((line, index) => (
+        <Text key={`${index}-${line}`} style={styles.lessonFactBody}>
+          {`• ${line}`}
+        </Text>
+      ))}
+    </View>
+  );
+}
+
 function CourseContent({
   content,
   onShare,
@@ -267,6 +296,17 @@ function CourseContent({
   const [openImageUrl, setOpenImageUrl] = useState<string | null>(null);
   const [completing, setCompleting] = useState(false);
   const materialAttachments = lessonMaterials(content);
+  let durationLabel: string | null = null;
+  if (content.durationMinutes === 1) {
+    durationLabel = t('profile.courseLesson.durationOne', { defaultValue: '1 minuto' });
+  } else if (content.durationMinutes != null && content.durationMinutes > 1) {
+    durationLabel = t('profile.courseLesson.durationMany', {
+      count: content.durationMinutes,
+      defaultValue: '{{count}} minutos',
+    });
+  }
+  const hasLessonFacts =
+    durationLabel != null || Boolean(content.level) || content.learningOutcomes.length > 0 || content.tips.length > 0;
 
   const openMaterial = (attachment: Attachment) => {
     const target = attachment.url.trim();
@@ -309,6 +349,7 @@ function CourseContent({
         <Text style={styles.lessonScreenTitle}>{content.title}</Text>
         {onShare ? <IconButton icon='share' variant='light' backgroundSize='medium' onPress={onShare} /> : null}
       </View>
+      {content.body ? <MarkdownText style={styles.lessonBody} text={content.body} /> : null}
       <View style={styles.tabRow}>
         {(
           [
@@ -325,10 +366,40 @@ function CourseContent({
           );
         })}
       </View>
-      {tab === CONTENT_TAB.ABOUT && content.body ? (
-        <MarkdownText style={styles.lessonBody} text={content.body} />
+      {tab === CONTENT_TAB.ABOUT && hasLessonFacts ? (
+        <View style={styles.lessonFacts}>
+          {durationLabel ? (
+            <LessonFact
+              icon={LessonTimerIcon}
+              title={t('profile.courseLesson.durationTitle', { defaultValue: 'Duração' })}
+            >
+              <Text style={styles.lessonFactBody}>{durationLabel}</Text>
+            </LessonFact>
+          ) : null}
+          {content.level ? (
+            <LessonFact icon={LessonAwardIcon} title={t('profile.courseLesson.levelTitle', { defaultValue: 'Nível' })}>
+              <Text style={styles.lessonFactBody}>{content.level}</Text>
+            </LessonFact>
+          ) : null}
+          {content.learningOutcomes.length > 0 ? (
+            <LessonFact
+              icon={LessonBookIcon}
+              title={t('profile.courseLesson.learningTitle', { defaultValue: 'O que você vai aprender' })}
+            >
+              <LessonFactLines lines={content.learningOutcomes} />
+            </LessonFact>
+          ) : null}
+          {content.tips.length > 0 ? (
+            <LessonFact
+              icon={LessonCrownIcon}
+              title={t('profile.courseLesson.tipTitle', { defaultValue: 'Dica da Betina' })}
+            >
+              <LessonFactLines lines={content.tips} />
+            </LessonFact>
+          ) : null}
+        </View>
       ) : null}
-      {tab === CONTENT_TAB.ABOUT && !content.body ? (
+      {tab === CONTENT_TAB.ABOUT && !content.body && !hasLessonFacts ? (
         <Text style={styles.lessonBody}>
           {t('profile.courseLesson.aboutEmpty', { defaultValue: 'Esta aula ainda não tem descrição.' })}
         </Text>

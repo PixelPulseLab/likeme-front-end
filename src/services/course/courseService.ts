@@ -7,6 +7,10 @@ function mapProgramCourseContent(content: ProgramCourseContent): ProgramCourseCo
     ...content,
     attachments: content.attachments ?? [],
     video: content.video?.id?.trim() ? content.video : null,
+    durationMinutes: content.durationMinutes ?? null,
+    level: content.level ?? null,
+    learningOutcomes: content.learningOutcomes ?? [],
+    tips: content.tips ?? [],
   };
 }
 
