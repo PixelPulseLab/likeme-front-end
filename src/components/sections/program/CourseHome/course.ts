@@ -1,5 +1,5 @@
 import type { Attachment } from '@/types/attachment';
-import type { CourseStep } from '@/types/course/course';
+import type { CourseStep, ProgramCourseContent, ProgramCourseModule } from '@/types/course/course';
 
 export const COURSE_MODULE_STATUS = {
   AVAILABLE: 'available',
@@ -16,14 +16,16 @@ export type CourseContent = {
   coverUri: string | null;
   video: Attachment | null;
   attachments: Attachment[];
+  completed: boolean;
 };
 
 export type CourseSubmodule = {
   id: string;
+  position: number;
   title: string;
   summary: string | null;
   completed: boolean;
-  content: CourseContent;
+  contents: CourseContent[];
 };
 
 export type CourseModule = {
@@ -65,16 +67,19 @@ function contentSummary(body: string | null): string | null {
   return `${plain.slice(0, 137)}...`;
 }
 
-function contentCoverUri(step: CourseStep): string | null {
-  const poster = step.video?.posterUrl?.trim();
+function contentCoverUri(source: {
+  video?: { posterUrl?: string | null; id?: string } | null;
+  attachments?: Attachment[];
+}): string | null {
+  const poster = source.video?.posterUrl?.trim();
   if (poster) {
     return poster;
   }
-  const image = step.attachments.find((attachment) => attachment.type === 'image' && attachment.url.trim());
+  const image = (source.attachments ?? []).find((attachment) => attachment.type === 'image' && attachment.url.trim());
   return image?.url.trim() || null;
 }
 
-function contentFromStep(step: CourseStep): CourseContent {
+function contentFromStep(step: CourseStep, completedStepIds: ReadonlySet<string>): CourseContent {
   return {
     id: step.postId,
     title: step.title,
@@ -82,21 +87,64 @@ function contentFromStep(step: CourseStep): CourseContent {
     coverUri: contentCoverUri(step),
     video: step.video?.id?.trim() ? step.video : null,
     attachments: step.attachments ?? [],
+    completed: completedStepIds.has(step.postId),
   };
 }
 
 function submoduleFromStep(step: CourseStep, completedStepIds: ReadonlySet<string>): CourseSubmodule {
-  const content = contentFromStep(step);
+  const content = contentFromStep(step, completedStepIds);
   return {
     id: step.postId,
+    position: 1,
     title: step.title,
     summary: contentSummary(step.body),
-    completed: completedStepIds.has(step.postId),
-    content,
+    completed: content.completed,
+    contents: [content],
   };
 }
 
-export function buildCourse(steps: CourseStep[], completedStepIds: ReadonlySet<string> = new Set()): Course {
+function contentFromOutline(content: ProgramCourseContent, completedStepIds: ReadonlySet<string>): CourseContent {
+  return {
+    id: content.id,
+    title: content.title,
+    body: content.body,
+    coverUri: contentCoverUri(content),
+    video: content.video?.id?.trim() ? content.video : null,
+    attachments: content.attachments ?? [],
+    completed: completedStepIds.has(content.id),
+  };
+}
+
+function courseFromModules(modules: CourseModule[]): Course {
+  const contents = modules.flatMap((courseModule) =>
+    courseModule.submodules.flatMap((submodule) => submodule.contents),
+  );
+  const completedContents = contents.filter((content) => content.completed).length;
+  const continueModule = modules.find((courseModule) => courseModule.status === COURSE_MODULE_STATUS.AVAILABLE) ?? null;
+  const continueSubmodule =
+    continueModule?.submodules.find((submodule) => submodule.contents.some((content) => !content.completed)) ?? null;
+  const continueContentItem = continueSubmodule?.contents.find((content) => !content.completed) ?? null;
+  const continueSummary = continueSubmodule?.summary ?? contentSummary(continueContentItem?.body ?? null);
+  const continueContent =
+    continueModule && continueContentItem
+      ? {
+          courseModuleId: continueModule.id,
+          courseModuleTitle: continueModule.title,
+          contentTitle: continueContentItem.title,
+          summary: continueSummary,
+          coverUri: continueContentItem.coverUri,
+        }
+      : null;
+
+  return {
+    modules,
+    completedContents,
+    totalContents: contents.length,
+    continueContent,
+  };
+}
+
+function buildSteppedCourse(steps: CourseStep[], completedStepIds: ReadonlySet<string>): Course {
   const modules: CourseModule[] = [];
   let previousModuleCompleted = true;
 
@@ -122,27 +170,64 @@ export function buildCourse(steps: CourseStep[], completedStepIds: ReadonlySet<s
     previousModuleCompleted = isCompleted;
   });
 
-  const submodules = modules.flatMap((courseModule) => courseModule.submodules);
-  const completedContents = submodules.filter((submodule) => submodule.completed).length;
-  const continueModule = modules.find((courseModule) => courseModule.status === COURSE_MODULE_STATUS.AVAILABLE) ?? null;
-  const continueSubmodule = continueModule?.submodules.find((submodule) => !submodule.completed) ?? null;
-  const continueContent =
-    continueModule && continueSubmodule
-      ? {
-          courseModuleId: continueModule.id,
-          courseModuleTitle: continueModule.title,
-          contentTitle: continueSubmodule.content.title,
-          summary: continueSubmodule.summary,
-          coverUri: continueSubmodule.content.coverUri,
-        }
-      : null;
+  return courseFromModules(modules);
+}
 
-  return {
-    modules,
-    completedContents,
-    totalContents: submodules.length,
-    continueContent,
-  };
+function buildOutlinedCourse(outline: ProgramCourseModule[], completedStepIds: ReadonlySet<string>): Course {
+  const modules: CourseModule[] = [];
+  let previousModuleCompleted = true;
+  const orderedModules = [...outline].sort((left, right) => left.position - right.position);
+
+  for (const outlineModule of orderedModules) {
+    const submodules = [...outlineModule.submodules]
+      .sort((left, right) => left.position - right.position)
+      .map((outlineSubmodule) => {
+        const contents = [...outlineSubmodule.contents]
+          .sort((left, right) => left.position - right.position)
+          .map((content) => contentFromOutline(content, completedStepIds));
+        const completed = contents.length > 0 && contents.every((content) => content.completed);
+        return {
+          id: outlineSubmodule.id,
+          position: outlineSubmodule.position,
+          title: outlineSubmodule.title,
+          summary: outlineSubmodule.summary,
+          completed,
+          contents,
+        };
+      });
+    const moduleContents = submodules.flatMap((submodule) => submodule.contents);
+    const isCompleted = moduleContents.length > 0 && moduleContents.every((content) => content.completed);
+    let status: CourseModuleStatus = COURSE_MODULE_STATUS.LOCKED;
+    if (isCompleted) {
+      status = COURSE_MODULE_STATUS.COMPLETED;
+    } else if (previousModuleCompleted) {
+      status = COURSE_MODULE_STATUS.AVAILABLE;
+    }
+    const blocksNextModule = moduleContents.length > 0 && !isCompleted;
+    previousModuleCompleted = !blocksNextModule;
+
+    modules.push({
+      id: outlineModule.id,
+      position: outlineModule.position,
+      title: outlineModule.title,
+      summary: outlineModule.summary,
+      status,
+      submodules,
+    });
+  }
+
+  return courseFromModules(modules);
+}
+
+export function buildCourse(
+  steps: CourseStep[],
+  completedStepIds: ReadonlySet<string> = new Set(),
+  outline: ProgramCourseModule[] = [],
+): Course {
+  if (outline.length > 0) {
+    return buildOutlinedCourse(outline, completedStepIds);
+  }
+  return buildSteppedCourse(steps, completedStepIds);
 }
 
 export function formatCourseLiveWhen(startTime: string): string {
