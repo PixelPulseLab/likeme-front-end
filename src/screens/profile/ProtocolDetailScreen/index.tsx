@@ -21,6 +21,7 @@ import { MEMBER_PROTOCOL_COMMUNITY_IMAGE_FALLBACK } from '@/constants/community/
 import { SHARE_CONTENT_TYPES } from '@/constants/share';
 import type { ProtocolDetailProtocol, RootStackParamList } from '@/types/navigation';
 import type { ModuleItem } from '@/components/sections/program/ModuleAccordion';
+import { courseService } from '@/services/course/courseService';
 import productService from '@/services/product/productService';
 import { subscriptionService } from '@/services/payment/subscriptionService';
 import { COLORS } from '@/constants';
@@ -149,10 +150,11 @@ const ProtocolDetailScreen: React.FC<Props> = ({ navigation, route }) => {
 
   const heroImageUri = protocol?.image?.trim() || (hasCommunity ? MEMBER_PROTOCOL_COMMUNITY_IMAGE_FALLBACK : '');
 
-  const { course, loading: courseLoading } = useProgramCourse(
-    communityId,
-    hasCommunity && hasActiveProtocolAccess && !opensCommunityFeed,
-  );
+  const {
+    course,
+    loading: courseLoading,
+    reload: reloadCourse,
+  } = useProgramCourse(communityId, hasCommunity && hasActiveProtocolAccess && !opensCommunityFeed);
   const { eventBanner, eventJoinUrl, closeEventSession, handleEventBannerPress, handleEventBannerCtaPress } =
     useCommunityEventBanner({
       enabled: hasCommunity && hasActiveProtocolAccess && !opensCommunityFeed,
@@ -167,7 +169,16 @@ const ProtocolDetailScreen: React.FC<Props> = ({ navigation, route }) => {
 
   const [protocolAccessedAt, setProtocolAccessedAt] = useState(() => Date.now());
 
-  const courseHome = useMemo(() => buildCourse(course?.steps ?? [], new Set(), course?.modules ?? []), [course]);
+  const courseHome = useMemo(
+    () => buildCourse(course?.steps ?? [], new Set(course?.completedContentIds ?? []), course?.modules ?? []),
+    [course],
+  );
+  const completeContent = course?.modules?.length
+    ? async (contentId: string) => {
+        await courseService.completeProgramContent(communityId, contentId);
+        await reloadCourse();
+      }
+    : undefined;
 
   const courseModules: ModuleItem[] = useMemo(() => {
     if (!course?.steps?.length) {
@@ -689,6 +700,7 @@ const ProtocolDetailScreen: React.FC<Props> = ({ navigation, route }) => {
                   setOpenCourseModuleId(courseModuleId);
                 }}
                 onOpenContent={setOpenContentId}
+                onCompleteContent={completeContent}
                 onShareContent={() => {
                   void handleSharePress();
                 }}

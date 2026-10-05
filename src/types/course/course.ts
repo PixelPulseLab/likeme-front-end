@@ -41,4 +41,5 @@ export type ProgramCourse = {
   communityId: string;
   steps: CourseStep[];
   modules?: ProgramCourseModule[];
+  completedContentIds: string[];
 };

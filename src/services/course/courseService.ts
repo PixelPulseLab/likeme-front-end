@@ -45,8 +45,21 @@ class CourseService {
           video: step.video?.id?.trim() ? step.video : null,
         })),
         modules: (response.data.modules ?? []).map(mapProgramCourseModule),
+        completedContentIds: response.data.completedContentIds ?? [],
       },
     };
+  }
+
+  async completeProgramContent(communityId: string, contentId: string): Promise<void> {
+    const response = await apiClient.post<ApiResponse<{ completedContentIds: string[] }>>(
+      `/api/courses/program/communities/${encodeURIComponent(communityId.trim())}/contents/${encodeURIComponent(
+        contentId.trim(),
+      )}/completion`,
+    );
+    const isSuccess = response.success === true || (response as { status?: string }).status === 'success';
+    if (!isSuccess) {
+      throw new Error(response.message || 'Erro ao concluir a aula');
+    }
   }
 }
 

@@ -37,6 +37,7 @@ type Props = {
   openContentId: string | null;
   onOpenCourseModule: (courseModuleId: string) => void;
   onOpenContent: (contentId: string) => void;
+  onCompleteContent?: (contentId: string) => Promise<void>;
   onShareContent?: () => void;
 };
 
@@ -252,10 +253,19 @@ function CourseSubmoduleCard({
   );
 }
 
-function CourseContent({ content, onShare }: { content: CourseContent; onShare?: () => void }) {
+function CourseContent({
+  content,
+  onShare,
+  onCompleteContent,
+}: {
+  content: CourseContent;
+  onShare?: () => void;
+  onCompleteContent?: (contentId: string) => Promise<void>;
+}) {
   const { t } = useTranslation();
   const [tab, setTab] = useState<ContentTab>(CONTENT_TAB.ABOUT);
   const [openImageUrl, setOpenImageUrl] = useState<string | null>(null);
+  const [completing, setCompleting] = useState(false);
   const materialAttachments = lessonMaterials(content);
 
   const openMaterial = (attachment: Attachment) => {
@@ -270,6 +280,20 @@ function CourseContent({ content, onShare }: { content: CourseContent; onShare?:
     void Linking.openURL(target).catch((cause) => {
       logger.error('[CourseContent] Falha ao abrir material', { fileName: attachment.fileName, url: target, cause });
     });
+  };
+
+  const completeLesson = async () => {
+    if (!onCompleteContent || completing || content.completed) {
+      return;
+    }
+    setCompleting(true);
+    try {
+      await onCompleteContent(content.id);
+    } catch (cause) {
+      logger.error('[CourseContent] Falha ao concluir a aula', { contentId: content.id, cause });
+    } finally {
+      setCompleting(false);
+    }
   };
 
   return (
@@ -323,6 +347,26 @@ function CourseContent({ content, onShare }: { content: CourseContent; onShare?:
         <Text style={styles.lessonBody}>
           {t('profile.courseLesson.commentsEmpty', { defaultValue: 'Nenhum comentário nesta aula.' })}
         </Text>
+      ) : null}
+      {onCompleteContent ? (
+        <View style={styles.lessonComplete}>
+          {content.completed ? (
+            <View style={styles.lessonCompletedRow}>
+              <Icon name='check-circle' size={22} color={COLORS.PRIMARY.PURE} />
+              <Text style={styles.lessonCompletedLabel}>
+                {t('profile.courseLesson.completed', { defaultValue: 'Aula concluída' })}
+              </Text>
+            </View>
+          ) : (
+            <SecondaryButton
+              label={t('profile.courseLesson.completeAction', { defaultValue: 'Concluir aula' })}
+              loading={completing}
+              onPress={() => {
+                void completeLesson();
+              }}
+            />
+          )}
+        </View>
       ) : null}
       <PostImageFullscreenModal
         uris={openImageUrl ? [openImageUrl] : []}
@@ -481,6 +525,7 @@ export function CourseHome({
   openContentId,
   onOpenCourseModule,
   onOpenContent,
+  onCompleteContent,
   onShareContent,
 }: Props) {
   const { t } = useTranslation();
@@ -497,7 +542,7 @@ export function CourseHome({
   if (openCourseModule && openContent) {
     return (
       <View style={styles.root}>
-        <CourseContent content={openContent} onShare={onShareContent} />
+        <CourseContent content={openContent} onShare={onShareContent} onCompleteContent={onCompleteContent} />
       </View>
     );
   }
@@ -507,6 +552,7 @@ export function CourseHome({
   }
 
   const continueContent = course.continueContent;
+  const isProgramComplete = course.totalContents > 0 && course.completedContents >= course.totalContents;
   const showCourseModuleTitle =
     continueContent != null && continueContent.courseModuleTitle.trim() !== continueContent.contentTitle.trim();
 
@@ -516,6 +562,19 @@ export function CourseHome({
         <Text style={styles.displayTitle}>{welcomeTitle}</Text>
         {description ? <Text style={styles.welcomeBody}>{description}</Text> : null}
       </View>
+
+      {isProgramComplete ? (
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>
+            {t('profile.courseHome.programCompletedTitle', { defaultValue: 'Programa concluído' })}
+          </Text>
+          <Text style={styles.welcomeBody}>
+            {t('profile.courseHome.programCompletedBody', {
+              defaultValue: 'Você concluiu todas as aulas desta jornada.',
+            })}
+          </Text>
+        </View>
+      ) : null}
 
       {continueContent ? (
         <View style={styles.section}>

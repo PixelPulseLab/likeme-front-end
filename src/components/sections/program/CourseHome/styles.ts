@@ -301,6 +301,18 @@ export const styles = StyleSheet.create({
     ...TYPOGRAPHY.bodySm,
     color: COLORS.NEUTRAL.LOW.DARK,
   },
+  lessonComplete: {
+    marginTop: SPACING.SM,
+  },
+  lessonCompletedRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.SM,
+  },
+  lessonCompletedLabel: {
+    ...TYPOGRAPHY.bodyMdMedium,
+    color: COLORS.NEUTRAL.LOW.PURE,
+  },
   tabRow: {
     flexDirection: 'row',
     gap: SPACING.XS,
