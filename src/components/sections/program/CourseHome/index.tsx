@@ -31,10 +31,8 @@ type Props = {
   course: Course;
   live: CourseLiveCard | null;
   openCourseModuleId: string | null;
-  openSubmoduleId: string | null;
   openContentId: string | null;
   onOpenCourseModule: (courseModuleId: string) => void;
-  onOpenSubmodule: (submoduleId: string) => void;
   onOpenContent: (contentId: string) => void;
   onShareContent?: () => void;
 };
@@ -154,17 +152,9 @@ function submoduleCoverUri(submodule: CourseSubmodule): string | null {
   return submodule.contents.find((content) => content.coverUri)?.coverUri ?? null;
 }
 
-function openSubmoduleLesson(
-  submodule: CourseSubmodule,
-  onOpenSubmodule: (submoduleId: string) => void,
-  onOpenContent: (contentId: string) => void,
-): void {
-  if (submodule.contents.length > 1) {
-    onOpenSubmodule(submodule.id);
-    return;
-  }
+function openSubmoduleLesson(submodule: CourseSubmodule, onOpenContent: (contentId: string) => void): void {
   const onlyContent = submodule.contents[0];
-  if (onlyContent) {
+  if (submodule.contents.length === 1 && onlyContent) {
     onOpenContent(onlyContent.id);
   }
 }
@@ -173,22 +163,20 @@ function CourseSubmoduleCard({
   submodule,
   locked,
   onOpenContent,
-  onOpenSubmodule,
   onLockedPress,
 }: {
   submodule: CourseSubmodule;
   locked: boolean;
   onOpenContent: (contentId: string) => void;
-  onOpenSubmodule: (submoduleId: string) => void;
   onLockedPress: () => void;
 }) {
   const { t } = useTranslation();
   const headingStyle = locked ? [styles.lessonHeading, styles.lessonHeadingLocked] : styles.lessonHeading;
   const summaryStyle = locked ? [styles.continueSummary, styles.lessonSummaryLocked] : styles.continueSummary;
   const coverUri = submoduleCoverUri(submodule);
-  const canOpen = submodule.contents.length > 0;
+  const canOpen = submodule.contents.length === 1;
   const showPlayIcon = !locked && canOpen;
-  const openLesson = () => openSubmoduleLesson(submodule, onOpenSubmodule, onOpenContent);
+  const openLesson = () => openSubmoduleLesson(submodule, onOpenContent);
   const seeMoreLabel = t('profile.courseHome.seeMore', { defaultValue: 'Ver mais' });
   const playIcon = showPlayIcon ? <Icon name='play-arrow' size={32} color={COLORS.WHITE} /> : null;
   const lockedSeeMore = (
@@ -349,64 +337,25 @@ function LockedContentNotice({ visible, onClose }: { visible: boolean; onClose: 
   );
 }
 
-function CourseContents({
-  submodule,
-  onOpenContent,
-}: {
-  submodule: CourseSubmodule;
-  onOpenContent: (contentId: string) => void;
-}) {
-  const [lockedNoticeOpen, setLockedNoticeOpen] = useState(false);
-  const orderLabel = String(submodule.position).padStart(2, '0');
-  const submoduleTitle = `${orderLabel} - ${submodule.title}`;
-
-  return (
-    <View style={styles.root}>
-      <View style={styles.welcomeBlock}>
-        <Text style={styles.displayTitle}>{submoduleTitle}</Text>
-        {submodule.summary ? <Text style={styles.continueSummary}>{submodule.summary}</Text> : null}
-      </View>
-      <View style={styles.lessonList}>
-        {submodule.contents.map((content, index) => {
-          const previousIncomplete = submodule.contents.slice(0, index).some((item) => !item.completed);
-          const isLocked = previousIncomplete && !content.completed;
-          const lesson: CourseSubmodule = {
-            id: content.id,
-            position: index + 1,
-            title: content.title,
-            summary: null,
-            completed: content.completed,
-            contents: [content],
-          };
-          return (
-            <View key={content.id}>
-              {index > 0 ? <View style={styles.lessonSeparator} /> : null}
-              <CourseSubmoduleCard
-                submodule={lesson}
-                locked={isLocked}
-                onOpenContent={onOpenContent}
-                onOpenSubmodule={() => onOpenContent(content.id)}
-                onLockedPress={() => setLockedNoticeOpen(true)}
-              />
-            </View>
-          );
-        })}
-      </View>
-      <LockedContentNotice visible={lockedNoticeOpen} onClose={() => setLockedNoticeOpen(false)} />
-    </View>
-  );
+function contentLesson(content: CourseContent, position: number): CourseSubmodule {
+  return {
+    id: content.id,
+    position,
+    title: content.title,
+    summary: null,
+    completed: content.completed,
+    contents: [content],
+  };
 }
 
 function CourseSubmodules({
   courseModule,
   course,
   onOpenContent,
-  onOpenSubmodule,
 }: {
   courseModule: CourseModule;
   course: Course;
   onOpenContent: (contentId: string) => void;
-  onOpenSubmodule: (submoduleId: string) => void;
 }) {
   const { t } = useTranslation();
   const [lockedNoticeOpen, setLockedNoticeOpen] = useState(false);
@@ -425,22 +374,36 @@ function CourseSubmodules({
         title={t('profile.courseHome.trackProgress', { defaultValue: 'Acompanhe sua evolução' })}
       />
       <View style={styles.lessonList}>
-        {courseModule.submodules.map((submodule, index) => {
-          const previousIncomplete = courseModule.submodules.slice(0, index).some((item) => !item.completed);
-          const isLocked =
-            courseModule.status === COURSE_MODULE_STATUS.LOCKED || (previousIncomplete && !submodule.completed);
-          return (
-            <View key={submodule.id}>
-              {index > 0 ? <View style={styles.lessonSeparator} /> : null}
-              <CourseSubmoduleCard
-                submodule={submodule}
-                locked={isLocked}
-                onOpenContent={onOpenContent}
-                onOpenSubmodule={onOpenSubmodule}
-                onLockedPress={() => setLockedNoticeOpen(true)}
-              />
-            </View>
-          );
+        {courseModule.submodules.map((submodule, submoduleIndex) => {
+          const previousSubmoduleIncomplete = courseModule.submodules
+            .slice(0, submoduleIndex)
+            .some((item) => item.contents.length > 0 && !item.completed);
+          const submoduleLocked =
+            courseModule.status === COURSE_MODULE_STATUS.LOCKED ||
+            (previousSubmoduleIncomplete && !submodule.completed);
+          const lessons =
+            submodule.contents.length > 1
+              ? submodule.contents.map((content, contentIndex) => contentLesson(content, contentIndex + 1))
+              : [submodule];
+
+          return lessons.map((lesson, lessonIndex) => {
+            const previousContentIncomplete = submodule.contents
+              .slice(0, lessonIndex)
+              .some((content) => !content.completed);
+            const isLocked = submoduleLocked || (lessonIndex > 0 && previousContentIncomplete && !lesson.completed);
+            const showSeparator = submoduleIndex > 0 || lessonIndex > 0;
+            return (
+              <View key={lesson.id}>
+                {showSeparator ? <View style={styles.lessonSeparator} /> : null}
+                <CourseSubmoduleCard
+                  submodule={lesson}
+                  locked={isLocked}
+                  onOpenContent={onOpenContent}
+                  onLockedPress={() => setLockedNoticeOpen(true)}
+                />
+              </View>
+            );
+          });
         })}
       </View>
       <LockedContentNotice visible={lockedNoticeOpen} onClose={() => setLockedNoticeOpen(false)} />
@@ -454,22 +417,17 @@ export function CourseHome({
   course,
   live,
   openCourseModuleId,
-  openSubmoduleId,
   openContentId,
   onOpenCourseModule,
-  onOpenSubmodule,
   onOpenContent,
   onShareContent,
 }: Props) {
   const { t } = useTranslation();
   const openCourseModule = course.modules.find((courseModule) => courseModule.id === openCourseModuleId) ?? null;
-  const openSubmodule =
-    openCourseModule?.submodules.find((submodule) => submodule.id === openSubmoduleId) ??
-    openCourseModule?.submodules.find((submodule) =>
-      submodule.contents.some((content) => content.id === openContentId),
-    ) ??
-    null;
-  const openContent = openSubmodule?.contents.find((content) => content.id === openContentId) ?? null;
+  const openContent =
+    openCourseModule?.submodules
+      .flatMap((submodule) => submodule.contents)
+      .find((content) => content.id === openContentId) ?? null;
   const welcomeTitle = t('profile.courseHome.welcomeTitle', {
     name: welcomeName,
     defaultValue: 'Bem-vinda ao\n{{name}}',
@@ -483,19 +441,8 @@ export function CourseHome({
     );
   }
 
-  if (openCourseModule && openSubmodule && openSubmodule.contents.length > 1) {
-    return <CourseContents submodule={openSubmodule} onOpenContent={onOpenContent} />;
-  }
-
   if (openCourseModule) {
-    return (
-      <CourseSubmodules
-        courseModule={openCourseModule}
-        course={course}
-        onOpenContent={onOpenContent}
-        onOpenSubmodule={onOpenSubmodule}
-      />
-    );
+    return <CourseSubmodules courseModule={openCourseModule} course={course} onOpenContent={onOpenContent} />;
   }
 
   const continueContent = course.continueContent;

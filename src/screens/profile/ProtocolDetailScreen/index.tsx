@@ -145,7 +145,6 @@ const ProtocolDetailScreen: React.FC<Props> = ({ navigation, route }) => {
   const [agreementsText, setAgreementsText] = useState(protocol?.agreements?.trim() ?? '');
   const [expandedModuleId, setExpandedModuleId] = useState<string | null>(null);
   const [openCourseModuleId, setOpenCourseModuleId] = useState<string | null>(null);
-  const [openSubmoduleId, setOpenSubmoduleId] = useState<string | null>(null);
   const [openContentId, setOpenContentId] = useState<string | null>(null);
 
   const heroImageUri = protocol?.image?.trim() || (hasCommunity ? MEMBER_PROTOCOL_COMMUNITY_IMAGE_FALLBACK : '');
@@ -280,10 +279,6 @@ const ProtocolDetailScreen: React.FC<Props> = ({ navigation, route }) => {
   const handleBack = () => {
     if (openContentId) {
       setOpenContentId(null);
-      return;
-    }
-    if (openSubmoduleId) {
-      setOpenSubmoduleId(null);
       return;
     }
     if (openCourseModuleId) {
@@ -688,16 +683,10 @@ const ProtocolDetailScreen: React.FC<Props> = ({ navigation, route }) => {
                 course={courseHome}
                 live={liveCard}
                 openCourseModuleId={openCourseModuleId}
-                openSubmoduleId={openSubmoduleId}
                 openContentId={openContentId}
                 onOpenCourseModule={(courseModuleId) => {
                   setOpenContentId(null);
-                  setOpenSubmoduleId(null);
                   setOpenCourseModuleId(courseModuleId);
-                }}
-                onOpenSubmodule={(submoduleId) => {
-                  setOpenContentId(null);
-                  setOpenSubmoduleId(submoduleId);
                 }}
                 onOpenContent={setOpenContentId}
                 onShareContent={() => {
