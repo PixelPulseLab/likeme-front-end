@@ -1,9 +1,17 @@
-import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Linking, Modal, Pressable, Text, TouchableOpacity, View } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, Linking, Modal, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Video, { type OnLoadData, type OnProgressData, type VideoRef } from 'react-native-video';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import PlayerBackIcon from '@/assets/course/player-back-15.svg';
+import PlayerForwardIcon from '@/assets/course/player-forward-15.svg';
+import PlayerFullscreenIcon from '@/assets/course/player-fullscreen.svg';
+import PlayerMoreIcon from '@/assets/course/player-more.svg';
+import PlayerPlayIcon from '@/assets/course/player-play.svg';
+import PlayerVolumeIcon from '@/assets/course/player-volume.svg';
 import { CachedImage } from '@/components/ui/media/CachedImage';
-import { PostEmbeddedVideo } from '@/components/sections/community/PostCard/PostEmbeddedVideo';
+import { PostEmbeddedVideo, videoSourceFromUri } from '@/components/sections/community/PostCard/PostEmbeddedVideo';
 import { useTranslation } from '@/hooks/i18n';
 import type { Attachment } from '@/types/attachment';
 import { COLORS, SPACING } from '@/constants';
@@ -11,10 +19,37 @@ import { logger } from '@/utils/logger';
 import { isRncWebViewTurboModuleLinked } from '@/utils/infrastructure/rncWebViewModule';
 import { styles } from './styles';
 
+const SEEK_STEP_SECONDS = 15;
+
 type Props = {
   video: Attachment;
   opensFullscreen?: boolean;
+  presentation?: 'card' | 'lesson';
+  title?: string;
+  durationMinutes?: number | null;
 };
+
+function clockLabel(totalSeconds: number): string {
+  const seconds = Math.max(0, Math.floor(totalSeconds));
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const remain = seconds % 60;
+  const paddedSeconds = String(remain).padStart(2, '0');
+  if (hours > 0) {
+    const paddedMinutes = String(minutes).padStart(2, '0');
+    return `${hours}:${paddedMinutes}:${paddedSeconds}`;
+  }
+  return `${minutes}:${paddedSeconds}`;
+}
+
+function LessonPauseIcon() {
+  return (
+    <View style={styles.lessonPause}>
+      <View style={styles.lessonPauseBar} />
+      <View style={styles.lessonPauseBar} />
+    </View>
+  );
+}
 
 type WebViewComponent = React.ComponentType<{
   source: { uri: string };
@@ -34,13 +69,31 @@ function videoHasPlaybackUrl(video: Attachment): boolean {
   return Boolean(video.streamUrl?.trim() || video.playerUrl?.trim() || video.url?.trim());
 }
 
-export const VideoPlayer: React.FC<Props> = ({ video, opensFullscreen = false }) => {
+export const VideoPlayer: React.FC<Props> = ({
+  video,
+  opensFullscreen = false,
+  presentation = 'card',
+  title = '',
+  durationMinutes = null,
+}) => {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
+  const videoRef = useRef<VideoRef>(null);
+  const positionRef = useRef(0);
   const [playbackOpen, setPlaybackOpen] = useState(false);
   const [WebViewCmp, setWebViewCmp] = useState<WebViewComponent | null>(null);
   const [preferStreamFallback, setPreferStreamFallback] = useState(false);
   const [streamFailed, setStreamFailed] = useState(false);
+  const [playing, setPlaying] = useState(false);
+  const [started, setStarted] = useState(false);
+  const [fullscreen, setFullscreen] = useState(false);
+  const [muted, setMuted] = useState(false);
+  const [positionSeconds, setPositionSeconds] = useState(0);
+  const [durationSeconds, setDurationSeconds] = useState<number | null>(null);
+  const [streamReady, setStreamReady] = useState(false);
+  const [trackWidth, setTrackWidth] = useState(0);
+  const pendingSeekRef = useRef<number | null>(null);
+  const isLesson = presentation === 'lesson';
 
   const streamUrl = video.streamUrl?.trim() || '';
   const playerUrl = video.playerUrl?.trim() || (!streamUrl ? video.url?.trim() || '' : '');
@@ -57,6 +110,14 @@ export const VideoPlayer: React.FC<Props> = ({ video, opensFullscreen = false })
     setPlaybackOpen(false);
     setPreferStreamFallback(false);
     setStreamFailed(false);
+    setPlaying(false);
+    setStarted(false);
+    setFullscreen(false);
+    setPositionSeconds(0);
+    setDurationSeconds(null);
+    setStreamReady(false);
+    positionRef.current = 0;
+    pendingSeekRef.current = null;
   }, [video.id]);
 
   useEffect(() => {
@@ -87,9 +148,11 @@ export const VideoPlayer: React.FC<Props> = ({ video, opensFullscreen = false })
   }, [needsWebViewPlayer, streamUrl, video.id]);
 
   if (!playable) {
+    const unavailableStyle = isLesson ? styles.lessonUnavailable : styles.placeholder;
+    const shellStyle = isLesson ? styles.lessonContainer : styles.container;
     return (
-      <View style={styles.container} testID='video-player-unavailable'>
-        <View style={styles.placeholder}>
+      <View style={shellStyle} testID='video-player-unavailable'>
+        <View style={unavailableStyle}>
           <Icon name='hourglass-empty' size={36} color={COLORS.NEUTRAL.LOW.MEDIUM} />
           <Text style={styles.statusText}>
             {t('course.video.unavailable', {
@@ -225,6 +288,282 @@ export const VideoPlayer: React.FC<Props> = ({ video, opensFullscreen = false })
     );
   };
 
+  const editorialSeconds = durationMinutes != null && durationMinutes > 0 ? durationMinutes * 60 : 0;
+  const totalSeconds = durationSeconds ?? editorialSeconds;
+  const progressRatio = totalSeconds > 0 ? Math.min(1, positionSeconds / totalSeconds) : 0;
+  const elapsedLabel = clockLabel(positionSeconds);
+  const totalLabel = clockLabel(totalSeconds);
+  const timeLabel = `${elapsedLabel} / ${totalLabel}`;
+  const progressWidth = trackWidth * progressRatio;
+  const playLabel = playing ? 'Pausar vídeo' : t('course.video.play', { defaultValue: 'Reproduzir vídeo' });
+  const volumeLabel = muted ? 'Ativar som' : 'Silenciar';
+  const fullscreenLabel = fullscreen ? 'Sair da tela cheia' : 'Tela cheia';
+  const lessonCanStream = Boolean(streamUrl) && !streamFailed;
+  const showLessonSpinner = started && playing && lessonCanStream && !streamReady;
+  const lessonResizeMode = fullscreen ? 'contain' : 'cover';
+  const lessonPlayIcon = playing ? <LessonPauseIcon /> : <PlayerPlayIcon />;
+  const volumeStyle = muted ? styles.lessonControlMuted : undefined;
+  const lessonFrameStyle = fullscreen ? styles.lessonFrameFill : null;
+  const chromeBottom = fullscreen ? insets.bottom + SPACING.SM : SPACING.SM;
+
+  const rememberPosition = (next: number) => {
+    positionRef.current = next;
+    setPositionSeconds(next);
+  };
+
+  const toggleLessonPlay = () => {
+    if (lessonCanStream) {
+      setStarted(true);
+      setPlaying((current) => !current);
+      return;
+    }
+    setPlaybackOpen(true);
+  };
+
+  const seekBy = (delta: number) => {
+    if (!lessonCanStream) {
+      return;
+    }
+    const ceiling = totalSeconds > 0 ? totalSeconds : positionSeconds + Math.max(delta, 0);
+    const next = Math.min(ceiling, Math.max(0, positionSeconds + delta));
+    rememberPosition(next);
+    if (!started) {
+      pendingSeekRef.current = next;
+      setStarted(true);
+      setPlaying(true);
+      return;
+    }
+    setPlaying(true);
+    videoRef.current?.seek(next);
+  };
+
+  const scrubTo = (locationX: number, width: number) => {
+    if (!lessonCanStream || width <= 0 || totalSeconds <= 0) {
+      return;
+    }
+    const ratio = Math.min(1, Math.max(0, locationX / width));
+    seekBy(ratio * totalSeconds - positionSeconds);
+  };
+
+  const onStreamLoad = (data: OnLoadData) => {
+    setStreamReady(true);
+    if (data.duration > 0) {
+      setDurationSeconds(data.duration);
+    }
+    const pending = pendingSeekRef.current;
+    pendingSeekRef.current = null;
+    const position = pending ?? positionRef.current;
+    if (position > 0) {
+      videoRef.current?.seek(position);
+    }
+  };
+
+  const onStreamProgress = (data: OnProgressData) => {
+    rememberPosition(data.currentTime);
+  };
+
+  const onStreamError = () => {
+    logger.warn('[VideoPlayer] Falha no stream da aula', {
+      videoId: video.id,
+      streamUrl,
+    });
+    setStreamFailed(true);
+    setPlaying(false);
+    setFullscreen(false);
+    setStarted(false);
+    if (playerUrl) {
+      setPlaybackOpen(true);
+    }
+  };
+
+  const toggleFullscreen = () => {
+    if (!lessonCanStream) {
+      setPlaybackOpen(true);
+      return;
+    }
+    if (!started) {
+      setStarted(true);
+      setPlaying(true);
+    }
+    setFullscreen((current) => !current);
+  };
+
+  const embedModal =
+    playbackOpen && (opensFullscreen || isLesson) ? (
+      <Modal
+        visible
+        animationType='fade'
+        statusBarTranslucent
+        supportedOrientations={['portrait', 'landscape', 'landscape-left', 'landscape-right']}
+        onRequestClose={() => setPlaybackOpen(false)}
+      >
+        <View style={styles.fullscreenStage}>
+          <View style={styles.fullscreenPlayer}>{renderPlayer()}</View>
+          <Pressable
+            style={[styles.fullscreenClose, { top: insets.top + SPACING.SM }]}
+            onPress={() => setPlaybackOpen(false)}
+            accessibilityRole='button'
+            accessibilityLabel={t('course.video.collapse', { defaultValue: 'Voltar à capa do vídeo' })}
+          >
+            <View style={styles.collapseInner}>
+              <Icon name='close' size={22} color='rgba(255,255,255,0.95)' />
+            </View>
+          </Pressable>
+        </View>
+      </Modal>
+    ) : null;
+
+  if (isLesson) {
+    const lessonPoster = posterUri ? (
+      <CachedImage
+        source={{ uri: posterUri }}
+        style={styles.posterImage}
+        contentFit='cover'
+        recyclingKey={`video-poster-${video.id}`}
+      />
+    ) : (
+      <View style={styles.posterFallback} />
+    );
+
+    const showLessonPoster = !(started && lessonCanStream);
+    const lessonVisual = showLessonPoster ? lessonPoster : null;
+    const lessonStream =
+      started && lessonCanStream ? (
+        <Video
+          ref={videoRef}
+          source={videoSourceFromUri(streamUrl)}
+          style={StyleSheet.absoluteFill}
+          controls={false}
+          paused={!playing}
+          muted={muted}
+          resizeMode={lessonResizeMode}
+          repeat={false}
+          ignoreSilentSwitch='ignore'
+          playInBackground={false}
+          onLoad={onStreamLoad}
+          onProgress={onStreamProgress}
+          onEnd={() => setPlaying(false)}
+          onError={onStreamError}
+        />
+      ) : null;
+    const lessonSpinner = showLessonSpinner ? (
+      <View style={styles.lessonSpinner} pointerEvents='none'>
+        <ActivityIndicator color={COLORS.NEUTRAL.HIGH.LIGHT} />
+      </View>
+    ) : null;
+
+    const lessonFrame = (
+      <View style={[styles.lessonFrame, lessonFrameStyle]}>
+        {lessonVisual}
+        {lessonStream}
+        <Pressable style={StyleSheet.absoluteFill} onPress={toggleLessonPlay} accessible={false} />
+        {lessonSpinner}
+        <View style={[styles.lessonChrome, { paddingBottom: chromeBottom }]} pointerEvents='box-none'>
+          <LinearGradient
+            pointerEvents='none'
+            colors={['rgba(8,9,13,0)', 'rgba(8,9,13,0.9)']}
+            style={styles.lessonChromeFade}
+          />
+          <View style={styles.lessonChromeBody} pointerEvents='auto'>
+            <View style={styles.lessonChromeMeta}>
+              <Text style={styles.lessonChromeTitle} numberOfLines={1}>
+                {title}
+              </Text>
+              <Text style={styles.lessonChromeTime}>{timeLabel}</Text>
+            </View>
+            <Pressable
+              style={styles.lessonTrackHit}
+              onPress={(event) => scrubTo(event.nativeEvent.locationX, trackWidth)}
+              onLayout={(event) => setTrackWidth(event.nativeEvent.layout.width)}
+              accessibilityRole='adjustable'
+              accessibilityLabel={timeLabel}
+            >
+              <View style={styles.lessonTrack}>
+                <View style={[styles.lessonTrackFill, { width: progressWidth }]} />
+              </View>
+            </Pressable>
+            <View style={styles.lessonChromeControls}>
+              <View style={styles.lessonChromeGroup}>
+                <Pressable
+                  style={styles.lessonControl}
+                  onPress={toggleLessonPlay}
+                  accessibilityRole='button'
+                  accessibilityLabel={playLabel}
+                >
+                  {lessonPlayIcon}
+                </Pressable>
+                <Pressable
+                  style={styles.lessonControl}
+                  onPress={() => seekBy(-SEEK_STEP_SECONDS)}
+                  accessibilityRole='button'
+                  accessibilityLabel='Voltar 15 segundos'
+                >
+                  <PlayerBackIcon />
+                </Pressable>
+                <Pressable
+                  style={styles.lessonControl}
+                  onPress={() => seekBy(SEEK_STEP_SECONDS)}
+                  accessibilityRole='button'
+                  accessibilityLabel='Avançar 15 segundos'
+                >
+                  <PlayerForwardIcon />
+                </Pressable>
+              </View>
+              <View style={styles.lessonChromeGroup}>
+                <Pressable
+                  style={styles.lessonControl}
+                  onPress={() => setMuted((current) => !current)}
+                  accessibilityRole='button'
+                  accessibilityLabel={volumeLabel}
+                >
+                  <View style={volumeStyle}>
+                    <PlayerVolumeIcon />
+                  </View>
+                </Pressable>
+                <Pressable
+                  style={styles.lessonControl}
+                  onPress={toggleFullscreen}
+                  accessibilityRole='button'
+                  accessibilityLabel={fullscreenLabel}
+                >
+                  <PlayerFullscreenIcon />
+                </Pressable>
+                <View
+                  style={styles.lessonControl}
+                  accessibilityElementsHidden
+                  importantForAccessibility='no-hide-descendants'
+                >
+                  <PlayerMoreIcon />
+                </View>
+              </View>
+            </View>
+          </View>
+        </View>
+      </View>
+    );
+
+    const lessonStage = fullscreen ? (
+      <Modal
+        visible
+        animationType='fade'
+        statusBarTranslucent
+        supportedOrientations={['portrait', 'landscape', 'landscape-left', 'landscape-right']}
+        onRequestClose={() => setFullscreen(false)}
+      >
+        <View style={styles.fullscreenStage}>{lessonFrame}</View>
+      </Modal>
+    ) : (
+      lessonFrame
+    );
+
+    return (
+      <View style={styles.lessonContainer} testID='video-player'>
+        {lessonStage}
+        {embedModal}
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container} testID='video-player'>
       <View style={styles.posterInner}>
@@ -253,29 +592,7 @@ export const VideoPlayer: React.FC<Props> = ({ video, opensFullscreen = false })
           </TouchableOpacity>
         )}
       </View>
-      {opensFullscreen && playbackOpen ? (
-        <Modal
-          visible
-          animationType='fade'
-          statusBarTranslucent
-          supportedOrientations={['portrait', 'landscape', 'landscape-left', 'landscape-right']}
-          onRequestClose={() => setPlaybackOpen(false)}
-        >
-          <View style={styles.fullscreenStage}>
-            <View style={styles.fullscreenPlayer}>{renderPlayer()}</View>
-            <Pressable
-              style={[styles.fullscreenClose, { top: insets.top + SPACING.SM }]}
-              onPress={() => setPlaybackOpen(false)}
-              accessibilityRole='button'
-              accessibilityLabel={t('course.video.collapse', { defaultValue: 'Voltar à capa do vídeo' })}
-            >
-              <View style={styles.collapseInner}>
-                <Icon name='close' size={22} color='rgba(255,255,255,0.95)' />
-              </View>
-            </Pressable>
-          </View>
-        </Modal>
-      ) : null}
+      {embedModal}
     </View>
   );
 };

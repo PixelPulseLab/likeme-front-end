@@ -1,5 +1,5 @@
 import { useState, type FC, type ReactNode } from 'react';
-import { Image, Linking, Modal, Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, Image, Modal, Pressable, Text, View } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import type { SvgProps } from 'react-native-svg';
 import LessonAwardIcon from '@/assets/course/lesson-award.svg';
@@ -9,11 +9,11 @@ import LessonTimerIcon from '@/assets/course/lesson-timer.svg';
 import { IconButton, SecondaryButton } from '@/components/ui/buttons';
 import { CachedImage } from '@/components/ui/media/CachedImage';
 import { MarkdownText } from '@/components/ui/text/MarkdownText';
-import PostImageFullscreenModal from '@/components/sections/community/PostAttachments/PostImageFullscreenModal';
 import { VideoPlayer } from '@/components/sections/program/VideoPlayer';
 import { COLORS } from '@/constants';
 import { useTranslation } from '@/hooks/i18n';
 import type { Attachment } from '@/types/attachment';
+import { downloadCommunityAttachment } from '@/utils/community/communityAttachmentDownload';
 import { communityFileKindIconSource } from '@/utils/community/communityFileKindIconSource';
 import { logger } from '@/utils/logger';
 import {
@@ -54,20 +54,14 @@ const CONTENT_TAB = {
 
 type ContentTab = (typeof CONTENT_TAB)[keyof typeof CONTENT_TAB];
 
-function materialSizeLabel(sizeBytes: number | undefined): string | null {
-  if (sizeBytes == null || !Number.isFinite(sizeBytes) || sizeBytes < 0) {
-    return null;
+function materialIconSize(type: Attachment['type']): { width: number; height: number } {
+  if (type === 'pdf') {
+    return { width: 30, height: 37 };
   }
-  if (sizeBytes < 1024) {
-    return `${Math.round(sizeBytes)} B`;
+  if (type === 'document' || type === 'generic') {
+    return { width: 40, height: 37 };
   }
-  const kilobytes = sizeBytes / 1024;
-  if (kilobytes < 1024) {
-    return `${Math.max(1, Math.round(kilobytes))}kb`;
-  }
-  const megabytes = kilobytes / 1024;
-  const rounded = megabytes >= 10 ? Math.round(megabytes) : Math.round(megabytes * 10) / 10;
-  return `${rounded}mb`;
+  return { width: 38, height: 37 };
 }
 
 function lessonMaterials(content: CourseContent): Attachment[] {
@@ -261,7 +255,9 @@ function CourseSubmoduleCard({
 function LessonFact({ icon: FactIcon, title, children }: { icon: FC<SvgProps>; title: string; children: ReactNode }) {
   return (
     <View style={styles.lessonFact}>
-      <FactIcon />
+      <View style={styles.lessonFactIcon}>
+        <FactIcon />
+      </View>
       <View style={styles.lessonFactCopy}>
         <Text style={styles.lessonFactTitle}>{title}</Text>
         {children}
@@ -270,13 +266,31 @@ function LessonFact({ icon: FactIcon, title, children }: { icon: FC<SvgProps>; t
   );
 }
 
+function LessonMedia({ content }: { content: CourseContent }) {
+  if (content.video) {
+    return (
+      <VideoPlayer
+        video={content.video}
+        presentation='lesson'
+        title={content.title}
+        durationMinutes={content.durationMinutes}
+      />
+    );
+  }
+  if (!content.coverUri) {
+    return null;
+  }
+  return <CachedImage source={{ uri: content.coverUri }} style={styles.lessonPoster} />;
+}
+
 function LessonFactLines({ lines }: { lines: string[] }) {
   return (
     <View style={styles.lessonFactList}>
       {lines.map((line, index) => (
-        <Text key={`${index}-${line}`} style={styles.lessonFactBody}>
-          {`• ${line}`}
-        </Text>
+        <View key={`${index}-${line}`} style={styles.lessonFactItem}>
+          <View style={styles.lessonFactBullet} />
+          <Text style={styles.lessonFactItemText}>{line}</Text>
+        </View>
       ))}
     </View>
   );
@@ -293,7 +307,6 @@ function CourseContent({
 }) {
   const { t } = useTranslation();
   const [tab, setTab] = useState<ContentTab>(CONTENT_TAB.ABOUT);
-  const [openImageUrl, setOpenImageUrl] = useState<string | null>(null);
   const [completing, setCompleting] = useState(false);
   const materialAttachments = lessonMaterials(content);
   let durationLabel: string | null = null;
@@ -307,20 +320,6 @@ function CourseContent({
   }
   const hasLessonFacts =
     durationLabel != null || Boolean(content.level) || content.learningOutcomes.length > 0 || content.tips.length > 0;
-
-  const openMaterial = (attachment: Attachment) => {
-    const target = attachment.url.trim();
-    if (!target) {
-      return;
-    }
-    if (attachment.type === 'image') {
-      setOpenImageUrl(target);
-      return;
-    }
-    void Linking.openURL(target).catch((cause) => {
-      logger.error('[CourseContent] Falha ao abrir material', { fileName: attachment.fileName, url: target, cause });
-    });
-  };
 
   const completeLesson = async () => {
     if (!onCompleteContent || completing || content.completed) {
@@ -339,11 +338,7 @@ function CourseContent({
   return (
     <View style={styles.lessonScreen}>
       <View style={styles.lessonVideo}>
-        {content.video ? (
-          <VideoPlayer video={content.video} opensFullscreen />
-        ) : content.coverUri ? (
-          <CachedImage source={{ uri: content.coverUri }} style={styles.lessonPoster} />
-        ) : null}
+        <LessonMedia content={content} />
       </View>
       <View style={styles.lessonTitleRow}>
         <Text style={styles.lessonScreenTitle}>{content.title}</Text>
@@ -409,10 +404,13 @@ function CourseContent({
           {t('profile.courseLesson.materialsEmpty', { defaultValue: 'Esta aula não tem materiais.' })}
         </Text>
       ) : null}
+      {tab === CONTENT_TAB.MATERIALS && materialAttachments.length > 0 ? (
+        <Text style={styles.materialSectionTitle}>
+          {t('community.attachments.accessMaterials', { defaultValue: 'Acesse os materiais' })}
+        </Text>
+      ) : null}
       {tab === CONTENT_TAB.MATERIALS
-        ? materialAttachments.map((attachment) => (
-            <LessonMaterialCard key={attachment.id} attachment={attachment} onOpen={openMaterial} />
-          ))
+        ? materialAttachments.map((attachment) => <LessonMaterialCard key={attachment.id} attachment={attachment} />)
         : null}
       {tab === CONTENT_TAB.COMMENTS ? (
         <Text style={styles.lessonBody}>
@@ -439,46 +437,63 @@ function CourseContent({
           )}
         </View>
       ) : null}
-      <PostImageFullscreenModal
-        uris={openImageUrl ? [openImageUrl] : []}
-        initialIndex={0}
-        visible={openImageUrl != null}
-        onClose={() => setOpenImageUrl(null)}
-      />
     </View>
   );
 }
 
-function LessonMaterialCard({
-  attachment,
-  onOpen,
-}: {
-  attachment: Attachment;
-  onOpen: (attachment: Attachment) => void;
-}) {
-  const sizeLabel = materialSizeLabel(attachment.sizeBytes);
+function LessonMaterialCard({ attachment }: { attachment: Attachment }) {
+  const { t } = useTranslation();
+  const [isDownloading, setIsDownloading] = useState(false);
+  const downloadLabel = t('community.attachments.download', { defaultValue: 'Baixar' });
   const isImage = attachment.type === 'image' && Boolean(attachment.url.trim());
-  const thumb = isImage ? (
-    <CachedImage source={{ uri: attachment.url }} style={styles.materialThumb} />
+  const iconSize = materialIconSize(attachment.type);
+  const materialIcon = isImage ? (
+    <CachedImage source={{ uri: attachment.url }} style={iconSize} contentFit='contain' />
   ) : (
-    <View style={styles.materialIconWrap}>
-      <Image source={communityFileKindIconSource(attachment.type)} style={styles.materialIcon} />
-    </View>
+    <Image source={communityFileKindIconSource(attachment.type)} style={iconSize} resizeMode='contain' />
+  );
+  const downloadAction = isDownloading ? (
+    <ActivityIndicator size='small' color={COLORS.NEUTRAL.LOW.PURE} />
+  ) : (
+    <>
+      <Text style={styles.materialDownloadLabel}>{downloadLabel}</Text>
+      <Icon name='vertical-align-bottom' size={24} color={COLORS.NEUTRAL.LOW.PURE} />
+    </>
   );
 
+  const onDownload = async () => {
+    if (isDownloading) {
+      return;
+    }
+    setIsDownloading(true);
+    try {
+      await downloadCommunityAttachment(attachment);
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
   return (
-    <Pressable
-      style={styles.materialCard}
-      onPress={() => onOpen(attachment)}
-      accessibilityRole='button'
-      accessibilityLabel={attachment.fileName}
-    >
-      {thumb}
-      <View style={styles.materialCopy}>
-        <Text style={styles.materialName}>{attachment.fileName}</Text>
-        {sizeLabel && <Text style={styles.materialSize}>{sizeLabel}</Text>}
+    <View style={styles.materialCard}>
+      <View style={styles.materialIdentity}>
+        <View style={styles.materialIconWrap}>{materialIcon}</View>
+        <Text style={styles.materialName} numberOfLines={1}>
+          {attachment.fileName}
+        </Text>
       </View>
-    </Pressable>
+      <Pressable
+        style={styles.materialDownload}
+        onPress={() => {
+          void onDownload();
+        }}
+        disabled={isDownloading}
+        accessibilityRole='button'
+        accessibilityLabel={`${downloadLabel} ${attachment.fileName}`}
+        accessibilityState={{ busy: isDownloading }}
+      >
+        {downloadAction}
+      </Pressable>
+    </View>
   );
 }
 

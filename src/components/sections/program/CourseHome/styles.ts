@@ -1,5 +1,6 @@
 import { StyleSheet } from 'react-native';
 import { BORDER_RADIUS, COLORS, FONT_FAMILY, FONT_SIZES, SPACING, TYPOGRAPHY } from '@/constants';
+import { LESSON_VIDEO_HEIGHT } from '@/components/sections/program/VideoPlayer/styles';
 
 const cardRadius = {
   borderTopLeftRadius: BORDER_RADIUS.XL,
@@ -280,11 +281,11 @@ export const styles = StyleSheet.create({
   },
   lessonVideo: {
     marginHorizontal: -SPACING.LG,
-    minHeight: 280,
+    marginTop: -SPACING.LG,
   },
   lessonPoster: {
     width: '100%',
-    height: 280,
+    height: LESSON_VIDEO_HEIGHT,
   },
   lessonTitleRow: {
     flexDirection: 'row',
@@ -309,6 +310,10 @@ export const styles = StyleSheet.create({
     alignItems: 'flex-start',
     gap: SPACING.GAP_20,
   },
+  lessonFactIcon: {
+    width: 32,
+    height: 32,
+  },
   lessonFactCopy: {
     flex: 1,
     gap: SPACING.SM,
@@ -316,15 +321,37 @@ export const styles = StyleSheet.create({
   lessonFactTitle: {
     fontFamily: FONT_FAMILY.DM_SANS_BOLD,
     fontSize: FONT_SIZES.SM,
+    lineHeight: 18,
     letterSpacing: 0.2,
     color: COLORS.NEUTRAL.LOW.PURE,
   },
   lessonFactBody: {
-    ...TYPOGRAPHY.bodySm,
+    fontFamily: FONT_FAMILY.DM_SANS_MEDIUM,
+    fontSize: FONT_SIZES.XS,
+    lineHeight: 16,
     color: COLORS.NEUTRAL.LOW.PURE,
   },
   lessonFactList: {
     gap: SPACING.XS,
+  },
+  lessonFactItem: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+  },
+  lessonFactBullet: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    marginTop: 5,
+    backgroundColor: COLORS.NEUTRAL.LOW.PURE,
+  },
+  lessonFactItemText: {
+    flex: 1,
+    fontFamily: FONT_FAMILY.DM_SANS_MEDIUM,
+    fontSize: FONT_SIZES.XS,
+    lineHeight: 16,
+    color: COLORS.NEUTRAL.LOW.PURE,
   },
   lessonComplete: {
     marginTop: SPACING.SM,
@@ -363,42 +390,55 @@ export const styles = StyleSheet.create({
   tabLabelSelected: {
     color: COLORS.SECONDARY.PURE,
   },
+  materialSectionTitle: {
+    ...TYPOGRAPHY.bodyMdMedium,
+    color: COLORS.BLACK,
+  },
   materialCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: SPACING.MD,
-    padding: SPACING.MD,
-    borderRadius: BORDER_RADIUS.LG,
-    backgroundColor: COLORS.SECONDARY.PURE,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: COLORS.NEUTRAL.LOW.LIGHT,
+    justifyContent: 'space-between',
+    gap: SPACING.SM,
+    paddingHorizontal: SPACING.MD,
+    paddingVertical: SPACING.MD_PLUS,
+    backgroundColor: 'rgba(240, 238, 225, 0.16)',
+    borderWidth: 1,
+    borderColor: COLORS.NEUTRAL.LOW.MEDIUM,
+    borderTopLeftRadius: BORDER_RADIUS.BUTTON_TOP,
+    borderTopRightRadius: BORDER_RADIUS.BUTTON_TOP,
+    borderBottomLeftRadius: BORDER_RADIUS.BUTTON_BOTTOM,
+    borderBottomRightRadius: BORDER_RADIUS.BUTTON_BOTTOM,
   },
-  materialThumb: {
-    width: 64,
-    height: 64,
-    borderRadius: BORDER_RADIUS.MD,
+  materialIdentity: {
+    flex: 1,
+    minWidth: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.SM,
   },
   materialIconWrap: {
-    width: 64,
-    height: 64,
+    width: 38,
+    height: 38,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  materialIcon: {
-    width: 40,
-    height: 40,
-  },
-  materialCopy: {
-    flex: 1,
-    gap: SPACING.XS,
-  },
   materialName: {
-    ...TYPOGRAPHY.bodyMdMedium,
-    color: COLORS.NEUTRAL.LOW.PURE,
+    flex: 1,
+    fontFamily: FONT_FAMILY.DM_SANS_MEDIUM,
+    fontSize: 10,
+    lineHeight: 14,
+    color: COLORS.NEUTRAL.LOW.DARK,
   },
-  materialSize: {
-    ...TYPOGRAPHY.bodySm,
-    color: COLORS.NEUTRAL.LOW.MEDIUM,
+  materialDownload: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: SPACING.XS,
+    maxHeight: 48,
+  },
+  materialDownloadLabel: {
+    ...TYPOGRAPHY.labelMd,
+    color: COLORS.NEUTRAL.LOW.PURE,
   },
   lockedBackdrop: {
     flex: 1,

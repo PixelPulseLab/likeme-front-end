@@ -13,7 +13,7 @@ type Props = {
   onPlaybackError?: (error: OnVideoErrorData) => void;
 };
 
-function videoSourceFromUri(videoUri: string): { uri: string; type?: 'm3u8' } {
+export function videoSourceFromUri(videoUri: string): { uri: string; type?: 'm3u8' } {
   if (/\.m3u8(\?|$)/i.test(videoUri)) {
     return { uri: videoUri, type: 'm3u8' };
   }

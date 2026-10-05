@@ -7,7 +7,7 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import { IconButton } from '@/components/ui/buttons';
 import { CachedImage } from '@/components/ui/media/CachedImage';
 import { useCartItemCount } from '@/hooks/marketplace/useCartItemCount';
-import { IMAGE_PRIORITY_HIGH } from '@/constants';
+import { COLORS, IMAGE_PRIORITY_HIGH } from '@/constants';
 import notificationApiService from '@/services/notification/notificationApiService';
 import { logger } from '@/utils/logger';
 import { styles } from './styles';
@@ -143,6 +143,7 @@ const Header: React.FC<HeaderProps> = ({
 }) => {
   const hasRightLabel = Boolean(rightLabel && onRightPress);
   const ratingIconName = favoriteActive === undefined ? 'star' : favoriteActive ? 'star' : 'star-border';
+  const headerButtonTint = iconBackgroundTintColor ?? backgroundColor ?? COLORS.BACKGROUND_SECONDARY;
   return (
     <View style={[styles.container, backgroundColor ? { backgroundColor } : null]}>
       <View style={styles.header}>
@@ -168,7 +169,7 @@ const Header: React.FC<HeaderProps> = ({
             icon='chevron-left'
             onPress={onBackPress ?? noop}
             backgroundSize='medium'
-            backgroundTintColor={iconBackgroundTintColor}
+            backgroundTintColor={headerButtonTint}
             containerStyle={styles.leftButton}
           />
         )}
@@ -201,17 +202,17 @@ const Header: React.FC<HeaderProps> = ({
         {!hasRightLabel && (
           <View style={styles.rightButtons}>
             {showBellButton && (
-              <BellHeaderButton onPress={onBellPress ?? noop} backgroundTintColor={iconBackgroundTintColor} />
+              <BellHeaderButton onPress={onBellPress ?? noop} backgroundTintColor={headerButtonTint} />
             )}
             {showCartButton && onCartPress && (
-              <CartHeaderButton onPress={onCartPress} backgroundTintColor={iconBackgroundTintColor} />
+              <CartHeaderButton onPress={onCartPress} backgroundTintColor={headerButtonTint} />
             )}
             {showShareButton && onSharePress ? (
               <IconButton
                 icon='share'
                 onPress={onSharePress}
                 backgroundSize='medium'
-                backgroundTintColor={iconBackgroundTintColor}
+                backgroundTintColor={headerButtonTint}
               />
             ) : null}
             {showLogoutButton && onLogoutPress && (
@@ -219,7 +220,7 @@ const Header: React.FC<HeaderProps> = ({
                 icon='logout'
                 onPress={onLogoutPress}
                 backgroundSize='medium'
-                backgroundTintColor={iconBackgroundTintColor}
+                backgroundTintColor={headerButtonTint}
               />
             )}
             {showRating && (
@@ -227,7 +228,7 @@ const Header: React.FC<HeaderProps> = ({
                 icon={ratingIconName}
                 onPress={onRatingPress ?? noop}
                 backgroundSize='medium'
-                backgroundTintColor={iconBackgroundTintColor}
+                backgroundTintColor={headerButtonTint}
               />
             )}
           </View>
