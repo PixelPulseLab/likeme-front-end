@@ -1,5 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Dimensions, Modal, Pressable, ScrollView, Text, View } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import CourseLiveCamIcon from '@/assets/course/course-live-cam.svg';
+import CourseMoreIcon from '@/assets/course/course-more.svg';
 import type { StackScreenProps } from '@react-navigation/stack';
 import { useFocusEffect } from '@react-navigation/native';
 import { ScreenWithHeader, HeroImage } from '@/components/ui/layout';
@@ -8,7 +11,9 @@ import { SecondaryButton } from '@/components/ui/buttons';
 import { type ButtonCarouselOption } from '@/components/ui/carousel';
 import InfoSectionTabsRow, { type InfoSectionMenuOption } from '@/components/ui/carousel/InfoSectionTabsRow';
 import ModuleAccordion, { type ModuleItem } from '@/components/sections/course/ModuleAccordion';
-import { CourseHome } from '@/screens/course/CourseHome';
+import { CourseModuleCard } from '@/components/sections/course/CourseModuleCard';
+import { CourseProgress } from '@/components/sections/course/CourseProgress';
+import { CachedImage } from '@/components/ui/media/CachedImage';
 import { CourseContent } from '@/screens/course/CourseContent';
 import { CourseModule } from '@/screens/course/CourseModule';
 import { buildCourse, formatCourseLiveWhen } from '@/screens/course/course';
@@ -378,6 +383,23 @@ const ProtocolDetailScreen: React.FC<Props> = ({ navigation, route }) => {
     return options.length > 0 ? options : undefined;
   }, [handleManageProtocol, handleSharePress, protocol, t]);
 
+  const menuButtonRef = useRef<View>(null);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [menuAnchor, setMenuAnchor] = useState({ top: 0, right: 16 });
+  const openProtocolMenu = useCallback(() => {
+    if (!protocolMenuOptions?.length) {
+      return;
+    }
+    menuButtonRef.current?.measureInWindow((x, y, width, height) => {
+      const windowWidth = Dimensions.get('window').width;
+      setMenuAnchor({
+        top: y + height + 4,
+        right: Math.max(16, windowWidth - (x + width)),
+      });
+      setIsMenuOpen(true);
+    });
+  }, [protocolMenuOptions]);
+
   const handleTabSelect = (tabId: ProtocolTabId) => {
     logTabSelect({ screen_name: 'protocol_detail', tab_id: tabId });
     setActiveTab(tabId);
@@ -690,15 +712,165 @@ const ProtocolDetailScreen: React.FC<Props> = ({ navigation, route }) => {
     setOpenContentId(null);
     setOpenCourseModuleId(courseModuleId);
   };
+  const continueContent = courseHome.continueContent;
+  const isProgramComplete = courseHome.totalContents > 0 && courseHome.completedContents >= courseHome.totalContents;
+  const showCourseModuleTitle =
+    continueContent != null && continueContent.courseModuleTitle.trim() !== continueContent.contentTitle.trim();
+  const showMenu = Boolean(protocolMenuOptions?.length);
+  const menuLabel = t('profile.protocolDetail.manageProtocol', { defaultValue: 'Gerenciar protocolo' });
+  const manageButtonStyle = isMenuOpen ? [styles.manageButton, styles.manageButtonOpen] : styles.manageButton;
+  const menuIconColor = isMenuOpen ? COLORS.WHITE : COLORS.NEUTRAL.LOW.PURE;
+  const welcomeTitle = t('profile.courseHome.welcomeTitle', {
+    name: protocol.name,
+    defaultValue: 'Bem-vinda ao\n{{name}}',
+  });
   let courseJourney = (
-    <CourseHome
-      welcomeName={protocol.name}
-      description={aboutText}
-      course={courseHome}
-      live={liveCard}
-      onOpenCourseModule={openCourseModuleView}
-      menuOptions={protocolMenuOptions}
-    />
+    <View style={styles.journeyRoot}>
+      <View style={styles.welcomeBlock}>
+        <View style={styles.welcomeHeader}>
+          <Text style={[styles.displayTitle, styles.welcomeTitle]}>{welcomeTitle}</Text>
+          {showMenu ? (
+            <View ref={menuButtonRef} collapsable={false} testID={E2E_TEST_IDS.PROTOCOL_MORE_MENU}>
+              <Pressable
+                style={manageButtonStyle}
+                onPress={openProtocolMenu}
+                accessibilityRole='button'
+                accessibilityLabel={menuLabel}
+              >
+                <CourseMoreIcon color={menuIconColor} />
+              </Pressable>
+            </View>
+          ) : null}
+        </View>
+        {aboutText ? <Text style={styles.welcomeBody}>{aboutText}</Text> : null}
+      </View>
+
+      {isProgramComplete ? (
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>
+            {t('profile.courseHome.programCompletedTitle', { defaultValue: 'Programa concluído' })}
+          </Text>
+          <Text style={styles.welcomeBody}>
+            {t('profile.courseHome.programCompletedBody', {
+              defaultValue: 'Você concluiu todas as aulas desta jornada.',
+            })}
+          </Text>
+        </View>
+      ) : null}
+
+      {continueContent ? (
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>
+            {t('profile.courseHome.continueTitle', { defaultValue: 'Continue a sua jornada' })}
+          </Text>
+          <Pressable style={styles.continueCard} onPress={() => openCourseModuleView(continueContent.courseModuleId)}>
+            {continueContent.coverUri ? (
+              <CachedImage source={{ uri: continueContent.coverUri }} style={styles.continueCover} />
+            ) : (
+              <View style={[styles.continueCover, { backgroundColor: COLORS.SECONDARY.MEDIUM }]} />
+            )}
+            <View style={styles.continueCopy}>
+              <View>
+                {showCourseModuleTitle ? (
+                  <Text style={styles.overline}>{continueContent.courseModuleTitle}</Text>
+                ) : null}
+                <Text style={styles.continueTitle}>{continueContent.contentTitle}</Text>
+                {continueContent.summary ? <Text style={styles.continueSummary}>{continueContent.summary}</Text> : null}
+              </View>
+              <SecondaryButton
+                label={t('profile.courseHome.continueAction', { defaultValue: 'Continuar' })}
+                icon='chevron-right'
+                onPress={() => openCourseModuleView(continueContent.courseModuleId)}
+              />
+            </View>
+          </Pressable>
+        </View>
+      ) : null}
+
+      {liveCard ? (
+        <View style={styles.liveSection}>
+          <Text style={styles.liveLabel}>{t('profile.courseHome.nextLive', { defaultValue: 'Próxima live' })}</Text>
+          <View style={styles.liveRow}>
+            <View style={styles.liveCoverFrame}>
+              <View style={styles.liveCoverWrap}>
+                {liveCard.imageUri ? (
+                  <CachedImage source={{ uri: liveCard.imageUri }} style={styles.liveCover} />
+                ) : (
+                  <View style={[styles.liveCover, styles.liveCoverFallback]} />
+                )}
+                <LinearGradient
+                  pointerEvents='none'
+                  colors={['rgba(0,0,0,0)', 'rgba(0,0,0,0.64)']}
+                  style={styles.liveCoverShade}
+                />
+                <Pressable
+                  style={styles.liveAction}
+                  onPress={liveCard.onAction}
+                  accessibilityRole='button'
+                  accessibilityLabel={liveCard.actionLabel}
+                >
+                  <Text style={styles.liveActionLabel}>{liveCard.actionLabel}</Text>
+                </Pressable>
+              </View>
+            </View>
+            <View style={styles.livePanel}>
+              <View style={styles.liveCopy}>
+                <CourseLiveCamIcon />
+                <Text style={styles.liveMessage}>{liveCard.message}</Text>
+              </View>
+              {liveCard.whenLabel ? <Text style={styles.liveWhen}>{liveCard.whenLabel}</Text> : null}
+            </View>
+          </View>
+        </View>
+      ) : null}
+
+      <View style={styles.journeyHeader}>
+        <Text style={styles.displayTitle}>{t('profile.courseHome.journeyTitle', { defaultValue: 'Sua jornada' })}</Text>
+        <Text style={styles.journeyHint}>
+          {t('profile.courseHome.journeyHint', { defaultValue: 'Conclua cada etapa para liberar a próxima.' })}
+        </Text>
+      </View>
+      <CourseProgress completed={courseHome.completedContents} total={courseHome.totalContents} />
+
+      {courseHome.modules.length > 0 ? (
+        <View style={styles.stageList}>
+          {courseHome.modules.map((courseModule) => (
+            <CourseModuleCard
+              key={courseModule.id}
+              courseModule={courseModule}
+              onOpenCourseModule={openCourseModuleView}
+            />
+          ))}
+        </View>
+      ) : (
+        <Text style={styles.journeyHint}>
+          {t('profile.protocolDetail.noCourseSteps', { defaultValue: 'Nenhuma aula disponível no momento.' })}
+        </Text>
+      )}
+
+      <Modal visible={isMenuOpen} transparent animationType='fade' onRequestClose={() => setIsMenuOpen(false)}>
+        <View style={styles.menuBackdrop}>
+          <Pressable style={styles.menuDismissArea} onPress={() => setIsMenuOpen(false)} accessibilityRole='button' />
+          <View style={[styles.menuCard, { top: menuAnchor.top, right: menuAnchor.right }]}>
+            {protocolMenuOptions?.map((option) => (
+              <Pressable
+                key={option.label}
+                style={styles.menuOption}
+                onPress={() => {
+                  setIsMenuOpen(false);
+                  option.onPress();
+                }}
+                accessibilityRole='button'
+                accessibilityLabel={option.label}
+                testID={option.testID}
+              >
+                <Text style={styles.menuOptionLabel}>{option.label}</Text>
+              </Pressable>
+            ))}
+          </View>
+        </View>
+      </Modal>
+    </View>
   );
   if (openCourseModule && openContent) {
     courseJourney = (
@@ -710,6 +882,7 @@ const ProtocolDetailScreen: React.FC<Props> = ({ navigation, route }) => {
           void handleSharePress();
         }}
         onCompleteContent={completeContent}
+        communityId={communityId}
         onOpenLessonRating={(params) => {
           navigation.navigate('CourseLessonCompletion', params);
         }}
