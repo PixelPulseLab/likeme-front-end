@@ -30,3 +30,17 @@ export function personNameLabel(raw: string): string {
     .map((word) => (word.length > 0 ? word.charAt(0).toUpperCase() + word.slice(1).toLowerCase() : ''))
     .join(' ');
 }
+
+export function personNameInitials(raw: string): string {
+  const tokens = uniqueNameTokens(raw);
+  if (tokens.length === 0) {
+    return '';
+  }
+  const first = tokens[0].charAt(0).toUpperCase();
+  const last = tokens.length > 1 ? tokens[tokens.length - 1].charAt(0).toUpperCase() : '';
+  return `${first}${last}`;
+}
+
+export function isDefaultInitialsAvatar(uri: string | null | undefined): boolean {
+  return (uri ?? '').includes('cdn.auth0.com/avatars/');
+}
