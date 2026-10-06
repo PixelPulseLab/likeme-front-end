@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, ScrollView, Text, View } from 'react-native';
 import type { StackScreenProps } from '@react-navigation/stack';
 import { useFocusEffect } from '@react-navigation/native';
@@ -7,9 +7,11 @@ import { EmptyState, ShareContentUnavailable } from '@/components/ui/feedback';
 import { SecondaryButton } from '@/components/ui/buttons';
 import { type ButtonCarouselOption } from '@/components/ui/carousel';
 import InfoSectionTabsRow, { type InfoSectionMenuOption } from '@/components/ui/carousel/InfoSectionTabsRow';
-import { ModuleAccordion } from '@/components/sections/program';
-import { CourseHome } from '@/components/sections/program/CourseHome';
-import { buildCourse, formatCourseLiveWhen } from '@/components/sections/program/CourseHome/course';
+import ModuleAccordion, { type ModuleItem } from '@/components/sections/course/ModuleAccordion';
+import { CourseHome } from '@/screens/course/CourseHome';
+import { CourseContent } from '@/screens/course/CourseContent';
+import { CourseModule } from '@/screens/course/CourseModule';
+import { buildCourse, formatCourseLiveWhen } from '@/screens/course/course';
 import { EventBanner } from '@/components/sections/community';
 import { EventWebViewSession } from '@/components/infrastructure/webview/EventWebViewSession';
 import { MarkdownText } from '@/components/ui/text/MarkdownText';
@@ -20,7 +22,6 @@ import { useTranslation } from '@/hooks/i18n';
 import { MEMBER_PROTOCOL_COMMUNITY_IMAGE_FALLBACK } from '@/constants/community/communityProtocol';
 import { SHARE_CONTENT_TYPES } from '@/constants/share';
 import type { ProtocolDetailProtocol, RootStackParamList } from '@/types/navigation';
-import type { ModuleItem } from '@/components/sections/program/ModuleAccordion';
 import { courseService } from '@/services/course/courseService';
 import productService from '@/services/product/productService';
 import { subscriptionService } from '@/services/payment/subscriptionService';
@@ -147,6 +148,8 @@ const ProtocolDetailScreen: React.FC<Props> = ({ navigation, route }) => {
   const [expandedModuleId, setExpandedModuleId] = useState<string | null>(null);
   const [openCourseModuleId, setOpenCourseModuleId] = useState<string | null>(null);
   const [openContentId, setOpenContentId] = useState<string | null>(null);
+  const appliedCourseFocusToken = useRef<number | null>(null);
+  const courseFocus = route.params.courseFocus;
 
   const heroImageUri = protocol?.image?.trim() || (hasCommunity ? MEMBER_PROTOCOL_COMMUNITY_IMAGE_FALLBACK : '');
 
@@ -286,6 +289,20 @@ const ProtocolDetailScreen: React.FC<Props> = ({ navigation, route }) => {
       };
     }, [menuItems, opensCommunityFeed, resolvedProtocol?.subscriptionId, setMenu]),
   );
+
+  useEffect(() => {
+    if (!courseFocus || appliedCourseFocusToken.current === courseFocus.token) {
+      return;
+    }
+    appliedCourseFocusToken.current = courseFocus.token;
+    if (courseFocus.kind === 'home') {
+      setOpenContentId(null);
+      setOpenCourseModuleId(null);
+      return;
+    }
+    setOpenCourseModuleId(courseFocus.courseModuleId);
+    setOpenContentId(courseFocus.contentId);
+  }, [courseFocus]);
 
   const handleBack = () => {
     if (openContentId) {
@@ -428,6 +445,7 @@ const ProtocolDetailScreen: React.FC<Props> = ({ navigation, route }) => {
   const unpaidBadgeLabel = t('profile.acquisitionList.statusUnpaid', { defaultValue: 'Inadimplente' });
   const showsCourse = !isCanceledSubscription && !isUnpaidSubscription;
   const openCourseModule = courseHome.modules.find((courseModule) => courseModule.id === openCourseModuleId) ?? null;
+  const openContent = openCourseModule?.contents.find((content) => content.id === openContentId) ?? null;
   const contentHeaderTitle = openCourseModule?.title?.trim() || protocol.name;
   const innerScreenTitle = openContentId ? contentHeaderTitle : protocol.name;
   const courseHeaderTitle = openCourseModuleId ? innerScreenTitle : null;
@@ -655,6 +673,41 @@ const ProtocolDetailScreen: React.FC<Props> = ({ navigation, route }) => {
     }
   };
 
+  const openCourseModuleView = (courseModuleId: string) => {
+    setOpenContentId(null);
+    setOpenCourseModuleId(courseModuleId);
+  };
+  let courseJourney = (
+    <CourseHome
+      welcomeName={protocol.name}
+      description={aboutText}
+      course={courseHome}
+      live={liveCard}
+      onOpenCourseModule={openCourseModuleView}
+      menuOptions={protocolMenuOptions}
+    />
+  );
+  if (openCourseModule && openContent) {
+    courseJourney = (
+      <CourseContent
+        course={courseHome}
+        courseModule={openCourseModule}
+        content={openContent}
+        onShare={() => {
+          void handleSharePress();
+        }}
+        onCompleteContent={completeContent}
+        onOpenLessonRating={(params) => {
+          navigation.navigate('CourseLessonCompletion', params);
+        }}
+      />
+    );
+  } else if (openCourseModule) {
+    courseJourney = (
+      <CourseModule course={courseHome} courseModule={openCourseModule} onOpenContent={setOpenContentId} />
+    );
+  }
+
   return (
     <ScreenWithHeader
       navigation={navigation}
@@ -688,23 +741,7 @@ const ProtocolDetailScreen: React.FC<Props> = ({ navigation, route }) => {
                 <ActivityIndicator size='large' color={COLORS.PRIMARY.PURE} />
               </View>
             ) : (
-              <CourseHome
-                welcomeName={protocol.name}
-                description={aboutText}
-                course={courseHome}
-                live={liveCard}
-                openCourseModuleId={openCourseModuleId}
-                openContentId={openContentId}
-                onOpenCourseModule={(courseModuleId) => {
-                  setOpenContentId(null);
-                  setOpenCourseModuleId(courseModuleId);
-                }}
-                onOpenContent={setOpenContentId}
-                onCompleteContent={completeContent}
-                onShareContent={() => {
-                  void handleSharePress();
-                }}
-              />
+              courseJourney
             )}
           </>
         ) : (

@@ -23,22 +23,13 @@ export type CourseContent = {
   tips: string[];
 };
 
-export type CourseSubmodule = {
-  id: string;
-  position: number;
-  title: string;
-  summary: string | null;
-  completed: boolean;
-  contents: CourseContent[];
-};
-
 export type CourseModule = {
   id: string;
   position: number;
   title: string;
   summary: string | null;
   status: CourseModuleStatus;
-  submodules: CourseSubmodule[];
+  contents: CourseContent[];
 };
 
 export type CourseContinue = {
@@ -56,7 +47,7 @@ export type Course = {
   continueContent: CourseContinue | null;
 };
 
-function contentSummary(body: string | null): string | null {
+export function contentSummary(body: string | null): string | null {
   const line = body
     ?.split('\n')
     .map((part) => part.trim())
@@ -99,18 +90,6 @@ function contentFromStep(step: CourseStep, completedStepIds: ReadonlySet<string>
   };
 }
 
-function submoduleFromStep(step: CourseStep, completedStepIds: ReadonlySet<string>): CourseSubmodule {
-  const content = contentFromStep(step, completedStepIds);
-  return {
-    id: step.postId,
-    position: 1,
-    title: step.title,
-    summary: contentSummary(step.body),
-    completed: content.completed,
-    contents: [content],
-  };
-}
-
 function contentFromOutline(content: ProgramCourseContent, completedStepIds: ReadonlySet<string>): CourseContent {
   return {
     id: content.id,
@@ -128,15 +107,11 @@ function contentFromOutline(content: ProgramCourseContent, completedStepIds: Rea
 }
 
 function courseFromModules(modules: CourseModule[]): Course {
-  const contents = modules.flatMap((courseModule) =>
-    courseModule.submodules.flatMap((submodule) => submodule.contents),
-  );
+  const contents = modules.flatMap((courseModule) => courseModule.contents);
   const completedContents = contents.filter((content) => content.completed).length;
   const continueModule = modules.find((courseModule) => courseModule.status === COURSE_MODULE_STATUS.AVAILABLE) ?? null;
-  const continueSubmodule =
-    continueModule?.submodules.find((submodule) => submodule.contents.some((content) => !content.completed)) ?? null;
-  const continueContentItem = continueSubmodule?.contents.find((content) => !content.completed) ?? null;
-  const continueSummary = continueSubmodule?.summary ?? contentSummary(continueContentItem?.body ?? null);
+  const continueContentItem = continueModule?.contents.find((content) => !content.completed) ?? null;
+  const continueSummary = contentSummary(continueContentItem?.body ?? null);
   const continueContent =
     continueModule && continueContentItem
       ? {
@@ -161,10 +136,9 @@ function buildSteppedCourse(steps: CourseStep[], completedStepIds: ReadonlySet<s
   let previousModuleCompleted = true;
 
   steps.forEach((step, index) => {
-    const submodule = submoduleFromStep(step, completedStepIds);
-    const isCompleted = submodule.completed;
+    const content = contentFromStep(step, completedStepIds);
     let status: CourseModuleStatus = COURSE_MODULE_STATUS.LOCKED;
-    if (isCompleted) {
+    if (content.completed) {
       status = COURSE_MODULE_STATUS.COMPLETED;
     } else if (previousModuleCompleted) {
       status = COURSE_MODULE_STATUS.AVAILABLE;
@@ -174,12 +148,12 @@ function buildSteppedCourse(steps: CourseStep[], completedStepIds: ReadonlySet<s
       id: step.postId,
       position: index + 1,
       title: step.title,
-      summary: submodule.summary,
+      summary: contentSummary(step.body),
       status,
-      submodules: [submodule],
+      contents: [content],
     });
 
-    previousModuleCompleted = isCompleted;
+    previousModuleCompleted = content.completed;
   });
 
   return courseFromModules(modules);
@@ -191,23 +165,9 @@ function buildOutlinedCourse(outline: ProgramCourseModule[], completedStepIds: R
   const orderedModules = [...outline].sort((left, right) => left.position - right.position);
 
   for (const outlineModule of orderedModules) {
-    const submodules = [...outlineModule.submodules]
+    const moduleContents = [...outlineModule.contents]
       .sort((left, right) => left.position - right.position)
-      .map((outlineSubmodule) => {
-        const contents = [...outlineSubmodule.contents]
-          .sort((left, right) => left.position - right.position)
-          .map((content) => contentFromOutline(content, completedStepIds));
-        const completed = contents.length > 0 && contents.every((content) => content.completed);
-        return {
-          id: outlineSubmodule.id,
-          position: outlineSubmodule.position,
-          title: outlineSubmodule.title,
-          summary: outlineSubmodule.summary,
-          completed,
-          contents,
-        };
-      });
-    const moduleContents = submodules.flatMap((submodule) => submodule.contents);
+      .map((content) => contentFromOutline(content, completedStepIds));
     const isCompleted = moduleContents.length > 0 && moduleContents.every((content) => content.completed);
     let status: CourseModuleStatus = COURSE_MODULE_STATUS.LOCKED;
     if (isCompleted) {
@@ -224,7 +184,7 @@ function buildOutlinedCourse(outline: ProgramCourseModule[], completedStepIds: R
       title: outlineModule.title,
       summary: outlineModule.summary,
       status,
-      submodules,
+      contents: moduleContents,
     });
   }
 

@@ -4,7 +4,7 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import { BackgroundIconOutline } from '@/assets/ui';
 import { IconButton } from '@/components/ui/buttons';
 import PostAttachmentsSection from '@/components/sections/community/PostAttachments/PostAttachmentsSection';
-import { VideoPlayer } from '@/components/sections/program/VideoPlayer';
+import { VideoPlayer } from '@/components/sections/course/VideoPlayer';
 import { MarkdownText } from '@/components/ui/text/MarkdownText';
 import { storageService } from '@/services';
 import type { Attachment } from '@/types/attachment';

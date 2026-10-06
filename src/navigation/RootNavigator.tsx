@@ -53,6 +53,7 @@ import {
   getDesignSystemScreen,
   getDeleteAccountScreen,
   getProtocolDetailScreen,
+  getCourseLessonCompletionScreen,
   getSubscriptionListScreen,
   getManageProtocolSubscriptionScreen,
   getCancelProtocolSubscriptionScreen,
@@ -286,6 +287,13 @@ const RootNavigator: React.FC = () => {
                   name='ProtocolDetail'
                   getComponent={getProtocolDetailScreen}
                   options={{ title: 'Protocolo' }}
+                />
+                <Stack.Screen
+                  name='CourseLessonCompletion'
+                  getComponent={getCourseLessonCompletionScreen}
+                  options={{
+                    title: t('profile.courseLesson.completed', { defaultValue: 'Aula concluída' }),
+                  }}
                 />
                 <Stack.Screen
                   name='SubscriptionList'

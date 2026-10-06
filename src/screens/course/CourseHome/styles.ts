@@ -1,0 +1,183 @@
+import { StyleSheet } from 'react-native';
+import { BORDER_RADIUS, COLORS, FONT_FAMILY, FONT_SIZES, SPACING, TYPOGRAPHY } from '@/constants';
+
+const cardRadius = {
+  borderTopLeftRadius: BORDER_RADIUS.XL,
+  borderTopRightRadius: 28,
+  borderBottomRightRadius: SPACING.XL,
+  borderBottomLeftRadius: BORDER_RADIUS.MD,
+};
+
+export const styles = StyleSheet.create({
+  root: {
+    paddingHorizontal: SPACING.LG,
+    paddingTop: SPACING.LG,
+    gap: SPACING.XL,
+  },
+  welcomeBlock: {
+    gap: SPACING.MD,
+  },
+  welcomeHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: SPACING.SM,
+  },
+  welcomeTitle: {
+    flex: 1,
+  },
+  manageButton: {
+    flexShrink: 0,
+    minHeight: 36,
+    paddingHorizontal: SPACING.MD,
+    paddingVertical: SPACING.SM,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.WHITE,
+    borderTopLeftRadius: 18,
+    borderTopRightRadius: 18,
+    borderBottomRightRadius: BORDER_RADIUS.LG,
+    borderBottomLeftRadius: BORDER_RADIUS.LG,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  manageButtonOpen: {
+    backgroundColor: COLORS.PRIMARY.PURE,
+  },
+  menuBackdrop: {
+    flex: 1,
+  },
+  menuDismissArea: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  menuCard: {
+    position: 'absolute',
+    zIndex: 2,
+    minWidth: 165,
+    minHeight: 48,
+    paddingHorizontal: SPACING.MD,
+    paddingVertical: SPACING.MD_PLUS,
+    gap: SPACING.MD_PLUS,
+    backgroundColor: COLORS.SECONDARY.LIGHT,
+    borderWidth: 1,
+    borderColor: COLORS.PRIMARY.PURE,
+    borderTopLeftRadius: BORDER_RADIUS.XL,
+    borderTopRightRadius: BORDER_RADIUS.XL,
+    borderBottomRightRadius: BORDER_RADIUS.BUTTON_BOTTOM,
+    borderBottomLeftRadius: BORDER_RADIUS.BUTTON_BOTTOM,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  menuOption: {
+    alignItems: 'flex-start',
+    justifyContent: 'center',
+  },
+  menuOptionLabel: {
+    fontFamily: FONT_FAMILY.DM_SANS_MEDIUM,
+    fontSize: FONT_SIZES.SM,
+    lineHeight: 18,
+    color: COLORS.PRIMARY.PURE,
+    textAlign: 'left',
+  },
+  displayTitle: {
+    ...TYPOGRAPHY.displaySm,
+    color: COLORS.NEUTRAL.LOW.PURE,
+    textTransform: 'uppercase',
+  },
+  welcomeBody: {
+    ...TYPOGRAPHY.bodyMd,
+    color: COLORS.NEUTRAL.LOW.PURE,
+  },
+  section: {
+    gap: SPACING.SM,
+  },
+  sectionLabel: {
+    ...TYPOGRAPHY.bodyMdMedium,
+    color: COLORS.NEUTRAL.LOW.PURE,
+  },
+  continueCard: {
+    ...cardRadius,
+    backgroundColor: COLORS.PRIMARY.LIGHT,
+    flexDirection: 'row',
+    gap: SPACING.LG,
+    paddingHorizontal: SPACING.GAP_20,
+    paddingVertical: SPACING.MD,
+    minHeight: 187,
+  },
+  continueCover: {
+    width: 118,
+    height: 154,
+    borderTopLeftRadius: SPACING.GAP_20,
+    borderTopRightRadius: SPACING.GAP_20,
+    borderBottomRightRadius: SPACING.GAP_20,
+    borderBottomLeftRadius: BORDER_RADIUS.MD,
+  },
+  continueCopy: {
+    flex: 1,
+    justifyContent: 'space-between',
+    gap: SPACING.SM,
+  },
+  overline: {
+    ...TYPOGRAPHY.bodySmRegular,
+    color: COLORS.NEUTRAL.LOW.DARK,
+    textTransform: 'uppercase',
+  },
+  continueTitle: {
+    fontFamily: FONT_FAMILY.DM_SANS_BOLD,
+    fontSize: FONT_SIZES.MD,
+    lineHeight: 20,
+    color: COLORS.NEUTRAL.LOW.PURE,
+  },
+  continueSummary: {
+    ...TYPOGRAPHY.bodySm,
+    color: COLORS.TEXT_LIGHT,
+  },
+  liveRow: {
+    flexDirection: 'row',
+  },
+  liveCoverWrap: {
+    width: 139,
+    height: 148,
+    ...cardRadius,
+    overflow: 'hidden',
+    justifyContent: 'flex-end',
+    padding: SPACING.MD_PLUS,
+  },
+  liveCover: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  livePanel: {
+    flex: 1,
+    height: 148,
+    ...cardRadius,
+    backgroundColor: COLORS.HIGHLIGHT.LIGHT,
+    padding: SPACING.MD,
+    justifyContent: 'space-between',
+  },
+  liveMessage: {
+    ...TYPOGRAPHY.bodyMd,
+    color: COLORS.NEUTRAL.LOW.PURE,
+  },
+  liveWhen: {
+    fontFamily: FONT_FAMILY.DM_SANS_BOLD,
+    fontSize: FONT_SIZES.MD,
+    lineHeight: 20,
+    color: COLORS.NEUTRAL.LOW.PURE,
+  },
+  journeyHeader: {
+    gap: SPACING.SM,
+  },
+  journeyHint: {
+    ...TYPOGRAPHY.bodyMd,
+    color: COLORS.NEUTRAL.LOW.PURE,
+  },
+  stageList: {
+    gap: SPACING.LG,
+  },
+});

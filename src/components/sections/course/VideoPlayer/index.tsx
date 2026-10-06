@@ -21,6 +21,10 @@ import { styles } from './styles';
 
 const SEEK_STEP_SECONDS = 15;
 
+const COURSE_VIDEO_STATUS = {
+  FAILED: 'FAILED',
+} as const;
+
 type Props = {
   video: Attachment;
   opensFullscreen?: boolean;
@@ -82,7 +86,7 @@ export const VideoPlayer: React.FC<Props> = ({
   const positionRef = useRef(0);
   const [playbackOpen, setPlaybackOpen] = useState(false);
   const [WebViewCmp, setWebViewCmp] = useState<WebViewComponent | null>(null);
-  const [preferStreamFallback, setPreferStreamFallback] = useState(false);
+  const [embedFailed, setEmbedFailed] = useState(false);
   const [streamFailed, setStreamFailed] = useState(false);
   const [playing, setPlaying] = useState(false);
   const [started, setStarted] = useState(false);
@@ -98,17 +102,18 @@ export const VideoPlayer: React.FC<Props> = ({
   const streamUrl = video.streamUrl?.trim() || '';
   const playerUrl = video.playerUrl?.trim() || (!streamUrl ? video.url?.trim() || '' : '');
   const posterUri = video.posterUrl?.trim() || undefined;
-  const playable = video.playable !== false && videoHasPlaybackUrl(video);
+  const videoStatus = video.status?.trim().toUpperCase() ?? '';
+  const isFailedVideo = videoStatus === COURSE_VIDEO_STATUS.FAILED;
+  const canPlay = video.playable === true && !isFailedVideo && videoHasPlaybackUrl(video);
   const canUseWebView = isRncWebViewTurboModuleLinked();
 
-  // Embed do provedor quando há WebView; HLS como fallback (ou único caminho sem módulo nativo).
-  const useEmbedPlayer = Boolean(playerUrl) && !preferStreamFallback && canUseWebView;
-  const useStreamPlayer = Boolean(streamUrl) && !streamFailed && (!playerUrl || preferStreamFallback || !canUseWebView);
+  const useStreamPlayer = Boolean(streamUrl) && !streamFailed;
+  const useEmbedPlayer = !useStreamPlayer && Boolean(playerUrl) && canUseWebView && !embedFailed;
   const needsWebViewPlayer = playbackOpen && useEmbedPlayer;
 
   useEffect(() => {
     setPlaybackOpen(false);
-    setPreferStreamFallback(false);
+    setEmbedFailed(false);
     setStreamFailed(false);
     setPlaying(false);
     setStarted(false);
@@ -137,28 +142,28 @@ export const VideoPlayer: React.FC<Props> = ({
           videoId: video.id,
           cause,
         });
-        if (streamUrl) {
-          setPreferStreamFallback(true);
-        }
+        setEmbedFailed(true);
       });
 
     return () => {
       cancelled = true;
     };
-  }, [needsWebViewPlayer, streamUrl, video.id]);
+  }, [needsWebViewPlayer, video.id]);
 
-  if (!playable) {
+  if (!canPlay) {
     const unavailableStyle = isLesson ? styles.lessonUnavailable : styles.placeholder;
     const shellStyle = isLesson ? styles.lessonContainer : styles.container;
+    const unavailableLabel = isFailedVideo
+      ? t('course.video.failed', { defaultValue: 'Este vídeo está indisponível.' })
+      : t('course.video.unavailable', {
+          defaultValue: 'Vídeo ainda não está disponível para reprodução.',
+        });
+    const unavailableIcon = isFailedVideo ? 'error-outline' : 'hourglass-empty';
     return (
       <View style={shellStyle} testID='video-player-unavailable'>
         <View style={unavailableStyle}>
-          <Icon name='hourglass-empty' size={36} color={COLORS.NEUTRAL.LOW.MEDIUM} />
-          <Text style={styles.statusText}>
-            {t('course.video.unavailable', {
-              defaultValue: 'Vídeo ainda não está disponível para reprodução.',
-            })}
-          </Text>
+          <Icon name={unavailableIcon} size={36} color={COLORS.NEUTRAL.LOW.MEDIUM} />
+          <Text style={styles.statusText}>{unavailableLabel}</Text>
         </View>
       </View>
     );
@@ -203,10 +208,7 @@ export const VideoPlayer: React.FC<Props> = ({
                 playerUrl,
                 description: event.nativeEvent?.description,
               });
-              if (streamUrl) {
-                setPreferStreamFallback(true);
-                return;
-              }
+              setEmbedFailed(true);
               openPlayerExternally();
             }}
           />
@@ -248,8 +250,7 @@ export const VideoPlayer: React.FC<Props> = ({
               hasPlayerUrl: Boolean(playerUrl),
             });
             setStreamFailed(true);
-            if (playerUrl && canUseWebView) {
-              setPreferStreamFallback(false);
+            if (playerUrl && canUseWebView && !embedFailed) {
               return;
             }
             if (playerUrl) {

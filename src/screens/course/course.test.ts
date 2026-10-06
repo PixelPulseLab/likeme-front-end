@@ -42,32 +42,17 @@ describe('buildCourse', () => {
     expect(course.continueContent?.courseModuleId).toBe('b');
   });
 
-  it('abre a jornada no módulo e guarda os conteúdos de cada submódulo', () => {
+  it('abre a jornada no módulo e guarda os conteúdos', () => {
     const outline: ProgramCourseModule[] = [
       {
         id: 'mod-iniciante',
         position: 1,
         title: 'Iniciante',
         summary: 'Aprenda os movimentos e fundamentos.',
-        submodules: [
-          {
-            id: 'sub-aula-1',
-            position: 1,
-            title: 'Aula 1',
-            summary: null,
-            contents: [
-              { id: 'content-1', position: 1, title: 'Aula 1', body: null, attachments: [], video: null },
-              { id: 'content-2', position: 2, title: 'Aula 2', body: null, attachments: [], video: null },
-              { id: 'content-3', position: 3, title: 'Aula 3', body: null, attachments: [], video: null },
-            ],
-          },
-          {
-            id: 'sub-aula-2',
-            position: 2,
-            title: 'Aula 2',
-            summary: null,
-            contents: [],
-          },
+        contents: [
+          { id: 'content-1', position: 1, title: 'Aula 1', body: null, attachments: [], video: null },
+          { id: 'content-2', position: 2, title: 'Aula 2', body: null, attachments: [], video: null },
+          { id: 'content-3', position: 3, title: 'Aula 3', body: null, attachments: [], video: null },
         ],
       },
     ];
@@ -77,12 +62,7 @@ describe('buildCourse', () => {
     expect(course.modules).toHaveLength(1);
     expect(course.modules[0]?.title).toBe('Iniciante');
     expect(course.modules[0]?.status).toBe(COURSE_MODULE_STATUS.AVAILABLE);
-    expect(course.modules[0]?.submodules.map((submodule) => submodule.title)).toEqual(['Aula 1', 'Aula 2']);
-    expect(course.modules[0]?.submodules[0]?.contents.map((content) => content.title)).toEqual([
-      'Aula 1',
-      'Aula 2',
-      'Aula 3',
-    ]);
+    expect(course.modules[0]?.contents.map((content) => content.title)).toEqual(['Aula 1', 'Aula 2', 'Aula 3']);
     expect(course.totalContents).toBe(3);
     expect(course.continueContent?.courseModuleTitle).toBe('Iniciante');
     expect(course.continueContent?.contentTitle).toBe('Aula 1');

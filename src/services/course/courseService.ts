@@ -17,10 +17,7 @@ function mapProgramCourseContent(content: ProgramCourseContent): ProgramCourseCo
 function mapProgramCourseModule(module: ProgramCourseModule): ProgramCourseModule {
   return {
     ...module,
-    submodules: (module.submodules ?? []).map((submodule) => ({
-      ...submodule,
-      contents: (submodule.contents ?? []).map(mapProgramCourseContent),
-    })),
+    contents: (module.contents ?? []).map(mapProgramCourseContent),
   };
 }
 

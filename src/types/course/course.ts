@@ -24,20 +24,12 @@ export type ProgramCourseContent = {
   tips?: string[];
 };
 
-export type ProgramCourseSubmodule = {
-  id: string;
-  position: number;
-  title: string;
-  summary: string | null;
-  contents: ProgramCourseContent[];
-};
-
 export type ProgramCourseModule = {
   id: string;
   position: number;
   title: string;
   summary: string | null;
-  submodules: ProgramCourseSubmodule[];
+  contents: ProgramCourseContent[];
 };
 
 export type ProgramCourse = {

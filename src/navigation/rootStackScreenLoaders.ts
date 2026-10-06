@@ -95,7 +95,9 @@ export const getDesignSystemScreen = (): RootStackScreen =>
 export const getDeleteAccountScreen = (): RootStackScreen =>
   asScreen(require('../screens/profile/DeleteAccountScreen') as { default: RootStackScreen });
 export const getProtocolDetailScreen = (): RootStackScreen =>
-  asScreen(require('../screens/profile/ProtocolDetailScreen') as { default: RootStackScreen });
+  asScreen(require('../screens/course/ProtocolDetailScreen') as { default: RootStackScreen });
+export const getCourseLessonCompletionScreen = (): RootStackScreen =>
+  asScreen(require('../screens/course/LessonCompletionScreen') as { default: RootStackScreen });
 export const getSubscriptionListScreen = (): RootStackScreen =>
   asScreen(require('../screens/profile/SubscriptionListScreen') as { default: RootStackScreen });
 export const getManageProtocolSubscriptionScreen = (): RootStackScreen =>
