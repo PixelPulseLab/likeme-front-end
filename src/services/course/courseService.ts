@@ -2,6 +2,31 @@ import apiClient from '@/services/infrastructure/apiClient';
 import type { ProgramCourse, ProgramCourseContent, ProgramCourseModule } from '@/types/course/course';
 import type { ApiResponse } from '@/types/infrastructure';
 
+export type CourseContentComment = {
+  id: string;
+  comment: string;
+  createdAt: string;
+  author: {
+    name: string;
+    username: string | null;
+    avatar: string | null;
+  };
+};
+
+function courseContentPath(communityId: string, contentId: string): string {
+  return `/api/courses/program/communities/${encodeURIComponent(communityId.trim())}/contents/${encodeURIComponent(
+    contentId.trim(),
+  )}`;
+}
+
+function contentCommentsPath(communityId: string, contentId: string): string {
+  return `${courseContentPath(communityId, contentId)}/comments`;
+}
+
+function contentRatingPath(communityId: string, contentId: string): string {
+  return `${courseContentPath(communityId, contentId)}/rating`;
+}
+
 function mapProgramCourseContent(content: ProgramCourseContent): ProgramCourseContent {
   return {
     ...content,
@@ -60,6 +85,27 @@ class CourseService {
     const isSuccess = response.success === true || (response as { status?: string }).status === 'success';
     if (!isSuccess) {
       throw new Error(response.message || 'Erro ao concluir a aula');
+    }
+  }
+
+  async listContentComments(communityId: string, contentId: string): Promise<CourseContentComment[]> {
+    const response = await apiClient.get<ApiResponse<{ comments: CourseContentComment[] }>>(
+      contentCommentsPath(communityId, contentId),
+      undefined,
+      true,
+    );
+    return response.data?.comments ?? [];
+  }
+
+  async saveContentRating(
+    communityId: string,
+    contentId: string,
+    rating: { score: number; comment: string },
+  ): Promise<void> {
+    const response = await apiClient.post<ApiResponse<null>>(contentRatingPath(communityId, contentId), rating);
+    const isSuccess = response.success === true || (response as { status?: string }).status === 'success';
+    if (!isSuccess) {
+      throw new Error(response.message || 'Erro ao gravar a avaliação');
     }
   }
 }

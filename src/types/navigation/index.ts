@@ -40,6 +40,8 @@ export type CourseLessonCompletionNext = {
 };
 
 export type CourseLessonCompletionParams = {
+  communityId: string;
+  contentId: string;
   moduleTitle: string;
   coverUri: string | null;
   nextLesson: CourseLessonCompletionNext | null;

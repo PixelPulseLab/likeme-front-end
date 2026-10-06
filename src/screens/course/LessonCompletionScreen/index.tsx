@@ -10,7 +10,9 @@ import { useAnalyticsScreen } from '@/analytics';
 import { COLORS } from '@/constants';
 import { useUserAvatar } from '@/hooks/auth/useUserAvatar';
 import { useTranslation } from '@/hooks/i18n';
+import { courseService } from '@/services/course/courseService';
 import type { ProtocolCourseFocus, RootStackParamList } from '@/types/navigation';
+import { logger } from '@/utils/logger';
 import { styles } from './styles';
 
 type Props = StackScreenProps<RootStackParamList, 'CourseLessonCompletion'>;
@@ -43,9 +45,10 @@ const CourseLessonCompletionScreen: FC<Props> = ({ navigation, route }) => {
     screenClass: 'CourseLessonCompletionScreen',
   });
   const { t } = useTranslation();
-  const { moduleTitle, coverUri, nextLesson } = route.params;
+  const { moduleTitle, coverUri, nextLesson, communityId, contentId } = route.params;
   const [score, setScore] = useState<number | null>(null);
   const [comment, setComment] = useState('');
+  const [savingRating, setSavingRating] = useState(false);
   const avatarUri = useUserAvatar();
   const showComment = score != null;
   const congrats = t('profile.courseLesson.rateCongrats', {
@@ -77,6 +80,24 @@ const CourseLessonCompletionScreen: FC<Props> = ({ navigation, route }) => {
       return;
     }
     navigation.navigate('ProtocolDetail', { ...current, courseFocus });
+  };
+
+  const leaveAfterRating = async (goNext: () => void) => {
+    const text = comment.trim();
+    if (score != null && text) {
+      setSavingRating(true);
+      try {
+        await courseService.saveContentRating(communityId, contentId, { score, comment: text });
+      } catch (cause) {
+        logger.error('[CourseLessonCompletion] Falha ao gravar o comentário da aula', {
+          contentId,
+          cause,
+        });
+      } finally {
+        setSavingRating(false);
+      }
+    }
+    goNext();
   };
 
   const continueToNext = () => {
@@ -165,7 +186,12 @@ const CourseLessonCompletionScreen: FC<Props> = ({ navigation, route }) => {
             <Text style={styles.nextLabel}>
               {t('profile.courseLesson.nextLesson', { defaultValue: 'Próxima aula' })}
             </Text>
-            <Pressable style={styles.nextCard} onPress={continueToNext}>
+            <Pressable
+              style={styles.nextCard}
+              onPress={() => {
+                void leaveAfterRating(continueToNext);
+              }}
+            >
               {nextCover}
               <View style={styles.nextCopy}>
                 <Text style={styles.nextOverline}>{nextOverline}</Text>
@@ -179,12 +205,18 @@ const CourseLessonCompletionScreen: FC<Props> = ({ navigation, route }) => {
           <PrimaryButton
             label={t('profile.courseLesson.rateAndNext', { defaultValue: 'Avaliar e ir para o próximo' })}
             size='large'
-            onPress={continueToNext}
+            onPress={() => {
+              void leaveAfterRating(continueToNext);
+            }}
+            loading={savingRating}
           />
           <SecondaryButton
             label={t('profile.courseLesson.backToHome', { defaultValue: 'Voltar para a home' })}
             size='large'
-            onPress={backHome}
+            onPress={() => {
+              void leaveAfterRating(backHome);
+            }}
+            loading={savingRating}
           />
         </View>
       </ScrollView>

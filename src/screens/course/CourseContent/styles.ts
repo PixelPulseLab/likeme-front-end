@@ -69,4 +69,32 @@ export const styles = StyleSheet.create({
     ...TYPOGRAPHY.bodyMdMedium,
     color: COLORS.BLACK,
   },
+  commentItem: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: SPACING.SM,
+  },
+  commentAvatar: {
+    width: 26,
+    height: 24,
+    borderRadius: 12,
+  },
+  commentAvatarFallback: {
+    width: 26,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: COLORS.NEUTRAL.LOW.LIGHT,
+  },
+  commentCopy: {
+    flex: 1,
+    gap: SPACING.XS,
+  },
+  commentAuthor: {
+    ...TYPOGRAPHY.bodyMdMedium,
+    color: COLORS.NEUTRAL.LOW.PURE,
+  },
+  commentText: {
+    ...TYPOGRAPHY.bodyMd,
+    color: COLORS.NEUTRAL.LOW.PURE,
+  },
 });

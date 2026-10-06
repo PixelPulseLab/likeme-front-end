@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import LessonAwardIcon from '@/assets/course/lesson-award.svg';
 import LessonBookIcon from '@/assets/course/lesson-book.svg';
@@ -11,6 +11,7 @@ import { LessonFact } from '@/components/sections/course/LessonFact';
 import { LessonMaterialCard } from '@/components/sections/course/LessonMaterialCard';
 import { VideoPlayer } from '@/components/sections/course/VideoPlayer';
 import { useTranslation } from '@/hooks/i18n';
+import { courseService, type CourseContentComment } from '@/services/course/courseService';
 import type { CourseLessonCompletionParams } from '@/types/navigation';
 import type { Attachment } from '@/types/attachment';
 import { logger } from '@/utils/logger';
@@ -29,6 +30,7 @@ type Props = {
   onShare?: () => void;
   onCompleteContent?: (contentId: string) => Promise<void>;
   onOpenLessonRating?: (params: CourseLessonCompletionParams) => void;
+  communityId: string;
 };
 
 const CONTENT_TAB = {
@@ -85,10 +87,13 @@ export function CourseContent({
   onShare,
   onCompleteContent,
   onOpenLessonRating,
+  communityId,
 }: Props) {
   const { t } = useTranslation();
   const [tab, setTab] = useState<ContentTab>(CONTENT_TAB.ABOUT);
   const [completing, setCompleting] = useState(false);
+  const [comments, setComments] = useState<CourseContentComment[]>([]);
+  const [commentsLoading, setCommentsLoading] = useState(false);
   const materialAttachments = lessonMaterials(content);
   let durationLabel: string | null = null;
   if (content.durationMinutes === 1) {
@@ -101,6 +106,41 @@ export function CourseContent({
   }
   const hasLessonFacts =
     durationLabel != null || Boolean(content.level) || content.learningOutcomes.length > 0 || content.tips.length > 0;
+  const showsComments = tab === CONTENT_TAB.COMMENTS;
+
+  useEffect(() => {
+    if (!showsComments) {
+      return;
+    }
+
+    let cancelled = false;
+    setCommentsLoading(true);
+    courseService
+      .listContentComments(communityId, content.id)
+      .then((items) => {
+        if (!cancelled) {
+          setComments(items);
+        }
+      })
+      .catch((cause) => {
+        logger.error('[CourseContent] Falha ao carregar comentários da aula', {
+          contentId: content.id,
+          cause,
+        });
+        if (!cancelled) {
+          setComments([]);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setCommentsLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [showsComments, communityId, content.id]);
 
   const openLessonRating = async () => {
     if (onCompleteContent && !content.completed) {
@@ -127,6 +167,8 @@ export function CourseContent({
         }
       : null;
     onOpenLessonRating?.({
+      communityId,
+      contentId: content.id,
       moduleTitle: courseModule.title,
       coverUri: content.coverUri,
       nextLesson,
@@ -210,11 +252,34 @@ export function CourseContent({
         {tab === CONTENT_TAB.MATERIALS
           ? materialAttachments.map((attachment) => <LessonMaterialCard key={attachment.id} attachment={attachment} />)
           : null}
-        {tab === CONTENT_TAB.COMMENTS ? (
+        {tab === CONTENT_TAB.COMMENTS && commentsLoading ? (
+          <Text style={styles.lessonBody}>
+            {t('profile.courseLesson.commentsLoading', { defaultValue: 'Carregando comentários…' })}
+          </Text>
+        ) : null}
+        {tab === CONTENT_TAB.COMMENTS && !commentsLoading && comments.length === 0 ? (
           <Text style={styles.lessonBody}>
             {t('profile.courseLesson.commentsEmpty', { defaultValue: 'Nenhum comentário nesta aula.' })}
           </Text>
         ) : null}
+        {tab === CONTENT_TAB.COMMENTS && !commentsLoading
+          ? comments.map((item) => {
+              const commentAvatar = item.author.avatar ? (
+                <CachedImage source={{ uri: item.author.avatar }} style={styles.commentAvatar} />
+              ) : (
+                <View style={styles.commentAvatarFallback} />
+              );
+              return (
+                <View key={item.id} style={styles.commentItem}>
+                  {commentAvatar}
+                  <View style={styles.commentCopy}>
+                    <Text style={styles.commentAuthor}>{item.author.name}</Text>
+                    <Text style={styles.commentText}>{item.comment}</Text>
+                  </View>
+                </View>
+              );
+            })
+          : null}
         {onCompleteContent ? (
           <View style={styles.lessonComplete}>
             <SecondaryButton
