@@ -471,8 +471,21 @@ const ProtocolDetailScreen: React.FC<Props> = ({ navigation, route }) => {
     programBadge,
     ...heroBadges.filter((badge) => badge.trim().toLowerCase() !== programBadge.trim().toLowerCase()),
   ];
-  const liveImageUri = typeof eventBanner?.thumbnail === 'string' ? eventBanner.thumbnail.trim() : '';
+  let liveImageUri = '';
+  if (typeof eventBanner?.thumbnail === 'string') {
+    liveImageUri = eventBanner.thumbnail.trim();
+  } else if (
+    eventBanner?.thumbnail &&
+    typeof eventBanner.thumbnail === 'object' &&
+    'uri' in eventBanner.thumbnail &&
+    typeof eventBanner.thumbnail.uri === 'string'
+  ) {
+    liveImageUri = eventBanner.thumbnail.uri.trim();
+  }
   const isLiveJoin = eventBanner?.variant === 'live_join';
+  const isScheduledLive = eventBanner?.status === 'Scheduled';
+  const isLiveNow = eventBanner?.status === 'Live Now';
+  const showCourseLive = eventBanner != null && eventBanner.variant !== 'purchase' && (isScheduledLive || isLiveNow);
   const liveActionLabel = isLiveJoin
     ? t('profile.courseHome.joinLive', { defaultValue: 'Entrar' })
     : t('profile.courseHome.createReminder', { defaultValue: 'Criar lembrete' });
@@ -484,9 +497,9 @@ const ProtocolDetailScreen: React.FC<Props> = ({ navigation, route }) => {
       })
     : eventBanner?.title ?? '';
   const liveCard =
-    eventBanner && liveImageUri
+    showCourseLive && eventBanner
       ? {
-          imageUri: liveImageUri,
+          imageUri: liveImageUri || null,
           message: liveMessage,
           whenLabel: formatCourseLiveWhen(eventBanner.startTime),
           actionLabel: liveActionLabel,

@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState } from 'react';
 import { Dimensions, Modal, Pressable, Text, View } from 'react-native';
-import Icon from 'react-native-vector-icons/MaterialIcons';
+import { LinearGradient } from 'expo-linear-gradient';
+import CourseLiveCamIcon from '@/assets/course/course-live-cam.svg';
 import CourseMoreIcon from '@/assets/course/course-more.svg';
 import { SecondaryButton } from '@/components/ui/buttons';
 import { CachedImage } from '@/components/ui/media/CachedImage';
@@ -14,7 +15,7 @@ import type { Course } from '@/screens/course/course';
 import { styles } from './styles';
 
 export type CourseLiveCard = {
-  imageUri: string;
+  imageUri: string | null;
   message: string;
   whenLabel: string;
   actionLabel: string;
@@ -130,16 +131,36 @@ export function CourseHome({ welcomeName, description, course, live, onOpenCours
       ) : null}
 
       {live ? (
-        <View style={styles.section}>
-          <Text style={styles.sectionLabel}>{t('profile.courseHome.nextLive', { defaultValue: 'Próxima live' })}</Text>
+        <View style={styles.liveSection}>
+          <Text style={styles.liveLabel}>{t('profile.courseHome.nextLive', { defaultValue: 'Próxima live' })}</Text>
           <View style={styles.liveRow}>
-            <View style={styles.liveCoverWrap}>
-              <CachedImage source={{ uri: live.imageUri }} style={styles.liveCover} />
-              <SecondaryButton label={live.actionLabel} onPress={live.onAction} />
+            <View style={styles.liveCoverFrame}>
+              <View style={styles.liveCoverWrap}>
+                {live.imageUri ? (
+                  <CachedImage source={{ uri: live.imageUri }} style={styles.liveCover} />
+                ) : (
+                  <View style={[styles.liveCover, styles.liveCoverFallback]} />
+                )}
+                <LinearGradient
+                  pointerEvents='none'
+                  colors={['rgba(0,0,0,0)', 'rgba(0,0,0,0.64)']}
+                  style={styles.liveCoverShade}
+                />
+                <Pressable
+                  style={styles.liveAction}
+                  onPress={live.onAction}
+                  accessibilityRole='button'
+                  accessibilityLabel={live.actionLabel}
+                >
+                  <Text style={styles.liveActionLabel}>{live.actionLabel}</Text>
+                </Pressable>
+              </View>
             </View>
             <View style={styles.livePanel}>
-              <Icon name='videocam' size={24} color={COLORS.NEUTRAL.LOW.PURE} />
-              <Text style={styles.liveMessage}>{live.message}</Text>
+              <View style={styles.liveCopy}>
+                <CourseLiveCamIcon />
+                <Text style={styles.liveMessage}>{live.message}</Text>
+              </View>
               {live.whenLabel ? <Text style={styles.liveWhen}>{live.whenLabel}</Text> : null}
             </View>
           </View>

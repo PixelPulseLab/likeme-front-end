@@ -1,5 +1,5 @@
 import { useState, type FC } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import type { StackScreenProps } from '@react-navigation/stack';
 import LessonCheckIcon from '@/assets/course/lesson-check.svg';
 import LessonStarIcon from '@/assets/course/lesson-star.svg';
@@ -8,6 +8,7 @@ import { ScreenWithHeader } from '@/components/ui/layout';
 import { CachedImage } from '@/components/ui/media/CachedImage';
 import { useAnalyticsScreen } from '@/analytics';
 import { COLORS } from '@/constants';
+import { useUserAvatar } from '@/hooks/auth/useUserAvatar';
 import { useTranslation } from '@/hooks/i18n';
 import type { ProtocolCourseFocus, RootStackParamList } from '@/types/navigation';
 import { styles } from './styles';
@@ -44,6 +45,9 @@ const CourseLessonCompletionScreen: FC<Props> = ({ navigation, route }) => {
   const { t } = useTranslation();
   const { moduleTitle, coverUri, nextLesson } = route.params;
   const [score, setScore] = useState<number | null>(null);
+  const [comment, setComment] = useState('');
+  const avatarUri = useUserAvatar();
+  const showComment = score != null;
   const congrats = t('profile.courseLesson.rateCongrats', {
     defaultValue: 'Parabéns! Você concluiu mais uma aula do seu programa.',
   });
@@ -56,6 +60,14 @@ const CourseLessonCompletionScreen: FC<Props> = ({ navigation, route }) => {
   ) : (
     <View style={[styles.nextCover, { backgroundColor: COLORS.SECONDARY.MEDIUM }]} />
   );
+  const commentAvatar = avatarUri ? (
+    <CachedImage source={{ uri: avatarUri }} style={styles.commentAvatar} />
+  ) : (
+    <View style={styles.commentAvatarFallback} />
+  );
+  const commentPlaceholder = t('profile.courseLesson.rateCommentPlaceholder', {
+    defaultValue: 'Descreva sua experiência com a aula.',
+  });
 
   const focusProtocol = (courseFocus: ProtocolCourseFocus) => {
     const protocolRoute = navigation.getState().routes.find((item) => item.name === 'ProtocolDetail');
@@ -132,6 +144,22 @@ const CourseLessonCompletionScreen: FC<Props> = ({ navigation, route }) => {
             );
           })}
         </View>
+        {showComment ? (
+          <View style={styles.commentRow}>
+            {commentAvatar}
+            <View style={styles.commentBox}>
+              <TextInput
+                value={comment}
+                onChangeText={setComment}
+                placeholder={commentPlaceholder}
+                placeholderTextColor={COLORS.NEUTRAL.LOW.DARK}
+                multiline
+                style={styles.commentInput}
+                accessibilityLabel={commentPlaceholder}
+              />
+            </View>
+          </View>
+        ) : null}
         {nextLesson && nextOverline ? (
           <View style={styles.next}>
             <Text style={styles.nextLabel}>
