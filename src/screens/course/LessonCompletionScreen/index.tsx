@@ -1,4 +1,4 @@
-import { useState, type FC } from 'react';
+import { useCallback, useEffect, useRef, useState, type FC } from 'react';
 import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import type { StackScreenProps } from '@react-navigation/stack';
 import LessonCheckIcon from '@/assets/course/lesson-check.svg';
@@ -49,6 +49,11 @@ const CourseLessonCompletionScreen: FC<Props> = ({ navigation, route }) => {
   const [score, setScore] = useState<number | null>(null);
   const [comment, setComment] = useState('');
   const [savingRating, setSavingRating] = useState(false);
+  const ratingLeaveStarted = useRef(false);
+  const scoreRef = useRef(score);
+  const commentRef = useRef(comment);
+  scoreRef.current = score;
+  commentRef.current = comment;
   const avatarUri = useUserAvatar();
   const showComment = score != null;
   const congrats = t('profile.courseLesson.rateCongrats', {
@@ -82,23 +87,49 @@ const CourseLessonCompletionScreen: FC<Props> = ({ navigation, route }) => {
     navigation.navigate('ProtocolDetail', { ...current, courseFocus });
   };
 
-  const leaveAfterRating = async (goNext: () => void) => {
-    const text = comment.trim();
-    if (score != null && text) {
-      setSavingRating(true);
-      try {
-        await courseService.saveContentRating(communityId, contentId, { score, comment: text });
-      } catch (cause) {
-        logger.error('[CourseLessonCompletion] Falha ao gravar o comentário da aula', {
-          contentId,
-          cause,
-        });
-      } finally {
-        setSavingRating(false);
+  const leaveAfterRating = useCallback(
+    async (goNext: () => void) => {
+      if (ratingLeaveStarted.current) {
+        goNext();
+        return;
       }
-    }
-    goNext();
-  };
+      ratingLeaveStarted.current = true;
+      const text = commentRef.current.trim();
+      const currentScore = scoreRef.current;
+      if (currentScore != null && text) {
+        setSavingRating(true);
+        try {
+          await courseService.saveContentRating(communityId, contentId, { score: currentScore, comment: text });
+        } catch (cause) {
+          logger.error('[CourseLessonCompletion] Falha ao gravar o comentário da aula', {
+            contentId,
+            cause,
+          });
+        } finally {
+          setSavingRating(false);
+        }
+      }
+      goNext();
+    },
+    [communityId, contentId],
+  );
+
+  useEffect(() => {
+    return navigation.addListener('beforeRemove', (event) => {
+      if (ratingLeaveStarted.current) {
+        return;
+      }
+      const text = commentRef.current.trim();
+      const currentScore = scoreRef.current;
+      if (currentScore == null || !text) {
+        return;
+      }
+      event.preventDefault();
+      void leaveAfterRating(() => {
+        navigation.dispatch(event.data.action);
+      });
+    });
+  }, [navigation, leaveAfterRating]);
 
   const continueToNext = () => {
     if (!nextLesson) {
@@ -122,7 +153,9 @@ const CourseLessonCompletionScreen: FC<Props> = ({ navigation, route }) => {
       navigation={navigation}
       headerProps={{
         showBackButton: true,
-        onBackPress: () => navigation.goBack(),
+        onBackPress: () => {
+          void leaveAfterRating(() => navigation.goBack());
+        },
         customLogo: (
           <Text style={styles.headerTitle} numberOfLines={1}>
             {moduleTitle}
