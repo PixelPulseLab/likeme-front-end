@@ -1,20 +1,29 @@
 import { useEffect, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
+import CommentThumbDownIcon from '@/assets/course/comment-thumb-down.svg';
+import CommentThumbUpIcon from '@/assets/course/comment-thumb-up.svg';
 import LessonAwardIcon from '@/assets/course/lesson-award.svg';
 import LessonBookIcon from '@/assets/course/lesson-book.svg';
 import LessonCrownIcon from '@/assets/course/lesson-crown.svg';
 import LessonTimerIcon from '@/assets/course/lesson-timer.svg';
 import { IconButton, SecondaryButton } from '@/components/ui/buttons';
+import { COLORS } from '@/constants';
 import { CachedImage } from '@/components/ui/media/CachedImage';
 import { MarkdownText } from '@/components/ui/text/MarkdownText';
 import { LessonFact } from '@/components/sections/course/LessonFact';
 import { LessonMaterialCard } from '@/components/sections/course/LessonMaterialCard';
 import { VideoPlayer } from '@/components/sections/course/VideoPlayer';
 import { useTranslation } from '@/hooks/i18n';
-import { courseService, type CourseContentComment } from '@/services/course/courseService';
+import {
+  COURSE_CONTENT_COMMENT_REACTION,
+  courseService,
+  type CourseContentComment,
+  type CourseContentCommentReaction,
+} from '@/services/course/courseService';
 import type { CourseLessonCompletionParams } from '@/types/navigation';
 import type { Attachment } from '@/types/attachment';
 import { logger } from '@/utils/logger';
+import { isDefaultInitialsAvatar, personNameInitials, personNameLabel } from '@/utils/user/personNameLabel';
 import {
   contentSummary,
   type Course,
@@ -59,6 +68,67 @@ function nextCourseLesson(
   return lessons[index + 1] ?? null;
 }
 
+function LessonCommentCard({
+  item,
+  pending,
+  onReact,
+}: {
+  item: CourseContentComment;
+  pending: boolean;
+  onReact: (ratingId: string, reaction: CourseContentCommentReaction) => void;
+}) {
+  const authorName = personNameLabel(item.author.name);
+  const photoUri = isDefaultInitialsAvatar(item.author.avatar) ? null : item.author.avatar;
+  const initials = personNameInitials(item.author.name);
+  const isLiked = item.viewerReaction === COURSE_CONTENT_COMMENT_REACTION.LIKE;
+  const isDisliked = item.viewerReaction === COURSE_CONTENT_COMMENT_REACTION.DISLIKE;
+  const likeFill = isLiked ? COLORS.PRIMARY.PURE : 'none';
+  const dislikeFill = isDisliked ? COLORS.PRIMARY.PURE : 'none';
+  const avatar = photoUri ? (
+    <CachedImage source={{ uri: photoUri }} style={styles.commentAvatar} />
+  ) : (
+    <View style={styles.commentAvatarFallback}>
+      <Text style={styles.commentAvatarInitials}>{initials}</Text>
+    </View>
+  );
+
+  return (
+    <View style={styles.commentCard}>
+      <View style={styles.commentBody}>
+        <View style={styles.commentAuthorRow}>
+          {avatar}
+          <Text style={styles.commentAuthor}>{authorName}</Text>
+        </View>
+        <Text style={styles.commentText}>{item.comment}</Text>
+      </View>
+      <View style={styles.commentActions}>
+        <Pressable
+          style={({ pressed }) => [styles.commentAction, pressed && styles.commentActionPressed]}
+          onPress={() => onReact(item.id, COURSE_CONTENT_COMMENT_REACTION.LIKE)}
+          disabled={pending}
+          accessibilityRole='button'
+          accessibilityLabel='Curtir'
+          accessibilityState={{ selected: isLiked, disabled: pending }}
+        >
+          <CommentThumbUpIcon width={24} height={24} fill={likeFill} />
+          <Text style={styles.commentActionCount}>{item.likeCount}</Text>
+        </Pressable>
+        <Pressable
+          style={({ pressed }) => [styles.commentAction, pressed && styles.commentActionPressed]}
+          onPress={() => onReact(item.id, COURSE_CONTENT_COMMENT_REACTION.DISLIKE)}
+          disabled={pending}
+          accessibilityRole='button'
+          accessibilityLabel='Não curtir'
+          accessibilityState={{ selected: isDisliked, disabled: pending }}
+        >
+          <CommentThumbDownIcon width={24} height={24} fill={dislikeFill} />
+          <Text style={styles.commentActionCount}>{item.dislikeCount}</Text>
+        </Pressable>
+      </View>
+    </View>
+  );
+}
+
 function lessonMaterials(content: CourseContentRecord): Attachment[] {
   return content.attachments.filter((attachment) => attachment.type !== 'video' || !content.video);
 }
@@ -94,6 +164,7 @@ export function CourseContent({
   const [completing, setCompleting] = useState(false);
   const [comments, setComments] = useState<CourseContentComment[]>([]);
   const [commentsLoading, setCommentsLoading] = useState(false);
+  const [reactingCommentId, setReactingCommentId] = useState<string | null>(null);
   const materialAttachments = lessonMaterials(content);
   let durationLabel: string | null = null;
   if (content.durationMinutes === 1) {
@@ -141,6 +212,26 @@ export function CourseContent({
       cancelled = true;
     };
   }, [showsComments, communityId, content.id]);
+
+  const reactToComment = async (ratingId: string, reaction: CourseContentCommentReaction) => {
+    if (reactingCommentId) {
+      return;
+    }
+    setReactingCommentId(ratingId);
+    try {
+      const totals = await courseService.reactToContentComment(communityId, content.id, ratingId, reaction);
+      setComments((current) => current.map((item) => (item.id === ratingId ? { ...item, ...totals } : item)));
+    } catch (cause) {
+      logger.error('[CourseContent] Falha ao reagir ao comentário da aula', {
+        contentId: content.id,
+        ratingId,
+        reaction,
+        cause,
+      });
+    } finally {
+      setReactingCommentId(null);
+    }
+  };
 
   const openLessonRating = async () => {
     if (onCompleteContent && !content.completed) {
@@ -263,22 +354,16 @@ export function CourseContent({
           </Text>
         ) : null}
         {tab === CONTENT_TAB.COMMENTS && !commentsLoading
-          ? comments.map((item) => {
-              const commentAvatar = item.author.avatar ? (
-                <CachedImage source={{ uri: item.author.avatar }} style={styles.commentAvatar} />
-              ) : (
-                <View style={styles.commentAvatarFallback} />
-              );
-              return (
-                <View key={item.id} style={styles.commentItem}>
-                  {commentAvatar}
-                  <View style={styles.commentCopy}>
-                    <Text style={styles.commentAuthor}>{item.author.name}</Text>
-                    <Text style={styles.commentText}>{item.comment}</Text>
-                  </View>
-                </View>
-              );
-            })
+          ? comments.map((item) => (
+              <LessonCommentCard
+                key={item.id}
+                item={item}
+                pending={reactingCommentId === item.id}
+                onReact={(ratingId, reaction) => {
+                  void reactToComment(ratingId, reaction);
+                }}
+              />
+            ))
           : null}
         {onCompleteContent ? (
           <View style={styles.lessonComplete}>

@@ -2,6 +2,20 @@ import apiClient from '@/services/infrastructure/apiClient';
 import type { ProgramCourse, ProgramCourseContent, ProgramCourseModule } from '@/types/course/course';
 import type { ApiResponse } from '@/types/infrastructure';
 
+export const COURSE_CONTENT_COMMENT_REACTION = {
+  LIKE: 'like',
+  DISLIKE: 'dislike',
+} as const;
+
+export type CourseContentCommentReaction =
+  (typeof COURSE_CONTENT_COMMENT_REACTION)[keyof typeof COURSE_CONTENT_COMMENT_REACTION];
+
+export type CourseContentCommentReactionTotals = {
+  likeCount: number;
+  dislikeCount: number;
+  viewerReaction: CourseContentCommentReaction | null;
+};
+
 export type CourseContentComment = {
   id: string;
   comment: string;
@@ -11,7 +25,7 @@ export type CourseContentComment = {
     username: string | null;
     avatar: string | null;
   };
-};
+} & CourseContentCommentReactionTotals;
 
 function courseContentPath(communityId: string, contentId: string): string {
   return `/api/courses/program/communities/${encodeURIComponent(communityId.trim())}/contents/${encodeURIComponent(
@@ -21,6 +35,31 @@ function courseContentPath(communityId: string, contentId: string): string {
 
 function contentCommentsPath(communityId: string, contentId: string): string {
   return `${courseContentPath(communityId, contentId)}/comments`;
+}
+
+function commentReaction(value: string | null | undefined): CourseContentCommentReaction | null {
+  if (value === COURSE_CONTENT_COMMENT_REACTION.LIKE) {
+    return COURSE_CONTENT_COMMENT_REACTION.LIKE;
+  }
+  if (value === COURSE_CONTENT_COMMENT_REACTION.DISLIKE) {
+    return COURSE_CONTENT_COMMENT_REACTION.DISLIKE;
+  }
+  return null;
+}
+
+function commentReactionTotals(totals: CourseContentCommentReactionTotals): CourseContentCommentReactionTotals {
+  return {
+    likeCount: totals.likeCount ?? 0,
+    dislikeCount: totals.dislikeCount ?? 0,
+    viewerReaction: commentReaction(totals.viewerReaction),
+  };
+}
+
+function commentWithReaction(comment: CourseContentComment): CourseContentComment {
+  return {
+    ...comment,
+    ...commentReactionTotals(comment),
+  };
 }
 
 function contentRatingPath(communityId: string, contentId: string): string {
@@ -94,7 +133,24 @@ class CourseService {
       undefined,
       true,
     );
-    return response.data?.comments ?? [];
+    return (response.data?.comments ?? []).map(commentWithReaction);
+  }
+
+  async reactToContentComment(
+    communityId: string,
+    contentId: string,
+    ratingId: string,
+    reaction: CourseContentCommentReaction,
+  ): Promise<CourseContentCommentReactionTotals> {
+    const response = await apiClient.post<ApiResponse<CourseContentCommentReactionTotals>>(
+      `${contentCommentsPath(communityId, contentId)}/${encodeURIComponent(ratingId.trim())}/reaction`,
+      { reaction },
+    );
+    const isSuccess = response.success === true || (response as { status?: string }).status === 'success';
+    if (!isSuccess || !response.data) {
+      throw new Error(response.message || 'Erro ao reagir ao comentário');
+    }
+    return commentReactionTotals(response.data);
   }
 
   async saveContentRating(
