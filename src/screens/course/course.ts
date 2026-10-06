@@ -28,6 +28,7 @@ export type CourseModule = {
   position: number;
   title: string;
   summary: string | null;
+  isArchive: boolean;
   status: CourseModuleStatus;
   contents: CourseContent[];
 };
@@ -107,9 +108,11 @@ function contentFromOutline(content: ProgramCourseContent, completedStepIds: Rea
 }
 
 function courseFromModules(modules: CourseModule[]): Course {
-  const contents = modules.flatMap((courseModule) => courseModule.contents);
+  const journeyModules = modules.filter((courseModule) => !courseModule.isArchive);
+  const contents = journeyModules.flatMap((courseModule) => courseModule.contents);
   const completedContents = contents.filter((content) => content.completed).length;
-  const continueModule = modules.find((courseModule) => courseModule.status === COURSE_MODULE_STATUS.AVAILABLE) ?? null;
+  const continueModule =
+    journeyModules.find((courseModule) => courseModule.status === COURSE_MODULE_STATUS.AVAILABLE) ?? null;
   const continueContentItem = continueModule?.contents.find((content) => !content.completed) ?? null;
   const continueSummary = contentSummary(continueContentItem?.body ?? null);
   const continueContent =
@@ -149,6 +152,7 @@ function buildSteppedCourse(steps: CourseStep[], completedStepIds: ReadonlySet<s
       position: index + 1,
       title: step.title,
       summary: contentSummary(step.body),
+      isArchive: false,
       status,
       contents: [content],
     });
@@ -168,6 +172,18 @@ function buildOutlinedCourse(outline: ProgramCourseModule[], completedStepIds: R
     const moduleContents = [...outlineModule.contents]
       .sort((left, right) => left.position - right.position)
       .map((content) => contentFromOutline(content, completedStepIds));
+    if (outlineModule.isArchive) {
+      modules.push({
+        id: outlineModule.id,
+        position: outlineModule.position,
+        title: outlineModule.title,
+        summary: outlineModule.summary,
+        isArchive: true,
+        status: COURSE_MODULE_STATUS.AVAILABLE,
+        contents: moduleContents,
+      });
+      continue;
+    }
     const isCompleted = moduleContents.length > 0 && moduleContents.every((content) => content.completed);
     let status: CourseModuleStatus = COURSE_MODULE_STATUS.LOCKED;
     if (isCompleted) {
@@ -183,6 +199,7 @@ function buildOutlinedCourse(outline: ProgramCourseModule[], completedStepIds: R
       position: outlineModule.position,
       title: outlineModule.title,
       summary: outlineModule.summary,
+      isArchive: false,
       status,
       contents: moduleContents,
     });

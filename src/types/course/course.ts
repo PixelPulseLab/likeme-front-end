@@ -29,6 +29,7 @@ export type ProgramCourseModule = {
   position: number;
   title: string;
   summary: string | null;
+  isArchive?: boolean;
   contents: ProgramCourseContent[];
 };
 

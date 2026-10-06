@@ -14,6 +14,7 @@ import ModuleAccordion, { type ModuleItem } from '@/components/sections/course/M
 import { CourseModuleCard } from '@/components/sections/course/CourseModuleCard';
 import { CourseProgress } from '@/components/sections/course/CourseProgress';
 import { CachedImage } from '@/components/ui/media/CachedImage';
+import { CourseArchive } from '@/screens/course/CourseArchive';
 import { CourseContent } from '@/screens/course/CourseContent';
 import { CourseModule } from '@/screens/course/CourseModule';
 import { buildCourse, formatCourseLiveWhen } from '@/screens/course/course';
@@ -153,6 +154,8 @@ const ProtocolDetailScreen: React.FC<Props> = ({ navigation, route }) => {
   const [expandedModuleId, setExpandedModuleId] = useState<string | null>(null);
   const [openCourseModuleId, setOpenCourseModuleId] = useState<string | null>(null);
   const [openContentId, setOpenContentId] = useState<string | null>(null);
+  const [openArchive, setOpenArchive] = useState(false);
+  const [openArchiveModuleId, setOpenArchiveModuleId] = useState<string | null>(null);
   const appliedCourseFocusToken = useRef<number | null>(null);
   const courseFocus = route.params.courseFocus;
 
@@ -303,6 +306,8 @@ const ProtocolDetailScreen: React.FC<Props> = ({ navigation, route }) => {
     if (courseFocus.kind === 'home') {
       setOpenContentId(null);
       setOpenCourseModuleId(null);
+      setOpenArchive(false);
+      setOpenArchiveModuleId(null);
       return;
     }
     setOpenCourseModuleId(courseFocus.courseModuleId);
@@ -316,6 +321,14 @@ const ProtocolDetailScreen: React.FC<Props> = ({ navigation, route }) => {
     }
     if (openCourseModuleId) {
       setOpenCourseModuleId(null);
+      return;
+    }
+    if (openArchiveModuleId) {
+      setOpenArchiveModuleId(null);
+      return;
+    }
+    if (openArchive) {
+      setOpenArchive(false);
       return;
     }
     goBackOrShareHome(navigation);
@@ -470,7 +483,17 @@ const ProtocolDetailScreen: React.FC<Props> = ({ navigation, route }) => {
   const openContent = openCourseModule?.contents.find((content) => content.id === openContentId) ?? null;
   const contentHeaderTitle = openCourseModule?.title?.trim() || protocol.name;
   const innerScreenTitle = openContentId ? contentHeaderTitle : protocol.name;
-  const courseHeaderTitle = openCourseModuleId ? innerScreenTitle : null;
+  const archiveTitle = t('profile.courseArchive.title', { defaultValue: 'Acervo' });
+  const archiveModules = courseHome.modules.filter((courseModule) => courseModule.isArchive);
+  const journeyModules = courseHome.modules.filter((courseModule) => !courseModule.isArchive);
+  const openArchiveModule = archiveModules.find((courseModule) => courseModule.id === openArchiveModuleId) ?? null;
+  const archiveHeaderTitle = openArchiveModule?.title?.trim() || archiveTitle;
+  let courseHeaderTitle: string | null = null;
+  if (openArchive) {
+    courseHeaderTitle = archiveHeaderTitle;
+  } else if (openCourseModuleId) {
+    courseHeaderTitle = innerScreenTitle;
+  }
   const programBadge = t('profile.courseHome.programBadge', { defaultValue: 'Programa' });
   const heroBadges = (() => {
     const base = (protocol.badges ?? []).filter(Boolean);
@@ -710,8 +733,17 @@ const ProtocolDetailScreen: React.FC<Props> = ({ navigation, route }) => {
 
   const openCourseModuleView = (courseModuleId: string) => {
     setOpenContentId(null);
+    setOpenArchive(false);
+    setOpenArchiveModuleId(null);
     setOpenCourseModuleId(courseModuleId);
   };
+  const openArchiveView = () => {
+    setOpenContentId(null);
+    setOpenCourseModuleId(null);
+    setOpenArchiveModuleId(null);
+    setOpenArchive(true);
+  };
+  const archiveCover = heroImageUri ? <CachedImage source={{ uri: heroImageUri }} style={styles.archivePhoto} /> : null;
   const continueContent = courseHome.continueContent;
   const isProgramComplete = courseHome.totalContents > 0 && courseHome.completedContents >= courseHome.totalContents;
   const showCourseModuleTitle =
@@ -832,9 +864,9 @@ const ProtocolDetailScreen: React.FC<Props> = ({ navigation, route }) => {
       </View>
       <CourseProgress completed={courseHome.completedContents} total={courseHome.totalContents} />
 
-      {courseHome.modules.length > 0 ? (
+      {journeyModules.length > 0 ? (
         <View style={styles.stageList}>
-          {courseHome.modules.map((courseModule) => (
+          {journeyModules.map((courseModule) => (
             <CourseModuleCard
               key={courseModule.id}
               courseModule={courseModule}
@@ -847,6 +879,40 @@ const ProtocolDetailScreen: React.FC<Props> = ({ navigation, route }) => {
           {t('profile.protocolDetail.noCourseSteps', { defaultValue: 'Nenhuma aula disponível no momento.' })}
         </Text>
       )}
+
+      <View style={styles.archiveSection}>
+        <Text style={styles.displayTitle}>{t('profile.courseArchive.title', { defaultValue: 'Acervo' })}</Text>
+        <Pressable
+          style={styles.archiveCard}
+          onPress={openArchiveView}
+          accessibilityRole='button'
+          accessibilityLabel={t('profile.courseArchive.openAction', { defaultValue: 'Ver acervo' })}
+        >
+          {archiveCover}
+          <LinearGradient
+            pointerEvents='none'
+            colors={['rgba(0,0,0,0)', 'rgba(0,0,0,0.74)']}
+            style={styles.archiveShade}
+          />
+          <View style={styles.archiveCopy}>
+            <View style={styles.archiveBadge}>
+              <Text style={styles.archiveBadgeText}>
+                {t('profile.courseArchive.badge', { defaultValue: 'Temos novidades' })}
+              </Text>
+            </View>
+            <Text style={styles.archiveBody}>
+              {t('profile.courseArchive.cardBody', {
+                defaultValue: 'Reveja encontros e conteúdos exclusivos com a Betina.',
+              })}
+            </Text>
+            <View style={styles.archiveButton}>
+              <Text style={styles.archiveButtonLabel}>
+                {t('profile.courseArchive.openAction', { defaultValue: 'Ver acervo' })}
+              </Text>
+            </View>
+          </View>
+        </Pressable>
+      </View>
 
       <Modal visible={isMenuOpen} transparent animationType='fade' onRequestClose={() => setIsMenuOpen(false)}>
         <View style={styles.menuBackdrop}>
@@ -891,6 +957,15 @@ const ProtocolDetailScreen: React.FC<Props> = ({ navigation, route }) => {
   } else if (openCourseModule) {
     courseJourney = (
       <CourseModule course={courseHome} courseModule={openCourseModule} onOpenContent={setOpenContentId} />
+    );
+  } else if (openArchive) {
+    courseJourney = (
+      <CourseArchive
+        modules={archiveModules}
+        heroImageUri={heroImageUri}
+        openModuleId={openArchiveModuleId}
+        onOpenModule={setOpenArchiveModuleId}
+      />
     );
   }
 

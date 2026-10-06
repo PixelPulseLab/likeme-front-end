@@ -337,4 +337,65 @@ export const styles = StyleSheet.create({
   stageList: {
     gap: SPACING.LG,
   },
+  archiveSection: {
+    gap: SPACING.MD,
+  },
+  archiveCard: {
+    height: 164,
+    overflow: 'hidden',
+    ...cardRadius,
+    shadowColor: COLORS.BLACK,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  archivePhoto: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  archiveShade: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  archiveCopy: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    padding: SPACING.MD,
+    gap: SPACING.SM,
+  },
+  archiveBadge: {
+    alignSelf: 'flex-start',
+    backgroundColor: 'rgba(0, 17, 55, 0.64)',
+    borderRadius: BORDER_RADIUS.SM,
+    paddingHorizontal: SPACING.SM,
+    paddingVertical: 2,
+  },
+  archiveBadgeText: {
+    fontFamily: FONT_FAMILY.DM_SANS_MEDIUM,
+    fontSize: FONT_SIZES.XS,
+    lineHeight: 22,
+    color: '#F6DEA9',
+  },
+  archiveBody: {
+    ...TYPOGRAPHY.bodyMd,
+    color: COLORS.WHITE,
+  },
+  archiveButton: {
+    alignSelf: 'flex-start',
+    minHeight: 36,
+    justifyContent: 'center',
+    paddingHorizontal: SPACING.MD,
+    borderWidth: 1,
+    borderColor: COLORS.SECONDARY.LIGHT,
+    backgroundColor: 'rgba(240, 238, 225, 0.16)',
+    borderTopLeftRadius: 18,
+    borderTopRightRadius: 18,
+    borderBottomLeftRadius: BORDER_RADIUS.MD,
+    borderBottomRightRadius: BORDER_RADIUS.MD,
+  },
+  archiveButtonLabel: {
+    fontFamily: FONT_FAMILY.DM_SANS_MEDIUM,
+    fontSize: FONT_SIZES.SM,
+    lineHeight: 18,
+    color: COLORS.WHITE,
+  },
 });

@@ -67,4 +67,33 @@ describe('buildCourse', () => {
     expect(course.continueContent?.courseModuleTitle).toBe('Iniciante');
     expect(course.continueContent?.contentTitle).toBe('Aula 1');
   });
+
+  it('deixa o módulo de acervo fora da jornada e da trava', () => {
+    const outline: ProgramCourseModule[] = [
+      {
+        id: 'mod-jornada',
+        position: 1,
+        title: 'Jornada',
+        summary: null,
+        contents: [{ id: 'aula-1', position: 1, title: 'Aula 1', body: null, attachments: [], video: null }],
+      },
+      {
+        id: 'mod-lives',
+        position: 2,
+        title: 'Lives',
+        summary: null,
+        isArchive: true,
+        contents: [{ id: 'live-1', position: 1, title: 'Live 1', body: null, attachments: [], video: null }],
+      },
+    ];
+
+    const course = buildCourse([], new Set(), outline);
+
+    expect(course.totalContents).toBe(1);
+    expect(course.continueContent?.contentTitle).toBe('Aula 1');
+    expect(course.modules.find((courseModule) => courseModule.id === 'mod-lives')?.isArchive).toBe(true);
+    expect(course.modules.find((courseModule) => courseModule.id === 'mod-jornada')?.status).toBe(
+      COURSE_MODULE_STATUS.AVAILABLE,
+    );
+  });
 });
