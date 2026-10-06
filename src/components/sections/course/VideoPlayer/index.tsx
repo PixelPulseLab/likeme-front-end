@@ -597,5 +597,3 @@ export const VideoPlayer: React.FC<Props> = ({
     </View>
   );
 };
-
-export default VideoPlayer;
