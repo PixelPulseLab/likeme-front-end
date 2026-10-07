@@ -22,7 +22,11 @@ import { styles } from './styles';
 
 const SEEK_STEP_SECONDS = 15;
 
-const VIDEO_ORIENTATIONS = ['portrait', 'landscape-left', 'landscape-right'] as const;
+const VIDEO_ORIENTATIONS: Array<'portrait' | 'landscape-left' | 'landscape-right'> = [
+  'portrait',
+  'landscape-left',
+  'landscape-right',
+];
 
 const COURSE_VIDEO_STATUS = {
   FAILED: 'FAILED',
