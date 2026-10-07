@@ -17,7 +17,7 @@ import { logger } from '@/utils/logger';
 import storageService from './storageService';
 import { setOnboardingStep } from './setOnboardingStep';
 
-const AUTH_SESSION_POST_AUTH_SCREENS = new Set(['Home', 'Wall']);
+const AUTH_SESSION_POST_AUTH_SCREENS = new Set(['Home']);
 
 export type AuthSessionPostAuthRoute = {
   screen: string;
@@ -30,13 +30,19 @@ export type AuthSessionApplyResult = {
 };
 
 let cachedPostAuthRoute: AuthSessionPostAuthRoute | null = null;
+let cachedHasRedeemedInvitation: boolean | null = null;
 
 export function getCachedPostAuthRoute(): AuthSessionPostAuthRoute | null {
   return cachedPostAuthRoute;
 }
 
+export function getCachedHasRedeemedInvitation(): boolean | null {
+  return cachedHasRedeemedInvitation;
+}
+
 export function clearCachedPostAuthRoute(): void {
   cachedPostAuthRoute = null;
+  cachedHasRedeemedInvitation = null;
 }
 
 function readSessionPayload(envelope: unknown): Record<string, unknown> | null {
@@ -80,6 +86,14 @@ function readPostAuthRoute(payload: Record<string, unknown>): AuthSessionPostAut
   }
 
   return Object.keys(params).length > 0 ? { screen, params } : { screen };
+}
+
+function readHasRedeemedInvitation(payload: Record<string, unknown>): boolean | null {
+  const value = payload.hasRedeemedInvitation;
+  if (typeof value === 'boolean') {
+    return value;
+  }
+  return null;
 }
 
 async function persistSessionToken(payload: Record<string, unknown>): Promise<boolean> {
@@ -150,6 +164,7 @@ export async function applyAuthSessionResponse(envelope: unknown): Promise<AuthS
   const tokenPersisted = await persistSessionToken(payload);
 
   cachedPostAuthRoute = readPostAuthRoute(payload);
+  cachedHasRedeemedInvitation = readHasRedeemedInvitation(payload);
   seedHomeSummaryCaches(payload);
 
   return {

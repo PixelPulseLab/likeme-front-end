@@ -87,17 +87,16 @@ export async function invitationHomeRoute(
   screen?: string,
   params?: object,
 ): Promise<{ screen: string; params?: object }> {
-  if (screen === 'Home' || screen === 'Wall') {
+  if (screen === 'Home') {
     return { screen, params };
   }
   if (await storageService.getInvitationOpensHome()) {
     return { screen: 'Home' };
   }
   const pending = await storageService.takePendingInvitationProgramDestination();
-  if (!pending) {
-    return { screen: 'Wall' };
+  if (pending) {
+    await storageService.setInvitationOpensHome();
   }
-  await storageService.setInvitationOpensHome();
   return { screen: 'Home' };
 }
 

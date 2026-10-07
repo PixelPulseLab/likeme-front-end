@@ -3,7 +3,11 @@ import { Alert } from 'react-native';
 import { FORCE_START_ONBOARDING_LOCALLY } from '@/constants';
 import { storageService, AuthService } from '@/services';
 import { invitationHomeRoute, invitationService } from '@/services/invitation/invitationService';
-import { clearCachedPostAuthRoute, getCachedPostAuthRoute } from '@/services/auth/applyAuthSessionResponse';
+import {
+  clearCachedPostAuthRoute,
+  getCachedHasRedeemedInvitation,
+  getCachedPostAuthRoute,
+} from '@/services/auth/applyAuthSessionResponse';
 import { invalidateApiClientAuthTokenMemoryCache } from '@/services/infrastructure/apiClient';
 import { useTranslation } from '@/hooks/i18n';
 import { logger } from '@/utils/logger';
@@ -20,16 +24,16 @@ async function syncAuthSessionFromBackend(): Promise<void> {
   try {
     await AuthService.refreshBackendSessionFromStoredCredentials();
   } catch (error) {
-    logger.warn('[useOnboardingRedirect] syncAuthSessionFromBackend falhou; segue Home ou Wall', {
+    logger.warn('[useOnboardingRedirect] syncAuthSessionFromBackend falhou; segue Home', {
       cause: error,
     });
   }
 }
 
-function homeOrWallFromSession(
+function homeFromSession(
   postAuthRoute: { screen: string; params?: object } | null,
 ): { screen: string; params?: object } | undefined {
-  if (postAuthRoute?.screen === 'Home' || postAuthRoute?.screen === 'Wall') {
+  if (postAuthRoute?.screen === 'Home') {
     return postAuthRoute;
   }
   return undefined;
@@ -44,8 +48,21 @@ function isInvitationRedeemRoute(currentRoute: string | undefined): boolean {
   return currentRoute === 'InvitationCode' || currentRoute === 'InvitationContext';
 }
 
-function shouldStayOnInvitationRedeem(currentRoute: string | undefined, destinationScreen: string): boolean {
-  return destinationScreen === 'Wall' && isInvitationRedeemRoute(currentRoute);
+function shouldStayOnInvitationRedeem(
+  currentRoute: string | undefined,
+  sessionScreen: string | undefined,
+  hasRedeemedInvitation: boolean | null,
+): boolean {
+  if (!isInvitationRedeemRoute(currentRoute)) {
+    return false;
+  }
+  if (hasRedeemedInvitation === true) {
+    return false;
+  }
+  if (hasRedeemedInvitation === false) {
+    return true;
+  }
+  return sessionScreen !== 'Home';
 }
 
 export function useOnboardingRedirect(navigation: NavWithParent): void {
@@ -80,15 +97,16 @@ export function useOnboardingRedirect(navigation: NavWithParent): void {
 
         clearCachedPostAuthRoute();
         await syncAuthSessionFromBackend();
-        const sessionRoute = homeOrWallFromSession(getCachedPostAuthRoute());
-        const destination = await invitationHomeRoute(sessionRoute?.screen, sessionRoute?.params);
-        if (shouldStayOnInvitationRedeem(currentRoute, destination.screen)) {
+        const sessionRoute = homeFromSession(getCachedPostAuthRoute());
+        const hasRedeemedInvitation = getCachedHasRedeemedInvitation();
+        if (shouldStayOnInvitationRedeem(currentRoute, sessionRoute?.screen, hasRedeemedInvitation)) {
           return;
         }
+        const destination = await invitationHomeRoute(sessionRoute?.screen, sessionRoute?.params);
         replace(destination.screen, destination.params);
       } catch (error) {
         logger.error('Error checking onboarding status:', error);
-        replace('Wall');
+        replace('Home');
       }
     };
 

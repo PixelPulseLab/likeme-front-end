@@ -18,7 +18,6 @@ import {
   getInvitationCodeScreen,
   getInvitationContextScreen,
   getAvatarScreen,
-  getWallScreen,
   getAuthenticatedScreen,
   getWelcomeScreen,
   getRegisterScreen,
@@ -144,11 +143,6 @@ const RootNavigator: React.FC = () => {
                   name='OnboardingAvatar'
                   getComponent={getAvatarScreen}
                   options={{ title: 'Áreas de interesse', gestureEnabled: false }}
-                />
-                <Stack.Screen
-                  name='Wall'
-                  getComponent={getWallScreen}
-                  options={{ title: 'Tapume', gestureEnabled: false }}
                 />
                 <Stack.Screen
                   name='Authenticated'
