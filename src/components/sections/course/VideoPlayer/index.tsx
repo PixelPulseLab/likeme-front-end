@@ -28,6 +28,8 @@ const COURSE_VIDEO_STATUS = {
 type Props = {
   video: Attachment;
   opensFullscreen?: boolean;
+  startOpen?: boolean;
+  onClose?: () => void;
   presentation?: 'card' | 'lesson';
   title?: string;
   durationMinutes?: number | null;
@@ -76,6 +78,8 @@ function videoHasPlaybackUrl(video: Attachment): boolean {
 export const VideoPlayer: React.FC<Props> = ({
   video,
   opensFullscreen = false,
+  startOpen = false,
+  onClose,
   presentation = 'card',
   title = '',
   durationMinutes = null,
@@ -84,7 +88,7 @@ export const VideoPlayer: React.FC<Props> = ({
   const insets = useSafeAreaInsets();
   const videoRef = useRef<VideoRef>(null);
   const positionRef = useRef(0);
-  const [playbackOpen, setPlaybackOpen] = useState(false);
+  const [playbackOpen, setPlaybackOpen] = useState(startOpen && opensFullscreen);
   const [WebViewCmp, setWebViewCmp] = useState<WebViewComponent | null>(null);
   const [embedFailed, setEmbedFailed] = useState(false);
   const [streamFailed, setStreamFailed] = useState(false);
@@ -112,7 +116,7 @@ export const VideoPlayer: React.FC<Props> = ({
   const needsWebViewPlayer = playbackOpen && useEmbedPlayer;
 
   useEffect(() => {
-    setPlaybackOpen(false);
+    setPlaybackOpen(startOpen && opensFullscreen);
     setEmbedFailed(false);
     setStreamFailed(false);
     setPlaying(false);
@@ -123,7 +127,7 @@ export const VideoPlayer: React.FC<Props> = ({
     setStreamReady(false);
     positionRef.current = 0;
     pendingSeekRef.current = null;
-  }, [video.id]);
+  }, [video.id, startOpen, opensFullscreen]);
 
   useEffect(() => {
     if (!needsWebViewPlayer) {
@@ -215,7 +219,7 @@ export const VideoPlayer: React.FC<Props> = ({
           {opensFullscreen ? null : (
             <Pressable
               style={styles.collapseTouch}
-              onPress={() => setPlaybackOpen(false)}
+              onPress={closePlayback}
               accessibilityRole='button'
               accessibilityLabel={t('course.video.collapse', { defaultValue: 'Voltar à capa do vídeo' })}
             >
@@ -389,6 +393,11 @@ export const VideoPlayer: React.FC<Props> = ({
     setFullscreen((current) => !current);
   };
 
+  const closePlayback = () => {
+    setPlaybackOpen(false);
+    onClose?.();
+  };
+
   const embedModal =
     playbackOpen && (opensFullscreen || isLesson) ? (
       <Modal
@@ -396,13 +405,13 @@ export const VideoPlayer: React.FC<Props> = ({
         animationType='fade'
         statusBarTranslucent
         supportedOrientations={['portrait', 'landscape', 'landscape-left', 'landscape-right']}
-        onRequestClose={() => setPlaybackOpen(false)}
+        onRequestClose={closePlayback}
       >
         <View style={styles.fullscreenStage}>
           <View style={styles.fullscreenPlayer}>{renderPlayer()}</View>
           <Pressable
             style={[styles.fullscreenClose, { top: insets.top + SPACING.SM }]}
-            onPress={() => setPlaybackOpen(false)}
+            onPress={closePlayback}
             accessibilityRole='button'
             accessibilityLabel={t('course.video.collapse', { defaultValue: 'Voltar à capa do vídeo' })}
           >
@@ -563,6 +572,10 @@ export const VideoPlayer: React.FC<Props> = ({
         {embedModal}
       </View>
     );
+  }
+
+  if (startOpen && opensFullscreen) {
+    return embedModal;
   }
 
   return (

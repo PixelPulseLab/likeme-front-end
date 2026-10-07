@@ -16,6 +16,7 @@ export type CourseContent = {
   coverUri: string | null;
   video: Attachment | null;
   attachments: Attachment[];
+  createdAt: string | null;
   completed: boolean;
   durationMinutes: number | null;
   level: string | null;
@@ -83,6 +84,7 @@ function contentFromStep(step: CourseStep, completedStepIds: ReadonlySet<string>
     coverUri: contentCoverUri(step),
     video: step.video?.id?.trim() ? step.video : null,
     attachments: step.attachments ?? [],
+    createdAt: step.createdAt,
     completed: completedStepIds.has(step.postId),
     durationMinutes: null,
     level: null,
@@ -99,6 +101,7 @@ function contentFromOutline(content: ProgramCourseContent, completedStepIds: Rea
     coverUri: contentCoverUri(content),
     video: content.video?.id?.trim() ? content.video : null,
     attachments: content.attachments ?? [],
+    createdAt: content.createdAt ?? null,
     completed: completedStepIds.has(content.id),
     durationMinutes: content.durationMinutes ?? null,
     level: content.level?.trim() || null,

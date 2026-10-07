@@ -492,15 +492,10 @@ const ProtocolDetailScreen: React.FC<Props> = ({ navigation, route }) => {
   const openContent = openCourseModule?.contents.find((content) => content.id === openContentId) ?? null;
   const contentHeaderTitle = openCourseModule?.title?.trim() || protocol.name;
   const innerScreenTitle = openContentId ? contentHeaderTitle : protocol.name;
-  const archiveTitle = t('profile.courseArchive.title', { defaultValue: 'Acervo' });
   const archiveModules = courseHome.modules.filter((courseModule) => courseModule.isArchive);
   const journeyModules = courseHome.modules.filter((courseModule) => !courseModule.isArchive);
-  const openArchiveModule = archiveModules.find((courseModule) => courseModule.id === openArchiveModuleId) ?? null;
-  const archiveHeaderTitle = openArchiveModule?.title?.trim() || archiveTitle;
   let courseHeaderTitle: string | null = null;
-  if (openArchive) {
-    courseHeaderTitle = archiveHeaderTitle;
-  } else if (openCourseModuleId) {
+  if (!openArchive && openCourseModuleId) {
     courseHeaderTitle = innerScreenTitle;
   }
   const programBadge = t('profile.courseHome.programBadge', { defaultValue: 'Programa' });
@@ -761,6 +756,34 @@ const ProtocolDetailScreen: React.FC<Props> = ({ navigation, route }) => {
         user?: { person?: { gender?: string | null } | null } | null;
       } | null
     )?.user?.person?.gender?.trim() || null;
+  const specialistFirstName = courseSpecialistName.split(/\s+/).find(Boolean) ?? '';
+  const isMasculineSpecialist = courseSpecialistGender?.toLowerCase() === 'male';
+  const archiveTitle = t('profile.courseArchive.title', { defaultValue: 'Acervo' });
+  const archiveTitleKey = isMasculineSpecialist
+    ? 'profile.courseArchive.titleWithNameMasculine'
+    : 'profile.courseArchive.titleWithNameFeminine';
+  const archiveTitleDefault = isMasculineSpecialist ? 'Acervo do {{name}}' : 'Acervo da {{name}}';
+  const archiveSubtitleKey = isMasculineSpecialist
+    ? 'profile.courseArchive.subtitleMasculine'
+    : 'profile.courseArchive.subtitleFeminine';
+  const archiveSubtitleDefault = isMasculineSpecialist
+    ? 'Reveja os encontros com o {{name}} quando quiser.'
+    : 'Reveja os encontros com a {{name}} quando quiser.';
+  const archiveTitleWithName = t(archiveTitleKey, {
+    name: specialistFirstName,
+    defaultValue: archiveTitleDefault,
+  });
+  const archiveSubtitleWithName = t(archiveSubtitleKey, {
+    name: specialistFirstName,
+    defaultValue: archiveSubtitleDefault,
+  });
+  const archiveListTitle = specialistFirstName ? archiveTitleWithName : archiveTitle;
+  const archiveSubtitle = specialistFirstName
+    ? archiveSubtitleWithName
+    : t('profile.courseArchive.subtitle', { defaultValue: 'Reveja os encontros quando quiser.' });
+  if (openArchive) {
+    courseHeaderTitle = archiveListTitle;
+  }
   const openSpecialistProfile = () => {
     if (!courseSpecialist || !courseSpecialistName) {
       return;
@@ -933,41 +956,43 @@ const ProtocolDetailScreen: React.FC<Props> = ({ navigation, route }) => {
         </Text>
       )}
 
-      <View style={styles.archiveSection}>
-        <Text style={styles.displayTitle}>{t('profile.courseArchive.title', { defaultValue: 'Acervo' })}</Text>
-        <Pressable
-          style={styles.archiveCard}
-          onPress={openArchiveView}
-          accessibilityRole='button'
-          accessibilityLabel={t('profile.courseArchive.openAction', { defaultValue: 'Ver acervo' })}
-        >
-          {archiveCover}
-          <LinearGradient
-            pointerEvents='none'
-            colors={['rgba(0,0,0,0)', 'rgba(0,0,0,0.74)']}
-            style={styles.archiveShade}
-          />
-          <View style={styles.archiveCopy}>
-            <View style={styles.archiveBadge}>
-              <Text style={styles.archiveBadgeText}>
-                {t('profile.courseArchive.badge', { defaultValue: 'Temos novidades' })}
-              </Text>
-            </View>
-            <View style={styles.archiveFooter}>
-              <Text style={styles.archiveBody}>
-                {t('profile.courseArchive.cardBody', {
-                  defaultValue: 'Reveja encontros e conteúdos exclusivos com a Betina.',
-                })}
-              </Text>
-              <View style={styles.archiveButton}>
-                <Text style={styles.archiveButtonLabel}>
-                  {t('profile.courseArchive.openAction', { defaultValue: 'Ver acervo' })}
+      {archiveModules.length > 0 ? (
+        <View style={styles.archiveSection}>
+          <Text style={styles.displayTitle}>{t('profile.courseArchive.title', { defaultValue: 'Acervo' })}</Text>
+          <Pressable
+            style={styles.archiveCard}
+            onPress={openArchiveView}
+            accessibilityRole='button'
+            accessibilityLabel={t('profile.courseArchive.openAction', { defaultValue: 'Ver acervo' })}
+          >
+            {archiveCover}
+            <LinearGradient
+              pointerEvents='none'
+              colors={['rgba(0,0,0,0)', 'rgba(0,0,0,0.74)']}
+              style={styles.archiveShade}
+            />
+            <View style={styles.archiveCopy}>
+              <View style={styles.archiveBadge}>
+                <Text style={styles.archiveBadgeText}>
+                  {t('profile.courseArchive.badge', { defaultValue: 'Temos novidades' })}
                 </Text>
               </View>
+              <View style={styles.archiveFooter}>
+                <Text style={styles.archiveBody}>
+                  {t('profile.courseArchive.cardBody', {
+                    defaultValue: 'Reveja encontros e conteúdos exclusivos com a Betina.',
+                  })}
+                </Text>
+                <View style={styles.archiveButton}>
+                  <Text style={styles.archiveButtonLabel}>
+                    {t('profile.courseArchive.openAction', { defaultValue: 'Ver acervo' })}
+                  </Text>
+                </View>
+              </View>
             </View>
-          </View>
-        </Pressable>
-      </View>
+          </Pressable>
+        </View>
+      ) : null}
 
       {courseSpecialist && courseSpecialistName ? (
         <CourseSpecialist
@@ -1029,6 +1054,7 @@ const ProtocolDetailScreen: React.FC<Props> = ({ navigation, route }) => {
       <CourseArchive
         modules={archiveModules}
         heroImageUri={heroImageUri}
+        subtitle={archiveSubtitle}
         openModuleId={openArchiveModuleId}
         onOpenModule={setOpenArchiveModuleId}
       />
