@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Linking, Modal, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import * as ScreenOrientation from 'expo-screen-orientation';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Video, { type OnLoadData, type OnProgressData, type VideoRef } from 'react-native-video';
 import Icon from 'react-native-vector-icons/MaterialIcons';
@@ -20,6 +21,8 @@ import { isRncWebViewTurboModuleLinked } from '@/utils/infrastructure/rncWebView
 import { styles } from './styles';
 
 const SEEK_STEP_SECONDS = 15;
+
+const VIDEO_ORIENTATIONS = ['portrait', 'landscape-left', 'landscape-right'] as const;
 
 const COURSE_VIDEO_STATUS = {
   FAILED: 'FAILED',
@@ -130,6 +133,22 @@ export const VideoPlayer: React.FC<Props> = ({
     positionRef.current = 0;
     pendingSeekRef.current = null;
   }, [video.id, startOpen, opensFullscreen]);
+
+  const videoFollowsDevice = fullscreen || (playbackOpen && (opensFullscreen || isLesson));
+
+  useEffect(() => {
+    if (!videoFollowsDevice) {
+      return;
+    }
+    void ScreenOrientation.unlockAsync().catch((cause: unknown) => {
+      logger.warn('[VideoPlayer] Não foi possível liberar a orientação do vídeo', { videoId: video.id, cause });
+    });
+    return () => {
+      void ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP).catch((cause: unknown) => {
+        logger.warn('[VideoPlayer] Não foi possível travar a orientação em retrato', { videoId: video.id, cause });
+      });
+    };
+  }, [video.id, videoFollowsDevice]);
 
   useEffect(() => {
     if (!needsWebViewPlayer) {
@@ -405,9 +424,10 @@ export const VideoPlayer: React.FC<Props> = ({
     playbackOpen && (opensFullscreen || isLesson) ? (
       <Modal
         visible
-        animationType='fade'
+        animationType='none'
+        presentationStyle='overFullScreen'
         statusBarTranslucent
-        supportedOrientations={['portrait', 'landscape', 'landscape-left', 'landscape-right']}
+        supportedOrientations={VIDEO_ORIENTATIONS}
         onRequestClose={closePlayback}
       >
         <View style={styles.fullscreenStage}>
@@ -447,6 +467,7 @@ export const VideoPlayer: React.FC<Props> = ({
           source={videoSourceFromUri(streamUrl)}
           style={StyleSheet.absoluteFill}
           controls={false}
+          fullscreenAutorotate={false}
           paused={!playing}
           muted={muted}
           resizeMode={lessonResizeMode}
@@ -558,9 +579,10 @@ export const VideoPlayer: React.FC<Props> = ({
     const lessonStage = fullscreen ? (
       <Modal
         visible
-        animationType='fade'
+        animationType='none'
+        presentationStyle='overFullScreen'
         statusBarTranslucent
-        supportedOrientations={['portrait', 'landscape', 'landscape-left', 'landscape-right']}
+        supportedOrientations={VIDEO_ORIENTATIONS}
         onRequestClose={() => setFullscreen(false)}
       >
         <View style={styles.fullscreenStage}>{lessonFrame}</View>

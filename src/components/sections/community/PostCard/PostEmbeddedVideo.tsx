@@ -68,6 +68,7 @@ const PostEmbeddedVideoInner: React.FC<Props> = ({
         source={videoSourceFromUri(videoUri)}
         style={styles.video}
         controls
+        fullscreenAutorotate={false}
         paused={false}
         muted={muted}
         volume={volume}
