@@ -38,6 +38,7 @@ type Props = {
   backgroundTintColor?: string | readonly string[] | null;
   containerStyle?: ViewStyle;
   iconContainerStyle?: ViewStyle;
+  accessibilityLabel?: string;
 };
 
 const IconButton: React.FC<Props> = (props) => {
@@ -55,6 +56,7 @@ const IconButton: React.FC<Props> = (props) => {
     backgroundSource,
     containerStyle,
     iconContainerStyle,
+    accessibilityLabel,
   } = props;
 
   const variantConfig = VARIANT_CONFIG[variant];
@@ -95,6 +97,8 @@ const IconButton: React.FC<Props> = (props) => {
       onPress={onPress}
       activeOpacity={0.7}
       disabled={disabled}
+      accessibilityRole='button'
+      accessibilityLabel={accessibilityLabel}
     >
       {iconFace}
       {label && <Text style={styles.label}>{label}</Text>}

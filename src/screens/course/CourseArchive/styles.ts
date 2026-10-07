@@ -158,21 +158,19 @@ export const styles = StyleSheet.create({
   contentTop: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: SPACING.MD_PLUS,
+    zIndex: 1,
   },
-  contentPlay: {
-    position: 'absolute',
-    top: '50%',
-    left: '50%',
-    width: 64,
-    height: 64,
-    marginTop: -32,
-    marginLeft: -32,
+  contentVolume: {
+    padding: 0,
+  },
+  contentPlayOverlay: {
+    ...StyleSheet.absoluteFillObject,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  contentPlayIcon: {
-    transform: [{ scale: 2.4 }],
+  contentPlay: {
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   contentFooter: {
     gap: SPACING.SM,
@@ -192,6 +190,7 @@ export const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
   contentBadge: {
+    overflow: 'hidden',
     minHeight: 24,
     justifyContent: 'center',
     paddingHorizontal: 14,
@@ -200,6 +199,9 @@ export const styles = StyleSheet.create({
     borderTopRightRadius: BORDER_RADIUS.MD,
     borderBottomRightRadius: 11,
     borderBottomLeftRadius: 11,
+  },
+  contentBadgeBlur: {
+    ...StyleSheet.absoluteFillObject,
   },
   contentBadgeText: {
     fontFamily: FONT_FAMILY.DM_SANS_REGULAR,

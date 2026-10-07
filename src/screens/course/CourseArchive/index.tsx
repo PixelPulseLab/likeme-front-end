@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
+import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import Icon from 'react-native-vector-icons/MaterialIcons';
-import PlayerFullscreenIcon from '@/assets/course/player-fullscreen.svg';
 import PlayerPlayIcon from '@/assets/course/player-play.svg';
 import PlayerVolumeIcon from '@/assets/course/player-volume.svg';
+import { IconButton } from '@/components/ui/buttons';
 import { CachedImage } from '@/components/ui/media/CachedImage';
 import { JoinCard } from '@/components/ui/cards/JoinCard';
 import { VideoPlayer } from '@/components/sections/course/VideoPlayer';
@@ -66,6 +67,7 @@ export function CourseArchive({ modules, heroImageUri, subtitle, openModuleId, o
   const [sort, setSort] = useState<ArchiveContentSort>(ARCHIVE_CONTENT_SORT.RECENT);
   const [moduleMenuOpen, setModuleMenuOpen] = useState(false);
   const [playingContentId, setPlayingContentId] = useState<string | null>(null);
+  const [muted, setMuted] = useState(false);
   const openModule = modules.find((courseModule) => courseModule.id === openModuleId) ?? null;
   const isRecentSort = sort === ARCHIVE_CONTENT_SORT.RECENT;
 
@@ -107,6 +109,7 @@ export function CourseArchive({ modules, heroImageUri, subtitle, openModuleId, o
             }
             const durationBadge = durationText ? (
               <View style={styles.contentBadge}>
+                <BlurView intensity={4} tint='dark' style={styles.contentBadgeBlur} />
                 <Text style={styles.contentBadgeText}>{durationText}</Text>
               </View>
             ) : null;
@@ -120,17 +123,25 @@ export function CourseArchive({ modules, heroImageUri, subtitle, openModuleId, o
                   })}
                 </Text>
               ) : null;
+            const volumeIcon = muted ? (
+              <Icon name='volume-off' size={22} color={COLORS.WHITE} />
+            ) : (
+              <PlayerVolumeIcon width={32} height={32} />
+            );
+            const volumeLabel = muted
+              ? t('course.video.unmute', { defaultValue: 'Ativar som' })
+              : t('course.video.mute', { defaultValue: 'Silenciar' });
             const playButton = canPlay ? (
-              <Pressable
-                style={styles.contentPlay}
-                onPress={() => setPlayingContentId(content.id)}
-                accessibilityRole='button'
-                accessibilityLabel={t('course.video.play', { defaultValue: 'Reproduzir vídeo' })}
-              >
-                <View style={styles.contentPlayIcon}>
-                  <PlayerPlayIcon />
-                </View>
-              </Pressable>
+              <View style={styles.contentPlayOverlay} pointerEvents='box-none'>
+                <Pressable
+                  style={styles.contentPlay}
+                  onPress={() => setPlayingContentId(content.id)}
+                  accessibilityRole='button'
+                  accessibilityLabel={t('course.video.play', { defaultValue: 'Reproduzir vídeo' })}
+                >
+                  <PlayerPlayIcon width={58} height={58} />
+                </Pressable>
+              </View>
             ) : null;
             return (
               <View key={content.id} style={styles.contentCard}>
@@ -138,11 +149,18 @@ export function CourseArchive({ modules, heroImageUri, subtitle, openModuleId, o
                   {photo}
                   <LinearGradient colors={['rgba(0,0,0,0)', 'rgba(0,0,0,0.74)']} style={styles.typeShade} />
                 </View>
-                <View style={styles.contentTop} pointerEvents='none'>
-                  <PlayerVolumeIcon />
-                  <PlayerFullscreenIcon />
-                </View>
                 {playButton}
+                <View style={styles.contentTop}>
+                  <IconButton
+                    variant='inline'
+                    backgroundSize='medium'
+                    iconColor={COLORS.WHITE}
+                    iconElement={volumeIcon}
+                    onPress={() => setMuted((current) => !current)}
+                    containerStyle={styles.contentVolume}
+                    accessibilityLabel={volumeLabel}
+                  />
+                </View>
                 <View style={styles.contentFooter}>
                   <View style={styles.contentMeta}>
                     {dateLine}
@@ -186,6 +204,7 @@ export function CourseArchive({ modules, heroImageUri, subtitle, openModuleId, o
         opensFullscreen
         startOpen
         title={playingContent?.title}
+        muted={muted}
         onClose={() => setPlayingContentId(null)}
       />
     ) : null;

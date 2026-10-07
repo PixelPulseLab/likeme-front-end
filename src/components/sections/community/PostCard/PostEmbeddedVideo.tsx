@@ -9,6 +9,7 @@ type Props = {
   fillContainer?: boolean;
   onCollapse: () => void;
   hideCollapse?: boolean;
+  muted?: boolean;
   containerStyle?: StyleProp<ViewStyle>;
   onPlaybackError?: (error: OnVideoErrorData) => void;
 };
@@ -25,6 +26,7 @@ const PostEmbeddedVideoInner: React.FC<Props> = ({
   fillContainer = false,
   onCollapse,
   hideCollapse = false,
+  muted = false,
   containerStyle,
   onPlaybackError,
 }) => {
@@ -57,6 +59,8 @@ const PostEmbeddedVideoInner: React.FC<Props> = ({
     onPlaybackErrorRef.current?.(error);
   }, []);
 
+  const volume = muted ? 0 : 1;
+
   return (
     <View style={[fillContainer ? styles.fillContainer : styles.container, containerStyle]}>
       <Video
@@ -65,6 +69,8 @@ const PostEmbeddedVideoInner: React.FC<Props> = ({
         style={styles.video}
         controls
         paused={false}
+        muted={muted}
+        volume={volume}
         resizeMode='contain'
         repeat={false}
         ignoreSilentSwitch='ignore'

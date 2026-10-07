@@ -33,6 +33,7 @@ type Props = {
   presentation?: 'card' | 'lesson';
   title?: string;
   durationMinutes?: number | null;
+  muted?: boolean;
 };
 
 function clockLabel(totalSeconds: number): string {
@@ -83,6 +84,7 @@ export const VideoPlayer: React.FC<Props> = ({
   presentation = 'card',
   title = '',
   durationMinutes = null,
+  muted: playbackMuted = false,
 }) => {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
@@ -246,6 +248,7 @@ export const VideoPlayer: React.FC<Props> = ({
           videoUri={streamUrl}
           fillContainer
           hideCollapse={opensFullscreen}
+          muted={playbackMuted}
           onCollapse={() => setPlaybackOpen(false)}
           onPlaybackError={() => {
             logger.warn('[VideoPlayer] Falha no stream HLS; tentando embed ou URL externa', {
