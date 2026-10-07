@@ -69,49 +69,110 @@ function markdownImageUri(body: string | null | undefined): string | null {
   return match?.[1]?.trim() || null;
 }
 
-function contentImageUri(source: { body?: string | null; attachments?: Attachment[] }): string | null {
+function contentVideo(video: Attachment | null | undefined): Attachment | null {
+  if (!video?.id?.trim()) {
+    return null;
+  }
+  return video;
+}
+
+function attachmentImage(source: { attachments?: Attachment[] }): { url: string; fileName: string } | null {
+  const attachment = (source.attachments ?? []).find((item) => item.type === 'image' && item.url.trim());
+  if (!attachment) {
+    return null;
+  }
+  const fileName = attachment.fileName.trim().toLowerCase();
+  return { url: attachment.url.trim(), fileName };
+}
+
+function storageStamp(url: string): number {
+  const name = url.split('/').pop() ?? '';
+  const stamp = Number.parseInt(name, 10);
+  return Number.isFinite(stamp) ? stamp : 0;
+}
+
+function imageOwners(items: Array<{ id: string; attachments?: Attachment[] }>): Map<string, string> {
+  const grouped = new Map<string, { id: string; url: string }[]>();
+  for (const item of items) {
+    const image = attachmentImage(item);
+    if (!image) {
+      continue;
+    }
+    const key = image.fileName || image.url;
+    const group = grouped.get(key) ?? [];
+    group.push({ id: item.id, url: image.url });
+    grouped.set(key, group);
+  }
+
+  const owners = new Map<string, string>();
+  for (const [key, group] of grouped) {
+    const owner = group.reduce((latest, image) =>
+      storageStamp(image.url) >= storageStamp(latest.url) ? image : latest,
+    );
+    owners.set(key, owner.id);
+  }
+  return owners;
+}
+
+function ownedImageUri(
+  source: { id: string; body?: string | null; attachments?: Attachment[] },
+  owners: Map<string, string>,
+): string | null {
   const fromBody = markdownImageUri(source.body);
   if (fromBody) {
     return fromBody;
   }
-  const attachment = (source.attachments ?? []).find((item) => item.type === 'image' && item.url.trim());
-  return attachment?.url.trim() || null;
+  const image = attachmentImage(source);
+  if (!image) {
+    return null;
+  }
+  const key = image.fileName || image.url;
+  if (owners.get(key) !== source.id) {
+    return null;
+  }
+  return image.url;
 }
 
-function contentCoverUri(source: {
-  body?: string | null;
-  video?: { posterUrl?: string | null; id?: string } | null;
-  attachments?: Attachment[];
-}): string | null {
-  const imageUri = contentImageUri(source);
+function contentCoverUri(
+  source: {
+    id: string;
+    body?: string | null;
+    video?: { posterUrl?: string | null } | null;
+    attachments?: Attachment[];
+  },
+  owners: Map<string, string>,
+): string | null {
+  const imageUri = ownedImageUri(source, owners);
   if (imageUri) {
     return imageUri;
   }
   return source.video?.posterUrl?.trim() || null;
 }
 
-function contentVideo(source: {
-  body?: string | null;
-  video?: Attachment | null;
-  attachments?: Attachment[];
-}): Attachment | null {
-  if (!source.video?.id?.trim()) {
-    return null;
+function contentPlayback(
+  source: { id: string; body?: string | null; video?: Attachment | null; attachments?: Attachment[] },
+  owners: Map<string, string>,
+): Attachment | null {
+  const video = contentVideo(source.video);
+  const imageUri = ownedImageUri(source, owners);
+  if (!video || !imageUri) {
+    return video;
   }
-  const imageUri = contentImageUri(source);
-  if (!imageUri) {
-    return source.video;
-  }
-  return { ...source.video, posterUrl: imageUri };
+  return { ...video, posterUrl: imageUri };
 }
 
-function contentFromStep(step: CourseStep, completedStepIds: ReadonlySet<string>): CourseContent {
+function contentFromStep(
+  step: CourseStep,
+  completedStepIds: ReadonlySet<string>,
+  owners: Map<string, string>,
+): CourseContent {
+  const source = { ...step, id: step.postId };
   return {
     id: step.postId,
     title: step.title,
     body: step.body,
-    coverUri: contentCoverUri(step),
-    video: contentVideo(step),
+    coverUri: contentCoverUri(source, owners),
+    video: contentPlayback(source, owners),
     attachments: step.attachments ?? [],
     createdAt: step.createdAt,
     completed: completedStepIds.has(step.postId),
@@ -122,13 +183,19 @@ function contentFromStep(step: CourseStep, completedStepIds: ReadonlySet<string>
   };
 }
 
-function contentFromOutline(content: ProgramCourseContent, completedStepIds: ReadonlySet<string>): CourseContent {
+function contentFromOutline(
+  content: ProgramCourseContent,
+  completedStepIds: ReadonlySet<string>,
+  owners: Map<string, string>,
+): CourseContent {
+  const coverUri = contentCoverUri(content, owners);
+  const video = contentPlayback(content, owners);
   return {
     id: content.id,
     title: content.title,
     body: content.body,
-    coverUri: contentCoverUri(content),
-    video: contentVideo(content),
+    coverUri,
+    video,
     attachments: content.attachments ?? [],
     createdAt: content.createdAt ?? null,
     completed: completedStepIds.has(content.id),
@@ -170,8 +237,9 @@ function buildSteppedCourse(steps: CourseStep[], completedStepIds: ReadonlySet<s
   const modules: CourseModule[] = [];
   let previousModuleCompleted = true;
 
+  const owners = imageOwners(steps.map((step) => ({ id: step.postId, attachments: step.attachments })));
   steps.forEach((step, index) => {
-    const content = contentFromStep(step, completedStepIds);
+    const content = contentFromStep(step, completedStepIds, owners);
     let status: CourseModuleStatus = COURSE_MODULE_STATUS.LOCKED;
     if (content.completed) {
       status = COURSE_MODULE_STATUS.COMPLETED;
@@ -199,11 +267,16 @@ function buildOutlinedCourse(outline: ProgramCourseModule[], completedStepIds: R
   const modules: CourseModule[] = [];
   let previousModuleCompleted = true;
   const orderedModules = [...outline].sort((left, right) => left.position - right.position);
+  const owners = imageOwners(
+    orderedModules.flatMap((outlineModule) =>
+      outlineModule.contents.map((content) => ({ id: content.id, attachments: content.attachments })),
+    ),
+  );
 
   for (const outlineModule of orderedModules) {
     const moduleContents = [...outlineModule.contents]
       .sort((left, right) => left.position - right.position)
-      .map((content) => contentFromOutline(content, completedStepIds));
+      .map((content) => contentFromOutline(content, completedStepIds, owners));
     if (outlineModule.isArchive) {
       modules.push({
         id: outlineModule.id,
