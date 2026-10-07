@@ -64,16 +64,45 @@ export function contentSummary(body: string | null): string | null {
   return `${plain.slice(0, 137)}...`;
 }
 
+function markdownImageUri(body: string | null | undefined): string | null {
+  const match = body?.match(/!\[[^\]]*]\(([^)\s]+)/);
+  return match?.[1]?.trim() || null;
+}
+
+function contentImageUri(source: { body?: string | null; attachments?: Attachment[] }): string | null {
+  const fromBody = markdownImageUri(source.body);
+  if (fromBody) {
+    return fromBody;
+  }
+  const attachment = (source.attachments ?? []).find((item) => item.type === 'image' && item.url.trim());
+  return attachment?.url.trim() || null;
+}
+
 function contentCoverUri(source: {
+  body?: string | null;
   video?: { posterUrl?: string | null; id?: string } | null;
   attachments?: Attachment[];
 }): string | null {
-  const poster = source.video?.posterUrl?.trim();
-  if (poster) {
-    return poster;
+  const imageUri = contentImageUri(source);
+  if (imageUri) {
+    return imageUri;
   }
-  const image = (source.attachments ?? []).find((attachment) => attachment.type === 'image' && attachment.url.trim());
-  return image?.url.trim() || null;
+  return source.video?.posterUrl?.trim() || null;
+}
+
+function contentVideo(source: {
+  body?: string | null;
+  video?: Attachment | null;
+  attachments?: Attachment[];
+}): Attachment | null {
+  if (!source.video?.id?.trim()) {
+    return null;
+  }
+  const imageUri = contentImageUri(source);
+  if (!imageUri) {
+    return source.video;
+  }
+  return { ...source.video, posterUrl: imageUri };
 }
 
 function contentFromStep(step: CourseStep, completedStepIds: ReadonlySet<string>): CourseContent {
@@ -82,7 +111,7 @@ function contentFromStep(step: CourseStep, completedStepIds: ReadonlySet<string>
     title: step.title,
     body: step.body,
     coverUri: contentCoverUri(step),
-    video: step.video?.id?.trim() ? step.video : null,
+    video: contentVideo(step),
     attachments: step.attachments ?? [],
     createdAt: step.createdAt,
     completed: completedStepIds.has(step.postId),
@@ -99,7 +128,7 @@ function contentFromOutline(content: ProgramCourseContent, completedStepIds: Rea
     title: content.title,
     body: content.body,
     coverUri: contentCoverUri(content),
-    video: content.video?.id?.trim() ? content.video : null,
+    video: contentVideo(content),
     attachments: content.attachments ?? [],
     createdAt: content.createdAt ?? null,
     completed: completedStepIds.has(content.id),
