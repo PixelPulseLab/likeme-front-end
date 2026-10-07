@@ -7,6 +7,7 @@ import type { StackScreenProps } from '@react-navigation/stack';
 import { useFocusEffect } from '@react-navigation/native';
 import { ScreenWithHeader, HeroImage } from '@/components/ui/layout';
 import { EmptyState, ShareContentUnavailable } from '@/components/ui/feedback';
+import { PullToRefreshIndicator, usePullToRefresh } from '@/components/ui/feedback/PullToRefresh';
 import { SecondaryButton } from '@/components/ui/buttons';
 import { type ButtonCarouselOption } from '@/components/ui/carousel';
 import InfoSectionTabsRow, { type InfoSectionMenuOption } from '@/components/ui/carousel/InfoSectionTabsRow';
@@ -170,22 +171,42 @@ const ProtocolDetailScreen: React.FC<Props> = ({ navigation, route }) => {
     reload: reloadCourse,
   } = useProgramCourse(communityId, hasCommunity && hasActiveProtocolAccess && !opensCommunityFeed);
   const { isEnabled: isChatEnabled } = useFeatureFlag(FEATURE_FLAGS.CHAT_ENABLED);
-  const { advertisers: communityAdvertisers } = useAdvertisers({
+  const { advertisers: communityAdvertisers, refresh: refreshAdvertisers } = useAdvertisers({
     communityId: communityId || undefined,
     listOptions: { page: 1, limit: 1, status: ADVERTISER_STATUS.ACTIVE },
     enabled: hasCommunity && hasActiveProtocolAccess && !opensCommunityFeed,
   });
-  const { eventBanner, eventJoinUrl, closeEventSession, handleEventBannerPress, handleEventBannerCtaPress } =
-    useCommunityEventBanner({
-      enabled: hasCommunity && hasActiveProtocolAccess && !opensCommunityFeed,
-      communityId,
-      communityAvatarUrl: heroImageUri,
-      communityProviderName: protocol?.name ?? '',
-      defaultThumbnailUrl: heroImageUri,
-      programProductId: productId || undefined,
-      hasProgramAccess: hasActiveProtocolAccess,
-      navigation,
-    });
+  const {
+    eventBanner,
+    eventJoinUrl,
+    closeEventSession,
+    handleEventBannerPress,
+    handleEventBannerCtaPress,
+    refreshReminderState,
+  } = useCommunityEventBanner({
+    enabled: hasCommunity && hasActiveProtocolAccess && !opensCommunityFeed,
+    communityId,
+    communityAvatarUrl: heroImageUri,
+    communityProviderName: protocol?.name ?? '',
+    defaultThumbnailUrl: heroImageUri,
+    programProductId: productId || undefined,
+    hasProgramAccess: hasActiveProtocolAccess,
+    navigation,
+  });
+
+  const refreshProgramPage = useCallback(async () => {
+    try {
+      await Promise.all([reloadCourse(), refreshAdvertisers(), refreshReminderState()]);
+    } catch (cause) {
+      logger.error('[ProtocolDetailScreen] Falha ao atualizar o programa', { cause });
+    }
+  }, [refreshAdvertisers, refreshReminderState, reloadCourse]);
+
+  const {
+    showIndicator: showPullIndicator,
+    onScroll: onPullScroll,
+    refreshControl: pullRefreshControl,
+  } = usePullToRefresh(refreshProgramPage);
 
   const [protocolAccessedAt, setProtocolAccessedAt] = useState(() => Date.now());
 
@@ -1076,7 +1097,15 @@ const ProtocolDetailScreen: React.FC<Props> = ({ navigation, route }) => {
       contentContainerStyle={styles.container}
       contentBackgroundColor={COLORS.BACKGROUND}
     >
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <PullToRefreshIndicator visible={showPullIndicator} accessibilityLabel={t('common.loading')} />
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        scrollEventThrottle={16}
+        onScroll={onPullScroll}
+        refreshControl={pullRefreshControl}
+      >
         {showsCourse ? (
           <>
             {courseHeaderTitle ? null : (

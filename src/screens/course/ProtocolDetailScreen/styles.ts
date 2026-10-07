@@ -21,6 +21,9 @@ export const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.BACKGROUND,
   },
+  scroll: {
+    flex: 1,
+  },
   scrollContent: {
     paddingBottom: SPACING.XL + FLOATING_NAV_MENU_BAR_OFFSET,
   },
