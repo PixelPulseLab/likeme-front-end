@@ -6,6 +6,7 @@ import PlayerFullscreenIcon from '@/assets/course/player-fullscreen.svg';
 import PlayerPlayIcon from '@/assets/course/player-play.svg';
 import PlayerVolumeIcon from '@/assets/course/player-volume.svg';
 import { CachedImage } from '@/components/ui/media/CachedImage';
+import { JoinCard } from '@/components/ui/cards/JoinCard';
 import { VideoPlayer } from '@/components/sections/course/VideoPlayer';
 import { COLORS } from '@/constants';
 import { useTranslation } from '@/hooks/i18n';
@@ -240,30 +241,16 @@ export function CourseArchive({ modules, heroImageUri, subtitle, openModuleId, o
       </Text>
     ) : (
       <View style={styles.typeList}>
-        {modules.map((courseModule) => {
-          const imageUri = moduleCover(courseModule, heroImageUri);
-          const photo = imageUri ? <CachedImage source={{ uri: imageUri }} style={styles.typePhoto} /> : null;
-          return (
-            <Pressable
-              key={courseModule.id}
-              style={styles.typeCard}
-              onPress={() => onOpenModule(courseModule.id)}
-              accessibilityRole='button'
-              accessibilityLabel={courseModule.title}
-            >
-              <View style={styles.typeMedia} pointerEvents='none'>
-                {photo}
-                <LinearGradient colors={['rgba(0,0,0,0)', 'rgba(0,0,0,0.74)']} style={styles.typeShade} />
-              </View>
-              <View style={styles.typeRow}>
-                <Text style={styles.typeTitle}>{courseModule.title}</Text>
-                <View style={styles.typeChevron}>
-                  <Icon name='chevron-right' size={22} color={COLORS.NEUTRAL.LOW.PURE} />
-                </View>
-              </View>
-            </Pressable>
-          );
-        })}
+        {modules.map((courseModule) => (
+          <JoinCard
+            key={courseModule.id}
+            title={courseModule.title}
+            badges={[]}
+            image={moduleCover(courseModule, heroImageUri)}
+            onPress={() => onOpenModule(courseModule.id)}
+            blur={false}
+          />
+        ))}
       </View>
     );
 

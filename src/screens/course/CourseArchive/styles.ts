@@ -1,13 +1,6 @@
 import { StyleSheet } from 'react-native';
 import { BORDER_RADIUS, COLORS, FONT_FAMILY, FONT_SIZES, SPACING, TYPOGRAPHY } from '@/constants';
 
-const cardRadius = {
-  borderTopLeftRadius: BORDER_RADIUS.XL,
-  borderTopRightRadius: 28,
-  borderBottomRightRadius: SPACING.XL,
-  borderBottomLeftRadius: BORDER_RADIUS.MD,
-};
-
 export const styles = StyleSheet.create({
   listRoot: {
     paddingHorizontal: SPACING.MD,
@@ -32,52 +25,11 @@ export const styles = StyleSheet.create({
   typeList: {
     gap: SPACING.MD,
   },
-  typeCard: {
-    height: 164,
-    backgroundColor: COLORS.NEUTRAL.LOW.PURE,
-    ...cardRadius,
-    shadowColor: COLORS.BLACK,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.04,
-    shadowRadius: 16,
-    elevation: 2,
-  },
-  typeMedia: {
-    ...StyleSheet.absoluteFillObject,
-    overflow: 'hidden',
-    ...cardRadius,
-  },
   typePhoto: {
     ...StyleSheet.absoluteFillObject,
   },
   typeShade: {
     ...StyleSheet.absoluteFillObject,
-  },
-  typeRow: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    justifyContent: 'space-between',
-    padding: SPACING.MD,
-    gap: SPACING.SM,
-  },
-  typeTitle: {
-    ...TYPOGRAPHY.labelLg,
-    color: COLORS.WHITE,
-    flex: 1,
-  },
-  typeChevron: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: COLORS.SECONDARY.LIGHT,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: COLORS.BLACK,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 2,
   },
   filterRow: {
     gap: SPACING.MD,
