@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Dimensions, Modal, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Dimensions, Modal, Pressable, ScrollView, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import CourseLiveCamIcon from '@/assets/course/course-live-cam.svg';
 import CourseMoreIcon from '@/assets/course/course-more.svg';
@@ -13,6 +13,7 @@ import InfoSectionTabsRow, { type InfoSectionMenuOption } from '@/components/ui/
 import ModuleAccordion, { type ModuleItem } from '@/components/sections/course/ModuleAccordion';
 import { CourseModuleCard } from '@/components/sections/course/CourseModuleCard';
 import { CourseProgress } from '@/components/sections/course/CourseProgress';
+import { CourseSpecialist } from '@/components/sections/course/CourseSpecialist';
 import { CachedImage } from '@/components/ui/media/CachedImage';
 import { CourseArchive } from '@/screens/course/CourseArchive';
 import { CourseContent } from '@/screens/course/CourseContent';
@@ -21,7 +22,7 @@ import { buildCourse, formatCourseLiveWhen } from '@/screens/course/course';
 import { EventBanner } from '@/components/sections/community';
 import { EventWebViewSession } from '@/components/infrastructure/webview/EventWebViewSession';
 import { MarkdownText } from '@/components/ui/text/MarkdownText';
-import { useCommunityEventBanner, useMenuItems, useProgramCourse } from '@/hooks';
+import { useAdvertisers, useCommunityEventBanner, useFeatureFlag, useMenuItems, useProgramCourse } from '@/hooks';
 import { useFloatingMenuActions } from '@/contexts/FloatingMenuContext';
 import { useAnalyticsScreen, logTabSelect } from '@/analytics';
 import { useTranslation } from '@/hooks/i18n';
@@ -31,13 +32,15 @@ import type { ProtocolDetailProtocol, RootStackParamList } from '@/types/navigat
 import { courseService } from '@/services/course/courseService';
 import productService from '@/services/product/productService';
 import { subscriptionService } from '@/services/payment/subscriptionService';
-import { COLORS } from '@/constants';
+import { ADVERTISER_STATUS, COLORS, FEATURE_FLAGS } from '@/constants';
 import { E2E_TEST_IDS } from '@/constants/e2eTestIds';
 import { isProtocolStepAutoCompleted } from '@/utils/course/protocolStepAutoCompleted';
 import { protocolDetailFromProduct } from '@/utils/profile/protocolDetailFromProduct';
 import { goBackOrShareHome, navigateToShareHome } from '@/utils/navigation/shareHomeNavigation';
 import { navigateToShareDiscover } from '@/utils/navigation/shareDiscoverNavigation';
 import { navigateToCommunity } from '@/utils/navigation/communityNavigation';
+import { navigateToProviderProfile } from '@/utils/navigation/marketplaceNavigation';
+import { navigateRootStack } from '@/utils/navigation/rootStackNavigation';
 import { PROGRAM_TYPE } from '@/types/product/programType';
 import { logger } from '@/utils/logger';
 import { shareContent } from '@/utils/share/shareContent';
@@ -166,6 +169,12 @@ const ProtocolDetailScreen: React.FC<Props> = ({ navigation, route }) => {
     loading: courseLoading,
     reload: reloadCourse,
   } = useProgramCourse(communityId, hasCommunity && hasActiveProtocolAccess && !opensCommunityFeed);
+  const { isEnabled: isChatEnabled } = useFeatureFlag(FEATURE_FLAGS.CHAT_ENABLED);
+  const { advertisers: communityAdvertisers } = useAdvertisers({
+    communityId: communityId || undefined,
+    listOptions: { page: 1, limit: 1, status: ADVERTISER_STATUS.ACTIVE },
+    enabled: hasCommunity && hasActiveProtocolAccess && !opensCommunityFeed,
+  });
   const { eventBanner, eventJoinUrl, closeEventSession, handleEventBannerPress, handleEventBannerCtaPress } =
     useCommunityEventBanner({
       enabled: hasCommunity && hasActiveProtocolAccess && !opensCommunityFeed,
@@ -744,6 +753,50 @@ const ProtocolDetailScreen: React.FC<Props> = ({ navigation, route }) => {
     setOpenArchive(true);
   };
   const archiveCover = heroImageUri ? <CachedImage source={{ uri: heroImageUri }} style={styles.archivePhoto} /> : null;
+  const courseSpecialist = communityAdvertisers[0] ?? null;
+  const courseSpecialistName = courseSpecialist?.name?.trim() ?? '';
+  const courseSpecialistGender =
+    (
+      courseSpecialist as {
+        user?: { person?: { gender?: string | null } | null } | null;
+      } | null
+    )?.user?.person?.gender?.trim() || null;
+  const openSpecialistProfile = () => {
+    if (!courseSpecialist || !courseSpecialistName) {
+      return;
+    }
+    navigateToProviderProfile(navigation, {
+      providerId: courseSpecialist.id,
+      provider: {
+        name: courseSpecialistName,
+        avatar: courseSpecialist.logo,
+        description: courseSpecialist.description,
+      },
+    });
+  };
+  const openSpecialistChat = () => {
+    if (!courseSpecialist || !courseSpecialistName) {
+      return;
+    }
+    if (!isChatEnabled) {
+      Alert.alert(
+        t('marketplace.chatUnavailableTitle', { defaultValue: 'Chat indisponível' }),
+        t('marketplace.chatUnavailableBody', {
+          defaultValue: 'Esta funcionalidade está desativada no momento.',
+        }),
+      );
+      return;
+    }
+    navigateRootStack(navigation, 'Chat', {
+      screen: 'ChatConversation',
+      params: {
+        targetAdvertiserId: courseSpecialist.id,
+        channelName: courseSpecialistName,
+        channelAvatar: courseSpecialist.logo,
+        initialMessage: t('marketplace.chatInitialMessage'),
+      },
+    });
+  };
   const continueContent = courseHome.continueContent;
   const isProgramComplete = courseHome.totalContents > 0 && courseHome.completedContents >= courseHome.totalContents;
   const showCourseModuleTitle =
@@ -900,19 +953,32 @@ const ProtocolDetailScreen: React.FC<Props> = ({ navigation, route }) => {
                 {t('profile.courseArchive.badge', { defaultValue: 'Temos novidades' })}
               </Text>
             </View>
-            <Text style={styles.archiveBody}>
-              {t('profile.courseArchive.cardBody', {
-                defaultValue: 'Reveja encontros e conteúdos exclusivos com a Betina.',
-              })}
-            </Text>
-            <View style={styles.archiveButton}>
-              <Text style={styles.archiveButtonLabel}>
-                {t('profile.courseArchive.openAction', { defaultValue: 'Ver acervo' })}
+            <View style={styles.archiveFooter}>
+              <Text style={styles.archiveBody}>
+                {t('profile.courseArchive.cardBody', {
+                  defaultValue: 'Reveja encontros e conteúdos exclusivos com a Betina.',
+                })}
               </Text>
+              <View style={styles.archiveButton}>
+                <Text style={styles.archiveButtonLabel}>
+                  {t('profile.courseArchive.openAction', { defaultValue: 'Ver acervo' })}
+                </Text>
+              </View>
             </View>
           </View>
         </Pressable>
       </View>
+
+      {courseSpecialist && courseSpecialistName ? (
+        <CourseSpecialist
+          name={courseSpecialistName}
+          role={courseSpecialist.description?.trim() || null}
+          imageUri={courseSpecialist.logo?.trim() || null}
+          gender={courseSpecialistGender}
+          onVisitProfile={openSpecialistProfile}
+          onTalk={openSpecialistChat}
+        />
+      ) : null}
 
       <Modal visible={isMenuOpen} transparent animationType='fade' onRequestClose={() => setIsMenuOpen(false)}>
         <View style={styles.menuBackdrop}>
