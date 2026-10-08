@@ -423,3 +423,8 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 - A jornada respeita a trava que a API devolve
 - Módulo vazio não libera a etapa seguinte
 - A capa do conteúdo não usa a imagem de outra aula
+
+## [1.21.1] - 2026-10-08
+
+### Corrigido
+- Depois de logar com convite, o app abre a página do programa
