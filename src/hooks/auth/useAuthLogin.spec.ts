@@ -81,7 +81,10 @@ describe('useAuthLogin', () => {
   it('abre o Auth0 de novo quando há convite pendente mesmo com JWT local', async () => {
     mockGetToken.mockResolvedValue('session-token-a');
     mockGetPendingInvitationCode.mockResolvedValue('7F3K9Q');
-    mockActivatePendingStoredCode.mockResolvedValue({ outcome: 'linked' });
+    mockActivatePendingStoredCode.mockResolvedValue({
+      outcome: 'linked',
+      context: { program: { id: 'program-1' } },
+    });
 
     const { result } = renderHook(() => useAuthLogin(navigation));
 
@@ -93,6 +96,10 @@ describe('useAuthLogin', () => {
       expect(mockLogin).toHaveBeenCalled();
       expect(mockValidateToken).toHaveBeenCalled();
       expect(mockActivatePendingStoredCode).toHaveBeenCalled();
+      expect(navigation.reset).toHaveBeenCalledWith({
+        index: 0,
+        routes: [{ name: 'Authenticated', params: { invitationProductId: 'program-1' } }],
+      });
     });
   });
 

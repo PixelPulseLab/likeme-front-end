@@ -40,9 +40,14 @@ export const useAuthLogin = (navigation: any) => {
           Alert.alert(t('invitation.identityMismatch'));
         }
 
+        const invitationProductId = activation.context?.program.id?.trim();
+        const authenticatedRoute =
+          activation.outcome === 'linked' && invitationProductId
+            ? { name: 'Authenticated' as const, params: { invitationProductId } }
+            : { name: 'Authenticated' as const };
         navigation.reset({
           index: 0,
-          routes: [{ name: 'Authenticated' as never }],
+          routes: [authenticatedRoute],
         });
       } catch (error) {
         if (isLoginUserAbortError(error)) {
