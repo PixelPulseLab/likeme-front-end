@@ -210,9 +210,13 @@ function courseFromModules(modules: CourseModule[]): Course {
   const journeyModules = modules.filter((courseModule) => !courseModule.isArchive);
   const contents = journeyModules.flatMap((courseModule) => courseModule.contents);
   const completedContents = contents.filter((content) => content.completed).length;
-  const continueModule =
-    journeyModules.find((courseModule) => courseModule.status === COURSE_MODULE_STATUS.AVAILABLE) ?? null;
-  const continueContentItem = continueModule?.contents.find((content) => !content.completed) ?? null;
+  const continueLesson =
+    journeyModules
+      .filter((courseModule) => courseModule.status !== COURSE_MODULE_STATUS.LOCKED)
+      .flatMap((courseModule) => courseModule.contents.map((content) => ({ courseModule, content })))
+      .find((lesson) => !lesson.content.completed) ?? null;
+  const continueModule = continueLesson?.courseModule ?? null;
+  const continueContentItem = continueLesson?.content ?? null;
   const continueSummary = contentSummary(continueContentItem?.body ?? null);
   const continueContent =
     continueModule && continueContentItem
@@ -296,8 +300,9 @@ function buildOutlinedCourse(outline: ProgramCourseModule[], completedStepIds: R
     } else if (previousModuleCompleted) {
       status = COURSE_MODULE_STATUS.AVAILABLE;
     }
-    const blocksNextModule = moduleContents.length > 0 && !isCompleted;
-    previousModuleCompleted = !blocksNextModule;
+    if (moduleContents.length > 0) {
+      previousModuleCompleted = isCompleted;
+    }
 
     modules.push({
       id: outlineModule.id,
