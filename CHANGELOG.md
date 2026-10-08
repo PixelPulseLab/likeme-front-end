@@ -406,3 +406,20 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 
 ### Alterado
 - A tela do módulo abre o conteúdo direto, sem listagem extra
+
+## [1.21.0] - 2026-10-08
+
+### Adicionado
+- A aula abre em tela cheia, com materiais, comentários e avaliação
+- Concluir a aula libera a próxima e mostra o programa concluído
+- A home do curso mostra o especialista e o acervo
+- Quem entra sem convite vai para a Home; quem tem convite abre o programa
+
+### Alterado
+- O vídeo em tela cheia acompanha a orientação do aparelho
+- A aba Sobre da aula mostra duração, nível e as listas
+
+### Corrigido
+- A jornada respeita a trava que a API devolve
+- Módulo vazio não libera a etapa seguinte
+- A capa do conteúdo não usa a imagem de outra aula
