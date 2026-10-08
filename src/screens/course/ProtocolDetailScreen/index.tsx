@@ -508,7 +508,7 @@ const ProtocolDetailScreen: React.FC<Props> = ({ navigation, route }) => {
   });
   const pastDueBadgeLabel = t('profile.acquisitionList.statusPastDue', { defaultValue: 'Em atraso' });
   const unpaidBadgeLabel = t('profile.acquisitionList.statusUnpaid', { defaultValue: 'Inadimplente' });
-  const showsCourse = !isCanceledSubscription && !isUnpaidSubscription;
+  const showsCourse = hasActiveProtocolAccess;
   const openCourseModule = courseHome.modules.find((courseModule) => courseModule.id === openCourseModuleId) ?? null;
   const openContent = openCourseModule?.contents.find((content) => content.id === openContentId) ?? null;
   const contentHeaderTitle = openCourseModule?.title?.trim() || protocol.name;
