@@ -26,8 +26,6 @@ export const getInvitationContextScreen = (): RootStackScreen =>
   asScreen(require('../screens/onboarding/InvitationContextScreen') as { default: RootStackScreen });
 export const getAvatarScreen = (): RootStackScreen =>
   asScreen(require('../screens/onboarding/AvatarScreen') as { default: RootStackScreen });
-export const getWallScreen = (): RootStackScreen =>
-  asScreen(require('../screens/wall/WallScreen') as { default: RootStackScreen });
 export const getAuthenticatedScreen = (): RootStackScreen =>
   asScreen(require('../screens/auth/AuthenticatedScreen') as { default: RootStackScreen });
 export const getWelcomeScreen = (): RootStackScreen =>
@@ -95,7 +93,9 @@ export const getDesignSystemScreen = (): RootStackScreen =>
 export const getDeleteAccountScreen = (): RootStackScreen =>
   asScreen(require('../screens/profile/DeleteAccountScreen') as { default: RootStackScreen });
 export const getProtocolDetailScreen = (): RootStackScreen =>
-  asScreen(require('../screens/profile/ProtocolDetailScreen') as { default: RootStackScreen });
+  asScreen(require('../screens/course/ProtocolDetailScreen') as { default: RootStackScreen });
+export const getCourseLessonCompletionScreen = (): RootStackScreen =>
+  asScreen(require('../screens/course/LessonCompletionScreen') as { default: RootStackScreen });
 export const getSubscriptionListScreen = (): RootStackScreen =>
   asScreen(require('../screens/profile/SubscriptionListScreen') as { default: RootStackScreen });
 export const getManageProtocolSubscriptionScreen = (): RootStackScreen =>

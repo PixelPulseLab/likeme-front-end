@@ -18,14 +18,13 @@ export type ProgramCourseContent = {
   body: string | null;
   attachments: Attachment[];
   video?: Attachment | null;
-};
-
-export type ProgramCourseSubmodule = {
-  id: string;
-  position: number;
-  title: string;
-  summary: string | null;
-  contents: ProgramCourseContent[];
+  createdAt?: string | null;
+  durationMinutes?: number | null;
+  level?: string | null;
+  learningOutcomes?: string[];
+  tips?: string[];
+  completed?: boolean;
+  locked?: boolean;
 };
 
 export type ProgramCourseModule = {
@@ -33,7 +32,9 @@ export type ProgramCourseModule = {
   position: number;
   title: string;
   summary: string | null;
-  submodules: ProgramCourseSubmodule[];
+  isArchive?: boolean;
+  status?: 'available' | 'locked' | 'completed';
+  contents: ProgramCourseContent[];
 };
 
 export type ProgramCourse = {
@@ -41,4 +42,5 @@ export type ProgramCourse = {
   communityId: string;
   steps: CourseStep[];
   modules?: ProgramCourseModule[];
+  completedContentIds: string[];
 };

@@ -28,6 +28,7 @@ jest.mock('@/services/auth/storageService', () => ({
     setUser: jest.fn(),
     setInvitationOpensHome: jest.fn(),
     getInvitationOpensHome: jest.fn(),
+    setPendingInvitationProgramDestination: jest.fn(),
     takePendingInvitationProgramDestination: jest.fn(),
     removePendingInvitationProgramDestination: jest.fn(),
   },
@@ -39,10 +40,8 @@ const mockRemovePendingInvitationCode = storageService.removePendingInvitationCo
 const mockGetUser = storageService.getUser as jest.Mock;
 const mockSetUser = storageService.setUser as jest.Mock;
 const mockSetInvitationOpensHome = storageService.setInvitationOpensHome as jest.Mock;
-const mockGetInvitationOpensHome = storageService.getInvitationOpensHome as jest.Mock;
+const mockSetPendingInvitationProgramDestination = storageService.setPendingInvitationProgramDestination as jest.Mock;
 const mockTakePendingInvitationProgramDestination = storageService.takePendingInvitationProgramDestination as jest.Mock;
-const mockRemovePendingInvitationProgramDestination =
-  storageService.removePendingInvitationProgramDestination as jest.Mock;
 
 const validContext = {
   code: '7F3K9Q',
@@ -133,8 +132,7 @@ describe('invitationService.activatePendingStoredCode', () => {
     mockGetUser.mockResolvedValue({ email: 'camilla@email.com' });
     mockSetUser.mockResolvedValue(undefined);
     mockRemovePendingInvitationCode.mockResolvedValue(undefined);
-    mockSetInvitationOpensHome.mockResolvedValue(undefined);
-    mockRemovePendingInvitationProgramDestination.mockResolvedValue(undefined);
+    mockSetPendingInvitationProgramDestination.mockResolvedValue(undefined);
   });
 
   it('não chama a API quando não há código pendente', async () => {
@@ -157,12 +155,16 @@ describe('invitationService.activatePendingStoredCode', () => {
       context: { ...validContext, displayName: 'Camilla', alreadyParticipating: false },
     });
     expect(mockRemovePendingInvitationCode).toHaveBeenCalled();
-    expect(mockSetInvitationOpensHome).toHaveBeenCalled();
-    expect(mockRemovePendingInvitationProgramDestination).toHaveBeenCalled();
+    expect(mockSetPendingInvitationProgramDestination).toHaveBeenCalledWith({
+      productId: 'program-1',
+      programType: 'course',
+      communityId: 'community-1',
+    });
+    expect(mockSetInvitationOpensHome).not.toHaveBeenCalled();
     expect(mockSetUser).toHaveBeenCalledWith({ email: 'camilla@email.com', name: 'Camilla' });
   });
 
-  it('abre a home também quando o usuário já participa do programa', async () => {
+  it('guarda a PDP também quando o usuário já participa do programa', async () => {
     mockGetPendingInvitationCode.mockResolvedValue('7F3K9Q');
     mockPost.mockResolvedValue({
       success: true,
@@ -175,8 +177,11 @@ describe('invitationService.activatePendingStoredCode', () => {
       context: { ...validContext, displayName: 'Camilla', alreadyParticipating: true },
     });
     expect(mockRemovePendingInvitationCode).toHaveBeenCalled();
-    expect(mockSetInvitationOpensHome).toHaveBeenCalled();
-    expect(mockRemovePendingInvitationProgramDestination).toHaveBeenCalled();
+    expect(mockSetPendingInvitationProgramDestination).toHaveBeenCalledWith({
+      productId: 'program-1',
+      programType: 'course',
+      communityId: 'community-1',
+    });
   });
 
   it('trata mismatch de identidade sem deixar o código pendente', async () => {
@@ -200,42 +205,31 @@ describe('invitationService.activatePendingStoredCode', () => {
 describe('invitationHomeRoute', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockGetInvitationOpensHome.mockResolvedValue(false);
     mockTakePendingInvitationProgramDestination.mockResolvedValue(null);
-    mockSetInvitationOpensHome.mockResolvedValue(undefined);
   });
 
-  it('vai ao tapume quando a rota não é Home/Wall e não há convite', async () => {
+  it('vai à home quando a rota não é Home e não há convite', async () => {
     await expect(invitationHomeRoute('InterestCategories', { firstName: 'Camilla' })).resolves.toEqual({
-      screen: 'Wall',
-    });
-    await expect(invitationHomeRoute()).resolves.toEqual({ screen: 'Wall' });
-  });
-
-  it('mantém o tapume quando a sessão aponta para Wall', async () => {
-    mockGetInvitationOpensHome.mockResolvedValue(true);
-
-    await expect(invitationHomeRoute('Wall')).resolves.toEqual({ screen: 'Wall' });
-    expect(mockTakePendingInvitationProgramDestination).not.toHaveBeenCalled();
-  });
-
-  it('vai à home quando o convite já foi vinculado', async () => {
-    mockGetInvitationOpensHome.mockResolvedValue(true);
-
-    await expect(invitationHomeRoute('Register', { userName: 'Camilla' })).resolves.toEqual({
       screen: 'Home',
     });
-    expect(mockTakePendingInvitationProgramDestination).not.toHaveBeenCalled();
+    await expect(invitationHomeRoute()).resolves.toEqual({ screen: 'Home' });
   });
 
-  it('vai à home e persiste o atalho quando ainda há destino antigo de programa', async () => {
+  it('vai à home quando a sessão aponta para Home e não há PDP pendente', async () => {
+    await expect(invitationHomeRoute('Home')).resolves.toEqual({ screen: 'Home' });
+    expect(mockTakePendingInvitationProgramDestination).toHaveBeenCalled();
+  });
+
+  it('abre a PDP do programa recém-ativado', async () => {
     mockTakePendingInvitationProgramDestination.mockResolvedValue({
       productId: 'program-1',
       programType: 'course',
       communityId: 'community-1',
     });
 
-    await expect(invitationHomeRoute('Welcome')).resolves.toEqual({ screen: 'Home' });
-    expect(mockSetInvitationOpensHome).toHaveBeenCalled();
+    await expect(invitationHomeRoute('Home')).resolves.toEqual({
+      screen: 'ProductDetails',
+      params: { productId: 'program-1' },
+    });
   });
 });

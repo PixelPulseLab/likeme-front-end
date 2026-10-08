@@ -1,0 +1,1167 @@
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ActivityIndicator, Alert, Dimensions, Modal, Pressable, ScrollView, Text, View } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import CourseLiveCamIcon from '@/assets/course/course-live-cam.svg';
+import CourseMoreIcon from '@/assets/course/course-more.svg';
+import type { StackScreenProps } from '@react-navigation/stack';
+import { useFocusEffect } from '@react-navigation/native';
+import { ScreenWithHeader, HeroImage } from '@/components/ui/layout';
+import { EmptyState, ShareContentUnavailable } from '@/components/ui/feedback';
+import { PullToRefreshIndicator, usePullToRefresh } from '@/components/ui/feedback/PullToRefresh';
+import { SecondaryButton } from '@/components/ui/buttons';
+import { type ButtonCarouselOption } from '@/components/ui/carousel';
+import InfoSectionTabsRow, { type InfoSectionMenuOption } from '@/components/ui/carousel/InfoSectionTabsRow';
+import ModuleAccordion, { type ModuleItem } from '@/components/sections/course/ModuleAccordion';
+import { CourseModuleCard } from '@/components/sections/course/CourseModuleCard';
+import { CourseProgress } from '@/components/sections/course/CourseProgress';
+import { CourseSpecialist } from '@/components/sections/course/CourseSpecialist';
+import { CachedImage } from '@/components/ui/media/CachedImage';
+import { CourseArchive } from '@/screens/course/CourseArchive';
+import { CourseContent } from '@/screens/course/CourseContent';
+import { CourseModule } from '@/screens/course/CourseModule';
+import { buildCourse, formatCourseLiveWhen } from '@/screens/course/course';
+import { EventBanner } from '@/components/sections/community';
+import { EventWebViewSession } from '@/components/infrastructure/webview/EventWebViewSession';
+import { MarkdownText } from '@/components/ui/text/MarkdownText';
+import { useAdvertisers, useCommunityEventBanner, useFeatureFlag, useMenuItems, useProgramCourse } from '@/hooks';
+import { useFloatingMenuActions } from '@/contexts/FloatingMenuContext';
+import { useAnalyticsScreen, logTabSelect } from '@/analytics';
+import { useTranslation } from '@/hooks/i18n';
+import { MEMBER_PROTOCOL_COMMUNITY_IMAGE_FALLBACK } from '@/constants/community/communityProtocol';
+import { SHARE_CONTENT_TYPES } from '@/constants/share';
+import type { ProtocolDetailProtocol, RootStackParamList } from '@/types/navigation';
+import { courseService } from '@/services/course/courseService';
+import productService from '@/services/product/productService';
+import { subscriptionService } from '@/services/payment/subscriptionService';
+import { ADVERTISER_STATUS, COLORS, FEATURE_FLAGS } from '@/constants';
+import { E2E_TEST_IDS } from '@/constants/e2eTestIds';
+import { isProtocolStepAutoCompleted } from '@/utils/course/protocolStepAutoCompleted';
+import { protocolDetailFromProduct } from '@/utils/profile/protocolDetailFromProduct';
+import { goBackOrShareHome, navigateToShareHome } from '@/utils/navigation/shareHomeNavigation';
+import { navigateToShareDiscover } from '@/utils/navigation/shareDiscoverNavigation';
+import { navigateToCommunity } from '@/utils/navigation/communityNavigation';
+import { navigateToProviderProfile } from '@/utils/navigation/marketplaceNavigation';
+import { navigateRootStack } from '@/utils/navigation/rootStackNavigation';
+import { PROGRAM_TYPE } from '@/types/product/programType';
+import { logger } from '@/utils/logger';
+import { shareContent } from '@/utils/share/shareContent';
+import {
+  formatSubscriptionManageDate,
+  subscriptionCanceledOnDate,
+  subscriptionHasProtocolContentAccess,
+  subscriptionIsCancelingPresentation,
+  subscriptionIsCanceledPresentation,
+  subscriptionIsDesaturatedPresentation,
+  subscriptionIsPastDuePresentation,
+  subscriptionIsUnpaidPresentation,
+  subscriptionAllowsPaymentMethodUpdate,
+} from '@/utils/subscription/subscriptionManageDisplay';
+import { styles } from './styles';
+
+type Props = StackScreenProps<RootStackParamList, 'ProtocolDetail'>;
+
+type ProtocolTabId = 'content' | 'about' | 'agreements';
+
+const TAB_OPTIONS: ButtonCarouselOption<ProtocolTabId>[] = [
+  { id: 'content', label: 'Conteúdo' },
+  { id: 'about', label: 'Sobre' },
+  { id: 'agreements', label: 'Acordos' },
+];
+
+function protocolProductIdFromRouteParams(params: RootStackParamList['ProtocolDetail']): string | null {
+  if ('productId' in params) {
+    const productId = params.productId?.trim();
+    return productId || null;
+  }
+
+  const productId = params.protocol.productId?.trim() || params.protocol.id?.trim();
+  return productId || null;
+}
+
+const ProtocolDetailScreen: React.FC<Props> = ({ navigation, route }) => {
+  useAnalyticsScreen({ screenName: 'ProtocolDetail', screenClass: 'ProtocolDetailScreen' });
+  const { t } = useTranslation();
+  const menuItems = useMenuItems(navigation);
+  const { setMenu } = useFloatingMenuActions();
+  const routeParams = route.params;
+  const initialProtocol = 'protocol' in routeParams ? routeParams.protocol : undefined;
+  const routeProductId = protocolProductIdFromRouteParams(routeParams);
+
+  const [resolvedProtocol, setResolvedProtocol] = useState<ProtocolDetailProtocol | null>(initialProtocol ?? null);
+  const [protocolLoadState, setProtocolLoadState] = useState<'idle' | 'loading' | 'error'>(
+    initialProtocol ? 'idle' : 'loading',
+  );
+
+  useEffect(() => {
+    if (initialProtocol) {
+      setResolvedProtocol(initialProtocol);
+      setProtocolLoadState('idle');
+      return;
+    }
+
+    if (!routeProductId) {
+      setResolvedProtocol(null);
+      setProtocolLoadState('error');
+      return;
+    }
+
+    let cancelled = false;
+    setProtocolLoadState('loading');
+
+    void (async () => {
+      try {
+        const response = await productService.getProductById(routeProductId);
+        const isSuccess = response.success === true || (response as { status?: string }).status === 'success';
+        if (cancelled) {
+          return;
+        }
+        if (!isSuccess || !response.data) {
+          setResolvedProtocol(null);
+          setProtocolLoadState('error');
+          return;
+        }
+        setResolvedProtocol(protocolDetailFromProduct(response.data));
+        setProtocolLoadState('idle');
+      } catch (error) {
+        logger.warn('[ProtocolDetailScreen] Falha ao carregar protocolo compartilhado', {
+          productId: routeProductId,
+          cause: error,
+        });
+        if (!cancelled) {
+          setResolvedProtocol(null);
+          setProtocolLoadState('error');
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [initialProtocol, routeProductId]);
+
+  const protocol = resolvedProtocol;
+
+  const communityId = protocol?.communityId?.trim() ?? '';
+  const hasCommunity = Boolean(communityId);
+  const opensCommunityFeed = protocol?.programType === PROGRAM_TYPE.COMMUNITY && hasCommunity;
+  const productId = protocol?.productId?.trim() ?? '';
+  const subscriptionLifecycleFields = {
+    status: protocol?.subscriptionStatus,
+    cancelAtPeriodEnd: protocol?.cancelAtPeriodEnd,
+    canceledAt: protocol?.canceledAt,
+  };
+  const hasActiveProtocolAccess =
+    Boolean(protocol) && subscriptionHasProtocolContentAccess(subscriptionLifecycleFields);
+
+  const [activeTab, setActiveTab] = useState<ProtocolTabId>('content');
+  const [agreementsText, setAgreementsText] = useState(protocol?.agreements?.trim() ?? '');
+  const [expandedModuleId, setExpandedModuleId] = useState<string | null>(null);
+  const [openCourseModuleId, setOpenCourseModuleId] = useState<string | null>(null);
+  const [openContentId, setOpenContentId] = useState<string | null>(null);
+  const [openArchive, setOpenArchive] = useState(false);
+  const [openArchiveModuleId, setOpenArchiveModuleId] = useState<string | null>(null);
+  const appliedCourseFocusToken = useRef<number | null>(null);
+  const courseFocus = route.params.courseFocus;
+
+  const heroImageUri = protocol?.image?.trim() || (hasCommunity ? MEMBER_PROTOCOL_COMMUNITY_IMAGE_FALLBACK : '');
+
+  const {
+    course,
+    loading: courseLoading,
+    reload: reloadCourse,
+  } = useProgramCourse(communityId, hasCommunity && hasActiveProtocolAccess && !opensCommunityFeed);
+  const { isEnabled: isChatEnabled } = useFeatureFlag(FEATURE_FLAGS.CHAT_ENABLED);
+  const { advertisers: communityAdvertisers, refresh: refreshAdvertisers } = useAdvertisers({
+    communityId: communityId || undefined,
+    listOptions: { page: 1, limit: 1, status: ADVERTISER_STATUS.ACTIVE },
+    enabled: hasCommunity && hasActiveProtocolAccess && !opensCommunityFeed,
+  });
+  const {
+    eventBanner,
+    eventJoinUrl,
+    closeEventSession,
+    handleEventBannerPress,
+    handleEventBannerCtaPress,
+    refreshReminderState,
+  } = useCommunityEventBanner({
+    enabled: hasCommunity && hasActiveProtocolAccess && !opensCommunityFeed,
+    communityId,
+    communityAvatarUrl: heroImageUri,
+    communityProviderName: protocol?.name ?? '',
+    defaultThumbnailUrl: heroImageUri,
+    programProductId: productId || undefined,
+    hasProgramAccess: hasActiveProtocolAccess,
+    navigation,
+  });
+
+  const refreshProgramPage = useCallback(async () => {
+    try {
+      await Promise.all([reloadCourse(), refreshAdvertisers(), refreshReminderState()]);
+    } catch (cause) {
+      logger.error('[ProtocolDetailScreen] Falha ao atualizar o programa', { cause });
+    }
+  }, [refreshAdvertisers, refreshReminderState, reloadCourse]);
+
+  const {
+    showIndicator: showPullIndicator,
+    onScroll: onPullScroll,
+    refreshControl: pullRefreshControl,
+  } = usePullToRefresh(refreshProgramPage);
+
+  const [protocolAccessedAt, setProtocolAccessedAt] = useState(() => Date.now());
+
+  const courseHome = useMemo(
+    () => buildCourse(course?.steps ?? [], new Set(course?.completedContentIds ?? []), course?.modules ?? []),
+    [course],
+  );
+  const completeContent = course?.modules?.length
+    ? async (contentId: string) => {
+        await courseService.completeProgramContent(communityId, contentId);
+        await reloadCourse();
+      }
+    : undefined;
+
+  const courseModules: ModuleItem[] = useMemo(() => {
+    if (!course?.steps?.length) {
+      return [];
+    }
+
+    const now = new Date(protocolAccessedAt);
+    return course.steps.map((step) => ({
+      id: step.postId,
+      title: step.title,
+      completed: isProtocolStepAutoCompleted(step.updatedAt, now),
+      body: step.body,
+      attachments: step.attachments ?? [],
+      video: step.video?.id?.trim() ? step.video : null,
+    }));
+  }, [course, protocolAccessedAt]);
+
+  const aboutText = protocol?.description?.trim() || protocol?.shortDescription?.trim() || null;
+
+  useEffect(() => {
+    if (opensCommunityFeed) {
+      return;
+    }
+
+    const fromRoute = protocol?.agreements?.trim();
+    if (fromRoute) {
+      setAgreementsText(fromRoute);
+      return;
+    }
+
+    if (!productId) {
+      setAgreementsText('');
+      return;
+    }
+
+    let cancelled = false;
+
+    void (async () => {
+      try {
+        const response = await productService.getProductById(productId);
+        const isSuccess = response.success === true || (response as { status?: string }).status === 'success';
+        if (cancelled || !isSuccess || !response.data) {
+          return;
+        }
+        setAgreementsText(response.data.technicalSpecifications?.trim() ?? '');
+      } catch {
+        if (!cancelled) {
+          setAgreementsText('');
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [opensCommunityFeed, productId, protocol?.agreements]);
+
+  const contentLoading = hasCommunity && courseLoading;
+  const moduleStorageScopeId = communityId || protocol?.id || productId;
+
+  useFocusEffect(
+    useCallback(() => {
+      setMenu(menuItems, 'profile');
+      if (opensCommunityFeed) {
+        return;
+      }
+      setProtocolAccessedAt(Date.now());
+
+      const subscriptionId = resolvedProtocol?.subscriptionId?.trim();
+      if (!subscriptionId) {
+        return;
+      }
+
+      let cancelled = false;
+      void (async () => {
+        try {
+          const response = await subscriptionService.getManageSubscription(subscriptionId);
+          if (cancelled || !response.success || !response.data) {
+            return;
+          }
+          const manage = response.data;
+          setResolvedProtocol((current) => {
+            if (!current || current.subscriptionId !== subscriptionId) {
+              return current;
+            }
+            return {
+              ...current,
+              subscriptionStatus: manage.status,
+              cancelAtPeriodEnd: manage.cancelAtPeriodEnd,
+              accessValidUntil: manage.accessValidUntil,
+              canceledAt: manage.canceledAt ?? null,
+              cancelRequestedAt: manage.cancelRequestedAt ?? null,
+            };
+          });
+        } catch (error) {
+          logger.warn('[ProtocolDetailScreen] Falha ao sincronizar ciclo da assinatura', {
+            subscriptionId,
+            cause: error,
+          });
+        }
+      })();
+
+      return () => {
+        cancelled = true;
+      };
+    }, [menuItems, opensCommunityFeed, resolvedProtocol?.subscriptionId, setMenu]),
+  );
+
+  useEffect(() => {
+    if (!courseFocus || appliedCourseFocusToken.current === courseFocus.token) {
+      return;
+    }
+    appliedCourseFocusToken.current = courseFocus.token;
+    if (courseFocus.kind === 'home') {
+      setOpenContentId(null);
+      setOpenCourseModuleId(null);
+      setOpenArchive(false);
+      setOpenArchiveModuleId(null);
+      return;
+    }
+    setOpenCourseModuleId(courseFocus.courseModuleId);
+    setOpenContentId(courseFocus.contentId);
+  }, [courseFocus]);
+
+  const handleBack = () => {
+    if (openContentId) {
+      setOpenContentId(null);
+      return;
+    }
+    if (openCourseModuleId) {
+      setOpenCourseModuleId(null);
+      return;
+    }
+    if (openArchiveModuleId) {
+      setOpenArchiveModuleId(null);
+      return;
+    }
+    if (openArchive) {
+      setOpenArchive(false);
+      return;
+    }
+    goBackOrShareHome(navigation);
+  };
+
+  const handleGoHome = () => {
+    navigateToShareHome(navigation);
+  };
+
+  const handleDiscover = () => {
+    navigateToShareDiscover(navigation, protocol?.productId ?? routeProductId);
+  };
+
+  const handleSharePress = useCallback(async () => {
+    const productId = protocol?.productId ?? routeProductId;
+    if (!productId) {
+      return;
+    }
+    await shareContent({ contentType: SHARE_CONTENT_TYPES.PROTOCOL, productId }, { screenName: 'protocol_detail' });
+  }, [protocol?.productId, routeProductId]);
+
+  const handleManageProtocol = useCallback(() => {
+    const subscriptionId = protocol?.subscriptionId?.trim();
+    if (!subscriptionId) {
+      return;
+    }
+    navigation.navigate('ManageProtocolSubscription', {
+      subscriptionId,
+      programName:
+        protocol?.name?.trim() || t('profile.subscriptionManage.programFallback', { defaultValue: 'Programa' }),
+      focusUpdatePayment: subscriptionAllowsPaymentMethodUpdate(protocol?.subscriptionStatus),
+    });
+  }, [navigation, protocol?.name, protocol?.subscriptionId, protocol?.subscriptionStatus, t]);
+
+  const protocolMenuOptions = useMemo(() => {
+    if (!protocol) {
+      return undefined;
+    }
+
+    const subscriptionFields = {
+      status: protocol.subscriptionStatus,
+      cancelAtPeriodEnd: protocol.cancelAtPeriodEnd,
+      canceledAt: protocol.canceledAt,
+    };
+    const isCanceledSubscription = subscriptionIsCanceledPresentation(subscriptionFields);
+    const options: InfoSectionMenuOption[] = [];
+
+    if (protocol.subscriptionId?.trim()) {
+      options.push({
+        label: t('profile.protocolDetail.manageProtocol', { defaultValue: 'Gerenciar protocolo' }),
+        onPress: handleManageProtocol,
+        testID: E2E_TEST_IDS.PROTOCOL_MANAGE,
+      });
+    }
+
+    if (!isCanceledSubscription) {
+      options.push({
+        label: t('profile.protocolDetail.share', { defaultValue: 'Compartilhar' }),
+        onPress: () => {
+          void handleSharePress();
+        },
+      });
+    }
+
+    return options.length > 0 ? options : undefined;
+  }, [handleManageProtocol, handleSharePress, protocol, t]);
+
+  const menuButtonRef = useRef<View>(null);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [menuAnchor, setMenuAnchor] = useState({ top: 0, right: 16 });
+  const openProtocolMenu = useCallback(() => {
+    if (!protocolMenuOptions?.length) {
+      return;
+    }
+    menuButtonRef.current?.measureInWindow((x, y, width, height) => {
+      const windowWidth = Dimensions.get('window').width;
+      setMenuAnchor({
+        top: y + height + 4,
+        right: Math.max(16, windowWidth - (x + width)),
+      });
+      setIsMenuOpen(true);
+    });
+  }, [protocolMenuOptions]);
+
+  const handleTabSelect = (tabId: ProtocolTabId) => {
+    logTabSelect({ screen_name: 'protocol_detail', tab_id: tabId });
+    setActiveTab(tabId);
+  };
+
+  useEffect(() => {
+    if (!opensCommunityFeed) {
+      return;
+    }
+    navigateToCommunity(
+      navigation,
+      { focusCommunityId: communityId, programType: PROGRAM_TYPE.COMMUNITY },
+      { replace: true },
+    );
+  }, [opensCommunityFeed, communityId, navigation]);
+
+  if (opensCommunityFeed || protocolLoadState === 'loading') {
+    return (
+      <ScreenWithHeader
+        navigation={navigation}
+        headerProps={{ showBackButton: true, onBackPress: handleBack }}
+        contentContainerStyle={styles.container}
+        contentBackgroundColor={COLORS.BACKGROUND}
+      >
+        <View style={styles.loaderWrap}>
+          <ActivityIndicator size='large' color={COLORS.PRIMARY.PURE} />
+        </View>
+      </ScreenWithHeader>
+    );
+  }
+
+  if (protocolLoadState === 'error' || !protocol) {
+    return (
+      <ScreenWithHeader
+        navigation={navigation}
+        headerProps={{ showBackButton: true, onBackPress: handleBack }}
+        contentContainerStyle={styles.container}
+        contentBackgroundColor={COLORS.BACKGROUND}
+      >
+        <ShareContentUnavailable
+          contentType={SHARE_CONTENT_TYPES.PROTOCOL}
+          itemId={routeProductId ?? undefined}
+          screenName='protocol_detail'
+          onDiscover={handleDiscover}
+          onGoHome={handleGoHome}
+        />
+      </ScreenWithHeader>
+    );
+  }
+
+  const subscriptionFields = {
+    status: protocol.subscriptionStatus,
+    cancelAtPeriodEnd: protocol.cancelAtPeriodEnd,
+    canceledAt: protocol.canceledAt,
+  };
+  const isCanceledSubscription = subscriptionIsCanceledPresentation(subscriptionFields);
+  const isCancelingSubscription = subscriptionIsCancelingPresentation(subscriptionFields);
+  const isPastDueSubscription = subscriptionIsPastDuePresentation(subscriptionFields.status);
+  const isUnpaidSubscription = subscriptionIsUnpaidPresentation(subscriptionFields.status);
+  const canceledBadgeLabel = t('profile.acquisitionList.statusCanceled', { defaultValue: 'Cancelado' });
+  const cancelingBadgeLabel = t('profile.acquisitionList.statusCanceling', {
+    defaultValue: 'Em cancelamento',
+  });
+  const pastDueBadgeLabel = t('profile.acquisitionList.statusPastDue', { defaultValue: 'Em atraso' });
+  const unpaidBadgeLabel = t('profile.acquisitionList.statusUnpaid', { defaultValue: 'Inadimplente' });
+  const showsCourse = hasActiveProtocolAccess;
+  const openCourseModule = courseHome.modules.find((courseModule) => courseModule.id === openCourseModuleId) ?? null;
+  const openContent = openCourseModule?.contents.find((content) => content.id === openContentId) ?? null;
+  const contentHeaderTitle = openCourseModule?.title?.trim() || protocol.name;
+  const innerScreenTitle = openContentId ? contentHeaderTitle : protocol.name;
+  const archiveModules = courseHome.modules.filter((courseModule) => courseModule.isArchive);
+  const journeyModules = courseHome.modules.filter((courseModule) => !courseModule.isArchive);
+  let courseHeaderTitle: string | null = null;
+  if (!openArchive && openCourseModuleId) {
+    courseHeaderTitle = innerScreenTitle;
+  }
+  const programBadge = t('profile.courseHome.programBadge', { defaultValue: 'Programa' });
+  const heroBadges = (() => {
+    const base = (protocol.badges ?? []).filter(Boolean);
+    const statusBadge = isCanceledSubscription
+      ? canceledBadgeLabel
+      : isCancelingSubscription
+      ? cancelingBadgeLabel
+      : isUnpaidSubscription
+      ? unpaidBadgeLabel
+      : isPastDueSubscription
+      ? pastDueBadgeLabel
+      : null;
+    if (!statusBadge) {
+      return base;
+    }
+    const alreadyHas = base.some((badge) => badge.trim().toLowerCase() === statusBadge.toLowerCase());
+    return alreadyHas ? base : [...base, statusBadge];
+  })();
+  const courseHeroBadges = [
+    programBadge,
+    ...heroBadges.filter((badge) => badge.trim().toLowerCase() !== programBadge.trim().toLowerCase()),
+  ];
+  let liveImageUri = '';
+  if (typeof eventBanner?.thumbnail === 'string') {
+    liveImageUri = eventBanner.thumbnail.trim();
+  } else if (
+    eventBanner?.thumbnail &&
+    typeof eventBanner.thumbnail === 'object' &&
+    'uri' in eventBanner.thumbnail &&
+    typeof eventBanner.thumbnail.uri === 'string'
+  ) {
+    liveImageUri = eventBanner.thumbnail.uri.trim();
+  }
+  const isLiveJoin = eventBanner?.variant === 'live_join';
+  const isScheduledLive = eventBanner?.status === 'Scheduled';
+  const isLiveNow = eventBanner?.status === 'Live Now';
+  const showCourseLive = eventBanner != null && eventBanner.variant !== 'purchase' && (isScheduledLive || isLiveNow);
+  const liveActionLabel = isLiveJoin
+    ? t('profile.courseHome.joinLive', { defaultValue: 'Entrar' })
+    : t('profile.courseHome.createReminder', { defaultValue: 'Criar lembrete' });
+  const liveHost = eventBanner?.host.trim() ?? '';
+  const liveMessage = liveHost
+    ? t('profile.courseHome.nextLiveMessage', {
+        host: liveHost,
+        defaultValue: 'Não perca a próxima live de {{host}}.',
+      })
+    : eventBanner?.title ?? '';
+  const liveCard =
+    showCourseLive && eventBanner
+      ? {
+          imageUri: liveImageUri || null,
+          message: liveMessage,
+          whenLabel: formatCourseLiveWhen(eventBanner.startTime),
+          actionLabel: liveActionLabel,
+          onAction: () => {
+            void (isLiveJoin ? handleEventBannerPress(eventBanner) : handleEventBannerCtaPress(eventBanner));
+          },
+        }
+      : null;
+  const canceledOnLabel = formatSubscriptionManageDate(
+    subscriptionCanceledOnDate({
+      ...subscriptionFields,
+      cancelRequestedAt: protocol.cancelRequestedAt,
+    }),
+  );
+  const accessUntilLabel = formatSubscriptionManageDate(protocol.accessValidUntil);
+
+  const renderCancelingNotice = () => (
+    <View style={styles.canceledNoticeCard}>
+      <Text style={styles.canceledNoticeText}>
+        {t('profile.protocolDetail.cancelingNoticePrefix', {
+          defaultValue: 'Este protocolo será cancelado em ',
+        })}
+        <Text style={styles.canceledNoticeDate}>{accessUntilLabel}</Text>
+        {t('profile.protocolDetail.cancelingNoticeSuffix', {
+          defaultValue: '. Você continua com acesso até essa data.',
+        })}
+      </Text>
+    </View>
+  );
+
+  const renderCanceledContentTab = () => (
+    <View style={styles.tabContent}>
+      <View style={styles.canceledNoticeCard}>
+        <Text style={styles.canceledNoticeText}>
+          {t('profile.protocolDetail.canceledNoticePrefix', { defaultValue: 'Programa cancelado em ' })}
+          <Text style={styles.canceledNoticeDate}>{canceledOnLabel}</Text>
+          {t('profile.protocolDetail.canceledNoticeSuffix', { defaultValue: '.' })}
+        </Text>
+      </View>
+      <View style={styles.similarProductsSection}>
+        <Text style={styles.similarProductsTitle}>
+          {t('profile.protocolDetail.similarProductsTitle', { defaultValue: 'Conheça produtos similares' })}
+        </Text>
+        <Text style={styles.similarProductsDescription}>
+          {t('profile.protocolDetail.similarProductsDescription', {
+            defaultValue:
+              'Navegue na(s) comunidade(s) e na aba shop e descubra o que combina com a sua jornada de bem-estar.',
+          })}
+        </Text>
+        <SecondaryButton
+          label={t('profile.protocolDetail.similarProductsButton', { defaultValue: 'Ver mais' })}
+          onPress={() => navigation.navigate('Marketplace' as never)}
+          size='large'
+        />
+      </View>
+    </View>
+  );
+
+  const renderUnpaidContentTab = () => (
+    <View style={styles.tabContent}>
+      <View style={styles.canceledNoticeCard}>
+        <Text style={styles.canceledNoticeText}>
+          {t('profile.protocolDetail.unpaidNotice', {
+            defaultValue: 'Sua assinatura está inadimplente. Atualize a forma de pagamento para recuperar o acesso.',
+          })}
+        </Text>
+      </View>
+      {protocol.subscriptionId?.trim() ? (
+        <SecondaryButton
+          label={t('profile.protocolDetail.pastDueUpdatePayment', {
+            defaultValue: 'Atualizar forma de pagamento',
+          })}
+          onPress={handleManageProtocol}
+          size='large'
+        />
+      ) : null}
+    </View>
+  );
+
+  const renderContentTab = () => {
+    if (isCanceledSubscription) {
+      return renderCanceledContentTab();
+    }
+
+    if (isUnpaidSubscription) {
+      return renderUnpaidContentTab();
+    }
+
+    if (!hasCommunity) {
+      return (
+        <View style={styles.tabContent}>
+          {isCancelingSubscription ? renderCancelingNotice() : null}
+          {courseModules.length > 0 ? (
+            <ModuleAccordion modules={courseModules} storageScopeId={moduleStorageScopeId} />
+          ) : (
+            <Text style={styles.emptyText}>
+              {t('profile.protocolDetail.noCommunityLinked', {
+                defaultValue: 'Conteúdo indisponível: protocolo sem comunidade vinculada.',
+              })}
+            </Text>
+          )}
+        </View>
+      );
+    }
+
+    if (contentLoading) {
+      return (
+        <View style={styles.loaderWrap}>
+          <ActivityIndicator size='large' color={COLORS.PRIMARY.PURE} />
+        </View>
+      );
+    }
+
+    const showLessons = courseModules.length > 0;
+    const noCourseStepsTitle = t('profile.protocolDetail.noCourseSteps', {
+      defaultValue: 'Nenhuma aula disponível no momento.',
+    });
+
+    if (!eventBanner && !showLessons) {
+      return (
+        <View style={styles.tabContent}>
+          {isCancelingSubscription ? renderCancelingNotice() : null}
+          <EmptyState title={noCourseStepsTitle} iconName='menu-book' />
+        </View>
+      );
+    }
+
+    return (
+      <View style={styles.tabContent}>
+        {isCancelingSubscription ? renderCancelingNotice() : null}
+        {eventBanner ? (
+          <View style={styles.eventBannerContainer}>
+            <EventBanner event={eventBanner} onPress={handleEventBannerPress} onCtaPress={handleEventBannerCtaPress} />
+          </View>
+        ) : null}
+        {showLessons ? (
+          <ModuleAccordion
+            modules={courseModules}
+            storageScopeId={moduleStorageScopeId}
+            expandedModuleId={expandedModuleId}
+            onExpandedModuleChange={setExpandedModuleId}
+          />
+        ) : (
+          <EmptyState title={noCourseStepsTitle} iconName='menu-book' />
+        )}
+      </View>
+    );
+  };
+
+  const renderAboutTab = () => (
+    <View style={styles.tabContent}>
+      {aboutText ? (
+        <MarkdownText style={styles.descriptionText} text={aboutText} />
+      ) : (
+        <Text style={styles.emptyText}>
+          {t('community.aboutEmpty', { defaultValue: 'Sem informações disponíveis.' })}
+        </Text>
+      )}
+    </View>
+  );
+
+  const renderAgreementsTab = () => (
+    <View style={styles.tabContent}>
+      {agreementsText.length > 0 ? (
+        <MarkdownText style={styles.descriptionText} text={agreementsText} />
+      ) : (
+        <Text style={styles.emptyText}>
+          {t('marketplace.noDescriptionAvailable', {
+            defaultValue: 'Descrição não disponível.',
+          })}
+        </Text>
+      )}
+    </View>
+  );
+
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case 'content':
+        return renderContentTab();
+      case 'about':
+        return renderAboutTab();
+      case 'agreements':
+        return renderAgreementsTab();
+    }
+  };
+
+  const openCourseModuleView = (courseModuleId: string) => {
+    setOpenContentId(null);
+    setOpenArchive(false);
+    setOpenArchiveModuleId(null);
+    setOpenCourseModuleId(courseModuleId);
+  };
+  const openArchiveView = () => {
+    setOpenContentId(null);
+    setOpenCourseModuleId(null);
+    setOpenArchiveModuleId(null);
+    setOpenArchive(true);
+  };
+  const archiveCover = heroImageUri ? <CachedImage source={{ uri: heroImageUri }} style={styles.archivePhoto} /> : null;
+  const courseSpecialist = communityAdvertisers[0] ?? null;
+  const courseSpecialistName = courseSpecialist?.name?.trim() ?? '';
+  const courseSpecialistGender =
+    (
+      courseSpecialist as {
+        user?: { person?: { gender?: string | null } | null } | null;
+      } | null
+    )?.user?.person?.gender?.trim() || null;
+  const specialistFirstName = courseSpecialistName.split(/\s+/).find(Boolean) ?? '';
+  const isMasculineSpecialist = courseSpecialistGender?.toLowerCase() === 'male';
+  const archiveTitle = t('profile.courseArchive.title', { defaultValue: 'Acervo' });
+  const archiveTitleKey = isMasculineSpecialist
+    ? 'profile.courseArchive.titleWithNameMasculine'
+    : 'profile.courseArchive.titleWithNameFeminine';
+  const archiveTitleDefault = isMasculineSpecialist ? 'Acervo do {{name}}' : 'Acervo da {{name}}';
+  const archiveSubtitleKey = isMasculineSpecialist
+    ? 'profile.courseArchive.subtitleMasculine'
+    : 'profile.courseArchive.subtitleFeminine';
+  const archiveSubtitleDefault = isMasculineSpecialist
+    ? 'Reveja os encontros com o {{name}} quando quiser.'
+    : 'Reveja os encontros com a {{name}} quando quiser.';
+  const archiveTitleWithName = t(archiveTitleKey, {
+    name: specialistFirstName,
+    defaultValue: archiveTitleDefault,
+  });
+  const archiveSubtitleWithName = t(archiveSubtitleKey, {
+    name: specialistFirstName,
+    defaultValue: archiveSubtitleDefault,
+  });
+  const archiveListTitle = specialistFirstName ? archiveTitleWithName : archiveTitle;
+  const archiveSubtitle = specialistFirstName
+    ? archiveSubtitleWithName
+    : t('profile.courseArchive.subtitle', { defaultValue: 'Reveja os encontros quando quiser.' });
+  if (openArchive) {
+    courseHeaderTitle = archiveListTitle;
+  }
+  const openSpecialistProfile = () => {
+    if (!courseSpecialist || !courseSpecialistName) {
+      return;
+    }
+    navigateToProviderProfile(navigation, {
+      providerId: courseSpecialist.id,
+      provider: {
+        name: courseSpecialistName,
+        avatar: courseSpecialist.logo,
+        description: courseSpecialist.description,
+      },
+    });
+  };
+  const openSpecialistChat = () => {
+    if (!courseSpecialist || !courseSpecialistName) {
+      return;
+    }
+    if (!isChatEnabled) {
+      Alert.alert(
+        t('marketplace.chatUnavailableTitle', { defaultValue: 'Chat indisponível' }),
+        t('marketplace.chatUnavailableBody', {
+          defaultValue: 'Esta funcionalidade está desativada no momento.',
+        }),
+      );
+      return;
+    }
+    navigateRootStack(navigation, 'Chat', {
+      screen: 'ChatConversation',
+      params: {
+        targetAdvertiserId: courseSpecialist.id,
+        channelName: courseSpecialistName,
+        channelAvatar: courseSpecialist.logo,
+        initialMessage: t('marketplace.chatInitialMessage'),
+      },
+    });
+  };
+  const continueContent = courseHome.continueContent;
+  const isProgramComplete = courseHome.totalContents > 0 && courseHome.completedContents >= courseHome.totalContents;
+  const showCourseModuleTitle =
+    continueContent != null && continueContent.courseModuleTitle.trim() !== continueContent.contentTitle.trim();
+  const showMenu = Boolean(protocolMenuOptions?.length);
+  const menuLabel = t('profile.protocolDetail.manageProtocol', { defaultValue: 'Gerenciar protocolo' });
+  const manageButtonStyle = isMenuOpen ? [styles.manageButton, styles.manageButtonOpen] : styles.manageButton;
+  const menuIconColor = isMenuOpen ? COLORS.WHITE : COLORS.NEUTRAL.LOW.PURE;
+  const welcomeTitle = t('profile.courseHome.welcomeTitle', {
+    name: protocol.name,
+    defaultValue: 'Bem-vinda ao\n{{name}}',
+  });
+  let courseJourney = (
+    <View style={styles.journeyRoot}>
+      <View style={styles.welcomeBlock}>
+        <View style={styles.welcomeHeader}>
+          <Text style={[styles.displayTitle, styles.welcomeTitle]}>{welcomeTitle}</Text>
+          {showMenu ? (
+            <View ref={menuButtonRef} collapsable={false} testID={E2E_TEST_IDS.PROTOCOL_MORE_MENU}>
+              <Pressable
+                style={manageButtonStyle}
+                onPress={openProtocolMenu}
+                accessibilityRole='button'
+                accessibilityLabel={menuLabel}
+              >
+                <CourseMoreIcon color={menuIconColor} />
+              </Pressable>
+            </View>
+          ) : null}
+        </View>
+        {aboutText ? <Text style={styles.welcomeBody}>{aboutText}</Text> : null}
+      </View>
+
+      {isProgramComplete ? (
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>
+            {t('profile.courseHome.programCompletedTitle', { defaultValue: 'Programa concluído' })}
+          </Text>
+          <Text style={styles.welcomeBody}>
+            {t('profile.courseHome.programCompletedBody', {
+              defaultValue: 'Você concluiu todas as aulas desta jornada.',
+            })}
+          </Text>
+        </View>
+      ) : null}
+
+      {continueContent ? (
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>
+            {t('profile.courseHome.continueTitle', { defaultValue: 'Continue a sua jornada' })}
+          </Text>
+          <Pressable style={styles.continueCard} onPress={() => openCourseModuleView(continueContent.courseModuleId)}>
+            {continueContent.coverUri ? (
+              <CachedImage source={{ uri: continueContent.coverUri }} style={styles.continueCover} />
+            ) : (
+              <View style={[styles.continueCover, { backgroundColor: COLORS.SECONDARY.MEDIUM }]} />
+            )}
+            <View style={styles.continueCopy}>
+              <View>
+                {showCourseModuleTitle ? (
+                  <Text style={styles.overline}>{continueContent.courseModuleTitle}</Text>
+                ) : null}
+                <Text style={styles.continueTitle}>{continueContent.contentTitle}</Text>
+                {continueContent.summary ? <Text style={styles.continueSummary}>{continueContent.summary}</Text> : null}
+              </View>
+              <SecondaryButton
+                label={t('profile.courseHome.continueAction', { defaultValue: 'Continuar' })}
+                icon='chevron-right'
+                onPress={() => openCourseModuleView(continueContent.courseModuleId)}
+              />
+            </View>
+          </Pressable>
+        </View>
+      ) : null}
+
+      {liveCard ? (
+        <View style={styles.liveSection}>
+          <Text style={styles.liveLabel}>{t('profile.courseHome.nextLive', { defaultValue: 'Próxima live' })}</Text>
+          <View style={styles.liveRow}>
+            <View style={styles.liveCoverFrame}>
+              <View style={styles.liveCoverWrap}>
+                {liveCard.imageUri ? (
+                  <CachedImage source={{ uri: liveCard.imageUri }} style={styles.liveCover} />
+                ) : (
+                  <View style={[styles.liveCover, styles.liveCoverFallback]} />
+                )}
+                <LinearGradient
+                  pointerEvents='none'
+                  colors={['rgba(0,0,0,0)', 'rgba(0,0,0,0.64)']}
+                  style={styles.liveCoverShade}
+                />
+                <Pressable
+                  style={styles.liveAction}
+                  onPress={liveCard.onAction}
+                  accessibilityRole='button'
+                  accessibilityLabel={liveCard.actionLabel}
+                >
+                  <Text style={styles.liveActionLabel}>{liveCard.actionLabel}</Text>
+                </Pressable>
+              </View>
+            </View>
+            <View style={styles.livePanel}>
+              <View style={styles.liveCopy}>
+                <CourseLiveCamIcon />
+                <Text style={styles.liveMessage}>{liveCard.message}</Text>
+              </View>
+              {liveCard.whenLabel ? <Text style={styles.liveWhen}>{liveCard.whenLabel}</Text> : null}
+            </View>
+          </View>
+        </View>
+      ) : null}
+
+      <View style={styles.journeyHeader}>
+        <Text style={styles.displayTitle}>{t('profile.courseHome.journeyTitle', { defaultValue: 'Sua jornada' })}</Text>
+        <Text style={styles.journeyHint}>
+          {t('profile.courseHome.journeyHint', { defaultValue: 'Conclua cada etapa para liberar a próxima.' })}
+        </Text>
+      </View>
+      <CourseProgress completed={courseHome.completedContents} total={courseHome.totalContents} />
+
+      {journeyModules.length > 0 ? (
+        <View style={styles.stageList}>
+          {journeyModules.map((courseModule) => (
+            <CourseModuleCard
+              key={courseModule.id}
+              courseModule={courseModule}
+              onOpenCourseModule={openCourseModuleView}
+            />
+          ))}
+        </View>
+      ) : (
+        <Text style={styles.journeyHint}>
+          {t('profile.protocolDetail.noCourseSteps', { defaultValue: 'Nenhuma aula disponível no momento.' })}
+        </Text>
+      )}
+
+      {archiveModules.length > 0 ? (
+        <View style={styles.archiveSection}>
+          <Text style={styles.displayTitle}>{t('profile.courseArchive.title', { defaultValue: 'Acervo' })}</Text>
+          <Pressable
+            style={styles.archiveCard}
+            onPress={openArchiveView}
+            accessibilityRole='button'
+            accessibilityLabel={t('profile.courseArchive.openAction', { defaultValue: 'Ver acervo' })}
+          >
+            {archiveCover}
+            <LinearGradient
+              pointerEvents='none'
+              colors={['rgba(0,0,0,0)', 'rgba(0,0,0,0.74)']}
+              style={styles.archiveShade}
+            />
+            <View style={styles.archiveCopy}>
+              <View style={styles.archiveBadge}>
+                <Text style={styles.archiveBadgeText}>
+                  {t('profile.courseArchive.badge', { defaultValue: 'Temos novidades' })}
+                </Text>
+              </View>
+              <View style={styles.archiveFooter}>
+                <Text style={styles.archiveBody}>
+                  {t('profile.courseArchive.cardBody', {
+                    defaultValue: 'Reveja encontros e conteúdos exclusivos com a Betina.',
+                  })}
+                </Text>
+                <View style={styles.archiveButton}>
+                  <Text style={styles.archiveButtonLabel}>
+                    {t('profile.courseArchive.openAction', { defaultValue: 'Ver acervo' })}
+                  </Text>
+                </View>
+              </View>
+            </View>
+          </Pressable>
+        </View>
+      ) : null}
+
+      {courseSpecialist && courseSpecialistName ? (
+        <CourseSpecialist
+          name={courseSpecialistName}
+          role={courseSpecialist.description?.trim() || null}
+          imageUri={courseSpecialist.logo?.trim() || null}
+          gender={courseSpecialistGender}
+          onVisitProfile={openSpecialistProfile}
+          onTalk={openSpecialistChat}
+        />
+      ) : null}
+
+      <Modal visible={isMenuOpen} transparent animationType='fade' onRequestClose={() => setIsMenuOpen(false)}>
+        <View style={styles.menuBackdrop}>
+          <Pressable style={styles.menuDismissArea} onPress={() => setIsMenuOpen(false)} accessibilityRole='button' />
+          <View style={[styles.menuCard, { top: menuAnchor.top, right: menuAnchor.right }]}>
+            {protocolMenuOptions?.map((option) => (
+              <Pressable
+                key={option.label}
+                style={styles.menuOption}
+                onPress={() => {
+                  setIsMenuOpen(false);
+                  option.onPress();
+                }}
+                accessibilityRole='button'
+                accessibilityLabel={option.label}
+                testID={option.testID}
+              >
+                <Text style={styles.menuOptionLabel}>{option.label}</Text>
+              </Pressable>
+            ))}
+          </View>
+        </View>
+      </Modal>
+    </View>
+  );
+  if (openCourseModule && openContent) {
+    courseJourney = (
+      <CourseContent
+        course={courseHome}
+        courseModule={openCourseModule}
+        content={openContent}
+        onShare={() => {
+          void handleSharePress();
+        }}
+        onCompleteContent={completeContent}
+        communityId={communityId}
+        onOpenLessonRating={(params) => {
+          navigation.navigate('CourseLessonCompletion', params);
+        }}
+      />
+    );
+  } else if (openCourseModule) {
+    courseJourney = (
+      <CourseModule course={courseHome} courseModule={openCourseModule} onOpenContent={setOpenContentId} />
+    );
+  } else if (openArchive) {
+    courseJourney = (
+      <CourseArchive
+        modules={archiveModules}
+        heroImageUri={heroImageUri}
+        subtitle={archiveSubtitle}
+        openModuleId={openArchiveModuleId}
+        onOpenModule={setOpenArchiveModuleId}
+      />
+    );
+  }
+
+  return (
+    <ScreenWithHeader
+      navigation={navigation}
+      headerProps={{
+        showBackButton: true,
+        onBackPress: handleBack,
+        customLogo: courseHeaderTitle ? (
+          <Text style={styles.headerTitle} numberOfLines={1}>
+            {courseHeaderTitle}
+          </Text>
+        ) : undefined,
+      }}
+      contentContainerStyle={styles.container}
+      contentBackgroundColor={COLORS.BACKGROUND}
+    >
+      <PullToRefreshIndicator visible={showPullIndicator} accessibilityLabel={t('common.loading')} />
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        scrollEventThrottle={16}
+        onScroll={onPullScroll}
+        refreshControl={pullRefreshControl}
+      >
+        {showsCourse ? (
+          <>
+            {courseHeaderTitle ? null : (
+              <HeroImage
+                variant='compact'
+                imageUri={heroImageUri}
+                name={protocol.name}
+                badges={courseHeroBadges}
+                desaturated={subscriptionIsDesaturatedPresentation(subscriptionFields)}
+              />
+            )}
+            {isCancelingSubscription ? renderCancelingNotice() : null}
+            {contentLoading ? (
+              <View style={styles.loaderWrap}>
+                <ActivityIndicator size='large' color={COLORS.PRIMARY.PURE} />
+              </View>
+            ) : (
+              courseJourney
+            )}
+          </>
+        ) : (
+          <>
+            <HeroImage
+              imageUri={heroImageUri}
+              name={protocol.name}
+              badges={heroBadges}
+              heightRatio={0.6}
+              desaturated={subscriptionIsDesaturatedPresentation(subscriptionFields)}
+              footer={
+                aboutText ? (
+                  <View style={styles.heroFooter}>
+                    <Text style={styles.heroDescription}>{aboutText}</Text>
+                  </View>
+                ) : undefined
+              }
+            />
+
+            <View style={styles.infoSection}>
+              <Text style={styles.sectionTitle}>
+                {t('community.informationTitle', { defaultValue: 'Informações' })}
+              </Text>
+              <InfoSectionTabsRow
+                options={TAB_OPTIONS}
+                selectedId={activeTab}
+                onSelect={handleTabSelect}
+                menuOptions={protocolMenuOptions}
+              />
+            </View>
+
+            {renderTabContent()}
+          </>
+        )}
+      </ScrollView>
+      {eventJoinUrl ? <EventWebViewSession url={eventJoinUrl} onClose={closeEventSession} /> : null}
+    </ScreenWithHeader>
+  );
+};
+
+export default ProtocolDetailScreen;

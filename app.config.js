@@ -250,7 +250,8 @@ module.exports = {
     name: 'LikeMe',
     slug: 'likeme-front-end',
     version: appVersion.version,
-    orientation: 'portrait',
+    // O app fica em retrato pelo lock no JS. Paisagem entra só no vídeo em tela cheia.
+    orientation: 'default',
     userInterfaceStyle: 'light',
     platforms: ['ios', 'android', 'web'],
     web: {
@@ -283,6 +284,12 @@ module.exports = {
           image: './assets/app/icon.png',
           resizeMode: 'contain',
           backgroundColor: '#F4F3EC',
+        },
+      ],
+      [
+        'expo-screen-orientation',
+        {
+          initialOrientation: 'PORTRAIT',
         },
       ],
       'expo-navigation-bar',

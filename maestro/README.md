@@ -78,7 +78,7 @@ E2E_PRODUCT_ID=uuid E2E_COMMUNITY_ID=uuid npm run test:e2e:staging
 
 Conta de staging dos testes de login/checkout: `duda@pixelpulselab.dev` (user `5521d990-1b22-4ee6-af47-20cabb7aa0d8`). JWT e e-mail ficam em `.env.staging` (`EXPO_PUBLIC_E2E_STAGING_TOKEN`, `EXPO_PUBLIC_E2E_STAGING_EMAIL`). O Auth0 Management API não aceita `client_credentials` neste client — não dá para criar senha Auth0 por aqui; a sessão E2E é o JWT do backend.
 
-A conta precisa de um convite `REDEEMED` **antes** do fluxo. Sem isso o backend manda a sessão para o tapume e o bootstrap não acha `e2e.summary.root`. O convite da suíte é o código `E2EDU7`, no programa Comunidade interna Like:me (`c8aed25c-7237-43a8-8f87-92b884d03792`), provider Dr. Diogo Lara — outro programa que o checkout pago, para não criar matrícula grátis no protocolo que o cartão vai comprar.
+A conta da suíte usa o convite `E2EDU7` já `REDEEMED`, no programa Comunidade interna Like:me (`c8aed25c-7237-43a8-8f87-92b884d03792`), provider Dr. Diogo Lara. O checkout pago usa outro programa.
 
 `npm run test:e2e:login` prova a sessão: entra pelo deep link, abre o menu de perfil e confere `${E2E_LOGIN_EMAIL}` na conta logada.
 

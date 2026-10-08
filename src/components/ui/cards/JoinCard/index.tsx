@@ -62,7 +62,9 @@ function JoinCardBadges({ badges }: { badges: string[] }) {
   );
 }
 
-function JoinCardChevron({ onPress }: { onPress: () => void }) {
+function JoinCardChevron({ onPress, centered = false }: { onPress: () => void; centered?: boolean }) {
+  const chevronStyle = centered ? undefined : styles.ctaIconButton;
+
   return (
     <IconButton
       icon='chevron-right'
@@ -70,7 +72,7 @@ function JoinCardChevron({ onPress }: { onPress: () => void }) {
       iconSize={28}
       onPress={onPress}
       backgroundSize='large'
-      containerStyle={styles.ctaIconButton}
+      containerStyle={chevronStyle}
     />
   );
 }
@@ -130,6 +132,8 @@ function BlurJoinCard({
   const leadingDetail = layout.detailBeforeTitle ? detailText : null;
   const trailingDetail = layout.detailBeforeTitle ? null : detailText;
   const showFooterChevron = layout.footerChevron && Boolean(onPress);
+  const titleSitsOnFooter = !detail && price === undefined;
+  const titleStyle = titleSitsOnFooter ? styles.titleWithoutDetail : null;
 
   return (
     <View style={blurCardWrapperStyle(variant, fullWidth)} testID={testID}>
@@ -137,16 +141,19 @@ function BlurJoinCard({
         backgroundImage={image}
         topSection={<JoinCardTop badges={labels} onAddToCalendar={onAddToCalendar} />}
         footerSection={
-          <View style={styles.bottom}>
+          <View style={[styles.bottom, titleSitsOnFooter && styles.bottomTitleCentered]}>
             <View style={styles.footerTextBlock}>
               {leadingDetail}
-              <Text style={[styles.title, !onPress && styles.titleWithoutCta]} numberOfLines={layout.titleLines}>
+              <Text
+                style={[styles.title, !onPress && styles.titleWithoutCta, titleStyle]}
+                numberOfLines={layout.titleLines}
+              >
                 {title}
               </Text>
               {trailingDetail}
               {price !== undefined ? <Text style={styles.price}>{formatPriceLabel(price)}</Text> : null}
             </View>
-            {showFooterChevron && onPress ? <JoinCardChevron onPress={onPress} /> : null}
+            {showFooterChevron && onPress ? <JoinCardChevron onPress={onPress} centered={titleSitsOnFooter} /> : null}
           </View>
         }
         onPress={onPress}
@@ -189,6 +196,8 @@ function MediaJoinCard({
   const leadingDetail = layout.detailBeforeTitle ? detailText : null;
   const trailingDetail = layout.detailBeforeTitle ? null : detailText;
   const showFooterChevron = layout.footerChevron && Boolean(onPress);
+  const titleSitsOnFooter = !detail && price === undefined;
+  const titleStyle = titleSitsOnFooter ? styles.titleWithoutDetail : null;
 
   return (
     <View style={blurCardWrapperStyle(variant, fullWidth)} testID={testID}>
@@ -200,16 +209,19 @@ function MediaJoinCard({
             <JoinCardTop badges={labels} onAddToCalendar={onAddToCalendar} />
           </View>
           <View style={styles.mediaFooter}>
-            <View style={styles.bottom}>
+            <View style={[styles.bottom, titleSitsOnFooter && styles.bottomTitleCentered]}>
               <View style={styles.footerTextBlock}>
                 {leadingDetail}
-                <Text style={[styles.title, !onPress && styles.titleWithoutCta]} numberOfLines={layout.titleLines}>
+                <Text
+                  style={[styles.title, !onPress && styles.titleWithoutCta, titleStyle]}
+                  numberOfLines={layout.titleLines}
+                >
                   {title}
                 </Text>
                 {trailingDetail}
                 {price !== undefined ? <Text style={styles.price}>{formatPriceLabel(price)}</Text> : null}
               </View>
-              {showFooterChevron && onPress ? <JoinCardChevron onPress={onPress} /> : null}
+              {showFooterChevron && onPress ? <JoinCardChevron onPress={onPress} centered={titleSitsOnFooter} /> : null}
             </View>
           </View>
         </View>
@@ -237,6 +249,8 @@ function HeroJoinCard({
   testID,
 }: JoinCardProps) {
   const labels = visibleBadgeLabels(badges);
+  const titleSitsOnFooter = !detail;
+  const titleStyle = titleSitsOnFooter ? styles.titleWithoutDetail : null;
 
   return (
     <View style={styles.cardWrapperFullWidth} testID={testID}>
@@ -245,9 +259,9 @@ function HeroJoinCard({
         <LinearGradient pointerEvents='none' colors={HERO_GRADIENT} style={styles.heroMedia} />
         <View style={styles.heroBody}>
           <JoinCardTop badges={labels} onAddToCalendar={onAddToCalendar} />
-          <View style={styles.bottom}>
+          <View style={[styles.bottom, titleSitsOnFooter && styles.bottomTitleCentered]}>
             <View style={styles.footerTextBlock}>
-              <Text style={styles.title} numberOfLines={2}>
+              <Text style={[styles.title, titleStyle]} numberOfLines={2}>
                 {title}
               </Text>
               {detail ? (
@@ -256,7 +270,7 @@ function HeroJoinCard({
                 </Text>
               ) : null}
             </View>
-            {onPress ? <JoinCardChevron onPress={onPress} /> : null}
+            {onPress ? <JoinCardChevron onPress={onPress} centered={titleSitsOnFooter} /> : null}
           </View>
         </View>
       </Pressable>

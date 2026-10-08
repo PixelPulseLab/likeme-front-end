@@ -5,6 +5,7 @@ import type { NavWithParent } from '@/utils/navigation/rootStackNavigation';
 const mockGetToken = jest.fn();
 const mockRefreshBackendSession = jest.fn();
 const mockGetCachedPostAuthRoute = jest.fn();
+const mockGetCachedHasRedeemedInvitation = jest.fn();
 
 jest.mock('@/constants', () => ({
   FORCE_START_ONBOARDING_LOCALLY: false,
@@ -12,6 +13,7 @@ jest.mock('@/constants', () => ({
 
 jest.mock('@/services/auth/applyAuthSessionResponse', () => ({
   getCachedPostAuthRoute: (...args: unknown[]) => mockGetCachedPostAuthRoute(...args),
+  getCachedHasRedeemedInvitation: (...args: unknown[]) => mockGetCachedHasRedeemedInvitation(...args),
   clearCachedPostAuthRoute: jest.fn(),
 }));
 
@@ -21,10 +23,12 @@ jest.mock('@/services/infrastructure/apiClient', () => ({
 
 const mockActivatePendingStoredCode = jest.fn();
 const mockInvitationHomeRoute = jest.fn(
-  async (screen?: string, params?: object): Promise<{ screen: string; params?: object }> => ({
-    screen: screen ?? 'Wall',
-    params,
-  }),
+  async (screen?: string, params?: object): Promise<{ screen: string; params?: object }> => {
+    if (screen === 'Home') {
+      return { screen, params };
+    }
+    return { screen: 'Home' };
+  },
 );
 
 jest.mock('@/services/invitation/invitationService', () => ({
@@ -66,10 +70,13 @@ describe('useOnboardingRedirect', () => {
     navigation.getState.mockReturnValue({ index: 0, routes: [{ name: 'Authenticated' }] });
     mockGetToken.mockResolvedValue('session-token');
     mockActivatePendingStoredCode.mockResolvedValue({ outcome: 'none' });
-    mockInvitationHomeRoute.mockImplementation(async (screen?: string, params?: object) => ({
-      screen: screen ?? 'Wall',
-      params,
-    }));
+    mockGetCachedHasRedeemedInvitation.mockReturnValue(null);
+    mockInvitationHomeRoute.mockImplementation(async (screen?: string, params?: object) => {
+      if (screen === 'Home') {
+        return { screen, params };
+      }
+      return { screen: 'Home' };
+    });
     mockRefreshBackendSession.mockResolvedValue({
       ok: true,
       postAuthRoute: { screen: 'Home' },
@@ -89,19 +96,6 @@ describe('useOnboardingRedirect', () => {
     expect(navigation.reset).not.toHaveBeenCalled();
   });
 
-  it('após o activate sincroniza a sessão e segue o tapume', async () => {
-    mockGetCachedPostAuthRoute.mockReturnValue({ screen: 'Wall' });
-
-    renderHook(() => useOnboardingRedirect(navigation));
-
-    await waitFor(() => {
-      expect(mockActivatePendingStoredCode).toHaveBeenCalled();
-      expect(mockRefreshBackendSession).toHaveBeenCalledTimes(1);
-      expect(mockInvitationHomeRoute).toHaveBeenCalledWith('Wall', undefined);
-      expectResetTo('Wall');
-    });
-  });
-
   it('não segue Register nem onboarding quando o cache ainda traz essas telas', async () => {
     mockGetCachedPostAuthRoute.mockReturnValue({
       screen: 'InterestCategories',
@@ -112,11 +106,11 @@ describe('useOnboardingRedirect', () => {
 
     await waitFor(() => {
       expect(mockInvitationHomeRoute).toHaveBeenCalledWith(undefined, undefined);
-      expectResetTo('Wall');
+      expectResetTo('Home');
     });
   });
 
-  it('cai no tapume quando o sync falha sem postAuthRoute', async () => {
+  it('cai na Home quando o sync falha sem postAuthRoute', async () => {
     mockGetCachedPostAuthRoute.mockReturnValue(null);
     mockRefreshBackendSession.mockResolvedValue({ ok: false, postAuthRoute: null });
 
@@ -124,7 +118,7 @@ describe('useOnboardingRedirect', () => {
 
     await waitFor(() => {
       expect(mockInvitationHomeRoute).toHaveBeenCalledWith(undefined, undefined);
-      expectResetTo('Wall');
+      expectResetTo('Home');
     });
   });
 
@@ -143,30 +137,76 @@ describe('useOnboardingRedirect', () => {
     });
   });
 
-  it('não volta ao tapume quando a sessão ainda é Wall e o usuário está no código', async () => {
-    mockGetCachedPostAuthRoute.mockReturnValue({ screen: 'Wall' });
+  it('não sai do código quando a sessão não aponta para Home', async () => {
+    mockGetCachedPostAuthRoute.mockReturnValue(null);
     navigation.getState.mockReturnValue({ index: 0, routes: [{ name: 'InvitationCode' }] });
 
     renderHook(() => useOnboardingRedirect(navigation));
 
     await waitFor(() => {
-      expect(mockInvitationHomeRoute).toHaveBeenCalledWith('Wall', undefined);
+      expect(mockRefreshBackendSession).toHaveBeenCalled();
     });
+    expect(mockInvitationHomeRoute).not.toHaveBeenCalled();
     expect(mockActivatePendingStoredCode).not.toHaveBeenCalled();
     expect(navigation.reset).not.toHaveBeenCalled();
   });
 
+  it('não sai do código quando a sessão é Home e o convite não foi resgatado', async () => {
+    mockGetCachedPostAuthRoute.mockReturnValue({ screen: 'Home' });
+    mockGetCachedHasRedeemedInvitation.mockReturnValue(false);
+    navigation.getState.mockReturnValue({ index: 0, routes: [{ name: 'InvitationCode' }] });
+
+    renderHook(() => useOnboardingRedirect(navigation));
+
+    await waitFor(() => {
+      expect(mockRefreshBackendSession).toHaveBeenCalled();
+    });
+    expect(mockInvitationHomeRoute).not.toHaveBeenCalled();
+    expect(navigation.reset).not.toHaveBeenCalled();
+  });
+
+  it('vai à home a partir do código quando o convite já foi resgatado', async () => {
+    mockGetCachedPostAuthRoute.mockReturnValue({ screen: 'Home' });
+    mockGetCachedHasRedeemedInvitation.mockReturnValue(true);
+    navigation.getState.mockReturnValue({ index: 0, routes: [{ name: 'InvitationCode' }] });
+
+    renderHook(() => useOnboardingRedirect(navigation));
+
+    await waitFor(() => {
+      expectResetTo('Home');
+    });
+    expect(mockActivatePendingStoredCode).not.toHaveBeenCalled();
+  });
+
   it('não ativa convite pendente com a sessão atual na tela de contexto', async () => {
-    mockGetCachedPostAuthRoute.mockReturnValue({ screen: 'Wall' });
+    mockGetCachedPostAuthRoute.mockReturnValue(null);
     navigation.getState.mockReturnValue({ index: 0, routes: [{ name: 'InvitationContext' }] });
 
     renderHook(() => useOnboardingRedirect(navigation));
 
     await waitFor(() => {
-      expect(mockInvitationHomeRoute).toHaveBeenCalledWith('Wall', undefined);
+      expect(mockRefreshBackendSession).toHaveBeenCalled();
     });
+    expect(mockInvitationHomeRoute).not.toHaveBeenCalled();
     expect(mockActivatePendingStoredCode).not.toHaveBeenCalled();
     expect(navigation.reset).not.toHaveBeenCalled();
+  });
+
+  it('abre a PDP do convite sobre a Home', async () => {
+    mockGetCachedPostAuthRoute.mockReturnValue({ screen: 'Home' });
+    mockInvitationHomeRoute.mockResolvedValue({
+      screen: 'ProductDetails',
+      params: { productId: 'program-1' },
+    });
+
+    renderHook(() => useOnboardingRedirect(navigation));
+
+    await waitFor(() => {
+      expect(navigation.reset).toHaveBeenCalledWith({
+        index: 1,
+        routes: [{ name: 'Home' }, { name: 'ProductDetails', params: { productId: 'program-1' } }],
+      });
+    });
   });
 
   it('vai à home quando o fallback do convite substitui rota inválida', async () => {

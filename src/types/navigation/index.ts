@@ -25,6 +25,28 @@ export type CommunityStackParamList = {
   PostDetail: { post: import('@/types').Post } | { postId: string };
 };
 
+export type ProtocolCourseFocus =
+  | { token: number; kind: 'home' }
+  | { token: number; kind: 'lesson'; courseModuleId: string; contentId: string };
+
+export type CourseLessonCompletionNext = {
+  courseModuleId: string;
+  contentId: string;
+  moduleTitle: string;
+  title: string;
+  summary: string | null;
+  coverUri: string | null;
+  durationMinutes: number | null;
+};
+
+export type CourseLessonCompletionParams = {
+  communityId: string;
+  contentId: string;
+  moduleTitle: string;
+  coverUri: string | null;
+  nextLesson: CourseLessonCompletionNext | null;
+};
+
 export type ProtocolDetailProtocol = {
   id: string;
   name: string;
@@ -56,7 +78,6 @@ type RootStackParamListCore = {
   InvitationCode: { code?: string } | undefined;
   InvitationContext: InvitationCodeValidationContext;
   OnboardingAvatar: undefined;
-  Wall: undefined;
   Authenticated: undefined;
   Welcome: undefined;
   Register: { userName?: string };
@@ -126,7 +147,10 @@ type RootStackParamListCore = {
   DesignSystem: undefined;
   DeleteAccount: undefined;
   SubscriptionList: undefined;
-  ProtocolDetail: { protocol: ProtocolDetailProtocol } | { productId: string };
+  ProtocolDetail:
+    | { protocol: ProtocolDetailProtocol; courseFocus?: ProtocolCourseFocus }
+    | { productId: string; courseFocus?: ProtocolCourseFocus };
+  CourseLessonCompletion: CourseLessonCompletionParams;
   ManageProtocolSubscription: {
     subscriptionId: string;
     programName: string;

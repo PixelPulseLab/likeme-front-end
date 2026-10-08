@@ -18,7 +18,6 @@ import {
   getInvitationCodeScreen,
   getInvitationContextScreen,
   getAvatarScreen,
-  getWallScreen,
   getAuthenticatedScreen,
   getWelcomeScreen,
   getRegisterScreen,
@@ -53,6 +52,7 @@ import {
   getDesignSystemScreen,
   getDeleteAccountScreen,
   getProtocolDetailScreen,
+  getCourseLessonCompletionScreen,
   getSubscriptionListScreen,
   getManageProtocolSubscriptionScreen,
   getCancelProtocolSubscriptionScreen,
@@ -143,11 +143,6 @@ const RootNavigator: React.FC = () => {
                   name='OnboardingAvatar'
                   getComponent={getAvatarScreen}
                   options={{ title: 'Áreas de interesse', gestureEnabled: false }}
-                />
-                <Stack.Screen
-                  name='Wall'
-                  getComponent={getWallScreen}
-                  options={{ title: 'Tapume', gestureEnabled: false }}
                 />
                 <Stack.Screen
                   name='Authenticated'
@@ -286,6 +281,13 @@ const RootNavigator: React.FC = () => {
                   name='ProtocolDetail'
                   getComponent={getProtocolDetailScreen}
                   options={{ title: 'Protocolo' }}
+                />
+                <Stack.Screen
+                  name='CourseLessonCompletion'
+                  getComponent={getCourseLessonCompletionScreen}
+                  options={{
+                    title: t('profile.courseLesson.completed', { defaultValue: 'Aula concluída' }),
+                  }}
                 />
                 <Stack.Screen
                   name='SubscriptionList'

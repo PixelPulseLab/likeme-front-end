@@ -17,7 +17,12 @@ jest.mock('@/services/infrastructure/apiClient', () => ({
   invalidateApiClientAuthTokenMemoryCache: jest.fn(),
 }));
 
-import { applyAuthSessionResponse, clearCachedPostAuthRoute, getCachedPostAuthRoute } from './applyAuthSessionResponse';
+import {
+  applyAuthSessionResponse,
+  clearCachedPostAuthRoute,
+  getCachedHasRedeemedInvitation,
+  getCachedPostAuthRoute,
+} from './applyAuthSessionResponse';
 
 describe('applyAuthSessionResponse', () => {
   beforeEach(() => {
@@ -43,19 +48,31 @@ describe('applyAuthSessionResponse', () => {
     });
     expect(ok.ok).toBe(true);
     expect(getCachedPostAuthRoute()).toEqual({ screen: 'Home' });
+    expect(getCachedHasRedeemedInvitation()).toBeNull();
     expect(mockSetToken).toHaveBeenCalledWith('jwt');
   });
 
-  it('aceita postAuthRoute Wall', async () => {
-    const ok = await applyAuthSessionResponse({
+  it('guarda hasRedeemedInvitation da sessão', async () => {
+    await applyAuthSessionResponse({
+      data: {
+        token: 'jwt',
+        postAuthRoute: { screen: 'Home' },
+        hasRedeemedInvitation: false,
+      },
+    });
+    expect(getCachedHasRedeemedInvitation()).toBe(false);
+  });
+
+  it('rejeita postAuthRoute Wall', async () => {
+    const rejected = await applyAuthSessionResponse({
       data: {
         token: 'jwt',
         postAuthRoute: { screen: 'Wall' },
       },
     });
-    expect(ok.ok).toBe(true);
-    expect(ok.postAuthRoute).toEqual({ screen: 'Wall' });
-    expect(getCachedPostAuthRoute()).toEqual({ screen: 'Wall' });
+    expect(rejected.ok).toBe(true);
+    expect(rejected.postAuthRoute).toBeNull();
+    expect(getCachedPostAuthRoute()).toBeNull();
   });
 
   it('rejeita tela fora da allowlist', async () => {

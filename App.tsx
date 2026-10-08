@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { AppState, Platform, StatusBar, StyleSheet, View } from 'react-native';
+import * as ScreenOrientation from 'expo-screen-orientation';
 import * as SplashScreen from 'expo-splash-screen';
 import { useFonts } from 'expo-font';
 import { LIKEME_FONT_LOADER_MAP } from '@/constants/fontLoader';
@@ -76,6 +77,12 @@ const App: React.FC = () => {
       clearTimeout(fallbackTimer);
     };
   }, [hideSplashOnce]);
+
+  useEffect(() => {
+    void ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP).catch((cause: unknown) => {
+      logger.warn('[App] Não foi possível travar a orientação em retrato', { cause });
+    });
+  }, []);
 
   useEffect(() => {
     void startI18nHydration('pt-BR');

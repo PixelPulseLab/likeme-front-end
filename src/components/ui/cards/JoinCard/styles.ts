@@ -105,6 +105,9 @@ export const styles = StyleSheet.create({
     justifyContent: 'space-between',
     gap: SPACING.SM,
   },
+  bottomTitleCentered: {
+    alignItems: 'center',
+  },
   footerTextBlock: {
     flex: 1,
     gap: 4,
@@ -120,6 +123,11 @@ export const styles = StyleSheet.create({
   titleWithoutCta: {
     flex: 0,
     alignSelf: 'flex-start',
+  },
+  titleWithoutDetail: {
+    flex: 0,
+    alignSelf: 'flex-start',
+    textAlign: 'left',
   },
   ctaIconButton: {
     alignSelf: 'flex-end',

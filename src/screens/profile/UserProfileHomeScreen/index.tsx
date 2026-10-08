@@ -17,6 +17,7 @@ import { getMarkerGradient } from '@/constants/markers';
 import { INTEREST_CATEGORIES } from '@/hooks/interestCategories/useInterestCategories';
 import { useUserProfileHome } from './useUserProfileHome';
 import { useProfileAvatarEditor } from './useProfileAvatarEditor';
+import { isDefaultInitialsAvatar, personNameInitials } from '@/utils/user/personNameLabel';
 import { styles } from './styles';
 
 const CATEGORY_LABEL_KEY = Object.fromEntries(INTEREST_CATEGORIES.map((category) => [category.id, category.i18nKey]));
@@ -37,8 +38,21 @@ const UserProfileHomeScreen: React.FC<Props> = ({ navigation }) => {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { loading, data, setAvatarUri } = useUserProfileHome();
+  const profilePhotoUri = isDefaultInitialsAvatar(data.avatarUri) ? null : data.avatarUri;
+  const profileInitials = personNameInitials(data.displayName);
+  const profileAvatarFallback = profileInitials ? (
+    <Text style={styles.avatarInitials}>{profileInitials}</Text>
+  ) : (
+    <Icon name='person' size={48} color={COLORS.NEUTRAL.LOW.DARK} />
+  );
+  let profileAvatar = <View style={styles.avatarPlaceholder}>{profileAvatarFallback}</View>;
+  if (loading) {
+    profileAvatar = <View style={[styles.skeletonLine, styles.skeletonAvatar]} />;
+  } else if (profilePhotoUri) {
+    profileAvatar = <CachedImage source={{ uri: profilePhotoUri }} style={styles.avatar} />;
+  }
   const avatarEditor = useProfileAvatarEditor({
-    hasAvatar: Boolean(data.avatarUri),
+    hasAvatar: Boolean(profilePhotoUri),
     onAvatarChanged: setAvatarUri,
   });
 
@@ -118,15 +132,7 @@ const UserProfileHomeScreen: React.FC<Props> = ({ navigation }) => {
       >
         <View style={styles.profileSection}>
           <View style={styles.avatarBlock}>
-            {loading ? (
-              <View style={[styles.skeletonLine, styles.skeletonAvatar]} />
-            ) : data.avatarUri ? (
-              <CachedImage source={{ uri: data.avatarUri }} style={styles.avatar} />
-            ) : (
-              <View style={styles.avatarPlaceholder}>
-                <Icon name='person' size={48} color={COLORS.NEUTRAL.LOW.DARK} />
-              </View>
-            )}
+            {profileAvatar}
             {!loading ? (
               <IconButton
                 icon='edit'

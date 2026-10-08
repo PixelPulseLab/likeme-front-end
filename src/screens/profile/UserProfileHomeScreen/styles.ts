@@ -1,5 +1,5 @@
 import { StyleSheet } from 'react-native';
-import { COLORS, SPACING, TYPOGRAPHY } from '@/constants';
+import { COLORS, FONT_FAMILY, SPACING, TYPOGRAPHY } from '@/constants';
 
 export const styles = StyleSheet.create({
   container: {
@@ -42,6 +42,12 @@ export const styles = StyleSheet.create({
     backgroundColor: COLORS.NEUTRAL.LOW.LIGHT,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  avatarInitials: {
+    fontFamily: FONT_FAMILY.DM_SANS_MEDIUM,
+    fontSize: 40,
+    lineHeight: 48,
+    color: COLORS.NEUTRAL.LOW.PURE,
   },
   avatarEditButton: {
     position: 'absolute',

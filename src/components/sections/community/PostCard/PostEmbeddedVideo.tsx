@@ -9,11 +9,12 @@ type Props = {
   fillContainer?: boolean;
   onCollapse: () => void;
   hideCollapse?: boolean;
+  muted?: boolean;
   containerStyle?: StyleProp<ViewStyle>;
   onPlaybackError?: (error: OnVideoErrorData) => void;
 };
 
-function videoSourceFromUri(videoUri: string): { uri: string; type?: 'm3u8' } {
+export function videoSourceFromUri(videoUri: string): { uri: string; type?: 'm3u8' } {
   if (/\.m3u8(\?|$)/i.test(videoUri)) {
     return { uri: videoUri, type: 'm3u8' };
   }
@@ -25,6 +26,7 @@ const PostEmbeddedVideoInner: React.FC<Props> = ({
   fillContainer = false,
   onCollapse,
   hideCollapse = false,
+  muted = false,
   containerStyle,
   onPlaybackError,
 }) => {
@@ -57,6 +59,8 @@ const PostEmbeddedVideoInner: React.FC<Props> = ({
     onPlaybackErrorRef.current?.(error);
   }, []);
 
+  const volume = muted ? 0 : 1;
+
   return (
     <View style={[fillContainer ? styles.fillContainer : styles.container, containerStyle]}>
       <Video
@@ -64,7 +68,10 @@ const PostEmbeddedVideoInner: React.FC<Props> = ({
         source={videoSourceFromUri(videoUri)}
         style={styles.video}
         controls
+        fullscreenAutorotate={false}
         paused={false}
+        muted={muted}
+        volume={volume}
         resizeMode='contain'
         repeat={false}
         ignoreSilentSwitch='ignore'

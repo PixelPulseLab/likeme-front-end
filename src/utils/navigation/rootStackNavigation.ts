@@ -46,22 +46,40 @@ export function navigateRootStack(navigation: NavWithParent | undefined, name: s
   root.navigate?.(name, params);
 }
 
-export function resetRootStack(navigation: NavWithParent | undefined, name: string, params?: object): void {
+function applyRootReset(
+  navigation: NavWithParent | undefined,
+  index: number,
+  routes: Array<{ name: string; params?: object }>,
+): void {
   const root = rootStackNavigationFrom(navigation);
   if (!root) {
     return;
   }
 
-  const routes = [params != null ? { name, params } : { name }];
   if (typeof root.dispatch === 'function') {
     root.dispatch(
       CommonActions.reset({
-        index: 0,
+        index,
         routes,
       }),
     );
     return;
   }
 
-  (root as NavWithReset).reset?.({ index: 0, routes });
+  (root as NavWithReset).reset?.({ index, routes });
+}
+
+export function resetRootStack(navigation: NavWithParent | undefined, name: string, params?: object): void {
+  const routes = [params != null ? { name, params } : { name }];
+  applyRootReset(navigation, 0, routes);
+}
+
+export function resetRootStackOnTopOf(
+  navigation: NavWithParent | undefined,
+  baseName: string,
+  name: string,
+  params?: object,
+): void {
+  const top = params != null ? { name, params } : { name };
+  applyRootReset(navigation, 1, [{ name: baseName }, top]);
 }

@@ -101,7 +101,7 @@ const InvitationCodeScreen: React.FC<Props> = ({ navigation, route }) => {
     });
     logNavigation({
       source_screen: 'invitation_code',
-      destination_screen: 'wall',
+      destination_screen: 'home',
       action_name: 'interest_areas',
     });
     await handleLogin({ discardPendingInvitation: true });

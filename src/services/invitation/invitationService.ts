@@ -87,17 +87,16 @@ export async function invitationHomeRoute(
   screen?: string,
   params?: object,
 ): Promise<{ screen: string; params?: object }> {
-  if (screen === 'Home' || screen === 'Wall') {
+  const pendingProgram = await storageService.takePendingInvitationProgramDestination();
+  if (pendingProgram) {
+    return {
+      screen: 'ProductDetails',
+      params: { productId: pendingProgram.productId },
+    };
+  }
+  if (screen === 'Home') {
     return { screen, params };
   }
-  if (await storageService.getInvitationOpensHome()) {
-    return { screen: 'Home' };
-  }
-  const pending = await storageService.takePendingInvitationProgramDestination();
-  if (!pending) {
-    return { screen: 'Wall' };
-  }
-  await storageService.setInvitationOpensHome();
   return { screen: 'Home' };
 }
 
@@ -163,8 +162,11 @@ class InvitationService {
     try {
       const context = await this.activateCode(code);
       await storageService.removePendingInvitationCode();
-      await storageService.setInvitationOpensHome();
-      await storageService.removePendingInvitationProgramDestination();
+      await storageService.setPendingInvitationProgramDestination({
+        productId: context.program.id,
+        programType: context.program.programType,
+        communityId: context.community?.id ?? null,
+      });
       await applyInvitationDisplayNameIfEmpty(context.displayName);
       return { outcome: 'linked', context };
     } catch (error) {

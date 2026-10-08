@@ -7,6 +7,7 @@ export type Attachment = {
   fileName: string;
   extension: string;
   mimeType?: string;
+  sizeBytes?: number;
   posterUrl?: string;
   streamUrl?: string | null;
   playerUrl?: string | null;

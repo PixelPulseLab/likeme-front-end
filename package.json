@@ -1,6 +1,6 @@
 {
   "name": "likeme-front-end",
-  "version": "1.20.1",
+  "version": "1.21.0",
   "description": "React Native app for health and wellness",
   "main": "index.js",
   "scripts": {
@@ -116,6 +116,7 @@
     "expo-image-picker": "~17.0.11",
     "expo-linear-gradient": "~15.0.8",
     "expo-navigation-bar": "~5.0.10",
+    "expo-screen-orientation": "~9.0.9",
     "expo-splash-screen": "~31.0.13",
     "i18next": "^25.8.0",
     "react": "19.1.0",
