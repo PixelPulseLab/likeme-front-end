@@ -83,17 +83,7 @@ function isUnrecoverableInvitationActivationError(error: unknown): boolean {
   );
 }
 
-export async function invitationHomeRoute(
-  screen?: string,
-  params?: object,
-): Promise<{ screen: string; params?: object }> {
-  const pendingProgram = await storageService.takePendingInvitationProgramDestination();
-  if (pendingProgram) {
-    return {
-      screen: 'ProductDetails',
-      params: { productId: pendingProgram.productId },
-    };
-  }
+export function invitationHomeRoute(screen?: string, params?: object): { screen: string; params?: object } {
   if (screen === 'Home') {
     return { screen, params };
   }
@@ -161,12 +151,6 @@ class InvitationService {
 
     try {
       const context = await this.activateCode(code);
-      await storageService.removePendingInvitationCode();
-      await storageService.setPendingInvitationProgramDestination({
-        productId: context.program.id,
-        programType: context.program.programType,
-        communityId: context.community?.id ?? null,
-      });
       await applyInvitationDisplayNameIfEmpty(context.displayName);
       return { outcome: 'linked', context };
     } catch (error) {

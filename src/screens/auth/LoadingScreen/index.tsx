@@ -193,6 +193,15 @@ const LoadingScreen: React.FC<Props> = ({ navigation }) => {
         logger.error('[LoadingScreen] Falha ao aguardar i18n', hydrationError);
       }
 
+      await replaceSignedOut();
+    };
+
+    const replaceSignedOut = async () => {
+      const pendingCode = (await storageService.getPendingInvitationCode())?.trim();
+      if (pendingCode) {
+        replaceOnce('InvitationCode', { code: pendingCode });
+        return;
+      }
       replaceOnce('Unauthenticated');
     };
 
@@ -275,11 +284,11 @@ const LoadingScreen: React.FC<Props> = ({ navigation }) => {
         }
 
         await dismissReturningUserLogo();
-        replaceOnce('Unauthenticated');
+        await replaceSignedOut();
       } catch (error) {
         logger.error('[LoadingScreen] Falha no bootstrap de returning user', error);
         await dismissReturningUserLogo();
-        replaceOnce('Unauthenticated');
+        await replaceSignedOut();
       }
     };
 
@@ -305,6 +314,12 @@ const LoadingScreen: React.FC<Props> = ({ navigation }) => {
       void startI18nHydration('pt-BR');
       const publicPolicy = await loadPublicReleasePolicy(publicPolicyPromise, installedVersion);
       if (await navigateToForcedUpdateIfNeeded(publicPolicy.policy, publicPolicy.serverMustUpdate, installedVersion)) {
+        return;
+      }
+
+      const pendingCode = (await storageService.getPendingInvitationCode())?.trim();
+      if (pendingCode) {
+        replaceOnce('InvitationCode', { code: pendingCode });
         return;
       }
 

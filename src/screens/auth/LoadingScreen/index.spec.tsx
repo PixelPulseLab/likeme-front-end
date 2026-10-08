@@ -4,6 +4,7 @@ import LoadingScreen from './index';
 
 const mockGetToken = jest.fn();
 const mockRemoveToken = jest.fn();
+const mockGetPendingInvitationCode = jest.fn();
 const mockEnsureI18nHydrated = jest.fn();
 const mockHydrateI18nFromCache = jest.fn();
 const mockStartI18nHydration = jest.fn();
@@ -77,6 +78,7 @@ jest.mock('@/services', () => ({
   storageService: {
     getToken: (...args: unknown[]) => mockGetToken(...args),
     removeToken: (...args: unknown[]) => mockRemoveToken(...args),
+    getPendingInvitationCode: (...args: unknown[]) => mockGetPendingInvitationCode(...args),
   },
   invalidateApiClientAuthTokenMemoryCache: jest.fn(),
 }));
@@ -91,6 +93,7 @@ describe('LoadingScreen', () => {
     consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
     jest.clearAllMocks();
     mockGetToken.mockResolvedValue(null);
+    mockGetPendingInvitationCode.mockResolvedValue(null);
     mockEnsureI18nHydrated.mockResolvedValue(undefined);
     mockHydrateI18nFromCache.mockResolvedValue(true);
     mockStartI18nHydration.mockResolvedValue(undefined);
@@ -144,6 +147,21 @@ describe('LoadingScreen', () => {
     expect(mockRemoveToken).not.toHaveBeenCalled();
     expect(mockHydrateI18nFromCache).not.toHaveBeenCalled();
     expect(mockEnsureI18nHydrated).toHaveBeenCalled();
+  });
+
+  it('retoma o código de convite gravado quando o app reabre sem sessão', async () => {
+    mockGetPendingInvitationCode.mockResolvedValue('KGPEMN');
+    const replace = jest.fn();
+
+    render(<LoadingScreen navigation={{ replace, navigate: jest.fn() }} />);
+    await act(async () => {
+      await jest.runAllTimersAsync();
+    });
+
+    await waitFor(() => {
+      expect(replace).toHaveBeenCalledWith('InvitationCode', { code: 'KGPEMN' });
+    });
+    expect(replace).not.toHaveBeenCalledWith('Unauthenticated');
   });
 
   it('navega para Authenticated quando o token é validado com sucesso', async () => {

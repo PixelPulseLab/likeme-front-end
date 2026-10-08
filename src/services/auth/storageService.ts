@@ -1,8 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { logger } from '@/utils/logger';
 import type { StoredUser } from '@/types/auth';
-import type { PendingInvitationProgramDestination } from '@/types/invitation/invitation';
-import { PROGRAM_TYPE } from '@/types/product/programType';
 import { resolveCartItemCatalogType } from '@/types/product/productCatalogType';
 import { isProtocolCartItem } from '@/utils/profile/protocolProduct';
 
@@ -27,7 +25,6 @@ const NOTIFICATION_PROMPT_DISMISSED_AT_KEY = '@likeme:notification_prompt_dismis
 const COMMUNITY_FAVORITE_IDS_KEY = '@likeme:community_favorite_ids';
 const PROGRAM_MODULE_COMPLETED_IDS_KEY = '@likeme:program_module_completed_ids';
 const PENDING_INVITATION_CODE_KEY = '@likeme:pending_invitation_code';
-const PENDING_INVITATION_PROGRAM_DESTINATION_KEY = '@likeme:pending_invitation_destination';
 const INVITATION_OPENS_HOME_KEY = '@likeme:invitation_opens_home';
 
 const ONBOARDING_STORAGE_KEYS = [
@@ -576,66 +573,6 @@ class StorageService {
     }
   }
 
-  async setPendingInvitationProgramDestination(destination: PendingInvitationProgramDestination): Promise<void> {
-    const productId = destination.productId.trim();
-    if (!productId) {
-      await this.removePendingInvitationProgramDestination();
-      return;
-    }
-    const payload: PendingInvitationProgramDestination = {
-      productId,
-      programType: destination.programType === PROGRAM_TYPE.COMMUNITY ? PROGRAM_TYPE.COMMUNITY : PROGRAM_TYPE.COURSE,
-      communityId: destination.communityId?.trim() || null,
-    };
-    try {
-      await AsyncStorage.setItem(PENDING_INVITATION_PROGRAM_DESTINATION_KEY, JSON.stringify(payload));
-    } catch (error) {
-      logger.error('Error saving pending invitation program destination:', error);
-      throw error;
-    }
-  }
-
-  async getPendingInvitationProgramDestination(): Promise<PendingInvitationProgramDestination | null> {
-    try {
-      const raw = await AsyncStorage.getItem(PENDING_INVITATION_PROGRAM_DESTINATION_KEY);
-      if (!raw) {
-        return null;
-      }
-      const parsed = JSON.parse(raw) as Partial<PendingInvitationProgramDestination>;
-      const productId = typeof parsed.productId === 'string' ? parsed.productId.trim() : '';
-      if (!productId) {
-        await this.removePendingInvitationProgramDestination();
-        return null;
-      }
-      return {
-        productId,
-        programType: parsed.programType === PROGRAM_TYPE.COMMUNITY ? PROGRAM_TYPE.COMMUNITY : PROGRAM_TYPE.COURSE,
-        communityId:
-          typeof parsed.communityId === 'string' && parsed.communityId.trim() ? parsed.communityId.trim() : null,
-      };
-    } catch (error) {
-      logger.error('Error getting pending invitation program destination:', error);
-      await this.removePendingInvitationProgramDestination();
-      return null;
-    }
-  }
-
-  async takePendingInvitationProgramDestination(): Promise<PendingInvitationProgramDestination | null> {
-    const destination = await this.getPendingInvitationProgramDestination();
-    if (destination) {
-      await this.removePendingInvitationProgramDestination();
-    }
-    return destination;
-  }
-
-  async removePendingInvitationProgramDestination(): Promise<void> {
-    try {
-      await AsyncStorage.removeItem(PENDING_INVITATION_PROGRAM_DESTINATION_KEY);
-    } catch (error) {
-      logger.error('Error removing pending invitation program destination:', error);
-    }
-  }
-
   async setInvitationOpensHome(): Promise<void> {
     try {
       await AsyncStorage.setItem(INVITATION_OPENS_HOME_KEY, 'true');
@@ -666,7 +603,6 @@ class StorageService {
         COMMUNITY_FAVORITE_IDS_KEY,
         PROGRAM_MODULE_COMPLETED_IDS_KEY,
         PENDING_INVITATION_CODE_KEY,
-        PENDING_INVITATION_PROGRAM_DESTINATION_KEY,
       ]);
       await this.clearCart();
     } catch (error) {

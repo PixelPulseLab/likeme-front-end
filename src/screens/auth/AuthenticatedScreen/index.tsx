@@ -8,9 +8,9 @@ import { styles } from './styles';
 
 type Props = StackScreenProps<RootStackParamList, 'Authenticated'>;
 
-const AuthenticatedScreen: React.FC<Props> = ({ navigation, route }) => {
+const AuthenticatedScreen: React.FC<Props> = ({ navigation }) => {
   useAnalyticsScreen({ screenName: 'Authenticated', screenClass: 'AuthenticatedScreen' });
-  useOnboardingRedirect(navigation, route.params?.invitationProductId);
+  useOnboardingRedirect(navigation);
 
   return <View style={styles.container} accessibilityLabel='Carregando' />;
 };

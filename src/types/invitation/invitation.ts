@@ -30,9 +30,3 @@ export type InvitationActivationContext = InvitationCodeValidationContext & {
   displayName: string | null;
   alreadyParticipating: boolean;
 };
-
-export type PendingInvitationProgramDestination = {
-  productId: string;
-  programType: ProgramType;
-  communityId: string | null;
-};

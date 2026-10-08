@@ -97,8 +97,27 @@ describe('useAuthLogin', () => {
       expect(mockValidateToken).toHaveBeenCalled();
       expect(mockActivatePendingStoredCode).toHaveBeenCalled();
       expect(navigation.reset).toHaveBeenCalledWith({
+        index: 1,
+        routes: [{ name: 'Home' }, { name: 'ProductDetails', params: { productId: 'program-1' } }],
+      });
+    });
+  });
+
+  it('não abre a PDP se o vínculo não devolveu o programa', async () => {
+    mockGetToken.mockResolvedValue(null);
+    mockGetPendingInvitationCode.mockResolvedValue('7F3K9Q');
+    mockActivatePendingStoredCode.mockResolvedValue({ outcome: 'failed' });
+
+    const { result } = renderHook(() => useAuthLogin(navigation));
+
+    await act(async () => {
+      await result.current.handleLogin();
+    });
+
+    await waitFor(() => {
+      expect(navigation.reset).toHaveBeenCalledWith({
         index: 0,
-        routes: [{ name: 'Authenticated', params: { invitationProductId: 'program-1' } }],
+        routes: [{ name: 'Authenticated' }],
       });
     });
   });
