@@ -18,6 +18,7 @@ export type CourseContent = {
   attachments: Attachment[];
   createdAt: string | null;
   completed: boolean;
+  locked: boolean;
   durationMinutes: number | null;
   level: string | null;
   learningOutcomes: string[];
@@ -176,6 +177,7 @@ function contentFromStep(
     attachments: step.attachments ?? [],
     createdAt: step.createdAt,
     completed: completedStepIds.has(step.postId),
+    locked: false,
     durationMinutes: null,
     level: null,
     learningOutcomes: [],
@@ -183,11 +185,7 @@ function contentFromStep(
   };
 }
 
-function contentFromOutline(
-  content: ProgramCourseContent,
-  completedStepIds: ReadonlySet<string>,
-  owners: Map<string, string>,
-): CourseContent {
+function contentFromOutline(content: ProgramCourseContent, owners: Map<string, string>): CourseContent {
   const coverUri = contentCoverUri(content, owners);
   const video = contentPlayback(content, owners);
   return {
@@ -198,7 +196,8 @@ function contentFromOutline(
     video,
     attachments: content.attachments ?? [],
     createdAt: content.createdAt ?? null,
-    completed: completedStepIds.has(content.id),
+    completed: content.completed === true,
+    locked: content.locked === true,
     durationMinutes: content.durationMinutes ?? null,
     level: content.level?.trim() || null,
     learningOutcomes: content.learningOutcomes ?? [],
@@ -212,9 +211,8 @@ function courseFromModules(modules: CourseModule[]): Course {
   const completedContents = contents.filter((content) => content.completed).length;
   const continueLesson =
     journeyModules
-      .filter((courseModule) => courseModule.status !== COURSE_MODULE_STATUS.LOCKED)
       .flatMap((courseModule) => courseModule.contents.map((content) => ({ courseModule, content })))
-      .find((lesson) => !lesson.content.completed) ?? null;
+      .find((lesson) => !lesson.content.locked && !lesson.content.completed) ?? null;
   const continueModule = continueLesson?.courseModule ?? null;
   const continueContentItem = continueLesson?.content ?? null;
   const continueSummary = contentSummary(continueContentItem?.body ?? null);
@@ -258,7 +256,7 @@ function buildSteppedCourse(steps: CourseStep[], completedStepIds: ReadonlySet<s
       summary: contentSummary(step.body),
       isArchive: false,
       status,
-      contents: [content],
+      contents: [{ ...content, locked: status === COURSE_MODULE_STATUS.LOCKED }],
     });
 
     previousModuleCompleted = content.completed;
@@ -267,9 +265,19 @@ function buildSteppedCourse(steps: CourseStep[], completedStepIds: ReadonlySet<s
   return courseFromModules(modules);
 }
 
-function buildOutlinedCourse(outline: ProgramCourseModule[], completedStepIds: ReadonlySet<string>): Course {
+function moduleStatus(status: ProgramCourseModule['status']): CourseModuleStatus {
+  if (
+    status === COURSE_MODULE_STATUS.AVAILABLE ||
+    status === COURSE_MODULE_STATUS.COMPLETED ||
+    status === COURSE_MODULE_STATUS.LOCKED
+  ) {
+    return status;
+  }
+  return COURSE_MODULE_STATUS.LOCKED;
+}
+
+function buildOutlinedCourse(outline: ProgramCourseModule[]): Course {
   const modules: CourseModule[] = [];
-  let previousModuleCompleted = true;
   const orderedModules = [...outline].sort((left, right) => left.position - right.position);
   const owners = imageOwners(
     orderedModules.flatMap((outlineModule) =>
@@ -280,36 +288,15 @@ function buildOutlinedCourse(outline: ProgramCourseModule[], completedStepIds: R
   for (const outlineModule of orderedModules) {
     const moduleContents = [...outlineModule.contents]
       .sort((left, right) => left.position - right.position)
-      .map((content) => contentFromOutline(content, completedStepIds, owners));
-    if (outlineModule.isArchive) {
-      modules.push({
-        id: outlineModule.id,
-        position: outlineModule.position,
-        title: outlineModule.title,
-        summary: outlineModule.summary,
-        isArchive: true,
-        status: COURSE_MODULE_STATUS.AVAILABLE,
-        contents: moduleContents,
-      });
-      continue;
-    }
-    const isCompleted = moduleContents.length > 0 && moduleContents.every((content) => content.completed);
-    let status: CourseModuleStatus = COURSE_MODULE_STATUS.LOCKED;
-    if (isCompleted) {
-      status = COURSE_MODULE_STATUS.COMPLETED;
-    } else if (previousModuleCompleted) {
-      status = COURSE_MODULE_STATUS.AVAILABLE;
-    }
-    if (moduleContents.length > 0) {
-      previousModuleCompleted = isCompleted;
-    }
-
+      .map((content) => contentFromOutline(content, owners));
+    const isArchive = outlineModule.isArchive === true;
+    const status = isArchive ? COURSE_MODULE_STATUS.AVAILABLE : moduleStatus(outlineModule.status);
     modules.push({
       id: outlineModule.id,
       position: outlineModule.position,
       title: outlineModule.title,
       summary: outlineModule.summary,
-      isArchive: false,
+      isArchive,
       status,
       contents: moduleContents,
     });
@@ -324,7 +311,7 @@ export function buildCourse(
   outline: ProgramCourseModule[] = [],
 ): Course {
   if (outline.length > 0) {
-    return buildOutlinedCourse(outline, completedStepIds);
+    return buildOutlinedCourse(outline);
   }
   return buildSteppedCourse(steps, completedStepIds);
 }

@@ -75,6 +75,8 @@ function mapProgramCourseContent(content: ProgramCourseContent): ProgramCourseCo
     level: content.level ?? null,
     learningOutcomes: content.learningOutcomes ?? [],
     tips: content.tips ?? [],
+    completed: content.completed === true,
+    locked: content.locked === true,
   };
 }
 
@@ -82,6 +84,7 @@ function mapProgramCourseModule(module: ProgramCourseModule): ProgramCourseModul
   return {
     ...module,
     contents: (module.contents ?? []).map(mapProgramCourseContent),
+    status: module.status,
   };
 }
 

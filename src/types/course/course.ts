@@ -23,6 +23,8 @@ export type ProgramCourseContent = {
   level?: string | null;
   learningOutcomes?: string[];
   tips?: string[];
+  completed?: boolean;
+  locked?: boolean;
 };
 
 export type ProgramCourseModule = {
@@ -31,6 +33,7 @@ export type ProgramCourseModule = {
   title: string;
   summary: string | null;
   isArchive?: boolean;
+  status?: 'available' | 'locked' | 'completed';
   contents: ProgramCourseContent[];
 };
 

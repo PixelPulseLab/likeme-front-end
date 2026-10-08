@@ -4,7 +4,7 @@ import { CourseContentCard } from '@/components/sections/course/CourseContentCar
 import { CourseProgress } from '@/components/sections/course/CourseProgress';
 import { LockedContentNotice } from '@/components/sections/course/LockedContentNotice';
 import { useTranslation } from '@/hooks/i18n';
-import { COURSE_MODULE_STATUS, type Course, type CourseModule } from '@/screens/course/course';
+import type { Course, CourseModule } from '@/screens/course/course';
 import { styles } from './styles';
 
 type Props = {
@@ -32,17 +32,12 @@ export function CourseModule({ course, courseModule, onOpenContent }: Props) {
       />
       <View style={styles.lessonList}>
         {courseModule.contents.map((content, contentIndex) => {
-          const previousContentIncomplete = courseModule.contents
-            .slice(0, contentIndex)
-            .some((item) => !item.completed);
-          const isLocked =
-            courseModule.status === COURSE_MODULE_STATUS.LOCKED || (previousContentIncomplete && !content.completed);
           return (
             <View key={content.id}>
               {contentIndex > 0 ? <View style={styles.lessonSeparator} /> : null}
               <CourseContentCard
                 content={content}
-                locked={isLocked}
+                locked={content.locked}
                 onOpenContent={onOpenContent}
                 onLockedPress={() => setLockedNoticeOpen(true)}
               />
