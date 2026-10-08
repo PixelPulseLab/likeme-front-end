@@ -70,7 +70,7 @@ function shouldStayOnInvitationRedeem(
   return sessionScreen !== 'Home';
 }
 
-export function useOnboardingRedirect(navigation: NavWithParent, invitationProductId?: string): void {
+export function useOnboardingRedirect(navigation: NavWithParent): void {
   const { t } = useTranslation();
   const replace = useCallback(
     (screen: string, params?: object) => {
@@ -84,6 +84,7 @@ export function useOnboardingRedirect(navigation: NavWithParent, invitationProdu
   );
 
   useEffect(() => {
+    let cancelled = false;
     const redirect = async () => {
       try {
         if (FORCE_START_ONBOARDING_LOCALLY) {
@@ -91,29 +92,28 @@ export function useOnboardingRedirect(navigation: NavWithParent, invitationProdu
           invalidateApiClientAuthTokenMemoryCache();
         } else {
           const token = await storageService.getToken();
-          if (!token?.trim()) {
+          if (!token?.trim() || cancelled) {
             return;
           }
-        }
-
-        const linkedProductId = invitationProductId?.trim();
-        if (linkedProductId) {
-          await storageService.removePendingInvitationProgramDestination();
-          replace('ProductDetails', { productId: linkedProductId });
-          return;
         }
 
         const currentRoute = currentRootRouteName(navigation);
         if (!isInvitationRedeemRoute(currentRoute)) {
           const activation = await invitationService.activatePendingStoredCode();
-          if (activation.outcome === 'mismatch') {
+          const linkedProductFromActivation = activation.context?.program.id?.trim() ?? '';
+          if (activation.outcome === 'linked' && linkedProductFromActivation && !cancelled) {
+            await storageService.removePendingInvitationCode();
+            replace('ProductDetails', { productId: linkedProductFromActivation });
+            return;
+          }
+          if (!cancelled && activation.outcome === 'mismatch') {
             Alert.alert(t('invitation.identityMismatch'));
           }
         }
 
         clearCachedPostAuthRoute();
         await syncAuthSessionFromBackend();
-        if (currentRootRouteName(navigation) !== currentRoute) {
+        if (cancelled || currentRootRouteName(navigation) !== currentRoute) {
           return;
         }
         const sessionRoute = homeFromSession(getCachedPostAuthRoute());
@@ -122,16 +122,21 @@ export function useOnboardingRedirect(navigation: NavWithParent, invitationProdu
           return;
         }
         const destination = await invitationHomeRoute(sessionRoute?.screen, sessionRoute?.params);
-        if (currentRootRouteName(navigation) !== currentRoute) {
+        if (cancelled || currentRootRouteName(navigation) !== currentRoute) {
           return;
         }
         replace(destination.screen, destination.params);
       } catch (error) {
         logger.error('Error checking onboarding status:', error);
-        replace('Home');
+        if (!cancelled) {
+          replace('Home');
+        }
       }
     };
 
     redirect();
-  }, [invitationProductId, navigation, replace, t]);
+    return () => {
+      cancelled = true;
+    };
+  }, [navigation, replace, t]);
 }

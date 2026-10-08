@@ -46,6 +46,7 @@ jest.mock('@/services', () => ({
   storageService: {
     getToken: (...args: unknown[]) => mockGetToken(...args),
     clearAll: jest.fn(),
+    removePendingInvitationCode: jest.fn(),
   },
   AuthService: {
     refreshBackendSessionFromStoredCredentials: (...args: unknown[]) => mockRefreshBackendSession(...args),
@@ -194,9 +195,9 @@ describe('useOnboardingRedirect', () => {
 
   it('abre a PDP do convite sobre a Home', async () => {
     mockGetCachedPostAuthRoute.mockReturnValue({ screen: 'Home' });
-    mockInvitationHomeRoute.mockResolvedValue({
-      screen: 'ProductDetails',
-      params: { productId: 'program-1' },
+    mockActivatePendingStoredCode.mockResolvedValue({
+      outcome: 'linked',
+      context: { program: { id: 'program-1' } },
     });
 
     renderHook(() => useOnboardingRedirect(navigation));

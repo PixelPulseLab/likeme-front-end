@@ -78,7 +78,7 @@ type RootStackParamListCore = {
   InvitationCode: { code?: string } | undefined;
   InvitationContext: InvitationCodeValidationContext;
   OnboardingAvatar: undefined;
-  Authenticated: { invitationProductId?: string } | undefined;
+  Authenticated: undefined;
   Welcome: undefined;
   Register: { userName?: string };
   Plans: { userName?: string };

@@ -5,6 +5,7 @@ import { invitationService } from '@/services/invitation/invitationService';
 import { useTranslation } from '@/hooks/i18n';
 import { logger } from '@/utils/logger';
 import { isLoginUserAbortError } from '@/utils/auth/loginUserAbort';
+import { resetRootStack, resetRootStackOnTopOf } from '@/utils/navigation/rootStackNavigation';
 
 type AuthLoginOptions = {
   discardPendingInvitation?: boolean;
@@ -40,15 +41,15 @@ export const useAuthLogin = (navigation: any) => {
           Alert.alert(t('invitation.identityMismatch'));
         }
 
-        const invitationProductId = activation.context?.program.id?.trim();
-        const authenticatedRoute =
-          activation.outcome === 'linked' && invitationProductId
-            ? { name: 'Authenticated' as const, params: { invitationProductId } }
-            : { name: 'Authenticated' as const };
-        navigation.reset({
-          index: 0,
-          routes: [authenticatedRoute],
-        });
+        const invitationProductId = activation.context?.program.id?.trim() ?? '';
+        if (activation.outcome === 'linked' && invitationProductId) {
+          await storageService.removePendingInvitationCode();
+          resetRootStackOnTopOf(navigation, 'Home', 'ProductDetails', {
+            productId: invitationProductId,
+          });
+          return;
+        }
+        resetRootStack(navigation, 'Authenticated');
       } catch (error) {
         if (isLoginUserAbortError(error)) {
           loginInFlightRef.current = false;

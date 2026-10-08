@@ -1,15 +1,15 @@
 {
-  "version": "1.21.1",
+  "version": "1.21.2",
   "releasedAt": "2026-10-08",
   "android": {
-    "versionCode": 271
+    "versionCode": 272
   },
   "ios": {
-    "buildNumber": 47
+    "buildNumber": 48
   },
   "changelog": {
     "fixed": [
-      "Depois de logar com convite, o app abre a página do programa"
+      "Se o app fecha no login da Google, o convite continua e a página do programa abre na volta"
     ]
   }
 }
