@@ -192,6 +192,23 @@ describe('useOnboardingRedirect', () => {
     expect(navigation.reset).not.toHaveBeenCalled();
   });
 
+  it('abre a PDP do convite sobre a Home', async () => {
+    mockGetCachedPostAuthRoute.mockReturnValue({ screen: 'Home' });
+    mockInvitationHomeRoute.mockResolvedValue({
+      screen: 'ProductDetails',
+      params: { productId: 'program-1' },
+    });
+
+    renderHook(() => useOnboardingRedirect(navigation));
+
+    await waitFor(() => {
+      expect(navigation.reset).toHaveBeenCalledWith({
+        index: 1,
+        routes: [{ name: 'Home' }, { name: 'ProductDetails', params: { productId: 'program-1' } }],
+      });
+    });
+  });
+
   it('vai à home quando o fallback do convite substitui rota inválida', async () => {
     mockGetCachedPostAuthRoute.mockReturnValue({ screen: 'Register', params: { userName: 'Camilla' } });
     mockInvitationHomeRoute.mockResolvedValue({

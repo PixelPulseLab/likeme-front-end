@@ -11,7 +11,12 @@ import {
 import { invalidateApiClientAuthTokenMemoryCache } from '@/services/infrastructure/apiClient';
 import { useTranslation } from '@/hooks/i18n';
 import { logger } from '@/utils/logger';
-import { resetRootStack, rootStackNavigationFrom, type NavWithParent } from '@/utils/navigation/rootStackNavigation';
+import {
+  resetRootStack,
+  resetRootStackOnTopOf,
+  rootStackNavigationFrom,
+  type NavWithParent,
+} from '@/utils/navigation/rootStackNavigation';
 
 async function syncAuthSessionFromBackend(): Promise<void> {
   if (FORCE_START_ONBOARDING_LOCALLY) {
@@ -69,6 +74,10 @@ export function useOnboardingRedirect(navigation: NavWithParent): void {
   const { t } = useTranslation();
   const replace = useCallback(
     (screen: string, params?: object) => {
+      if (screen === 'ProductDetails') {
+        resetRootStackOnTopOf(navigation, 'Home', screen, params);
+        return;
+      }
       resetRootStack(navigation, screen, params);
     },
     [navigation],
