@@ -70,7 +70,7 @@ function shouldStayOnInvitationRedeem(
   return sessionScreen !== 'Home';
 }
 
-export function useOnboardingRedirect(navigation: NavWithParent): void {
+export function useOnboardingRedirect(navigation: NavWithParent, invitationProductId?: string): void {
   const { t } = useTranslation();
   const replace = useCallback(
     (screen: string, params?: object) => {
@@ -96,6 +96,13 @@ export function useOnboardingRedirect(navigation: NavWithParent): void {
           }
         }
 
+        const linkedProductId = invitationProductId?.trim();
+        if (linkedProductId) {
+          await storageService.removePendingInvitationProgramDestination();
+          replace('ProductDetails', { productId: linkedProductId });
+          return;
+        }
+
         const currentRoute = currentRootRouteName(navigation);
         if (!isInvitationRedeemRoute(currentRoute)) {
           const activation = await invitationService.activatePendingStoredCode();
@@ -106,12 +113,18 @@ export function useOnboardingRedirect(navigation: NavWithParent): void {
 
         clearCachedPostAuthRoute();
         await syncAuthSessionFromBackend();
+        if (currentRootRouteName(navigation) !== currentRoute) {
+          return;
+        }
         const sessionRoute = homeFromSession(getCachedPostAuthRoute());
         const hasRedeemedInvitation = getCachedHasRedeemedInvitation();
         if (shouldStayOnInvitationRedeem(currentRoute, sessionRoute?.screen, hasRedeemedInvitation)) {
           return;
         }
         const destination = await invitationHomeRoute(sessionRoute?.screen, sessionRoute?.params);
+        if (currentRootRouteName(navigation) !== currentRoute) {
+          return;
+        }
         replace(destination.screen, destination.params);
       } catch (error) {
         logger.error('Error checking onboarding status:', error);
@@ -120,5 +133,5 @@ export function useOnboardingRedirect(navigation: NavWithParent): void {
     };
 
     redirect();
-  }, [navigation, replace, t]);
+  }, [invitationProductId, navigation, replace, t]);
 }
