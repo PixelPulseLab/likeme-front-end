@@ -434,7 +434,7 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 ### Corrigido
 - Se o app fecha no login da Google, o convite continua e a página do programa abre na volta
 
-## [1.22.0] - 2026-10-08
+## [1.21.3] - 2026-10-08
 
-### Alterado
+### Corrigido
 - Depois do login com convite, a página do programa abre no onboarding
