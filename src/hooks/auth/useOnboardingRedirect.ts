@@ -2,7 +2,7 @@ import { useCallback, useEffect } from 'react';
 import { Alert } from 'react-native';
 import { FORCE_START_ONBOARDING_LOCALLY } from '@/constants';
 import { storageService, AuthService } from '@/services';
-import { invitationHomeRoute, invitationService } from '@/services/invitation/invitationService';
+import { invitationService } from '@/services/invitation/invitationService';
 import {
   clearCachedPostAuthRoute,
   getCachedHasRedeemedInvitation,
@@ -18,7 +18,7 @@ import {
   type NavWithParent,
 } from '@/utils/navigation/rootStackNavigation';
 
-async function syncAuthSessionFromBackend(): Promise<void> {
+async function syncAuthSessionFromBackend(invitationCode: string): Promise<void> {
   if (FORCE_START_ONBOARDING_LOCALLY) {
     return;
   }
@@ -27,21 +27,14 @@ async function syncAuthSessionFromBackend(): Promise<void> {
     return;
   }
   try {
-    await AuthService.refreshBackendSessionFromStoredCredentials();
+    const code = invitationCode.trim();
+    const refreshOptions = code ? { code } : undefined;
+    await AuthService.refreshBackendSessionFromStoredCredentials(refreshOptions);
   } catch (error) {
     logger.warn('[useOnboardingRedirect] syncAuthSessionFromBackend falhou; segue Home', {
       cause: error,
     });
   }
-}
-
-function homeFromSession(
-  postAuthRoute: { screen: string; params?: object } | null,
-): { screen: string; params?: object } | undefined {
-  if (postAuthRoute?.screen === 'Home') {
-    return postAuthRoute;
-  }
-  return undefined;
 }
 
 function currentRootRouteName(navigation: NavWithParent): string | undefined {
@@ -98,30 +91,30 @@ export function useOnboardingRedirect(navigation: NavWithParent): void {
         }
 
         const currentRoute = currentRootRouteName(navigation);
-        if (!isInvitationRedeemRoute(currentRoute)) {
+        const onInvitationRoute = isInvitationRedeemRoute(currentRoute);
+        const storedCode = onInvitationRoute ? '' : (await storageService.getPendingInvitationCode())?.trim() ?? '';
+        if (!onInvitationRoute) {
           const activation = await invitationService.activatePendingStoredCode();
-          const linkedProductFromActivation = activation.context?.program.id?.trim() ?? '';
-          if (activation.outcome === 'linked' && linkedProductFromActivation && !cancelled) {
-            await storageService.removePendingInvitationCode();
-            replace('ProductDetails', { productId: linkedProductFromActivation });
-            return;
-          }
           if (!cancelled && activation.outcome === 'mismatch') {
             Alert.alert(t('invitation.identityMismatch'));
           }
         }
 
         clearCachedPostAuthRoute();
-        await syncAuthSessionFromBackend();
+        await syncAuthSessionFromBackend(storedCode);
         if (cancelled || currentRootRouteName(navigation) !== currentRoute) {
           return;
         }
-        const sessionRoute = homeFromSession(getCachedPostAuthRoute());
+        const cachedRoute = getCachedPostAuthRoute();
         const hasRedeemedInvitation = getCachedHasRedeemedInvitation();
-        if (shouldStayOnInvitationRedeem(currentRoute, sessionRoute?.screen, hasRedeemedInvitation)) {
+        if (shouldStayOnInvitationRedeem(currentRoute, cachedRoute?.screen, hasRedeemedInvitation)) {
           return;
         }
-        const destination = await invitationHomeRoute(sessionRoute?.screen, sessionRoute?.params);
+        const followsSession = cachedRoute?.screen === 'Home' || cachedRoute?.screen === 'ProductDetails';
+        const destination = followsSession ? cachedRoute : { screen: 'Home' };
+        if (destination.screen === 'ProductDetails') {
+          await storageService.removePendingInvitationCode();
+        }
         if (cancelled || currentRootRouteName(navigation) !== currentRoute) {
           return;
         }

@@ -17,11 +17,11 @@ import { logger } from '@/utils/logger';
 import storageService from './storageService';
 import { setOnboardingStep } from './setOnboardingStep';
 
-const AUTH_SESSION_POST_AUTH_SCREENS = new Set(['Home']);
+const AUTH_SESSION_POST_AUTH_SCREENS = new Set(['Home', 'ProductDetails']);
 
 export type AuthSessionPostAuthRoute = {
   screen: string;
-  params?: { userName?: string; firstName?: string };
+  params?: { userName?: string; firstName?: string; productId?: string };
 };
 
 export type AuthSessionApplyResult = {
@@ -69,10 +69,10 @@ function readPostAuthRoute(payload: Record<string, unknown>): AuthSessionPostAut
   }
 
   const paramsRaw = route.params;
-  if (paramsRaw == null) {
-    return { screen };
-  }
-  if (typeof paramsRaw !== 'object' || Array.isArray(paramsRaw)) {
+  if (paramsRaw == null || typeof paramsRaw !== 'object' || Array.isArray(paramsRaw)) {
+    if (screen === 'ProductDetails') {
+      return null;
+    }
     return { screen };
   }
 
@@ -83,6 +83,13 @@ function readPostAuthRoute(payload: Record<string, unknown>): AuthSessionPostAut
   }
   if (typeof paramsObj.firstName === 'string') {
     params.firstName = paramsObj.firstName;
+  }
+  if (typeof paramsObj.productId === 'string' && paramsObj.productId.trim()) {
+    params.productId = paramsObj.productId.trim();
+  }
+
+  if (screen === 'ProductDetails' && !params.productId) {
+    return null;
   }
 
   return Object.keys(params).length > 0 ? { screen, params } : { screen };

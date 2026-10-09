@@ -63,6 +63,29 @@ describe('applyAuthSessionResponse', () => {
     expect(getCachedHasRedeemedInvitation()).toBe(false);
   });
 
+  it('aceita a página do produto no onboarding', async () => {
+    const ok = await applyAuthSessionResponse({
+      data: {
+        token: 'jwt',
+        postAuthRoute: { screen: 'ProductDetails', params: { productId: ' program-1 ' } },
+      },
+    });
+    expect(ok.postAuthRoute).toEqual({
+      screen: 'ProductDetails',
+      params: { productId: 'program-1' },
+    });
+  });
+
+  it('rejeita ProductDetails sem productId', async () => {
+    const rejected = await applyAuthSessionResponse({
+      data: {
+        token: 'jwt',
+        postAuthRoute: { screen: 'ProductDetails' },
+      },
+    });
+    expect(rejected.postAuthRoute).toBeNull();
+  });
+
   it('rejeita postAuthRoute Wall', async () => {
     const rejected = await applyAuthSessionResponse({
       data: {

@@ -3,6 +3,7 @@ import { useOnboardingRedirect } from './useOnboardingRedirect';
 import type { NavWithParent } from '@/utils/navigation/rootStackNavigation';
 
 const mockGetToken = jest.fn();
+const mockGetPendingInvitationCode = jest.fn();
 const mockRefreshBackendSession = jest.fn();
 const mockGetCachedPostAuthRoute = jest.fn();
 const mockGetCachedHasRedeemedInvitation = jest.fn();
@@ -22,20 +23,11 @@ jest.mock('@/services/infrastructure/apiClient', () => ({
 }));
 
 const mockActivatePendingStoredCode = jest.fn();
-const mockInvitationHomeRoute = jest.fn(
-  async (screen?: string, params?: object): Promise<{ screen: string; params?: object }> => {
-    if (screen === 'Home') {
-      return { screen, params };
-    }
-    return { screen: 'Home' };
-  },
-);
 
 jest.mock('@/services/invitation/invitationService', () => ({
   invitationService: {
     activatePendingStoredCode: (...args: unknown[]) => mockActivatePendingStoredCode(...args),
   },
-  invitationHomeRoute: (screen?: string, params?: object) => mockInvitationHomeRoute(screen, params),
 }));
 
 jest.mock('@/hooks/i18n', () => ({
@@ -45,6 +37,7 @@ jest.mock('@/hooks/i18n', () => ({
 jest.mock('@/services', () => ({
   storageService: {
     getToken: (...args: unknown[]) => mockGetToken(...args),
+    getPendingInvitationCode: (...args: unknown[]) => mockGetPendingInvitationCode(...args),
     clearAll: jest.fn(),
     removePendingInvitationCode: jest.fn(),
   },
@@ -70,14 +63,9 @@ describe('useOnboardingRedirect', () => {
     jest.clearAllMocks();
     navigation.getState.mockReturnValue({ index: 0, routes: [{ name: 'Authenticated' }] });
     mockGetToken.mockResolvedValue('session-token');
+    mockGetPendingInvitationCode.mockResolvedValue(null);
     mockActivatePendingStoredCode.mockResolvedValue({ outcome: 'none' });
     mockGetCachedHasRedeemedInvitation.mockReturnValue(null);
-    mockInvitationHomeRoute.mockImplementation(async (screen?: string, params?: object) => {
-      if (screen === 'Home') {
-        return { screen, params };
-      }
-      return { screen: 'Home' };
-    });
     mockRefreshBackendSession.mockResolvedValue({
       ok: true,
       postAuthRoute: { screen: 'Home' },
@@ -106,7 +94,6 @@ describe('useOnboardingRedirect', () => {
     renderHook(() => useOnboardingRedirect(navigation));
 
     await waitFor(() => {
-      expect(mockInvitationHomeRoute).toHaveBeenCalledWith(undefined, undefined);
       expectResetTo('Home');
     });
   });
@@ -118,22 +105,16 @@ describe('useOnboardingRedirect', () => {
     renderHook(() => useOnboardingRedirect(navigation));
 
     await waitFor(() => {
-      expect(mockInvitationHomeRoute).toHaveBeenCalledWith(undefined, undefined);
       expectResetTo('Home');
     });
   });
 
   it('vai à home quando a sessão aponta para Home', async () => {
     mockGetCachedPostAuthRoute.mockReturnValue({ screen: 'Home' });
-    mockInvitationHomeRoute.mockResolvedValue({
-      screen: 'Home',
-    });
-
     renderHook(() => useOnboardingRedirect(navigation));
 
     await waitFor(() => {
-      expect(mockRefreshBackendSession).toHaveBeenCalled();
-      expect(mockInvitationHomeRoute).toHaveBeenCalledWith('Home', undefined);
+      expect(mockRefreshBackendSession).toHaveBeenCalledWith(undefined);
       expectResetTo('Home');
     });
   });
@@ -145,9 +126,8 @@ describe('useOnboardingRedirect', () => {
     renderHook(() => useOnboardingRedirect(navigation));
 
     await waitFor(() => {
-      expect(mockRefreshBackendSession).toHaveBeenCalled();
+      expect(mockRefreshBackendSession).toHaveBeenCalledWith(undefined);
     });
-    expect(mockInvitationHomeRoute).not.toHaveBeenCalled();
     expect(mockActivatePendingStoredCode).not.toHaveBeenCalled();
     expect(navigation.reset).not.toHaveBeenCalled();
   });
@@ -162,7 +142,6 @@ describe('useOnboardingRedirect', () => {
     await waitFor(() => {
       expect(mockRefreshBackendSession).toHaveBeenCalled();
     });
-    expect(mockInvitationHomeRoute).not.toHaveBeenCalled();
     expect(navigation.reset).not.toHaveBeenCalled();
   });
 
@@ -188,12 +167,29 @@ describe('useOnboardingRedirect', () => {
     await waitFor(() => {
       expect(mockRefreshBackendSession).toHaveBeenCalled();
     });
-    expect(mockInvitationHomeRoute).not.toHaveBeenCalled();
     expect(mockActivatePendingStoredCode).not.toHaveBeenCalled();
     expect(navigation.reset).not.toHaveBeenCalled();
   });
 
-  it('abre a PDP do convite sobre a Home', async () => {
+  it('abre a PDP que a sessão de onboarding devolve', async () => {
+    mockGetPendingInvitationCode.mockResolvedValue('7F3K9Q');
+    mockGetCachedPostAuthRoute.mockReturnValue({
+      screen: 'ProductDetails',
+      params: { productId: 'program-1' },
+    });
+
+    renderHook(() => useOnboardingRedirect(navigation));
+
+    await waitFor(() => {
+      expect(mockRefreshBackendSession).toHaveBeenCalledWith({ code: '7F3K9Q' });
+      expect(navigation.reset).toHaveBeenCalledWith({
+        index: 1,
+        routes: [{ name: 'Home' }, { name: 'ProductDetails', params: { productId: 'program-1' } }],
+      });
+    });
+  });
+
+  it('não abre a PDP pelo programa do activate quando a sessão é Home', async () => {
     mockGetCachedPostAuthRoute.mockReturnValue({ screen: 'Home' });
     mockActivatePendingStoredCode.mockResolvedValue({
       outcome: 'linked',
@@ -203,23 +199,16 @@ describe('useOnboardingRedirect', () => {
     renderHook(() => useOnboardingRedirect(navigation));
 
     await waitFor(() => {
-      expect(navigation.reset).toHaveBeenCalledWith({
-        index: 1,
-        routes: [{ name: 'Home' }, { name: 'ProductDetails', params: { productId: 'program-1' } }],
-      });
+      expectResetTo('Home');
     });
   });
 
-  it('vai à home quando o fallback do convite substitui rota inválida', async () => {
+  it('vai à home quando a sessão traz uma rota que o app não segue', async () => {
     mockGetCachedPostAuthRoute.mockReturnValue({ screen: 'Register', params: { userName: 'Camilla' } });
-    mockInvitationHomeRoute.mockResolvedValue({
-      screen: 'Home',
-    });
 
     renderHook(() => useOnboardingRedirect(navigation));
 
     await waitFor(() => {
-      expect(mockInvitationHomeRoute).toHaveBeenCalledWith(undefined, undefined);
       expectResetTo('Home');
     });
   });

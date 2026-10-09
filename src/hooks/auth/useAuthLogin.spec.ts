@@ -96,9 +96,10 @@ describe('useAuthLogin', () => {
       expect(mockLogin).toHaveBeenCalled();
       expect(mockValidateToken).toHaveBeenCalled();
       expect(mockActivatePendingStoredCode).toHaveBeenCalled();
+      expect(mockRemovePendingInvitationCode).not.toHaveBeenCalled();
       expect(navigation.reset).toHaveBeenCalledWith({
-        index: 1,
-        routes: [{ name: 'Home' }, { name: 'ProductDetails', params: { productId: 'program-1' } }],
+        index: 0,
+        routes: [{ name: 'Authenticated' }],
       });
     });
   });
