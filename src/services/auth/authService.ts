@@ -554,10 +554,12 @@ class AuthService {
    * GET /api/auth/token — refresh leve (JWT + onboarding + postAuthRoute).
    * Use no onboarding / sync pontual. Bootstrap cold-start: `bootstrapBackendSession`.
    */
-  async refreshBackendSessionFromStoredCredentials(): Promise<
-    AuthSessionApplyResult & { responseBody: Record<string, unknown> | null }
-  > {
-    return this.fetchAndApplyAuthEndpoint('/api/auth/token');
+  async refreshBackendSessionFromStoredCredentials(options?: {
+    code?: string;
+  }): Promise<AuthSessionApplyResult & { responseBody: Record<string, unknown> | null }> {
+    const code = options?.code?.trim() ?? '';
+    const path = code ? `/api/auth/token?code=${encodeURIComponent(code)}` : '/api/auth/token';
+    return this.fetchAndApplyAuthEndpoint(path);
   }
 
   /**
