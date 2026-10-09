@@ -1,5 +1,5 @@
 {
-  "version": "1.22.0",
+  "version": "1.21.3",
   "releasedAt": "2026-10-08",
   "android": {
     "versionCode": 273
@@ -8,7 +8,7 @@
     "buildNumber": 49
   },
   "changelog": {
-    "changed": [
+    "fixed": [
       "Depois do login com convite, a página do programa abre no onboarding"
     ]
   }
