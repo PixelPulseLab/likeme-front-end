@@ -77,18 +77,75 @@ function eventBannerDataFromQueryParams(params: EventBannerQueryPreviewParams): 
   };
 }
 
+type PreviewDomStyleTarget = { style: Record<string, string> };
+
+type PreviewDomDocument = {
+  documentElement: PreviewDomStyleTarget;
+  body: PreviewDomStyleTarget;
+  getElementById(id: string): PreviewDomStyleTarget | null;
+};
+
+function previewDocument(): PreviewDomDocument | null {
+  const raw = (globalThis as { document?: unknown }).document;
+  if (!raw || typeof raw !== 'object') {
+    return null;
+  }
+  return raw as PreviewDomDocument;
+}
+
+function useEventBannerPreviewDocumentStyles(enabled: boolean) {
+  useEffect(() => {
+    const document = previewDocument();
+    if (!enabled || !document) {
+      return;
+    }
+    const html = document.documentElement;
+    const body = document.body;
+    const root = document.getElementById('root');
+    const previous = {
+      htmlOverflow: html.style.overflow,
+      bodyOverflow: body.style.overflow,
+      bodyMargin: body.style.margin,
+      htmlHeight: html.style.height,
+      bodyHeight: body.style.height,
+      bodyMinHeight: body.style.minHeight,
+      rootHeight: root?.style.height ?? '',
+      rootOverflow: root?.style.overflow ?? '',
+      rootMinHeight: root?.style.minHeight ?? '',
+    };
+    html.style.overflow = 'hidden';
+    body.style.overflow = 'hidden';
+    body.style.margin = '0';
+    html.style.height = 'auto';
+    body.style.height = 'auto';
+    body.style.minHeight = '0';
+    if (root) {
+      root.style.height = 'auto';
+      root.style.overflow = 'hidden';
+      root.style.minHeight = '0';
+    }
+    return () => {
+      html.style.overflow = previous.htmlOverflow;
+      body.style.overflow = previous.bodyOverflow;
+      body.style.margin = previous.bodyMargin;
+      html.style.height = previous.htmlHeight;
+      body.style.height = previous.bodyHeight;
+      body.style.minHeight = previous.bodyMinHeight;
+      if (root) {
+        root.style.height = previous.rootHeight;
+        root.style.overflow = previous.rootOverflow;
+        root.style.minHeight = previous.rootMinHeight;
+      }
+    };
+  }, [enabled]);
+}
+
 function EventBannerQueryPreview({ params }: { params: EventBannerQueryPreviewParams }) {
+  useEventBannerPreviewDocumentStyles(true);
   const event = useMemo(() => eventBannerDataFromQueryParams(params), [params]);
 
   return (
-    <View
-      style={{
-        flex: 1,
-        justifyContent: 'center',
-        padding: SPACING.LG,
-        backgroundColor: COLORS.BACKGROUND,
-      }}
-    >
+    <View style={styles.bannerPreviewRoot}>
       <EventBanner event={event} onPress={() => undefined} onCtaPress={() => undefined} />
     </View>
   );
@@ -114,10 +171,15 @@ export default function DesignSystemWebApp() {
     );
   }
 
-  const content =
-    bannerPreviewParams != null ? <EventBannerQueryPreview params={bannerPreviewParams} /> : <DesignSystemScreen />;
+  if (bannerPreviewParams != null) {
+    return <EventBannerQueryPreview params={bannerPreviewParams} />;
+  }
 
-  return <SafeAreaProvider>{content}</SafeAreaProvider>;
+  return (
+    <SafeAreaProvider>
+      <DesignSystemScreen />
+    </SafeAreaProvider>
+  );
 }
 
 const styles = StyleSheet.create({
@@ -125,6 +187,12 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: COLORS.BACKGROUND,
+  },
+  bannerPreviewRoot: {
+    width: '100%',
+    paddingHorizontal: SPACING.LG,
+    paddingVertical: SPACING.SM,
     backgroundColor: COLORS.BACKGROUND,
   },
 });
