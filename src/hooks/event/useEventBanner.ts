@@ -13,6 +13,10 @@ import { useTranslation } from '@/hooks/i18n';
 import type { EventBannerData } from '@/types/event';
 import type { RootStackParamList } from '@/types/navigation';
 import { useLiveJitsiSession } from '@/contexts/LiveJitsiSessionContext';
+import {
+  promptAddVirtualLiveToDeviceCalendar,
+  virtualLiveScheduleFromBanner,
+} from '@/utils/event/virtualLiveDeviceCalendar';
 
 const DEFAULT_EVENT_BANNER_THUMB = 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=800';
 
@@ -206,6 +210,15 @@ export function useEventBanner(options: UseEventBannerOptions = {}): UseEventBan
           Alert.alert(t('errors.error'), t('community.eventBanner.reminderMissingSchedule'));
           return;
         }
+        if (!virtualLiveScheduleFromBanner(bannerData)) {
+          Alert.alert(
+            t('errors.error'),
+            t('community.eventBanner.reminderMissingEndTime', {
+              defaultValue: 'Horário de término indisponível para criar lembrete.',
+            }),
+          );
+          return;
+        }
 
         try {
           const response = await eventService.registerScheduledCommunityEventReminder({
@@ -225,6 +238,7 @@ export function useEventBanner(options: UseEventBannerOptions = {}): UseEventBan
           }
 
           await Promise.all([refreshReminderState(), prefetchActivityList('active')]);
+          await promptAddVirtualLiveToDeviceCalendar(bannerData, t);
           if (navigation) {
             navigateToActivitiesActives(navigation);
           } else {

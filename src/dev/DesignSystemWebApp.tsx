@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { useFonts } from 'expo-font';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -7,10 +7,8 @@ import { COLORS, SPACING } from '@/constants';
 import { LIKEME_FONT_LOADER_MAP } from '@/constants/fontLoader';
 import type { EventBannerData, EventBannerVariant } from '@/types/event';
 import DesignSystemScreen from '@/screens/dev/DesignSystemScreen';
-import { startI18nHydration } from '@/i18n/hydration';
+import { ensureI18nHydrated } from '@/i18n/hydration';
 import '@/i18n';
-
-const MATERIAL_ICONS = require('react-native-vector-icons/Fonts/MaterialIcons.ttf');
 
 const DEFAULT_BANNER_THUMBNAIL =
   'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&w=400&q=80';
@@ -153,17 +151,17 @@ function EventBannerQueryPreview({ params }: { params: EventBannerQueryPreviewPa
 
 export default function DesignSystemWebApp() {
   const bannerPreviewParams = readEventBannerQueryPreviewParams();
+  const [i18nReady, setI18nReady] = useState(false);
 
   useEffect(() => {
-    void startI18nHydration('pt-BR');
+    void ensureI18nHydrated({ lang: 'pt-BR' }).finally(() => setI18nReady(true));
   }, []);
 
-  const [fontsLoaded] = useFonts({
-    ...LIKEME_FONT_LOADER_MAP,
-    MaterialIcons: MATERIAL_ICONS,
-  });
+  const [fontsLoaded] = useFonts(LIKEME_FONT_LOADER_MAP);
 
-  if (!fontsLoaded) {
+  const isBootReady = fontsLoaded && i18nReady;
+
+  if (!isBootReady) {
     return (
       <View style={styles.boot}>
         <ActivityIndicator color={COLORS.PRIMARY.PURE} />

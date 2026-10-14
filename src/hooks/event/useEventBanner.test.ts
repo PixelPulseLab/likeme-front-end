@@ -43,6 +43,16 @@ jest.mock('@/contexts/LiveJitsiSessionContext', () => ({
   }),
 }));
 
+const mockPromptAddVirtualLiveToDeviceCalendar = jest.fn().mockResolvedValue(undefined);
+
+jest.mock('@/utils/event/virtualLiveDeviceCalendar', () => {
+  const actual = jest.requireActual('@/utils/event/virtualLiveDeviceCalendar');
+  return {
+    ...actual,
+    promptAddVirtualLiveToDeviceCalendar: (...args: unknown[]) => mockPromptAddVirtualLiveToDeviceCalendar(...args),
+  };
+});
+
 const navigation = { navigate: jest.fn() } as never;
 const useEventListMock = useEventList as jest.Mock;
 const refreshEventsMock = jest.fn();
@@ -50,6 +60,7 @@ const refreshEventsMock = jest.fn();
 describe('useEventBanner', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockPromptAddVirtualLiveToDeviceCalendar.mockResolvedValue(undefined);
     jest.spyOn(Linking, 'openURL').mockResolvedValue(undefined);
     jest.spyOn(Alert, 'alert').mockImplementation(() => {});
     useEventListMock.mockReturnValue({
@@ -140,7 +151,7 @@ describe('useEventBanner', () => {
         host: 'Host',
         status: 'Scheduled',
         startTime: '2026-06-30T18:00:00.000Z',
-        endTime: '',
+        endTime: '2026-06-30T19:00:00.000Z',
         thumbnail: '',
         variant: 'reminder',
         communityId: 'community-1',
@@ -155,8 +166,36 @@ describe('useEventBanner', () => {
     });
     expect(refreshEventsMock).toHaveBeenCalled();
     expect(prefetchActivityList).toHaveBeenCalledWith('active');
+    expect(mockPromptAddVirtualLiveToDeviceCalendar).toHaveBeenCalled();
     expect(navigateToActivitiesActives).toHaveBeenCalledWith(navigation);
     expect(Alert.alert).not.toHaveBeenCalled();
+  });
+
+  it('variant reminder sem horário de término não registra lembrete', async () => {
+    const { result } = renderHook(() =>
+      useEventBanner({
+        enabled: true,
+        communityId: 'community-1',
+        navigation,
+      }),
+    );
+
+    await act(async () => {
+      await result.current.handleEventBannerPress({
+        id: 'evt-reminder',
+        title: 'Sessão',
+        host: 'Host',
+        status: 'Scheduled',
+        startTime: '2026-06-30T18:00:00.000Z',
+        endTime: '',
+        thumbnail: '',
+        variant: 'reminder',
+        communityId: 'community-1',
+      });
+    });
+
+    expect(eventService.registerScheduledCommunityEventReminder).not.toHaveBeenCalled();
+    expect(Alert.alert).toHaveBeenCalled();
   });
 
   it('CTA com reminder_created navega para Minhas atividades', async () => {

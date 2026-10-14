@@ -1,5 +1,5 @@
 import { StyleSheet } from 'react-native';
-import { COLORS, SPACING } from '@/constants';
+import { COLORS, SPACING, TYPOGRAPHY } from '@/constants';
 
 const IMAGE_CORNER_RADIUS = {
   borderTopLeftRadius: 24,
@@ -74,8 +74,7 @@ export const styles = StyleSheet.create({
     elevation: 4,
   },
   ctaButtonText: {
-    fontSize: 14,
-    fontWeight: '500',
+    ...TYPOGRAPHY.labelMd,
     color: '#001137',
     textAlign: 'center',
   },
@@ -117,28 +116,34 @@ export const styles = StyleSheet.create({
     gap: 0,
   },
   title: {
-    fontSize: 14,
-    fontWeight: '400',
+    ...TYPOGRAPHY.bodyMd,
     color: '#001137',
-    letterSpacing: 0.2,
-    lineHeight: 14,
   },
   timeContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    flexWrap: 'wrap',
     gap: SPACING.XS,
-    height: 16,
+    minHeight: 16,
   },
   timeLabel: {
-    fontSize: 12,
-    fontWeight: '500',
+    ...TYPOGRAPHY.bodySm,
     color: '#6e6a6a',
-    letterSpacing: 0.2,
   },
   time: {
-    fontSize: 12,
-    fontWeight: '500',
+    ...TYPOGRAPHY.bodySm,
     color: '#001137',
-    letterSpacing: 0.2,
+  },
+  scheduleDate: {
+    ...TYPOGRAPHY.bodySm,
+    color: '#001137',
+  },
+  scheduleTime: {
+    ...TYPOGRAPHY.bodySmRegular,
+    color: '#001137',
+  },
+  scheduleDot: {
+    ...TYPOGRAPHY.bodySmRegular,
+    color: '#001137',
   },
 });

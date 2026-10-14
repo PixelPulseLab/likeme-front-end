@@ -62,6 +62,33 @@ function combineLocalDateAndTime(dateYmd: string | undefined, timeString: string
   return result;
 }
 
+export type DeviceCalendarInstantEventInput = {
+  title: string;
+  startDate: Date;
+  endDate: Date;
+  location?: string;
+  notes?: string;
+};
+
+export async function createDeviceCalendarInstantEvent(input: DeviceCalendarInstantEventInput): Promise<string> {
+  if (input.endDate.getTime() <= input.startDate.getTime()) {
+    throw new Error('Horário de término deve ser posterior ao início');
+  }
+
+  const calendarId = await writableCalendarId();
+  const eventId = await Calendar.createEventAsync(calendarId, {
+    title: input.title.trim() || 'Atividade Like:Me',
+    startDate: input.startDate,
+    endDate: input.endDate,
+    location: input.location?.trim() || undefined,
+    notes: input.notes?.trim() || undefined,
+    timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+  });
+
+  logger.debug('[createDeviceCalendarInstantEvent] evento criado', { eventId, calendarId });
+  return eventId;
+}
+
 async function writableCalendarId(): Promise<string> {
   const permission = await Calendar.requestCalendarPermissionsAsync();
   if (permission.status !== 'granted') {
@@ -113,16 +140,11 @@ export async function addActivityToDeviceCalendar(input: DeviceCalendarActivityI
     endDate.setTime(startDate.getTime() + 60 * 60 * 1000);
   }
 
-  const calendarId = await writableCalendarId();
-  const eventId = await Calendar.createEventAsync(calendarId, {
-    title: input.name.trim() || 'Atividade Like:Me',
+  return createDeviceCalendarInstantEvent({
+    title: input.name,
     startDate,
     endDate,
-    location: input.location?.trim() || undefined,
-    notes: input.description?.trim() || undefined,
-    timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    location: input.location,
+    notes: input.description,
   });
-
-  logger.debug('[addActivityToDeviceCalendar] evento criado', { eventId, calendarId });
-  return eventId;
 }

@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, Pressable, type ImageSourcePropType } from 'react-native';
-import Icon from 'react-native-vector-icons/MaterialIcons';
+import Icon from '@/components/ui/layout/Icon';
 import type { EventBannerData, EventBannerVariant } from '@/types/event';
 import { useTranslation } from '@/hooks/i18n';
 import { formatEventScheduleLabel } from '@/utils/event/formatEventTimeRange';
@@ -26,6 +26,25 @@ function titleKey(variant: EventBannerVariant | undefined): string {
     default:
       return 'community.eventBanner.withHost';
   }
+}
+
+function EventScheduleLabel({ label }: { label: string }) {
+  const separator = ' · ';
+  const separatorIndex = label.indexOf(separator);
+  if (separatorIndex === -1) {
+    return <Text style={styles.time}>{label}</Text>;
+  }
+
+  const datePart = label.slice(0, separatorIndex);
+  const timePart = label.slice(separatorIndex + separator.length);
+
+  return (
+    <Text style={styles.time}>
+      <Text style={styles.scheduleDate}>{datePart}</Text>
+      <Text style={styles.scheduleDot}>{separator}</Text>
+      <Text style={styles.scheduleTime}>{timePart}</Text>
+    </Text>
+  );
 }
 
 function ctaLabelKey(variant: EventBannerVariant | undefined): string {
@@ -91,11 +110,11 @@ const EventBanner: React.FC<Props> = ({ event, onPress, onCtaPress }) => {
             {event.status === 'Live Now' && variant !== 'purchase' ? (
               <>
                 <Text style={styles.timeLabel}>{t('community.eventBanner.statusLiveNow')}</Text>
-                <Text style={styles.time}>{eventScheduleLabel}</Text>
+                <EventScheduleLabel label={eventScheduleLabel} />
               </>
             ) : null}
             {event.status === 'Scheduled' && variant !== 'live_join' ? (
-              <Text style={styles.time}>{eventScheduleLabel}</Text>
+              <EventScheduleLabel label={eventScheduleLabel} />
             ) : null}
           </View>
         </View>
