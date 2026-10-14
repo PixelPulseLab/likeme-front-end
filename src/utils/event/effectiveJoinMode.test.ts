@@ -15,21 +15,24 @@ const base: Omit<EventBannerData, 'joinMode'> = {
 describe('effectiveJoinMode', () => {
   it('usa joinMode do banner quando presente', () => {
     expect(effectiveJoinMode({ ...base, joinMode: 'external_browser' })).toBe('external_browser');
-  });
-
-  it('deduz jitsi_embed para URL Jitsi quando joinMode ausente', () => {
-    expect(effectiveJoinMode({ ...base, externalUrl: 'https://meet.jit.si/LikeMeLiveTest' })).toBe('jitsi_embed');
-  });
-
-  it('deduz external_browser para URL de join Zoom quando joinMode ausente', () => {
-    expect(effectiveJoinMode({ ...base })).toBe('external_browser');
+    expect(effectiveJoinMode({ ...base, joinMode: 'jitsi_embed' })).toBe('jitsi_embed');
   });
 
   it('normaliza joinMode legado zoom_sdk para external_browser', () => {
     expect(effectiveJoinMode({ ...base, joinMode: 'zoom_sdk' })).toBe('external_browser');
   });
 
-  it('deduz external_browser quando joinMode ausente e URL não é Zoom join', () => {
+  it('sem joinMode na API não infere Jitsi pela URL', () => {
+    expect(effectiveJoinMode({ ...base, externalUrl: 'https://meet.jit.si/LikeMeLiveTest' })).toBe('external_browser');
+  });
+
+  it('sem joinMode e com URL cai em external_browser', () => {
+    expect(effectiveJoinMode({ ...base })).toBe('external_browser');
     expect(effectiveJoinMode({ ...base, externalUrl: 'https://example.com/x' })).toBe('external_browser');
+  });
+
+  it('retorna none sem URL', () => {
+    expect(effectiveJoinMode({ ...base, externalUrl: undefined })).toBe('none');
+    expect(effectiveJoinMode({ ...base, externalUrl: '   ' })).toBe('none');
   });
 });
