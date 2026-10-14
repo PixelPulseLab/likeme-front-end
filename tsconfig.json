@@ -34,6 +34,7 @@
     "strictNullChecks": false,
     "useDefineForClassFields": true,
     "paths": {
+      "@jitsi/react-native-sdk": ["types/jitsi-react-native-sdk.d.ts"],
       "@/*": ["src/*"],
       "@/assets": ["src/assets/index"],
       "@/assets/auth": ["src/assets/auth"],

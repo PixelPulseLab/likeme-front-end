@@ -21,17 +21,17 @@ export const styles = StyleSheet.create({
     height: '100%',
   },
   posterFallback: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: '#2a2a2a',
   },
   playOverlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: 'rgba(0, 0, 0, 0.2)',
   },
   playerOverlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: '#000',
   },
   webView: {
@@ -39,7 +39,7 @@ export const styles = StyleSheet.create({
     backgroundColor: '#000',
   },
   webViewLoading: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#000',
@@ -121,7 +121,7 @@ export const styles = StyleSheet.create({
     paddingBottom: SPACING.SM,
   },
   lessonChromeFade: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
   },
   lessonChromeBody: {
     gap: SPACING.XS,
@@ -191,7 +191,7 @@ export const styles = StyleSheet.create({
     backgroundColor: COLORS.NEUTRAL.HIGH.LIGHT,
   },
   lessonSpinner: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     alignItems: 'center',
     justifyContent: 'center',
   },

@@ -8,12 +8,12 @@ export const styles = StyleSheet.create({
     backgroundColor: COLORS.BACKGROUND,
   },
   backgroundClip: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     overflow: 'hidden',
     zIndex: 0,
   },
   background: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     width: '100%',
     height: '100%',
     transform: [{ scale: 1.6 }],

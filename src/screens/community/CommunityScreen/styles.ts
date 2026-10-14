@@ -13,7 +13,7 @@ export const styles = StyleSheet.create({
     position: 'relative',
   },
   loadingOverlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     zIndex: 20,
   },
   /** Header em posição absoluta no topo para o HeroImage começar logo abaixo. */
@@ -328,7 +328,7 @@ export const styles = StyleSheet.create({
     backgroundColor: '#4CAF50',
   },
   eventJoinBusyOverlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: 'rgba(253, 251, 238, 0.72)',
     alignItems: 'center',
     justifyContent: 'center',

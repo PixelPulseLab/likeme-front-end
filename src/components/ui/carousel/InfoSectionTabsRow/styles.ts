@@ -22,7 +22,7 @@ export const styles = StyleSheet.create({
     flex: 1,
   },
   menuDismissArea: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
   },
   menuCard: {
     position: 'absolute',

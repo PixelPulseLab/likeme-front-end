@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
 const fs = require('fs');
 const path = require('path');
 
@@ -14,19 +15,25 @@ if (!fs.existsSync(podspecPath)) {
   process.exit(0);
 }
 
-const marker = 'unless new_arch_enabled';
+const archGuard = "if ENV['RCT_NEW_ARCH_ENABLED'] != '1'";
 const targetLine = '  s.source_files = "ios/**/*.{h,m,mm}"';
 const patchBlock = `${targetLine}
-  unless new_arch_enabled
+  ${archGuard}
     s.exclude_files = [
       "ios/RNCSliderComponentView.h",
       "ios/RNCSliderComponentView.mm",
     ]
   end`;
 
-const source = fs.readFileSync(podspecPath, 'utf8');
+let source = fs.readFileSync(podspecPath, 'utf8');
 
-if (source.includes(marker)) {
+if (source.includes('unless new_arch_enabled')) {
+  source = source.replace(/unless new_arch_enabled/g, archGuard);
+  fs.writeFileSync(podspecPath, source);
+  process.exit(0);
+}
+
+if (source.includes(archGuard)) {
   process.exit(0);
 }
 

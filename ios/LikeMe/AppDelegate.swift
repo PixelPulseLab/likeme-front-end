@@ -1,4 +1,4 @@
-import Expo
+internal import Expo
 import FirebaseCore
 import React
 // @generated begin revopush-updates-header - expo prebuild (DO NOT MODIFY) sync-1ba9c8bf0aed4942895f95d6664fec89eb587603
@@ -6,8 +6,8 @@ import CodePush
 // @generated end revopush-updates-header
 import ReactAppDependencyProvider
 
-@UIApplicationMain
-public class AppDelegate: ExpoAppDelegate {
+@main
+class AppDelegate: ExpoAppDelegate {
   var window: UIWindow?
 
   var reactNativeDelegate: ExpoReactNativeFactoryDelegate?
@@ -23,7 +23,6 @@ public class AppDelegate: ExpoAppDelegate {
 
     reactNativeDelegate = delegate
     reactNativeFactory = factory
-    bindReactNativeFactory(factory)
 
 #if os(iOS) || os(tvOS)
     window = UIWindow(frame: UIScreen.main.bounds)
@@ -60,10 +59,7 @@ FirebaseApp.configure()
 }
 
 class ReactNativeDelegate: ExpoReactNativeFactoryDelegate {
-  // Extension point for config-plugins
-
   override func sourceURL(for bridge: RCTBridge) -> URL? {
-    // needed to return the correct URL for expo-dev-client.
     bridge.bundleURL ?? bundleURL()
   }
 

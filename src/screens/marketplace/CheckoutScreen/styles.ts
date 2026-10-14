@@ -23,7 +23,7 @@ export const styles = StyleSheet.create({
     paddingBottom: SPACING.XXL * 1.5,
   },
   backgroundLayer: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     zIndex: 0,
   },
   orderStepStepperPadding: {
@@ -369,7 +369,7 @@ export const styles = StyleSheet.create({
     flex: 1,
   },
   cardSheetBackdrop: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: 'rgba(0, 0, 0, 0.7)',
   },
   cardSheetAlign: {

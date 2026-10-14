@@ -42,11 +42,11 @@ export const attachmentStyles = StyleSheet.create({
     width: '100%',
   },
   videoPlayerOverlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: '#000',
   },
   playOverlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: 'rgba(0, 0, 0, 0.2)',
@@ -97,7 +97,7 @@ export const attachmentStyles = StyleSheet.create({
     minHeight: 200,
   },
   imageGridOverlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: 'rgba(0, 17, 55, 0.55)',
     justifyContent: 'center',
     alignItems: 'center',

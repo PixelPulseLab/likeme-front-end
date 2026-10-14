@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { AppState, Platform, StatusBar, StyleSheet, View } from 'react-native';
 import * as ScreenOrientation from 'expo-screen-orientation';
+import Constants from 'expo-constants';
 import * as SplashScreen from 'expo-splash-screen';
 import { useFonts } from 'expo-font';
 import { LIKEME_FONT_LOADER_MAP } from '@/constants/fontLoader';
@@ -9,6 +10,7 @@ import * as NavigationBar from 'expo-navigation-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { RootNavigator } from './src/navigation';
 import { RootErrorBoundary } from './src/components/infrastructure/RootErrorBoundary';
+import { LiveJitsiSessionProvider } from '@/contexts/LiveJitsiSessionContext';
 import { COLORS, ROOT_SPLASH_FONT_LOAD_FALLBACK_MS } from './src/constants';
 import { AUTH0_CONFIG } from './src/config/environment';
 import { startI18nHydration } from './src/i18n/hydration';
@@ -117,7 +119,6 @@ const App: React.FC = () => {
       logger.debug('');
 
       try {
-        const Constants = require('expo-constants').default;
         if (Constants?.expoConfig) {
           logger.debug('Constants.expoConfig:', 'existe');
           logger.debug('Constants.expoConfig.extra:', Constants.expoConfig?.extra ? 'existe' : 'não existe');
@@ -189,7 +190,9 @@ const App: React.FC = () => {
           <StatusBar hidden={Platform.OS === 'android'} />
           {shouldRenderApp ? (
             <RootErrorBoundary>
-              <RootNavigator />
+              <LiveJitsiSessionProvider>
+                <RootNavigator />
+              </LiveJitsiSessionProvider>
             </RootErrorBoundary>
           ) : null}
         </AppThemeProvider>

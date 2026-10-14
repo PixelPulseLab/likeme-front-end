@@ -63,13 +63,13 @@ export const styles = StyleSheet.create({
     elevation: 2,
   },
   photoImage: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
   },
   photoFallback: {
     backgroundColor: COLORS.NEUTRAL.LOW.MEDIUM,
   },
   photoShade: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
   },
   photoCaption: {
     ...TYPOGRAPHY.bodySm,

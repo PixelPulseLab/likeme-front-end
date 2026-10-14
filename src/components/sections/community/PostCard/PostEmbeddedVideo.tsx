@@ -107,7 +107,7 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   fillContainer: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
   },
   video: {
     width: '100%',

@@ -23,7 +23,7 @@ import {
 } from '@/constants/home/summaryHomeData';
 import { EventBanner, NotificationPreferencesPrompt } from '@/components/sections/community';
 import { notificationPreferenceService } from '@/services/notification/notificationPreferenceService';
-import { EventWebViewSession } from '@/components/infrastructure/webview/EventWebViewSession';
+import { EventLiveSessionHost } from '@/components/infrastructure/live/EventLiveSessionHost';
 import { styles as socialListStyles } from '@/components/sections/community/SocialList/styles';
 import { FilterCategoryModal, type FilterCategoryResult } from '@/components/ui/modals';
 import { useFloatingMenuActions } from '@/contexts/FloatingMenuContext';
@@ -468,7 +468,7 @@ const SummaryScreen: React.FC<Props> = ({ navigation }) => {
           onFilter={handleHomeFilterApply}
           onClear={handleHomeFilterClear}
         />
-        {eventJoinUrl ? <EventWebViewSession url={eventJoinUrl} onClose={closeEventSession} /> : null}
+        {eventJoinUrl ? <EventLiveSessionHost webViewUrl={eventJoinUrl} onClose={closeEventSession} /> : null}
       </ScreenWithHeader>
       <NotificationPreferencesPrompt
         visible={showNotificationPrompt}

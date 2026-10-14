@@ -27,7 +27,7 @@ const GradientBackgroundByCategory: React.FC<Props> = ({ category }) => {
 
 const styles = StyleSheet.create({
   container: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
   },
 });
 

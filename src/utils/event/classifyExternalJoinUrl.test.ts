@@ -7,6 +7,11 @@ describe('classifyExternalJoinUrl', () => {
     expect(classifyExternalJoinUrl('   ')).toEqual({ kind: 'none' });
   });
 
+  it('retorna jitsi para link Jitsi', () => {
+    const url = 'https://meet.jit.si/LikeMeLiveTest';
+    expect(classifyExternalJoinUrl(url)).toEqual({ kind: 'jitsi', url });
+  });
+
   it('retorna zoom para link Zoom', () => {
     const url = 'https://us02web.zoom.us/j/123456789';
     expect(classifyExternalJoinUrl(url)).toEqual({ kind: 'zoom', url });

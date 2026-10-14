@@ -7,7 +7,7 @@ export const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.36)',
   },
   backdrop: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
   },
   panel: {
     flex: 1,

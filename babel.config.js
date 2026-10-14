@@ -38,6 +38,6 @@ module.exports = function (api) {
 
   return {
     presets: ['babel-preset-expo'],
-    plugins: [moduleResolverPlugin],
+    plugins: [moduleResolverPlugin, 'react-native-worklets-core/plugin'],
   };
 };

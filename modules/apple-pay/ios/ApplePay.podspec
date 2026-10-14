@@ -6,7 +6,7 @@ Pod::Spec.new do |s|
   s.author         = 'Like:Me'
   s.homepage       = 'https://likeme.app'
   s.license        = 'UNLICENSED'
-  s.platforms      = { :ios => '15.5' }
+  s.platforms      = { :ios => '16.4' }
   s.source         = { git: '' }
   s.static_framework = true
   s.dependency 'ExpoModulesCore'

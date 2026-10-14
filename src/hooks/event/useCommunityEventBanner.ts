@@ -12,6 +12,7 @@ import { navigateToProductDetailsScreen } from '@/utils/navigation/productNaviga
 import { useTranslation } from '@/hooks/i18n';
 import type { EventBannerData } from '@/types/event';
 import type { RootStackParamList } from '@/types/navigation';
+import { useLiveJitsiSession } from '@/contexts/LiveJitsiSessionContext';
 
 const DEFAULT_EVENT_BANNER_THUMB = 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=800';
 
@@ -82,6 +83,7 @@ export function useCommunityEventBanner(options: UseCommunityEventBannerOptions 
   const programProductId = programProductIdOption ?? programProductIdFromApi;
   const hasProgramAccess = hasProgramAccessOption ?? hasProgramAccessFromApi;
 
+  const { openLiveJitsiSession, closeLiveJitsiSession } = useLiveJitsiSession();
   const [eventJoinUrl, setEventJoinUrl] = useState<string | null>(null);
 
   const banner = useMemo(() => {
@@ -123,22 +125,56 @@ export function useCommunityEventBanner(options: UseCommunityEventBannerOptions 
 
   const closeEventSession = useCallback(() => {
     setEventJoinUrl(null);
-  }, []);
+    closeLiveJitsiSession();
+  }, [closeLiveJitsiSession]);
 
-  const openLiveSession = useCallback(async (bannerData: EventBannerData) => {
-    const mode = effectiveJoinMode(bannerData);
-    const url = bannerData.externalUrl?.trim();
-    if (mode === 'none' || !url) {
-      return;
-    }
-    if (mode === 'external_browser') {
-      Linking.openURL(url).catch((linkError: Error) => {
-        logger.error('[useCommunityEventBanner] Falha ao abrir link do evento', { url, cause: linkError });
-      });
-      return;
-    }
-    setEventJoinUrl(url);
-  }, []);
+  const openLiveSession = useCallback(
+    async (bannerData: EventBannerData) => {
+      const mode = effectiveJoinMode(bannerData);
+      const url = bannerData.externalUrl?.trim();
+      if (mode === 'none' || !url) {
+        logger.warn('[useCommunityEventBanner] Live indisponível: URL ou modo de entrada ausente', {
+          eventId: bannerData.id,
+          mode,
+          hasUrl: Boolean(url),
+        });
+        Alert.alert(
+          t('errors.error'),
+          t('community.eventBanner.liveJoinUnavailable', {
+            defaultValue: 'Este evento ainda não tem link de entrada. Tente de novo em instantes.',
+          }),
+        );
+        return;
+      }
+      if (mode === 'external_browser') {
+        Linking.openURL(url).catch((linkError: Error) => {
+          logger.error('[useCommunityEventBanner] Falha ao abrir link do evento', { url, cause: linkError });
+        });
+        return;
+      }
+      if (mode === 'jitsi_embed') {
+        try {
+          const payload = await eventService.fetchCommunityEventJoinPayload(url);
+          openLiveJitsiSession(payload);
+        } catch (error) {
+          logger.error('[useCommunityEventBanner] Falha ao obter payload da live Jitsi', {
+            url,
+            eventId: bannerData.id,
+            cause: error,
+          });
+          Alert.alert(
+            t('errors.error'),
+            t('community.eventBanner.liveJoinError', {
+              defaultValue: 'Não foi possível entrar na live agora. Tente novamente em instantes.',
+            }),
+          );
+        }
+        return;
+      }
+      setEventJoinUrl(url);
+    },
+    [openLiveJitsiSession, t],
+  );
 
   const handleEventBannerPress = useCallback(
     async (bannerData: EventBannerData) => {

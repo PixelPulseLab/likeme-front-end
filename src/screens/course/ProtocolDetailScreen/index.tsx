@@ -21,7 +21,7 @@ import { CourseContent } from '@/screens/course/CourseContent';
 import { CourseModule } from '@/screens/course/CourseModule';
 import { buildCourse, formatCourseLiveWhen } from '@/screens/course/course';
 import { EventBanner } from '@/components/sections/community';
-import { EventWebViewSession } from '@/components/infrastructure/webview/EventWebViewSession';
+import { EventLiveSessionHost } from '@/components/infrastructure/live/EventLiveSessionHost';
 import { MarkdownText } from '@/components/ui/text/MarkdownText';
 import { useAdvertisers, useCommunityEventBanner, useFeatureFlag, useMenuItems, useProgramCourse } from '@/hooks';
 import { useFloatingMenuActions } from '@/contexts/FloatingMenuContext';
@@ -193,6 +193,18 @@ const ProtocolDetailScreen: React.FC<Props> = ({ navigation, route }) => {
     hasProgramAccess: hasActiveProtocolAccess,
     navigation,
   });
+
+  const handleProgramLiveCardPress = useCallback(() => {
+    if (!eventBanner) {
+      return;
+    }
+    const shouldOpenLiveSession = eventBanner.variant === 'live_join' || eventBanner.status === 'Live Now';
+    if (shouldOpenLiveSession) {
+      void handleEventBannerPress(eventBanner);
+      return;
+    }
+    void handleEventBannerCtaPress(eventBanner);
+  }, [eventBanner, handleEventBannerCtaPress, handleEventBannerPress]);
 
   const refreshProgramPage = useCallback(async () => {
     try {
@@ -566,6 +578,7 @@ const ProtocolDetailScreen: React.FC<Props> = ({ navigation, route }) => {
         defaultValue: 'Não perca a próxima live de {{host}}.',
       })
     : eventBanner?.title ?? '';
+
   const liveCard =
     showCourseLive && eventBanner
       ? {
@@ -573,9 +586,7 @@ const ProtocolDetailScreen: React.FC<Props> = ({ navigation, route }) => {
           message: liveMessage,
           whenLabel: formatCourseLiveWhen(eventBanner.startTime),
           actionLabel: liveActionLabel,
-          onAction: () => {
-            void (isLiveJoin ? handleEventBannerPress(eventBanner) : handleEventBannerCtaPress(eventBanner));
-          },
+          onAction: handleProgramLiveCardPress,
         }
       : null;
   const canceledOnLabel = formatSubscriptionManageDate(
@@ -919,37 +930,38 @@ const ProtocolDetailScreen: React.FC<Props> = ({ navigation, route }) => {
       {liveCard ? (
         <View style={styles.liveSection}>
           <Text style={styles.liveLabel}>{t('profile.courseHome.nextLive', { defaultValue: 'Próxima live' })}</Text>
-          <View style={styles.liveRow}>
-            <View style={styles.liveCoverFrame}>
-              <View style={styles.liveCoverWrap}>
+          <Pressable
+            style={styles.liveRow}
+            onPress={liveCard.onAction}
+            accessibilityRole='button'
+            accessibilityLabel={liveCard.actionLabel}
+            testID={E2E_TEST_IDS.PROTOCOL_LIVE_EVENT_CARD}
+          >
+            <View style={styles.liveCoverFrame} pointerEvents='box-none'>
+              <View style={styles.liveCoverWrap} pointerEvents='box-none'>
                 {liveCard.imageUri ? (
-                  <CachedImage source={{ uri: liveCard.imageUri }} style={styles.liveCover} />
+                  <CachedImage pointerEvents='none' source={{ uri: liveCard.imageUri }} style={styles.liveCover} />
                 ) : (
-                  <View style={[styles.liveCover, styles.liveCoverFallback]} />
+                  <View pointerEvents='none' style={[styles.liveCover, styles.liveCoverFallback]} />
                 )}
                 <LinearGradient
                   pointerEvents='none'
                   colors={['rgba(0,0,0,0)', 'rgba(0,0,0,0.64)']}
                   style={styles.liveCoverShade}
                 />
-                <Pressable
-                  style={styles.liveAction}
-                  onPress={liveCard.onAction}
-                  accessibilityRole='button'
-                  accessibilityLabel={liveCard.actionLabel}
-                >
+                <View style={styles.liveAction} pointerEvents='none'>
                   <Text style={styles.liveActionLabel}>{liveCard.actionLabel}</Text>
-                </Pressable>
+                </View>
               </View>
             </View>
-            <View style={styles.livePanel}>
+            <View style={styles.livePanel} pointerEvents='none'>
               <View style={styles.liveCopy}>
                 <CourseLiveCamIcon />
                 <Text style={styles.liveMessage}>{liveCard.message}</Text>
               </View>
               {liveCard.whenLabel ? <Text style={styles.liveWhen}>{liveCard.whenLabel}</Text> : null}
             </View>
-          </View>
+          </Pressable>
         </View>
       ) : null}
 
@@ -1083,84 +1095,86 @@ const ProtocolDetailScreen: React.FC<Props> = ({ navigation, route }) => {
   }
 
   return (
-    <ScreenWithHeader
-      navigation={navigation}
-      headerProps={{
-        showBackButton: true,
-        onBackPress: handleBack,
-        customLogo: courseHeaderTitle ? (
-          <Text style={styles.headerTitle} numberOfLines={1}>
-            {courseHeaderTitle}
-          </Text>
-        ) : undefined,
-      }}
-      contentContainerStyle={styles.container}
-      contentBackgroundColor={COLORS.BACKGROUND}
-    >
-      <PullToRefreshIndicator visible={showPullIndicator} accessibilityLabel={t('common.loading')} />
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-        scrollEventThrottle={16}
-        onScroll={onPullScroll}
-        refreshControl={pullRefreshControl}
+    <View style={styles.screenRoot}>
+      {eventJoinUrl ? <EventLiveSessionHost webViewUrl={eventJoinUrl} onClose={closeEventSession} /> : null}
+      <ScreenWithHeader
+        navigation={navigation}
+        headerProps={{
+          showBackButton: true,
+          onBackPress: handleBack,
+          customLogo: courseHeaderTitle ? (
+            <Text style={styles.headerTitle} numberOfLines={1}>
+              {courseHeaderTitle}
+            </Text>
+          ) : undefined,
+        }}
+        contentContainerStyle={styles.container}
+        contentBackgroundColor={COLORS.BACKGROUND}
       >
-        {showsCourse ? (
-          <>
-            {courseHeaderTitle ? null : (
+        <PullToRefreshIndicator visible={showPullIndicator} accessibilityLabel={t('common.loading')} />
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          scrollEventThrottle={16}
+          onScroll={onPullScroll}
+          refreshControl={pullRefreshControl}
+        >
+          {showsCourse ? (
+            <>
+              {courseHeaderTitle ? null : (
+                <HeroImage
+                  variant='compact'
+                  imageUri={heroImageUri}
+                  name={protocol.name}
+                  badges={courseHeroBadges}
+                  desaturated={subscriptionIsDesaturatedPresentation(subscriptionFields)}
+                />
+              )}
+              {isCancelingSubscription ? renderCancelingNotice() : null}
+              {contentLoading ? (
+                <View style={styles.loaderWrap}>
+                  <ActivityIndicator size='large' color={COLORS.PRIMARY.PURE} />
+                </View>
+              ) : (
+                courseJourney
+              )}
+            </>
+          ) : (
+            <>
               <HeroImage
-                variant='compact'
                 imageUri={heroImageUri}
                 name={protocol.name}
-                badges={courseHeroBadges}
+                badges={heroBadges}
+                heightRatio={0.6}
                 desaturated={subscriptionIsDesaturatedPresentation(subscriptionFields)}
+                footer={
+                  aboutText ? (
+                    <View style={styles.heroFooter}>
+                      <Text style={styles.heroDescription}>{aboutText}</Text>
+                    </View>
+                  ) : undefined
+                }
               />
-            )}
-            {isCancelingSubscription ? renderCancelingNotice() : null}
-            {contentLoading ? (
-              <View style={styles.loaderWrap}>
-                <ActivityIndicator size='large' color={COLORS.PRIMARY.PURE} />
+
+              <View style={styles.infoSection}>
+                <Text style={styles.sectionTitle}>
+                  {t('community.informationTitle', { defaultValue: 'Informações' })}
+                </Text>
+                <InfoSectionTabsRow
+                  options={TAB_OPTIONS}
+                  selectedId={activeTab}
+                  onSelect={handleTabSelect}
+                  menuOptions={protocolMenuOptions}
+                />
               </View>
-            ) : (
-              courseJourney
-            )}
-          </>
-        ) : (
-          <>
-            <HeroImage
-              imageUri={heroImageUri}
-              name={protocol.name}
-              badges={heroBadges}
-              heightRatio={0.6}
-              desaturated={subscriptionIsDesaturatedPresentation(subscriptionFields)}
-              footer={
-                aboutText ? (
-                  <View style={styles.heroFooter}>
-                    <Text style={styles.heroDescription}>{aboutText}</Text>
-                  </View>
-                ) : undefined
-              }
-            />
 
-            <View style={styles.infoSection}>
-              <Text style={styles.sectionTitle}>
-                {t('community.informationTitle', { defaultValue: 'Informações' })}
-              </Text>
-              <InfoSectionTabsRow
-                options={TAB_OPTIONS}
-                selectedId={activeTab}
-                onSelect={handleTabSelect}
-                menuOptions={protocolMenuOptions}
-              />
-            </View>
-
-            {renderTabContent()}
-          </>
-        )}
-      </ScrollView>
-      {eventJoinUrl ? <EventWebViewSession url={eventJoinUrl} onClose={closeEventSession} /> : null}
-    </ScreenWithHeader>
+              {renderTabContent()}
+            </>
+          )}
+        </ScrollView>
+      </ScreenWithHeader>
+    </View>
   );
 };
 

@@ -297,7 +297,7 @@ module.exports = {
       [
         'expo-build-properties',
         {
-          ios: { newArchEnabled: false, deploymentTarget: '15.5' },
+          ios: { newArchEnabled: false, deploymentTarget: '16.4' },
           android: {
             newArchEnabled: false,
             minSdkVersion: 28,
@@ -336,6 +336,7 @@ module.exports = {
       package: 'com.likeme.app',
       versionCode: appVersion.android.versionCode,
       googleServicesFile: './google-services.json',
+      permissions: ['android.permission.RECORD_AUDIO', 'android.permission.CAMERA'],
       softwareKeyboardLayoutMode: 'resize',
       adaptiveIcon: {
         foregroundImage: './assets/app/icon.png',
@@ -373,9 +374,10 @@ module.exports = {
       supportsTablet: false,
       googleServicesFile: './GoogleService-Info.plist',
       infoPlist: {
+        RCTNewArchEnabled: false,
         FirebaseAppDelegateProxyEnabled: true,
         ITSAppUsesNonExemptEncryption: false,
-        UIBackgroundModes: ['remote-notification'],
+        UIBackgroundModes: ['remote-notification', 'audio', 'voip'],
         NSBluetoothPeripheralUsageDescription:
           'Usamos Bluetooth para áudio em chamadas de vídeo quando você usa fones compatíveis.',
         NSCameraUsageDescription:

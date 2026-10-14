@@ -1,7 +1,7 @@
 import React, { useCallback, useMemo } from 'react';
 import { Linking, Pressable, Text, View } from 'react-native';
-import { useNavigationState } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useRootNavigationState } from '@/contexts/RootNavigationStateContext';
 import { ColoredTwoDotsIcon } from '@/assets/ui';
 import { FEATURE_FLAGS, isRouteNameEligibleForSupportFloating } from '@/constants';
 import { useFeatureFlag } from '@/hooks';
@@ -28,8 +28,15 @@ const SupportFloatingButton: React.FC = () => {
   const insets = useSafeAreaInsets();
   const isFloatingMenuVisible = useIsFloatingMenuVisible();
   const { isEnabled: isSupportFloatingButtonEnabled } = useFeatureFlag(FEATURE_FLAGS.SUPPORT_FLOATING_BUTTON_ENABLED);
-  const rootRouteName = useNavigationState((state) => getRootRouteName(state));
-  const focusedRouteName = useNavigationState((state) => getFocusedRouteNameFromNavState(state));
+  const rootNavigationState = useRootNavigationState();
+  const rootRouteName = useMemo(
+    () => (rootNavigationState ? getRootRouteName(rootNavigationState) : undefined),
+    [rootNavigationState],
+  );
+  const focusedRouteName = useMemo(
+    () => (rootNavigationState ? getFocusedRouteNameFromNavState(rootNavigationState) : undefined),
+    [rootNavigationState],
+  );
 
   const shouldShowByRoute = useMemo(
     () =>

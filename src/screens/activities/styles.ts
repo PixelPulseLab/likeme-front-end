@@ -11,7 +11,7 @@ export const styles = StyleSheet.create({
     zIndex: 1,
   },
   gradientBackground: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     zIndex: 0,
   },
   tabsContainer: {

@@ -22,7 +22,7 @@ export const styles = StyleSheet.create({
     resizeMode: 'cover',
   },
   overlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: 'rgba(0, 17, 55, 0.28)',
   },
   badgesRow: {

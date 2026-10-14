@@ -62,7 +62,7 @@ import type { ShopTabId } from '@/components/sections/community/ShoppingList';
 import { PROGRAM_TYPE } from '@/types/product/programType';
 import Toggle from '@/components/ui/buttons/Toggle';
 import { Checkbox } from '@/components/ui/inputs';
-import { EventWebViewSession } from '@/components/infrastructure/webview/EventWebViewSession';
+import { EventLiveSessionHost } from '@/components/infrastructure/live/EventLiveSessionHost';
 
 type CommunityInfoTabId = 'posts' | 'about' | 'agreements';
 
@@ -972,7 +972,7 @@ const CommunityScreen: React.FC<Props> = ({ navigation }) => {
   return (
     <View style={styles.screenRoot} testID='e2e.community.root'>
       {!isFocusCommunityUnavailable && eventJoinUrl ? (
-        <EventWebViewSession url={eventJoinUrl} onClose={closeEventSession} />
+        <EventLiveSessionHost webViewUrl={eventJoinUrl} onClose={closeEventSession} />
       ) : null}
       <ScreenWithHeader
         navigation={rootNavigation}

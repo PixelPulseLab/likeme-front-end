@@ -10,10 +10,10 @@ export const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   blur: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
   },
   blurOverlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: 'rgba(255,255,255,0.6)',
   },
   pill: {

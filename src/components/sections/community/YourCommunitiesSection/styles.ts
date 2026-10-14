@@ -195,7 +195,7 @@ export const styles = StyleSheet.create({
     backgroundColor: '#2a2a2a',
   },
   postMediaPlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: 'rgba(0, 0, 0, 0.2)',

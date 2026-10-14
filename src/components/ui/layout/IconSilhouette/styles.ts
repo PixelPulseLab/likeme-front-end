@@ -52,7 +52,7 @@ export const styles = StyleSheet.create({
     elevation: 0,
   },
   blurBorder: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
   },
   blurMask: {
     backgroundColor: 'transparent',

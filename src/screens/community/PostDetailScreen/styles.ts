@@ -9,7 +9,7 @@ export const styles = StyleSheet.create({
     paddingBottom: 0,
   },
   gradientBackground: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     zIndex: 0,
   },
   list: {

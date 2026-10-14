@@ -81,7 +81,7 @@
 	<key>NSCalendarsUsageDescription</key>
 	<string>Precisamos acessar sua agenda para marcar atividades compradas no Like:Me.</string>
 	<key>NSCameraUsageDescription</key>
-	<string>Precisamos da câmera para você tirar uma foto de perfil.</string>
+	<string>Precisamos da câmera para você tirar uma foto de perfil e participar de lives com vídeo.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Precisamos do microfone para você participar das lives e reuniões com áudio.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
@@ -91,10 +91,12 @@
 	<key>NSRemindersUsageDescription</key>
 	<string>Precisamos acessar seus lembretes para sincronizar atividades do Like:Me.</string>
 	<key>RCTNewArchEnabled</key>
-	<false/>
+	<true/>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>remote-notification</string>
+		<string>audio</string>
+		<string>voip</string>
 	</array>
 	<key>UILaunchStoryboardName</key>
 	<string>SplashScreen</string>

@@ -25,7 +25,7 @@ export const styles = StyleSheet.create({
     bottom: 0,
   },
   desaturatedImageWrap: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     borderBottomLeftRadius: 40,
     borderBottomRightRadius: 40,
     overflow: 'hidden',
@@ -35,7 +35,7 @@ export const styles = StyleSheet.create({
     borderBottomRightRadius: 40,
   },
   overlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     justifyContent: 'flex-end',
     borderBottomLeftRadius: 40,
     borderBottomRightRadius: 40,
@@ -48,7 +48,7 @@ export const styles = StyleSheet.create({
     minHeight: 56,
   },
   effectsContainer: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     overflow: 'hidden',
     zIndex: 0,
     borderBottomLeftRadius: 40,
@@ -157,6 +157,6 @@ export const styles = StyleSheet.create({
     marginTop: SPACING.SM,
   },
   compactGradient: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
   },
 });

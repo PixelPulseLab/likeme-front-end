@@ -67,6 +67,7 @@ export const E2E_TEST_IDS = {
   CHECKOUT_ORDER_ERROR: 'e2e.checkout.orderError',
   PROTOCOL_MORE_MENU: 'e2e.protocol.moreMenu',
   PROTOCOL_MANAGE: 'e2e.protocol.manage',
+  PROTOCOL_LIVE_EVENT_CARD: 'e2e.protocol.liveEventCard',
   SUBSCRIPTION_CARD_PREFIX: 'e2e.subscription.card.',
   SUBSCRIPTION_CANCEL: 'e2e.subscription.cancel',
   SUBSCRIPTION_CANCEL_CONFIRM: 'e2e.subscription.cancelConfirm',

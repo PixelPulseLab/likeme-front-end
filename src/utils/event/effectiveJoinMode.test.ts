@@ -17,6 +17,10 @@ describe('effectiveJoinMode', () => {
     expect(effectiveJoinMode({ ...base, joinMode: 'external_browser' })).toBe('external_browser');
   });
 
+  it('deduz jitsi_embed para URL Jitsi quando joinMode ausente', () => {
+    expect(effectiveJoinMode({ ...base, externalUrl: 'https://meet.jit.si/LikeMeLiveTest' })).toBe('jitsi_embed');
+  });
+
   it('deduz external_browser para URL de join Zoom quando joinMode ausente', () => {
     expect(effectiveJoinMode({ ...base })).toBe('external_browser');
   });

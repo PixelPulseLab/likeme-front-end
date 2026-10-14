@@ -1,5 +1,7 @@
 import './splashPreventAutoHide';
 import 'react-native-gesture-handler';
+import 'react-native-get-random-values';
+import 'promise.withresolvers/auto';
 import './nativeScreensEnable';
 
 import './src/i18n';

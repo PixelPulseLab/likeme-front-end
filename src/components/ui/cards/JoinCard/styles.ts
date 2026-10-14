@@ -45,7 +45,7 @@ export const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   heroMedia: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
   },
   heroBody: {
     flex: 1,
@@ -57,7 +57,7 @@ export const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   mediaBody: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     justifyContent: 'space-between',
   },
   mediaTop: {

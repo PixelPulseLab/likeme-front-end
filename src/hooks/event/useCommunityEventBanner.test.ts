@@ -14,6 +14,7 @@ jest.mock('@/hooks/event/useEventList', () => ({
 jest.mock('@/services', () => ({
   eventService: {
     registerScheduledCommunityEventReminder: jest.fn(),
+    fetchCommunityEventJoinPayload: jest.fn(),
   },
 }));
 

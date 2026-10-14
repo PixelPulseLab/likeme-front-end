@@ -45,7 +45,7 @@ const FMT_XCODE26_SNIPPET = `
 const POST_INSTALL_SNIPPET = `
     ${FMT_XCODE26_SNIPPET}
     ${POST_INSTALL_MARKER}
-    deployment_target = podfile_properties['ios.deploymentTarget'] || '15.5'
+    deployment_target = podfile_properties['ios.deploymentTarget'] || '16.4'
     installer.pods_project.targets.each do |target|
       target.build_configurations.each do |config|
         current = config.build_settings['IPHONEOS_DEPLOYMENT_TARGET']

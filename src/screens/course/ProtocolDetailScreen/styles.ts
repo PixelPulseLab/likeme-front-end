@@ -17,6 +17,9 @@ const cardRadius = {
 };
 
 export const styles = StyleSheet.create({
+  screenRoot: {
+    flex: 1,
+  },
   container: {
     flex: 1,
     backgroundColor: COLORS.BACKGROUND,
@@ -153,7 +156,7 @@ export const styles = StyleSheet.create({
     flex: 1,
   },
   menuDismissArea: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
   },
   menuCard: {
     position: 'absolute',
@@ -271,13 +274,13 @@ export const styles = StyleSheet.create({
     padding: SPACING.MD_PLUS,
   },
   liveCover: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
   },
   liveCoverFallback: {
     backgroundColor: COLORS.SECONDARY.MEDIUM,
   },
   liveCoverShade: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
   },
   liveAction: {
     minHeight: 36,
@@ -354,10 +357,10 @@ export const styles = StyleSheet.create({
     elevation: 2,
   },
   archivePhoto: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
   },
   archiveShade: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
   },
   archiveCopy: {
     flex: 1,

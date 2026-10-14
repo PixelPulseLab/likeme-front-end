@@ -59,6 +59,7 @@ const BlurCard: React.FC<BlurCardProps> = ({
         <DesaturatedImage uri={backgroundImage} style={styles.desaturatedImageWrap} />
       ) : (
         <CachedImage
+          pointerEvents='none'
           source={{ uri: backgroundImage }}
           style={styles.backgroundImage}
           contentPosition={IMAGE_CONTENT_POSITION_ABOVE_CENTER}
@@ -72,6 +73,7 @@ const BlurCard: React.FC<BlurCardProps> = ({
           {!desaturated && card.height > 0 && (
             <View style={getBlurStyle(footer.height, radii)}>
               <CachedImage
+                pointerEvents='none'
                 source={{ uri: backgroundImage }}
                 style={getFooterBlurImageStyle(card.height)}
                 contentPosition={IMAGE_CONTENT_POSITION_ABOVE_CENTER}

@@ -9,6 +9,7 @@ const Stack = createStackNavigator<ChatStackParamList>();
 const ChatStackNavigator: React.FC = () => {
   return (
     <Stack.Navigator
+      id='likeme-chat-stack'
       screenOptions={{
         headerShown: false,
         gestureEnabled: STACK_GESTURE_ENABLED,

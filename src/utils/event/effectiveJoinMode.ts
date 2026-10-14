@@ -12,6 +12,9 @@ export function effectiveJoinMode(banner: EventBannerData): EventJoinMode {
   if (how.kind === 'none') {
     return 'none';
   }
+  if (how.kind === 'jitsi') {
+    return 'jitsi_embed';
+  }
   if (how.kind === 'zoom') {
     return 'external_browser';
   }

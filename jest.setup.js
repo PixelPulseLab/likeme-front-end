@@ -160,6 +160,14 @@ Object.defineProperty(ReactNative, 'TouchableOpacity', {
   value: TestFriendlyTouchableOpacity,
 });
 
+jest.mock('@jitsi/react-native-sdk', () => {
+  const React = require('react');
+  const { View } = require('react-native');
+  return {
+    JitsiMeeting: (props) => React.createElement(View, { testID: 'jitsi-meeting-mock', ...props }),
+  };
+});
+
 jest.mock('@google/react-native-make-payment', () => ({
   PaymentRequest: jest.fn().mockImplementation(() => ({
     canMakePayment: jest.fn(() => Promise.resolve(false)),

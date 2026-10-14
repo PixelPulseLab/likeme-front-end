@@ -7,7 +7,7 @@ export const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   backdrop: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: 'rgba(0, 0, 0, 0.7)',
   },
   sheet: {
@@ -49,7 +49,7 @@ export const styles = StyleSheet.create({
     backgroundColor: COLORS.SECONDARY.MEDIUM,
   },
   loadingOverlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: 'rgba(251, 247, 229, 0.72)',
     alignItems: 'center',
     justifyContent: 'center',

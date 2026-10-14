@@ -10,6 +10,7 @@ const Stack = createStackNavigator<CommunityStackParamList>();
 const CommunityStackNavigator: React.FC = () => {
   return (
     <Stack.Navigator
+      id='likeme-community-stack'
       screenOptions={{
         headerShown: false,
         gestureEnabled: STACK_GESTURE_ENABLED,

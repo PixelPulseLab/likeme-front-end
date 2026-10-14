@@ -95,7 +95,7 @@ target 'LikeMe' do
     end
 
     # likeme-podfile-post-install
-    deployment_target = podfile_properties['ios.deploymentTarget'] || '15.5'
+    deployment_target = podfile_properties['ios.deploymentTarget'] || '16.4'
     installer.pods_project.targets.each do |target|
       target.build_configurations.each do |config|
         current = config.build_settings['IPHONEOS_DEPLOYMENT_TARGET']

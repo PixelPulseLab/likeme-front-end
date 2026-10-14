@@ -3,11 +3,11 @@ import { COLORS, SPACING, TYPOGRAPHY } from '@/constants';
 
 export const styles = StyleSheet.create({
   map: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     overflow: 'hidden',
   },
   canvas: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
   },
   bubble: {
     position: 'absolute',
@@ -16,7 +16,7 @@ export const styles = StyleSheet.create({
     paddingHorizontal: SPACING.SM,
   },
   bubbleImage: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
   },
   bubbleLabel: {
     ...TYPOGRAPHY.bodySm,

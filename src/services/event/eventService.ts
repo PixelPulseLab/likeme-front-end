@@ -1,5 +1,7 @@
 import apiClient from '../infrastructure/apiClient';
 import type {
+  CommunityEventJoinPayloadApiResponse,
+  CommunityEventJitsiJoinPayload,
   ListEventsApiResponse,
   RegisterScheduledCommunityEventReminderApiResponse,
   ScheduledCommunityEventRemindersListApiResponse,
@@ -70,6 +72,20 @@ class EventService {
         this.listEventsInflight.delete(normalizedId);
       }
     }
+  }
+
+  async fetchCommunityEventJoinPayload(externalUrl: string): Promise<CommunityEventJitsiJoinPayload> {
+    const trimmedUrl = externalUrl.trim();
+    const response = await apiClient.post<CommunityEventJoinPayloadApiResponse>(
+      `${this.eventsEndpoint}/join-payload`,
+      { externalUrl: trimmedUrl },
+      true,
+    );
+    const payload = response.data;
+    if (!payload || payload.provider !== 'jitsi') {
+      throw new Error(response.message || 'Payload de entrada na live indisponível');
+    }
+    return payload;
   }
 
   private async fetchCommunityEvents(communityId: string): Promise<ListEventsApiResponse> {

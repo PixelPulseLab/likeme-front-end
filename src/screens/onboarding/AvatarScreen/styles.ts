@@ -54,7 +54,7 @@ export const styles = StyleSheet.create({
     height: BODY_AVATAR_SIZE.height,
   },
   categoryCloud: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
   },
   footer: {
     position: 'absolute',

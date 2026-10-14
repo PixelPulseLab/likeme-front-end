@@ -15,7 +15,7 @@ export const styles = StyleSheet.create({
     paddingBottom: SPACING.XL,
   },
   gradientBackground: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     zIndex: 0,
   },
   content: {

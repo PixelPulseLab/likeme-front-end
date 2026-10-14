@@ -24,7 +24,7 @@ export const styles = StyleSheet.create({
     height: '100%',
   },
   desaturatedImageWrap: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
   },
   content: {
     flex: 1,

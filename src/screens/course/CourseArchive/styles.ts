@@ -26,10 +26,10 @@ export const styles = StyleSheet.create({
     gap: SPACING.MD,
   },
   typePhoto: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
   },
   typeShade: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
   },
   filterRow: {
     gap: SPACING.MD,
@@ -148,7 +148,7 @@ export const styles = StyleSheet.create({
     elevation: 2,
   },
   contentMedia: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     overflow: 'hidden',
     borderTopLeftRadius: 64,
     borderTopRightRadius: 64,
@@ -164,7 +164,7 @@ export const styles = StyleSheet.create({
     padding: 0,
   },
   contentPlayOverlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -201,7 +201,7 @@ export const styles = StyleSheet.create({
     borderBottomLeftRadius: 11,
   },
   contentBadgeBlur: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
   },
   contentBadgeText: {
     fontFamily: FONT_FAMILY.DM_SANS_REGULAR,

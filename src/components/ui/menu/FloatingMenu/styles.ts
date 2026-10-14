@@ -20,10 +20,10 @@ export const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   blur: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
   },
   overlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: MENU_BACKGROUND,
   },
   row: {

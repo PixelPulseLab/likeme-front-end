@@ -7,7 +7,7 @@ export const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   gradientBackground: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     zIndex: 0,
   },
   subHeader: {

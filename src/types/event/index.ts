@@ -22,10 +22,26 @@ export type EventBannerStatus = 'Live Now' | 'Scheduled';
 
 export type EventBannerVariant = 'purchase' | 'reminder' | 'reminder_created' | 'live_join';
 
-export type EventJoinMode = 'external_browser' | 'none';
+export type EventJoinMode = 'external_browser' | 'jitsi_embed' | 'meet_embed' | 'none';
 
 /** Valor legado ainda aceito na API; tratado como `external_browser`. */
 export type EventJoinModeFromApi = EventJoinMode | 'zoom_sdk';
+
+export type CommunityEventJitsiJoinPayload = {
+  provider: 'jitsi';
+  externalUrl: string;
+  roomName: string;
+  serverURL: string;
+  token?: string;
+  userName: string;
+  userEmail?: string;
+};
+
+export type CommunityEventJoinPayloadApiResponse = {
+  success?: boolean;
+  message?: string;
+  data?: CommunityEventJitsiJoinPayload;
+};
 
 export interface EventBannerData {
   id: string;
@@ -36,7 +52,7 @@ export interface EventBannerData {
   endTime: string;
   thumbnail: ImageSourcePropType | string;
   externalUrl?: string;
-  provider?: 'zoom' | 'unknown';
+  provider?: 'zoom' | 'jitsi' | 'meet' | 'unknown';
   joinMode?: EventJoinModeFromApi;
   variant?: EventBannerVariant;
   communityId?: string;
@@ -52,7 +68,7 @@ export interface CommunityEventBannerFromApi {
   startsAt: string;
   endsAt: string;
   externalUrl?: string;
-  provider: 'zoom' | 'unknown';
+  provider: 'zoom' | 'jitsi' | 'meet' | 'unknown';
   joinMode: EventJoinModeFromApi;
   variant: EventBannerVariant;
   communityId: string;
@@ -67,7 +83,7 @@ export interface Event {
   startsAt?: string;
   endsAt?: string;
   status: 'draft' | 'scheduled' | 'live' | 'ended' | 'error' | 'unknown';
-  provider: 'zoom' | 'unknown';
+  provider: 'zoom' | 'jitsi' | 'meet' | 'unknown';
   externalUrl?: string;
   source: 'social_plus';
   joinMode?: EventJoinModeFromApi;

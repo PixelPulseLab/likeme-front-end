@@ -15,7 +15,7 @@ export const styles = StyleSheet.create({
     position: 'relative',
   },
   gradientBackground: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     zIndex: 0,
   },
   scrollView: {

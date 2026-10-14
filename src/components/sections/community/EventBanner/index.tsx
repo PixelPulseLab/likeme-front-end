@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, type ImageSourcePropType } from 'react-native';
+import { View, Text, Pressable, type ImageSourcePropType } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import type { EventBannerData, EventBannerVariant } from '@/types/event';
 import { useTranslation } from '@/hooks/i18n';
@@ -51,18 +51,27 @@ const EventBanner: React.FC<Props> = ({ event, onPress, onCtaPress }) => {
   const variant = event.variant;
   const title = variant === 'live_join' ? t(titleKey(variant)) : `${t(titleKey(variant))} ${event.title}`.trim();
 
+  const handleCtaPress = () => {
+    (onCtaPress ?? onPress)(event);
+  };
+
   return (
-    <TouchableOpacity style={styles.container} onPress={() => onPress(event)} activeOpacity={0.8}>
-      <View style={styles.imageSide}>
+    <Pressable style={styles.container} onPress={() => onPress(event)} accessibilityRole='button'>
+      <View style={styles.imageSide} pointerEvents='box-none'>
         {isImageUri ? (
-          <CachedImage source={{ uri: event.thumbnail as string }} style={styles.image} />
+          <CachedImage pointerEvents='none' source={{ uri: event.thumbnail as string }} style={styles.image} />
         ) : (
-          <CachedImage source={event.thumbnail as ImageSourcePropType} style={styles.image} />
+          <CachedImage pointerEvents='none' source={event.thumbnail as ImageSourcePropType} style={styles.image} />
         )}
-        <View style={styles.imageOverlay}>
-          <TouchableOpacity style={styles.ctaButton} onPress={() => (onCtaPress ?? onPress)(event)} activeOpacity={0.8}>
+        <View style={styles.imageOverlay} pointerEvents='box-none'>
+          <Pressable
+            style={styles.ctaButton}
+            onPress={handleCtaPress}
+            accessibilityRole='button'
+            accessibilityLabel={t(ctaLabelKey(variant))}
+          >
             <Text style={styles.ctaButtonText}>{t(ctaLabelKey(variant))}</Text>
-          </TouchableOpacity>
+          </Pressable>
         </View>
       </View>
 
@@ -91,7 +100,7 @@ const EventBanner: React.FC<Props> = ({ event, onPress, onCtaPress }) => {
           </View>
         </View>
       </View>
-    </TouchableOpacity>
+    </Pressable>
   );
 };
 
