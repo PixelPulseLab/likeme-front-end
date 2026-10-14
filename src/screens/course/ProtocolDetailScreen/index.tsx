@@ -23,7 +23,7 @@ import { buildCourse, formatCourseLiveWhen } from '@/screens/course/course';
 import { EventBanner } from '@/components/sections/community';
 import { EventLiveSessionHost } from '@/components/infrastructure/live/EventLiveSessionHost';
 import { MarkdownText } from '@/components/ui/text/MarkdownText';
-import { useAdvertisers, useCommunityEventBanner, useFeatureFlag, useMenuItems, useProgramCourse } from '@/hooks';
+import { useAdvertisers, useEventBanner, useFeatureFlag, useMenuItems, useProgramCourse } from '@/hooks';
 import { useFloatingMenuActions } from '@/contexts/FloatingMenuContext';
 import { useAnalyticsScreen, logTabSelect } from '@/analytics';
 import { useTranslation } from '@/hooks/i18n';
@@ -183,7 +183,7 @@ const ProtocolDetailScreen: React.FC<Props> = ({ navigation, route }) => {
     handleEventBannerPress,
     handleEventBannerCtaPress,
     refreshReminderState,
-  } = useCommunityEventBanner({
+  } = useEventBanner({
     enabled: hasCommunity && hasActiveProtocolAccess && !opensCommunityFeed,
     communityId,
     communityAvatarUrl: heroImageUri,

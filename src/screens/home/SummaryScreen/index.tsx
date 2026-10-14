@@ -13,7 +13,7 @@ import {
   useSolutions,
   useSessionTokenReady,
   useCategories,
-  useCommunityEventBanner,
+  useEventBanner,
   useAdvertisers,
 } from '@/hooks';
 import {
@@ -192,7 +192,7 @@ const SummaryScreen: React.FC<Props> = ({ navigation }) => {
   const homeBannerCommunityId = homeBannerCommunity?.id?.trim() ?? '';
 
   const { eventBanner, eventJoinUrl, closeEventSession, handleEventBannerPress, handleEventBannerCtaPress } =
-    useCommunityEventBanner({
+    useEventBanner({
       enabled: hasSessionToken && Boolean(homeBannerCommunityId),
       communityId: homeBannerCommunityId,
       communityAvatarUrl: homeBannerCommunity?.image,

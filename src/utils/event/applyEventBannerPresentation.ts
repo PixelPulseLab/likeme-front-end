@@ -1,12 +1,7 @@
-import type {
-  CommunityEventBannerFromApi,
-  EventBannerData,
-  EventBannerVariant,
-  EventJoinModeFromApi,
-} from '@/types/event';
+import type { EventBannerFromApi, EventBannerData, EventBannerVariant, EventJoinModeFromApi } from '@/types/event';
 
-export type ApplyCommunityEventBannerPresentationParams = {
-  banner: CommunityEventBannerFromApi | null | undefined;
+export type ApplyEventBannerPresentationParams = {
+  banner: EventBannerFromApi | null | undefined;
   communityAvatarUrl?: string | null;
   communityProviderName?: string | null;
   defaultThumbnailUrl: string;
@@ -16,7 +11,7 @@ export type ApplyCommunityEventBannerPresentationParams = {
 
 function effectiveBannerVariant(
   apiVariant: EventBannerVariant,
-  apiStatus: CommunityEventBannerFromApi['status'],
+  apiStatus: EventBannerFromApi['status'],
   externalUrl: string | undefined,
   joinMode: EventJoinModeFromApi | undefined,
   effectiveHasProgramAccess: boolean,
@@ -35,13 +30,11 @@ function effectiveBannerVariant(
   return 'reminder';
 }
 
-function uiStatusFromApi(status: CommunityEventBannerFromApi['status']): EventBannerData['status'] {
+function uiStatusFromApi(status: EventBannerFromApi['status']): EventBannerData['status'] {
   return status === 'scheduled' ? 'Scheduled' : 'Live Now';
 }
 
-export function applyCommunityEventBannerPresentation(
-  params: ApplyCommunityEventBannerPresentationParams,
-): EventBannerData | undefined {
+export function applyEventBannerPresentation(params: ApplyEventBannerPresentationParams): EventBannerData | undefined {
   const {
     banner,
     communityAvatarUrl,

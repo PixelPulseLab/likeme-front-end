@@ -42,7 +42,7 @@ import {
   useAdvertisers,
   useProviderAds,
   useMenuItems,
-  useCommunityEventBanner,
+  useEventBanner,
 } from '@/hooks';
 import { useSetFloatingMenu } from '@/contexts/FloatingMenuContext';
 import { useTranslation } from '@/hooks/i18n';
@@ -273,7 +273,7 @@ const CommunityScreen: React.FC<Props> = ({ navigation }) => {
   const communityProviderName = advertiser?.name?.trim() ?? null;
 
   const { eventBanner, eventJoinUrl, closeEventSession, handleEventBannerPress, handleEventBannerCtaPress } =
-    useCommunityEventBanner({
+    useEventBanner({
       enabled: loadCommunityEvents,
       communityId: selectedCommunityId,
       communityAvatarUrl: selectedCommunity?.avatarUrl,

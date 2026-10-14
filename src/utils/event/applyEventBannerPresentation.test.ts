@@ -1,7 +1,7 @@
-import { applyCommunityEventBannerPresentation } from '@/utils/event/applyCommunityEventBannerPresentation';
-import type { CommunityEventBannerFromApi } from '@/types/event';
+import { applyEventBannerPresentation } from '@/utils/event/applyEventBannerPresentation';
+import type { EventBannerFromApi } from '@/types/event';
 
-const apiBanner: CommunityEventBannerFromApi = {
+const apiBanner: EventBannerFromApi = {
   id: 'evt-1',
   title: 'Sessão',
   host: 'Like:Me',
@@ -15,14 +15,14 @@ const apiBanner: CommunityEventBannerFromApi = {
   programProductId: 'product-1',
 };
 
-describe('applyCommunityEventBannerPresentation', () => {
+describe('applyEventBannerPresentation', () => {
   const defaultParams = {
     communityAvatarUrl: null,
     defaultThumbnailUrl: 'https://example.com/default-thumb.jpg',
   };
 
   it('aplica thumbnail e host da tela', () => {
-    const banner = applyCommunityEventBannerPresentation({
+    const banner = applyEventBannerPresentation({
       ...defaultParams,
       banner: apiBanner,
       communityAvatarUrl: 'https://example.com/avatar.jpg',
@@ -42,7 +42,7 @@ describe('applyCommunityEventBannerPresentation', () => {
   });
 
   it('promove variant purchase para reminder quando hasProgramAccess é forçado na tela', () => {
-    const banner = applyCommunityEventBannerPresentation({
+    const banner = applyEventBannerPresentation({
       ...defaultParams,
       banner: apiBanner,
       hasProgramAccess: true,
@@ -52,7 +52,7 @@ describe('applyCommunityEventBannerPresentation', () => {
   });
 
   it('promove variant purchase para live_join quando evento está ao vivo', () => {
-    const liveBanner: CommunityEventBannerFromApi = {
+    const liveBanner: EventBannerFromApi = {
       ...apiBanner,
       status: 'live',
       externalUrl: 'https://zoom.us/j/1',
@@ -60,7 +60,7 @@ describe('applyCommunityEventBannerPresentation', () => {
       variant: 'purchase',
     };
 
-    const banner = applyCommunityEventBannerPresentation({
+    const banner = applyEventBannerPresentation({
       ...defaultParams,
       banner: liveBanner,
       hasProgramAccess: true,
@@ -72,7 +72,7 @@ describe('applyCommunityEventBannerPresentation', () => {
 
   it('retorna undefined quando API não envia banner', () => {
     expect(
-      applyCommunityEventBannerPresentation({
+      applyEventBannerPresentation({
         ...defaultParams,
         banner: null,
       }),

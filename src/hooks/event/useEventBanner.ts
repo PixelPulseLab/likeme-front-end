@@ -4,7 +4,7 @@ import type { StackNavigationProp } from '@react-navigation/stack';
 import { eventService } from '@/services';
 import { logger } from '@/utils/logger';
 import { effectiveJoinMode } from '@/utils/event/effectiveJoinMode';
-import { applyCommunityEventBannerPresentation } from '@/utils/event/applyCommunityEventBannerPresentation';
+import { applyEventBannerPresentation } from '@/utils/event/applyEventBannerPresentation';
 import { useEventList } from '@/hooks/event/useEventList';
 import { navigateToActivitiesActives } from '@/utils/navigation/activitiesNavigation';
 import { prefetchActivityList } from '@/utils/activity/activityListCache';
@@ -31,7 +31,7 @@ function eventBannerIsOnToday(banner: EventBannerData): boolean {
   return date.toDateString() === new Date().toDateString();
 }
 
-export type UseCommunityEventBannerOptions = {
+export type UseEventBannerOptions = {
   enabled?: boolean;
   communityId?: string;
   communityAvatarUrl?: string | null;
@@ -44,7 +44,7 @@ export type UseCommunityEventBannerOptions = {
   onlyOnEventDay?: boolean;
 };
 
-export type UseCommunityEventBannerReturn = {
+export type UseEventBannerReturn = {
   eventBanner: EventBannerData | undefined;
   eventJoinUrl: string | null;
   closeEventSession: () => void;
@@ -53,7 +53,7 @@ export type UseCommunityEventBannerReturn = {
   refreshReminderState: () => Promise<void>;
 };
 
-export function useCommunityEventBanner(options: UseCommunityEventBannerOptions = {}): UseCommunityEventBannerReturn {
+export function useEventBanner(options: UseEventBannerOptions = {}): UseEventBannerReturn {
   const { t } = useTranslation();
   const {
     enabled = false,
@@ -90,7 +90,7 @@ export function useCommunityEventBanner(options: UseCommunityEventBannerOptions 
     if (!eventsEnabled) {
       return undefined;
     }
-    const presented = applyCommunityEventBannerPresentation({
+    const presented = applyEventBannerPresentation({
       banner: apiBanner,
       communityAvatarUrl,
       communityProviderName,
@@ -133,7 +133,7 @@ export function useCommunityEventBanner(options: UseCommunityEventBannerOptions 
       const mode = effectiveJoinMode(bannerData);
       const url = bannerData.externalUrl?.trim();
       if (mode === 'none' || !url) {
-        logger.warn('[useCommunityEventBanner] Live indisponível: URL ou modo de entrada ausente', {
+        logger.warn('[useEventBanner] Live indisponível: URL ou modo de entrada ausente', {
           eventId: bannerData.id,
           mode,
           hasUrl: Boolean(url),
@@ -148,16 +148,18 @@ export function useCommunityEventBanner(options: UseCommunityEventBannerOptions 
       }
       if (mode === 'external_browser') {
         Linking.openURL(url).catch((linkError: Error) => {
-          logger.error('[useCommunityEventBanner] Falha ao abrir link do evento', { url, cause: linkError });
+          logger.error('[useEventBanner] Falha ao abrir link do evento', { url, cause: linkError });
         });
         return;
       }
       if (mode === 'jitsi_embed') {
         try {
-          const payload = await eventService.fetchCommunityEventJoinPayload(url);
+          const payload = await eventService.fetchCommunityEventJoinPayload(url, {
+            eventId: bannerData.id,
+          });
           openLiveJitsiSession(payload);
         } catch (error) {
-          logger.error('[useCommunityEventBanner] Falha ao obter payload da live Jitsi', {
+          logger.error('[useEventBanner] Falha ao obter payload da live Jitsi', {
             url,
             eventId: bannerData.id,
             cause: error,
@@ -183,7 +185,7 @@ export function useCommunityEventBanner(options: UseCommunityEventBannerOptions 
       if (variant === 'purchase') {
         const productId = bannerData.programProductId?.trim();
         if (!productId || !navigation) {
-          logger.warn('[useCommunityEventBanner] PDP indisponível para banner de compra', {
+          logger.warn('[useEventBanner] PDP indisponível para banner de compra', {
             communityId: bannerData.communityId,
             programProductId: productId,
           });
@@ -232,7 +234,7 @@ export function useCommunityEventBanner(options: UseCommunityEventBannerOptions 
             );
           }
         } catch (error) {
-          logger.error('[useCommunityEventBanner] Falha ao registrar lembrete do evento', {
+          logger.error('[useEventBanner] Falha ao registrar lembrete do evento', {
             eventId: bannerData.id,
             communityId: bannerData.communityId,
             cause: error,

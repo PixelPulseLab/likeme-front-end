@@ -27,6 +27,11 @@ export type EventJoinMode = 'external_browser' | 'jitsi_embed' | 'meet_embed' | 
 /** Valor legado ainda aceito na API; tratado como `external_browser`. */
 export type EventJoinModeFromApi = EventJoinMode | 'zoom_sdk';
 
+export type CommunityEventJoinPayloadRequest = {
+  externalUrl: string;
+  eventId?: string;
+};
+
 export type CommunityEventJitsiJoinPayload = {
   provider: 'jitsi';
   externalUrl: string;
@@ -60,7 +65,7 @@ export interface EventBannerData {
 }
 
 /** Banner de evento retornado pela API (domínio; sem thumbnail da tela). */
-export interface CommunityEventBannerFromApi {
+export interface EventBannerFromApi {
   id: string;
   title: string;
   host: string;
@@ -98,7 +103,7 @@ export interface ListEventsApiResponse {
     events?: Event[];
     programProductId?: string | null;
     hasProgramAccess?: boolean;
-    banner?: CommunityEventBannerFromApi | null;
+    banner?: EventBannerFromApi | null;
   };
 }
 

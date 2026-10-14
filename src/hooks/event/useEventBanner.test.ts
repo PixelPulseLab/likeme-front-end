@@ -1,6 +1,6 @@
 import { act, renderHook } from '@testing-library/react-native';
 import { Alert, Linking } from 'react-native';
-import { useCommunityEventBanner } from '@/hooks/event/useCommunityEventBanner';
+import { useEventBanner } from '@/hooks/event/useEventBanner';
 import { useEventList } from '@/hooks/event/useEventList';
 import { eventService } from '@/services';
 import { prefetchActivityList } from '@/utils/activity/activityListCache';
@@ -47,7 +47,7 @@ const navigation = { navigate: jest.fn() } as never;
 const useEventListMock = useEventList as jest.Mock;
 const refreshEventsMock = jest.fn();
 
-describe('useCommunityEventBanner', () => {
+describe('useEventBanner', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     jest.spyOn(Linking, 'openURL').mockResolvedValue(undefined);
@@ -68,7 +68,7 @@ describe('useCommunityEventBanner', () => {
 
   it('handleEventBannerPress com live abre URL externa', async () => {
     const { result } = renderHook(() =>
-      useCommunityEventBanner({
+      useEventBanner({
         enabled: true,
         communityId: 'community-1',
         navigation,
@@ -95,7 +95,7 @@ describe('useCommunityEventBanner', () => {
 
   it('variant purchase navega para PDP', async () => {
     const { result } = renderHook(() =>
-      useCommunityEventBanner({
+      useEventBanner({
         enabled: true,
         communityId: 'community-1',
         navigation,
@@ -125,7 +125,7 @@ describe('useCommunityEventBanner', () => {
     });
 
     const { result } = renderHook(() =>
-      useCommunityEventBanner({
+      useEventBanner({
         enabled: true,
         communityId: 'community-1',
         hasProgramAccess: true,
@@ -161,7 +161,7 @@ describe('useCommunityEventBanner', () => {
 
   it('CTA com reminder_created navega para Minhas atividades', async () => {
     const { result } = renderHook(() =>
-      useCommunityEventBanner({
+      useEventBanner({
         enabled: true,
         communityId: 'community-1',
         hasProgramAccess: true,
@@ -191,7 +191,7 @@ describe('useCommunityEventBanner', () => {
 
   it('card com reminder_created abre o link do evento', async () => {
     const { result } = renderHook(() =>
-      useCommunityEventBanner({
+      useEventBanner({
         enabled: true,
         communityId: 'community-1',
         hasProgramAccess: true,

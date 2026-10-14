@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { eventService } from '@/services';
-import type { CommunityEventBannerFromApi, Event } from '@/types/event';
+import type { EventBannerFromApi, Event } from '@/types/event';
 import { getReadableErrorMessage } from '@/utils/error/readableErrorMessage';
 
 export interface UseEventListOptions {
@@ -10,7 +10,7 @@ export interface UseEventListOptions {
 
 export interface UseEventListReturn {
   events: Event[];
-  banner: CommunityEventBannerFromApi | null;
+  banner: EventBannerFromApi | null;
   programProductId: string | null;
   hasProgramAccess: boolean;
   loading: boolean;
@@ -21,7 +21,7 @@ export interface UseEventListReturn {
 export const useEventList = (options: UseEventListOptions = {}): UseEventListReturn => {
   const { enabled = true, communityId } = options;
   const [events, setEvents] = useState<Event[]>([]);
-  const [banner, setBanner] = useState<CommunityEventBannerFromApi | null>(null);
+  const [banner, setBanner] = useState<EventBannerFromApi | null>(null);
   const [programProductId, setProgramProductId] = useState<string | null>(null);
   const [hasProgramAccess, setHasProgramAccess] = useState(false);
   const [loading, setLoading] = useState(false);

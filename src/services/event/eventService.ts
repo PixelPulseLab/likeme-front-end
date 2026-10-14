@@ -1,6 +1,7 @@
 import apiClient from '../infrastructure/apiClient';
 import type {
   CommunityEventJoinPayloadApiResponse,
+  CommunityEventJoinPayloadRequest,
   CommunityEventJitsiJoinPayload,
   ListEventsApiResponse,
   RegisterScheduledCommunityEventReminderApiResponse,
@@ -74,11 +75,19 @@ class EventService {
     }
   }
 
-  async fetchCommunityEventJoinPayload(externalUrl: string): Promise<CommunityEventJitsiJoinPayload> {
+  async fetchCommunityEventJoinPayload(
+    externalUrl: string,
+    options?: { eventId?: string },
+  ): Promise<CommunityEventJitsiJoinPayload> {
     const trimmedUrl = externalUrl.trim();
+    const eventId = options?.eventId?.trim();
+    const body: CommunityEventJoinPayloadRequest = { externalUrl: trimmedUrl };
+    if (eventId) {
+      body.eventId = eventId;
+    }
     const response = await apiClient.post<CommunityEventJoinPayloadApiResponse>(
       `${this.eventsEndpoint}/join-payload`,
-      { externalUrl: trimmedUrl },
+      body,
       true,
     );
     const payload = response.data;
