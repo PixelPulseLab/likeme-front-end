@@ -9,9 +9,11 @@ type LiveJitsiSessionContextValue = {
 };
 
 const LiveJitsiSessionContext = createContext<LiveJitsiSessionContextValue | null>(null);
+const LiveJitsiSessionOpenContext = createContext(false);
 
 export const LiveJitsiSessionProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [session, setSession] = useState<CommunityEventJitsiJoinPayload | null>(null);
+  const isLiveJitsiSessionOpen = session !== null;
 
   const openLiveJitsiSession = useCallback((payload: CommunityEventJitsiJoinPayload) => {
     setSession(payload);
@@ -28,10 +30,12 @@ export const LiveJitsiSessionProvider: React.FC<{ children: React.ReactNode }> =
 
   return (
     <LiveJitsiSessionContext.Provider value={value}>
-      <View style={styles.root}>
-        {children}
-        {session ? <EventJitsiLiveSession session={session} onClose={closeLiveJitsiSession} /> : null}
-      </View>
+      <LiveJitsiSessionOpenContext.Provider value={isLiveJitsiSessionOpen}>
+        <View style={styles.root}>
+          {children}
+          {session ? <EventJitsiLiveSession session={session} onClose={closeLiveJitsiSession} /> : null}
+        </View>
+      </LiveJitsiSessionOpenContext.Provider>
     </LiveJitsiSessionContext.Provider>
   );
 };
@@ -48,4 +52,8 @@ export function useLiveJitsiSession(): LiveJitsiSessionContextValue {
     throw new Error('useLiveJitsiSession must be used within LiveJitsiSessionProvider');
   }
   return context;
+}
+
+export function useIsLiveJitsiSessionOpen(): boolean {
+  return useContext(LiveJitsiSessionOpenContext);
 }

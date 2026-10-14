@@ -1,25 +1,22 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ActivityIndicator, Animated, Easing, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Header } from '@/components/ui/layout';
 import { COLORS } from '@/constants';
 import type { CommunityEventJitsiJoinPayload } from '@/types/event';
 import { logger } from '@/utils/logger';
+import {
+  getCachedJitsiMeetingExport,
+  jitsiMeetingLoadErrorDetail,
+  loadJitsiMeetingExport,
+  type JitsiMeetingExport,
+} from '@/infrastructure/jitsi/jitsiMeetingModuleLoader';
 import { isJitsiNativeSdkLinked } from '@/utils/infrastructure/jitsiNativeSdkModule';
 
 export type EventJitsiLiveSessionProps = {
   session: CommunityEventJitsiJoinPayload;
   onClose: () => void;
 };
-
-type JitsiMeetingComponent = React.ComponentType<{
-  room: string;
-  serverURL: string;
-  token?: string;
-  userInfo?: { avatarURL: string; displayName: string; email: string };
-  config?: Record<string, unknown>;
-  flags?: Record<string, unknown>;
-  eventListeners?: Record<string, (...args: unknown[]) => void>;
-  style?: object;
-}>;
 
 const JITSI_DISABLED_NOTIFICATION_SOUNDS = [
   'ASKED_TO_UNMUTE_SOUND',
@@ -61,6 +58,9 @@ const JITSI_VIEWER_FLAGS: Record<string, unknown> = {
   'call-integration.enabled': false,
   'ios.screensharing.enabled': false,
 };
+
+const LIVE_SESSION_OVERLAY_Z_INDEX = 11000;
+const LIVE_SESSION_FADE_MS = 220;
 
 type LivePlayerMode = 'loading' | 'ready' | 'error';
 
@@ -104,15 +104,54 @@ const LOAD_FAILED_MESSAGE =
 
 export const EventJitsiLiveSession: React.FC<EventJitsiLiveSessionProps> = ({ session, onClose }) => {
   const nativeLinked = useMemo(() => isJitsiNativeSdkLinked(), []);
-  const [playerMode, setPlayerMode] = useState<LivePlayerMode>(() => (nativeLinked ? 'loading' : 'error'));
+  const [playerMode, setPlayerMode] = useState<LivePlayerMode>(() => {
+    if (!nativeLinked) {
+      return 'error';
+    }
+    if (getCachedJitsiMeetingExport()) {
+      return 'ready';
+    }
+    return 'loading';
+  });
   const [errorMessage, setErrorMessage] = useState<string>(() => (nativeLinked ? '' : NATIVE_MODULE_MISSING_MESSAGE));
-  const [JitsiMeetingCmp, setJitsiMeetingCmp] = useState<JitsiMeetingComponent | null>(null);
+  const [JitsiMeetingCmp, setJitsiMeetingCmp] = useState<JitsiMeetingExport | null>(() =>
+    getCachedJitsiMeetingExport(),
+  );
+  const overlayOpacity = useRef(new Animated.Value(0)).current;
+  const isClosingRef = useRef(false);
+
+  const runCloseAnimation = useCallback(() => {
+    if (isClosingRef.current) {
+      return;
+    }
+    isClosingRef.current = true;
+    Animated.timing(overlayOpacity, {
+      toValue: 0,
+      duration: LIVE_SESSION_FADE_MS,
+      easing: Easing.out(Easing.quad),
+      useNativeDriver: true,
+    }).start(() => {
+      onClose();
+    });
+  }, [onClose, overlayOpacity]);
+
+  useEffect(() => {
+    isClosingRef.current = false;
+    overlayOpacity.setValue(0);
+    Animated.timing(overlayOpacity, {
+      toValue: 1,
+      duration: LIVE_SESSION_FADE_MS,
+      easing: Easing.out(Easing.quad),
+      useNativeDriver: true,
+    }).start();
+  }, [session.roomName, session.serverURL, overlayOpacity]);
 
   const markLoadFailed = useCallback(
     (cause: unknown, context: string) => {
       logger.error(`[EventJitsiLiveSession] ${context}`, {
         roomName: session.roomName,
-        cause,
+        detail: jitsiMeetingLoadErrorDetail(cause),
+        stack: cause instanceof Error ? cause.stack : undefined,
       });
       setErrorMessage(LOAD_FAILED_MESSAGE);
       setPlayerMode('error');
@@ -125,18 +164,17 @@ export const EventJitsiLiveSession: React.FC<EventJitsiLiveSessionProps> = ({ se
       return;
     }
 
+    if (getCachedJitsiMeetingExport()) {
+      return;
+    }
+
     let cancelled = false;
-    void import('@jitsi/react-native-sdk')
-      .then((mod) => {
+    void loadJitsiMeetingExport()
+      .then((meetingExport) => {
         if (cancelled) {
           return;
         }
-        const meetingExport = mod.JitsiMeeting ?? mod.default?.JitsiMeeting;
-        if (meetingExport == null) {
-          markLoadFailed(new Error('JitsiMeeting export inválido'), 'Export JitsiMeeting ausente');
-          return;
-        }
-        setJitsiMeetingCmp(() => meetingExport as JitsiMeetingComponent);
+        setJitsiMeetingCmp(() => meetingExport);
         setPlayerMode('ready');
       })
       .catch((cause) => {
@@ -160,13 +198,13 @@ export const EventJitsiLiveSession: React.FC<EventJitsiLiveSessionProps> = ({ se
   const eventListeners = useMemo(
     () => ({
       onReadyToClose: () => {
-        onClose();
+        runCloseAnimation();
       },
       onConferenceLeft: () => {
-        onClose();
+        runCloseAnimation();
       },
     }),
-    [onClose],
+    [runCloseAnimation],
   );
 
   const userInfo = useMemo(() => {
@@ -211,83 +249,67 @@ export const EventJitsiLiveSession: React.FC<EventJitsiLiveSessionProps> = ({ se
     return { meetingRoom: room, meetingServerUrl: normalizedServer };
   }, [session.roomName, session.serverURL]);
 
-  const header = (
-    <View style={styles.header}>
-      <TouchableOpacity onPress={onClose} style={styles.closeButton} activeOpacity={0.8}>
-        <Text style={styles.closeButtonText}>Fechar</Text>
-      </TouchableOpacity>
-    </View>
+  const likemeHeader = (
+    <SafeAreaView edges={['top']} style={styles.likemeHeaderSafeArea}>
+      <Header showBackButton onBackPress={runCloseAnimation} showMenuWithAvatar={false} />
+    </SafeAreaView>
   );
 
-  const shell = (content: React.ReactNode) => <View style={styles.sessionShell}>{content}</View>;
+  const shell = (content: React.ReactNode) => (
+    <Animated.View style={[styles.sessionShell, { opacity: overlayOpacity }]}>
+      {likemeHeader}
+      <View style={styles.playerHost}>{content}</View>
+    </Animated.View>
+  );
 
   if (playerMode === 'error') {
     return shell(
-      <>
-        {header}
-        <View style={styles.messageContainer}>
-          <Text style={styles.errorTitle}>Live indisponível</Text>
-          <Text style={styles.errorBody}>{errorMessage}</Text>
-        </View>
-      </>,
+      <View style={styles.messageContainer}>
+        <Text style={styles.errorTitle}>Live indisponível</Text>
+        <Text style={styles.errorBody}>{errorMessage}</Text>
+      </View>,
     );
   }
 
   if (playerMode === 'loading' || !JitsiMeetingCmp) {
     return shell(
-      <>
-        {header}
-        <View style={styles.loaderContainer}>
-          <ActivityIndicator size='large' />
-        </View>
-      </>,
+      <View style={styles.loaderContainer}>
+        <ActivityIndicator size='large' />
+      </View>,
     );
   }
 
   const Meeting = JitsiMeetingCmp;
 
   return shell(
-    <>
-      {header}
-      <JitsiMeetingErrorBoundary onFailure={onMeetingRenderFailure}>
-        <Meeting
-          room={meetingRoom}
-          serverURL={meetingServerUrl}
-          token={session.token}
-          userInfo={userInfo}
-          config={JITSI_VIEWER_CONFIG}
-          flags={JITSI_VIEWER_FLAGS}
-          eventListeners={eventListeners}
-          style={styles.meeting}
-        />
-      </JitsiMeetingErrorBoundary>
-    </>,
+    <JitsiMeetingErrorBoundary onFailure={onMeetingRenderFailure}>
+      <Meeting
+        room={meetingRoom}
+        serverURL={meetingServerUrl}
+        token={session.token}
+        userInfo={userInfo}
+        config={JITSI_VIEWER_CONFIG}
+        flags={JITSI_VIEWER_FLAGS}
+        eventListeners={eventListeners}
+        style={styles.meeting}
+      />
+    </JitsiMeetingErrorBoundary>,
   );
 };
 
 const styles = StyleSheet.create({
   sessionShell: {
     ...StyleSheet.absoluteFill,
-    zIndex: 1000,
-    elevation: 1000,
+    zIndex: LIVE_SESSION_OVERLAY_Z_INDEX,
+    elevation: LIVE_SESSION_OVERLAY_Z_INDEX,
+    backgroundColor: COLORS.BACKGROUND_SECONDARY,
+  },
+  likemeHeaderSafeArea: {
+    backgroundColor: COLORS.BACKGROUND_SECONDARY,
+  },
+  playerHost: {
+    flex: 1,
     backgroundColor: COLORS.WHITE,
-  },
-  header: {
-    height: 56,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#DADADA',
-    justifyContent: 'center',
-    paddingHorizontal: 16,
-  },
-  closeButton: {
-    alignSelf: 'flex-start',
-    paddingVertical: 8,
-    paddingRight: 8,
-  },
-  closeButtonText: {
-    fontSize: 16,
-    color: '#001137',
-    fontWeight: '600',
   },
   meeting: {
     flex: 1,

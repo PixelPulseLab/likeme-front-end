@@ -1,6 +1,7 @@
 import React, { createContext, useCallback, useContext, useMemo, useState } from 'react';
 import { StyleSheet, View, type ImageSourcePropType } from 'react-native';
 import { FloatingMenu } from '@/components/ui/menu';
+import { useIsLiveJitsiSessionOpen } from '@/contexts/LiveJitsiSessionContext';
 import { useRootNavigationState } from '@/contexts/RootNavigationStateContext';
 import { getSelectedIdFromNavState, shouldShowFloatingMenuByRoute } from '@/utils/floatingMenuRoutePolicy';
 
@@ -52,6 +53,7 @@ const FloatingMenuStateContext = createContext<StateValue>(floatingMenuStateFall
 
 export const FloatingMenuProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const rootNavigationState = useRootNavigationState();
+  const isLiveJitsiSessionOpen = useIsLiveJitsiSessionOpen();
   const [menu, setMenuState] = useState<MenuState>(null);
 
   const showMenuByRoute = useMemo(
@@ -73,7 +75,7 @@ export const FloatingMenuProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
   const effectiveSelectedId = selectedIdFromRoute ?? menu?.selectedId;
 
-  const showMenu = menu && showMenuByRoute;
+  const showMenu = menu && showMenuByRoute && !isLiveJitsiSessionOpen;
   const isFloatingMenuVisible = Boolean(showMenu);
 
   const actionsValue = useMemo<ActionsValue>(() => ({ setMenu, clearMenu }), [setMenu, clearMenu]);
