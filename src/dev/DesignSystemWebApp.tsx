@@ -25,11 +25,17 @@ type EventBannerQueryPreviewParams = {
   thumbnail?: string;
 };
 
+function webLocationSearch(): string | null {
+  const search = (globalThis as { location?: { search?: string } }).location?.search;
+  return typeof search === 'string' ? search : null;
+}
+
 function readEventBannerQueryPreviewParams(): EventBannerQueryPreviewParams | null {
-  if (typeof window === 'undefined') {
+  const locationSearch = webLocationSearch();
+  if (!locationSearch) {
     return null;
   }
-  const params = new URLSearchParams(window.location.search);
+  const params = new URLSearchParams(locationSearch);
   if (params.get('preview') !== 'event-banner') {
     return null;
   }
