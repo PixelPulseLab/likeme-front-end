@@ -36,6 +36,13 @@ jest.mock('@/utils/navigation/productNavigation', () => ({
   navigateToProductDetailsScreen: jest.fn(),
 }));
 
+jest.mock('@/contexts/LiveJitsiSessionContext', () => ({
+  useLiveJitsiSession: () => ({
+    openLiveJitsiSession: jest.fn(),
+    closeLiveJitsiSession: jest.fn(),
+  }),
+}));
+
 const navigation = { navigate: jest.fn() } as never;
 const useEventListMock = useEventList as jest.Mock;
 const refreshEventsMock = jest.fn();
