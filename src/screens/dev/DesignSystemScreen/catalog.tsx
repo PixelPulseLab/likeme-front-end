@@ -11,7 +11,32 @@ import SearchBar from '@/components/ui/inputs/SearchBar';
 import TextInput from '@/components/ui/inputs/TextInput';
 import ToggleTabs from '@/components/ui/tabs/ToggleTabs';
 import { COLORS, TYPOGRAPHY } from '@/constants';
+import EventBanner from '@/components/sections/community/EventBanner';
+import type { EventBannerData } from '@/types/event';
 import { styles } from './styles';
+
+const noopBannerPress = () => undefined;
+
+const EVENT_BANNER_DEMO_PURCHASE: EventBannerData = {
+  id: 'ds-banner-purchase',
+  title: 'Yoga ao vivo',
+  host: 'Dr. Ana',
+  status: 'Scheduled',
+  startTime: '2026-06-30T18:00:00.000Z',
+  endTime: '2026-06-30T19:00:00.000Z',
+  thumbnail: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&w=400&q=80',
+  variant: 'purchase',
+};
+
+const EVENT_BANNER_DEMO_LIVE_JOIN: EventBannerData = {
+  ...EVENT_BANNER_DEMO_PURCHASE,
+  id: 'ds-banner-live',
+  status: 'Live Now',
+  variant: 'live_join',
+  joinMode: 'jitsi_embed',
+  externalUrl: 'https://8x8.vc/demo',
+  provider: 'jitsi',
+};
 
 const COLOR_SWATCHES = [
   { name: 'Primary', value: COLORS.PRIMARY.PURE },
@@ -144,6 +169,13 @@ export function CatalogScroll({ bottomInset }: { bottomInset: number }) {
           secondaryButtonLabel='Agora não'
           secondaryButtonOnPress={() => undefined}
         />
+      </CatalogSection>
+
+      <CatalogSection title='EventBanner'>
+        <View style={styles.stack}>
+          <EventBanner event={EVENT_BANNER_DEMO_PURCHASE} onPress={noopBannerPress} />
+          <EventBanner event={EVENT_BANNER_DEMO_LIVE_JOIN} onPress={noopBannerPress} />
+        </View>
       </CatalogSection>
     </ScrollView>
   );
