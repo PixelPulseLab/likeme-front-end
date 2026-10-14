@@ -35,6 +35,9 @@
     "useDefineForClassFields": true,
     "paths": {
       "@jitsi/react-native-sdk": ["types/jitsi-react-native-sdk.d.ts"],
+      "@jitsi/react-native-sdk/react/features/base/lib-jitsi-meet/functions.any": [
+        "types/jitsi-lib-jitsi-meet-functions-any.d.ts"
+      ],
       "@/*": ["src/*"],
       "@/assets": ["src/assets/index"],
       "@/assets/auth": ["src/assets/auth"],

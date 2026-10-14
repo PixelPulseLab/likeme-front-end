@@ -1,8 +1,23 @@
 /* eslint-disable no-new-func -- config.js da 8x8 é script executável; o loadConfig worklet do SDK quebra no Metro */
-import { loadScript } from '@jitsi/react-native-sdk/react/features/base/util/loadScript.native';
-import logger from '@jitsi/react-native-sdk/react/features/base/lib-jitsi-meet/logger';
-
 export * from '@jitsi/react-native-sdk/react/features/base/lib-jitsi-meet/functions.any';
+
+async function loadScript(url: string, timeoutMs: number, skipEval: boolean): Promise<unknown> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const response = await fetch(url, { signal: controller.signal });
+    if (response.status !== 200) {
+      throw new Error(`loadScript error: ${response.statusText}`);
+    }
+    const text = await response.text();
+    if (skipEval) {
+      return text;
+    }
+    throw new Error('loadScript skipEval=false não suportado no stub LikeMe');
+  } finally {
+    clearTimeout(timer);
+  }
+}
 
 function parseConfigText(configText: string): Record<string, unknown> {
   const runConfigScript = new Function(
@@ -21,10 +36,9 @@ export async function loadConfig(url: string): Promise<object> {
   try {
     const configText = await loadScript(url, 10 * 1000, true);
     const config = parseConfigText(String(configText));
-    logger.info(`Config loaded from ${url}`);
     return config;
   } catch (err) {
-    logger.error(`Failed to load config from ${url}`, err);
+    console.error(`[Jitsi] Failed to load config from ${url}`, err);
     throw err;
   }
 }
