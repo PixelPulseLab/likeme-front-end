@@ -1,0 +1,11 @@
+node_modules
+ios
+android
+.git
+.maestro
+dist
+.vercel/output
+*.apk
+*.aab
+coverage
+.expo
