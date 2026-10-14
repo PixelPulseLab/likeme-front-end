@@ -17,6 +17,7 @@ module.exports = {
     },
   },
   rules: {
+    '@typescript-eslint/no-require-imports': 'off',
     curly: ['warn', 'multi-line'],
     'react-hooks/exhaustive-deps': 'warn',
     'jsx-quotes': ['warn', 'prefer-single'],
