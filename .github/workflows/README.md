@@ -85,7 +85,7 @@ Depois edite só `app.version.json` e rode `npm run version:sync` (o CI roda iss
 
 1. `npm ci` (postinstall aplica patches + Jitsi prepare)
 2. `version:sync`, keystore
-3. Validar/chmod `hermesc` (linux64)
+3. Validar/chmod `hermesc` em `node_modules/hermes-compiler/hermesc/linux64-bin/` (RN 0.85)
 4. `:app:createBundleReleaseJsAndAssets` (serializado)
 5. `:app:bundleRelease` (assinatura via secrets)
 

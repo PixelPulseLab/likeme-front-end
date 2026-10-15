@@ -147,7 +147,7 @@ jobs:
       - name: Preparar Hermes e memória (release Android)
         run: |
           set -euo pipefail
-          HERMESC="$(node --print "require('path').join(require('path').dirname(require.resolve('react-native/package.json')), 'sdks/hermesc/linux64-bin/hermesc')")"
+          HERMESC="$(node --print "require('path').join(require('path').dirname(require.resolve('hermes-compiler/package.json')), 'hermesc', 'linux64-bin', 'hermesc')")"
           if [ ! -f "$HERMESC" ]; then
             echo "hermesc não encontrado: $HERMESC"
             ls -la "$(dirname "$HERMESC")" || true
