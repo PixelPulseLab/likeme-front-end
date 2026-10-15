@@ -1,15 +1,23 @@
 {
-  "version": "1.21.3",
-  "releasedAt": "2026-10-08",
+  "version": "1.23.0",
+  "releasedAt": "2026-10-15",
   "android": {
-    "versionCode": 273
+    "versionCode": 274
   },
   "ios": {
-    "buildNumber": 49
+    "buildNumber": 50
   },
   "changelog": {
+    "added": [
+      "Lives de eventos da comunidade abrem dentro do app com vídeo nativo (Jitsi)",
+      "Após criar lembrete de live virtual, opção de incluir o evento na agenda do celular"
+    ],
+    "changed": [
+      "Banner de eventos da comunidade com tipografia alinhada ao design do app",
+      "Entrada na live usa o evento informado pela API, sem depender de heurística de URL"
+    ],
     "fixed": [
-      "Depois do login com convite, a página do programa abre no onboarding"
+      "Experiência de carregamento da live com header Like:Me e transição mais suave"
     ]
   }
 }

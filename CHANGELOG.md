@@ -438,3 +438,16 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 
 ### Corrigido
 - Depois do login com convite, a página do programa abre no onboarding
+
+## [1.23.0] - 2026-10-15
+
+### Adicionado
+- Lives de eventos da comunidade abrem dentro do app com vídeo nativo (Jitsi)
+- Após criar lembrete de live virtual, opção de incluir o evento na agenda do celular
+
+### Alterado
+- Banner de eventos da comunidade com tipografia alinhada ao design do app
+- Entrada na live usa o evento informado pela API, sem depender de heurística de URL
+
+### Corrigido
+- Experiência de carregamento da live com header Like:Me e transição mais suave
