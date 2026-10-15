@@ -126,17 +126,37 @@ jobs:
           ANDROID_KEYSTORE_KEY_ALIAS: ${{ secrets.ANDROID_KEYSTORE_KEY_ALIAS }}
         run: bash scripts/ci-android-release-signing.sh
 
+      - name: Preparar Hermes e memória (release Android)
+        run: |
+          set -euo pipefail
+          HERMESC="$(node --print "require('path').join(require('path').dirname(require.resolve('react-native/package.json')), 'sdks/hermesc/linux64-bin/hermesc')")"
+          if [ ! -f "$HERMESC" ]; then
+            echo "hermesc não encontrado: $HERMESC"
+            ls -la "$(dirname "$HERMESC")" || true
+            exit 1
+          fi
+          chmod +x "$HERMESC"
+          "$HERMESC" -version
+
       - name: Build AAB (bundleRelease)
         env:
           ANDROID_KEYSTORE_STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_STORE_PASSWORD }}
           ANDROID_KEYSTORE_KEY_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_KEY_PASSWORD }}
           ANDROID_KEYSTORE_KEY_ALIAS: ${{ secrets.ANDROID_KEYSTORE_KEY_ALIAS }}
           REVOPUSH_DEPLOYMENT_KEY_ANDROID_PRODUCTION: ${{ secrets.REVOPUSH_DEPLOYMENT_KEY_ANDROID_PRODUCTION }}
+          GRADLE_OPTS: '-Dorg.gradle.jvmargs=-Xmx4096m -XX:MaxMetaspaceSize=512m'
         run: |
           set -euo pipefail
           KEY_ALIAS="${ANDROID_KEYSTORE_KEY_ALIAS:-likeme-key-alias}"
           echo "Gradle key.alias=${KEY_ALIAS}"
-          cd android && ./gradlew :app:bundleRelease \
+          cd android
+          GRADLE_RELEASE_FLAGS=(
+            -Dorg.gradle.parallel=false
+            -Dorg.gradle.workers.max=2
+            --no-daemon
+          )
+          ./gradlew :app:createBundleReleaseJsAndAssets "${GRADLE_RELEASE_FLAGS[@]}"
+          ./gradlew :app:bundleRelease "${GRADLE_RELEASE_FLAGS[@]}" \
             -Pandroid.injected.signing.store.file=$PWD/app/release.keystore \
             -Pandroid.injected.signing.store.password="$ANDROID_KEYSTORE_STORE_PASSWORD" \
             -Pandroid.injected.signing.key.alias="$KEY_ALIAS" \
@@ -183,7 +203,17 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci
+        run: |
+          set -euo pipefail
+          git config --global http.postBuffer 524288000
+          for attempt in 1 2 3; do
+            if npm ci; then
+              exit 0
+            fi
+            echo "npm ci falhou (tentativa ${attempt}/3); aguardando antes de retry..."
+            sleep 30
+          done
+          exit 1
 
       - name: Sincronizar versão nativa (app.version.json → iOS)
         run: npm run version:sync
