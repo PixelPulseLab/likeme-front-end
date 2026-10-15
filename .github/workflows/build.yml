@@ -136,6 +136,12 @@ jobs:
       - name: Sincronizar versão nativa (app.version.json → Gradle)
         run: npm run version:sync
 
+      - name: Prebuild Android (Revopush / CodePush nativo)
+        env:
+          REVOPUSH_DEPLOYMENT_KEY_IOS_PRODUCTION: ${{ secrets.REVOPUSH_DEPLOYMENT_KEY_IOS_PRODUCTION }}
+          REVOPUSH_DEPLOYMENT_KEY_ANDROID_PRODUCTION: ${{ secrets.REVOPUSH_DEPLOYMENT_KEY_ANDROID_PRODUCTION }}
+        run: bash scripts/ci-revopush-prebuild.sh android
+
       - name: Validar e decodificar keystore Android
         env:
           ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}

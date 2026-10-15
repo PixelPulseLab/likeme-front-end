@@ -1,7 +1,6 @@
 <resources>
   <string name="app_name">LikeMe</string>
-  <string name="CodePushDeploymentKey" translatable="false">hRngPuuVHhJCDZ8uFt33LfUELW7VN1_zqwVbNl</string>
+  <string name="CodePushDeploymentKey" translatable="false">y</string>
   <string name="CodePushServerUrl" translatable="false">https://api.revopush.org</string>
   <string name="expo_splash_screen_resize_mode" translatable="false">contain</string>
-  <string name="expo_splash_screen_status_bar_translucent" translatable="false">false</string>
 </resources>
