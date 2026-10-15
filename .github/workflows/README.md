@@ -66,7 +66,7 @@ Depois edite só `app.version.json` e rode `npm run version:sync` (o CI roda iss
 
 | Fase | O que acontece | Falha típica | Mitigação no repo |
 |------|----------------|--------------|-------------------|
-| `npm ci` → `postinstall` | Patches RN/Jitsi + `prepare_sdk.js` (Android/iOS assets do SDK) | `prepare_sdk` incompleto | Falha em CI se `prepare_sdk.js` ≠ 0 |
+| `npm ci` → `postinstall` | Patches RN/Jitsi; `prepare_sdk.js` só se SDK veio do monorepo jitsi-meet | `ENOENT ../images` no npm registry | `run-jitsi-prepare-sdk.js` pula se `images/` + módulos Android já existem no pacote |
 | Android Gradle | `@jitsi/react-native-sdk` exige `rootProject.ext.gradlePluginVersion` | Config project | `android/build.gradle` `ext { gradlePluginVersion, compileSdk… }` |
 | Android Kotlin | `react-native-splash-view` (dep Jitsi) + RN 0.85 | `currentActivity` | `patch-react-native-splash-view-android.js` no postinstall |
 | Android bundle | Metro ~5k módulos + Hermes bytecode | `hermesc` / OOM no runner | Bundle isolado, Gradle serializado, `NODE_OPTIONS` alto |
