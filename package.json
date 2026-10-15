@@ -67,7 +67,7 @@
     "revopush:release:ios": "bash scripts/revopush-release.sh ios",
     "revopush:release:android": "bash scripts/revopush-release.sh android",
     "revopush:release:all": "bash scripts/revopush-release.sh ios Production && bash scripts/revopush-release.sh android Production",
-    "postinstall": "node scripts/ensure-onboarding-debug.cjs && node scripts/patch-slider-podspec.js && node scripts/patch-rn-third-party-components-provider.js && node scripts/patch-expo-js-logger.js && node scripts/patch-react-native-sound-ios.js && node scripts/run-jitsi-prepare-sdk.js && node scripts/patch-jitsi-load-config-native.js && if [ -d ios ] && [ -f ios/Podfile ] && [ \"$SKIP_IOS_POD_INSTALL\" != \"true\" ]; then cd ios && pod install && cd ..; fi",
+    "postinstall": "node scripts/ensure-onboarding-debug.cjs && node scripts/patch-slider-podspec.js && node scripts/patch-rn-third-party-components-provider.js && node scripts/patch-expo-js-logger.js && node scripts/patch-react-native-sound-ios.js && node scripts/run-jitsi-prepare-sdk.js && node scripts/patch-jitsi-load-config-native.js && node scripts/patch-react-native-splash-view-android.js && if [ -d ios ] && [ -f ios/Podfile ] && [ \"$SKIP_IOS_POD_INSTALL\" != \"true\" ]; then cd ios && pod install && cd ..; fi",
     "prepare": "husky || true",
     "start:staging": "ENV_FILE_PATH=$PWD/.env.staging npx expo start --dev-client --reset-cache --clear",
     "ios:staging": "ENV_FILE_PATH=$PWD/.env.staging npx expo run:ios",
