@@ -61,3 +61,38 @@ Depois edite só `app.version.json` e rode `npm run version:sync` (o CI roda iss
 5. **Build iOS** — Xcode 26, archive + export IPA
 6. **Submit Android** — faixa `internal` na Play Store
 7. **iOS App Store Pipeline** — validate + upload via ASC API
+
+## Pontos frágeis (release 1.23+ / Jitsi)
+
+| Fase | O que acontece | Falha típica | Mitigação no repo |
+|------|----------------|--------------|-------------------|
+| `npm ci` → `postinstall` | Patches RN/Jitsi + `prepare_sdk.js` (Android/iOS assets do SDK) | `prepare_sdk` incompleto | Falha em CI se `prepare_sdk.js` ≠ 0 |
+| Android Gradle | `@jitsi/react-native-sdk` exige `rootProject.ext.gradlePluginVersion` | Config project | `android/build.gradle` `ext { gradlePluginVersion, compileSdk… }` |
+| Android Kotlin | `react-native-splash-view` (dep Jitsi) + RN 0.85 | `currentActivity` | `patch-react-native-splash-view-android.js` no postinstall |
+| Android bundle | Metro ~5k módulos + Hermes bytecode | `hermesc` / OOM no runner | Bundle isolado, Gradle serializado, `NODE_OPTIONS` alto |
+| iOS `npm ci` | Antes: `pod install` no postinstall **e** de novo após prebuild | Clone git Firebase (`curl 56`) | `SKIP_IOS_POD_INSTALL=true` no job iOS; `ios:pod-install:store` só após `ci-revopush-prebuild.sh` |
+| Gate de qualidade | pre-push: `version:check` + testes + `npm run build` | TS quebrado só na loja | CI **Test & Lint** roda `npm run build` (tsc + lint) |
+
+### Ordem iOS no CI (importante)
+
+1. `npm ci` (sem CocoaPods)
+2. `version:sync`, certificados, ASC key, perfil
+3. `ci-revopush-prebuild.sh ios` — `expo prebuild --no-install`
+4. `npm run ios:pod-install:store`
+5. Xcode build → archive → export
+
+### Ordem Android no CI
+
+1. `npm ci` (postinstall aplica patches + Jitsi prepare)
+2. `version:sync`, keystore
+3. Validar/chmod `hermesc` (linux64)
+4. `:app:createBundleReleaseJsAndAssets` (serializado)
+5. `:app:bundleRelease` (assinatura via secrets)
+
+### O pre-push **não** compila nativo
+
+Hook Husky: versão, Jest, typecheck + lint. **Não** roda Gradle nem Xcode. Erros nativos só aparecem no job **Build Android / Build iOS**. Após mudar deps nativas (Jitsi, Firebase, Expo SDK), vale `./gradlew :app:bundleRelease` local ou re-run do workflow.
+
+### Upgrades de `@jitsi/react-native-sdk` / React Native
+
+Revisar: README do SDK (Android `gradlePluginVersion`, permissões), scripts em `scripts/patch-*`, e se novos módulos Kotlin usam APIs removidas do RN (padrão `reactApplicationContext.currentActivity`).

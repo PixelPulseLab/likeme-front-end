@@ -65,8 +65,8 @@ jobs:
       - name: Validar Sign in with Apple na config iOS
         run: npm run assert:ios-apple-signin
 
-      - name: Run linter
-        run: npm run lint
+      - name: Typecheck e lint (mesmo gate do pre-push)
+        run: npm run build
 
       - name: Run tests
         run: npm test -- --coverage --watchAll=false
@@ -113,7 +113,16 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci
+        run: |
+          set -euo pipefail
+          for attempt in 1 2 3; do
+            if npm ci; then
+              exit 0
+            fi
+            echo "npm ci falhou (tentativa ${attempt}/3); aguardando antes de retry..."
+            sleep 20
+          done
+          exit 1
 
       - name: Sincronizar versão nativa (app.version.json → Gradle)
         run: npm run version:sync
@@ -145,6 +154,7 @@ jobs:
           ANDROID_KEYSTORE_KEY_ALIAS: ${{ secrets.ANDROID_KEYSTORE_KEY_ALIAS }}
           REVOPUSH_DEPLOYMENT_KEY_ANDROID_PRODUCTION: ${{ secrets.REVOPUSH_DEPLOYMENT_KEY_ANDROID_PRODUCTION }}
           GRADLE_OPTS: '-Dorg.gradle.jvmargs=-Xmx4096m -XX:MaxMetaspaceSize=512m'
+          NODE_OPTIONS: '--max-old-space-size=8192'
         run: |
           set -euo pipefail
           KEY_ALIAS="${ANDROID_KEYSTORE_KEY_ALIAS:-likeme-key-alias}"
@@ -175,7 +185,8 @@ jobs:
     needs: approve
     if: ${{ !failure() && !cancelled() }}
     env:
-      SKIP_IOS_POD_INSTALL: 'false'
+      # Pod só depois do expo prebuild (Revopush); evita pod install duplo e clone Firebase no postinstall.
+      SKIP_IOS_POD_INSTALL: 'true'
       EXPO_PUBLIC_AUTH0_DOMAIN: 'likeme.us.auth0.com'
       EXPO_PUBLIC_AUTH0_CLIENT_ID: 'BoUNLHdItmGpq8rr1A4VS7ea2ceXsWPy'
       EXPO_PUBLIC_AUTH0_AUDIENCE: 'https://likeme.us.auth0.com/api/v2/'

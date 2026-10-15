@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-require-imports */
 const path = require('path');
 const { spawnSync } = require('child_process');
 
@@ -17,7 +16,12 @@ function runJitsiPrepareSdk() {
   });
 
   if (result.status !== 0) {
-    console.warn('[run-jitsi-prepare-sdk] prepare_sdk.js terminou com código', result.status);
+    const message = `[run-jitsi-prepare-sdk] prepare_sdk.js terminou com código ${result.status}`;
+    if (process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true') {
+      console.error(message);
+      process.exit(result.status ?? 1);
+    }
+    console.warn(message);
   }
 }
 

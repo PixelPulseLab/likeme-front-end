@@ -3,6 +3,9 @@
 // @jitsi/react-native-sdk buildscript classpath (README: gradlePluginVersion >= 8.4.2)
 ext {
   gradlePluginVersion = "8.12.0"
+  compileSdkVersion = 36
+  targetSdkVersion = 36
+  minSdkVersion = 28
 }
 
 buildscript {
